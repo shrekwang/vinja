@@ -1,0 +1,29 @@
+<project name="szjde" basedir=".." default="jar">
+
+  <property name="src" value="java" />
+  <property name="dist" value="classes" />
+  <property name="lib" value="lib" />
+
+  <path id="class.path">
+    <fileset dir="${lib}">
+      <include name="**/*.jar" />
+    </fileset>
+    <pathelement location="${dist}" />
+  </path>
+
+  <target name="build">
+    <javac classpathref="class.path" srcdir="${src}" destdir="${dist}" includeantruntime="false"  />
+    <copy todir="${dist}">
+      <fileset dir="${src}">
+        <exclude name="**/*.java" />
+        <exclude name="**/*.swp" />
+      </fileset>
+    </copy>
+
+  </target>
+
+  <target name="jar" depends="build">
+    <jar jarfile="${lib}/szjde.jar" basedir="${dist}" />
+  </target>
+
+</project>

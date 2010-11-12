@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="sztools/java"/>
+	<classpathentry kind="lib" path="sztools/lib/commons-io-1.4.jar"/>
+	<classpathentry kind="lib" path="sztools/lib/jasper-jdt.jar"/>
+	<classpathentry kind="lib" path="sztools/lib/log4j-1.2.16.jar"/>
+	<classpathentry kind="lib" path="sztools/lib/swt-linux/swt.jar"/>
+	<classpathentry kind="lib" path="sztools/lib/swt-win/swt.jar"/>
+	<classpathentry kind="lib" path="sztools/lib/szjde.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="sztools/classes"/>
+</classpath>

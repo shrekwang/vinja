@@ -1,0 +1,53 @@
+Before everything else :
+  1: args are seperated by space, if a real space is needed, use "\ " instead.  
+  2: the native implement command will be search first , if can't  find the command,  
+     Shext will try to use system command, native implement commands list below.
+  3: interactive command like 'mysql' , 'telnet','ftp' are not supported.
+
+Change Dir and List :
+    pwd : display current dir. 
+    cd [arg] : change current dir, bookmark and wildcard can be used.
+    cdlist   : list the cd history.
+    lsd     : list dirs in current dir.
+
+    ls [ -l | -L ][ -t | -s | -n ] [ --help ] [args] : list files and dirs in current dir.
+
+Bookmarks :
+    bmadd   : add current dir to bookmarks. can be referenced in "cd" command.
+    bmedit  : edit bookmarks file. it's just a plain text file.
+    bmlist  : list bookmarks.
+
+File Manage:
+    touch [args]          : create new file or change the file modified time.
+    rm  [args] [-r]       : remove file or dir. 
+    mkdir [args]          : create dir.
+    rmdir [args]          : remove empty dir.
+    cp  [src...][dst]     : copy file or dir.
+    mv  [src...][dst]     : move file or dir.
+    echo [args]           : print text to the output .
+    yank [args]           : clear "yankbuffer" and  yank selected file name the "yankbuffer".
+    yankadd [args]        : add selected file name to the "yankbuffer".
+    cut  [args]           : clear "yankbuffer" and  yank selected file name the "yankbuffer".
+    cutadd [args]         : add selected file name to the "yankbuffer".
+    paste                 : paste the file names in "yankbuffer" to current dir. if the file was added by "cut", remove source file.
+    yankbuffer            : display yankbuffer contents.
+    merge [src...][dst]   : merge multiple file into one.
+
+    find [-n name][-t text] [-s size] [-p path] [--help] [args] : find files.
+
+File display & edit :
+    cat [arg]      : display file contents.
+    head [arg]     : display top 10 lines of the file. 
+    edit [args]    : edit file.
+
+LocateDb :
+    updatedb [-n alias][-u path][-d entry][--help]        : index dir or remove indexed data.
+    locate   [-l][-n alias][-p path][--help]              : search files in indexed db.
+    ledit  [ args ]                                       : search files in indexed db and edit it if found.
+    lgrep  [-n alias][-p path][search-pattern][filename]  : like "grep" , but only search file names in indexed db.
+
+Misc :
+    batch [args]   : batch execute command .
+    set  [args]    : set shext options.
+    help           : print this help message.
+    exit           : exit the Shext.
