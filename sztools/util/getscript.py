@@ -137,8 +137,8 @@ if __name__ == "__main__" :
     download_all(".")
     for file_name in os.listdir("."):
         extract_file(file_name)
-    os.mkdir("misc")
+    os.makedirs("misc/plugin")
     for file_name in os.listdir("."):
         if file_name.endswith(".vim") :
-            shutil.move(file_name, "misc")
+            shutil.move(file_name, "misc/plugin")
     os.chdir("..")
