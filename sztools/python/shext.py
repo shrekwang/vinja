@@ -546,7 +546,11 @@ class ShUtil(object):
         self.lscmd = LsCmd(screen_width)
         self.findcmd = FindCmd()
         self.shext_bm_path = os.path.join(getDataHome(), "shext-bm.txt")
+        if not os.path.exists(self.shext_bm_path) :
+            open(self.shext_bm_path, 'w').close()
         self.shext_sp_path = os.path.join(getDataHome(), "shext-sp.txt")
+        if not os.path.exists(self.shext_sp_path) :
+            open(self.shext_sp_path, 'w').close()
         shext_locatedb_path = os.path.join(getDataHome(), "shext-locatedb.dat")
         self.locatecmd = LocateCmd(shext_locatedb_path,self.shext_sp_path)
         self.yank_buffer = yank_buffer
