@@ -37,13 +37,18 @@ public class CompilerContext {
 		
 		File file=new File(classPathXml);
 		String abpath = file.getAbsolutePath();
-		this.projectRoot=new File(abpath).getParent();
-		String jdeXmlPath = FilenameUtils.concat(projectRoot, ".jde");
-		
-		initJdeProperty(jdeXmlPath);
-		initClassPath(classPathXml);
-		
-		
+		if (file.isFile()) {
+			this.projectRoot=new File(abpath).getParent();
+			String jdeXmlPath = FilenameUtils.concat(projectRoot, ".jde");
+			initJdeProperty(jdeXmlPath);
+			initClassPath(classPathXml);
+		} else {
+			this.projectRoot = abpath;
+			this.outputDir = abpath;
+			this.srcLocations.add(abpath);
+			try { classPathUrls.add(file.toURL()); } catch (Exception e) {}
+		}
+		initClassLoader();
 	}
 	
 	private void initJdeProperty(String jdeXmlPath) {
@@ -95,7 +100,9 @@ public class CompilerContext {
 				addUserLib(entry.path);
 			}
 		}
-
+		
+	} 
+	private void initClassLoader() {
 		URL urlsA[] = new URL[classPathUrls.size()];
 		classPathUrls.toArray(urlsA);
 		loader = new ReflectAbleClassLoader(urlsA, this.getClass().getClassLoader());
@@ -181,6 +188,18 @@ public class CompilerContext {
 		return dstPath;
 	}
 
+
+    public String locateSourcePath(String binClassName) {
+        String relativePath = binClassName.replace(".",File.separator)+".java";
+		for (String srcRoot : srcLocations ) {
+            String absSrcPath = FilenameUtils.concat(srcRoot, relativePath);
+            File file = new File(absSrcPath);
+            if ( file.exists()) {
+                return absSrcPath;
+            }
+		}
+        return "";
+    }
 	public String buildClassName(String source) {
 		
 		String locatedSrcRoot = null;

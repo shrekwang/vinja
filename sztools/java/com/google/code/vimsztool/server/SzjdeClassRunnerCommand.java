@@ -26,12 +26,13 @@ public class SzjdeClassRunnerCommand extends SzjdeCommand {
 
 		try {
 			String line;
-			Process p = Runtime.getRuntime().exec(cmd.toString());
+			File workingDir = new File(cc.getProjectRoot());
+			Process p = Runtime.getRuntime().exec(cmd.toString(),new String[]{},workingDir);
 			BufferedReader input = new BufferedReader(new 
 					InputStreamReader(p.getInputStream()));
 			StringBuilder runResult = new StringBuilder();
 			while ((line = input.readLine()) != null) {
-				runResult.append(line);
+				runResult.append(line).append("\n");
 			}
 			input.close();
 			return runResult.toString();

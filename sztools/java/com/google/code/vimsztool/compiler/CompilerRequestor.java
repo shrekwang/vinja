@@ -13,6 +13,8 @@ import org.eclipse.jdt.internal.compiler.ClassFile;
 import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.ICompilerRequestor;
 
+import com.google.code.vimsztool.omni.PackageInfo;
+
 public class CompilerRequestor implements ICompilerRequestor {
 	
 	 private List<String> problemList ; 
@@ -76,6 +78,7 @@ public class CompilerRequestor implements ICompilerRequestor {
                     bos.close();
                 }
             }
+            PackageInfo.cacheClassNameInDist(outputDir);
         } catch (IOException exc) {
         	exc.printStackTrace();
         }

@@ -1,4 +1,6 @@
 from  shext import LocateCmd
+from jde import Parser
+import fnmatch
 import os
 
 class Prompt(object) :
@@ -20,19 +22,16 @@ class Prompt(object) :
         vim.command("echo '%s%s'" % (">> ", self.get_name() ))
 
 class QuickLocater(object) :
-    def __init__(self, init_prompt_value) :
-        shext_locatedb_path = os.path.join(getDataHome(), "shext-locatedb.dat")
-        shext_sp_path = os.path.join(getDataHome(), "shext-sp.txt")
-        self.locatecmd = LocateCmd(shext_locatedb_path,shext_sp_path)
+    def __init__(self, init_prompt_value,content_manager) :
+        self.content_manager = content_manager
         self.prompt = Prompt(init_prompt_value)
-        self.newTab = False
+        self.create_tab = False
 
     def show_matched_result(self):
-        fname = self.prompt.get_name() + "*"
+        pat = self.prompt.get_name() + "*"
         result = []
-        if len(fname) > 2 :
-            result = self.locatecmd.locateFile(fname)
-            result = result[0:30]
+        #if len(pat) > 2 :
+        result = self.content_manager.search_content(pat)
         output(result)
         win_height = len(result)
         vim.command("resize %s" % str(win_height) )
@@ -71,14 +70,14 @@ class QuickLocater(object) :
         vim.command("highlight Cursor guifg=black guibg=%s" % (self.cursor_bg))
 
     @staticmethod
-    def runApp(newTab):
+    def runApp(content_manager , create_tab):
         global quickLocater
         name = vim.eval("expand('<cword>')")
         if name == None :
             name = ""
-        quickLocater = QuickLocater(name)
-        if newTab != None and newTab == "true":
-            quickLocater.newTab = True
+        quickLocater = QuickLocater(name,content_manager)
+        if create_tab != None and create_tab == "true":
+            quickLocater.create_tab = True
         quickLocater.create_explorer_buffer()
         if len(name) > 0 :
             quickLocater.prompt.show()
@@ -155,13 +154,10 @@ class QuickLocater(object) :
         elif key == "CR" :
             work_buffer=vim.current.buffer
             row,col = vim.current.window.cursor
-            fname = work_buffer[row-1].strip()
+            line = work_buffer[row-1]
             self.clean()
             vim.command("exec '%s wincmd w'" % self.last_bufnr)
-            if self.newTab :
-                vim.command("tabedit %s "  %(fname))
-            else :
-                vim.command("edit %s "  %(fname))
+            self.content_manager.open_content(line)
 
         elif key == "ESC" :
             self.clean()
@@ -174,4 +170,39 @@ class QuickLocater(object) :
         vim.command("bwipeout")
         vim.command("echo ''")
         self.restore_env()
+
+class FileContentManager(object):
+    def __init__(self):
+        shext_locatedb_path = os.path.join(getDataHome(), "shext-locatedb.dat")
+        shext_sp_path = os.path.join(getDataHome(), "shext-sp.txt")
+        self.locatecmd = LocateCmd(shext_locatedb_path,shext_sp_path)
+
+    def search_content(self,search_pat):
+        result = self.locatecmd.locateFile(search_pat)
+        result = result[0:30]
+        return result
+
+    def open_content(self,line):
+        fname = line.strip()
+        vim.command("edit %s "  %(fname))
+
+class JavaMemberContentManager(object):
+
+    def __init__(self):
+        work_buffer=vim.current.buffer
+        self.memberInfo = Parser.parseAllMemberInfo(work_buffer)
+
+    def search_content(self,search_pat):
+        result = []
+        for name ,decl,lineNum in self.memberInfo :
+            if fnmatch.fnmatch(name, search_pat) :
+                result.append("\t".join((name,str(lineNum))))
+        return result
+
+    def open_content(self,line):
+        print line
+        name,lineNum = line.split("\t")
+        vim.command("normal %sG" % str(lineNum))
+        
+
 

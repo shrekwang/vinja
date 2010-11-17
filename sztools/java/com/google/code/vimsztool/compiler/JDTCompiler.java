@@ -99,7 +99,7 @@ public class JDTCompiler  {
         Compiler compiler = new Compiler(env, policy, settings, requestor, problemFactory, true);
         compiler.compile(compilationUnits);
         
-        PackageInfo.cacheClassNameInDist(ctx.getOutputDir());
+       
         
         return problemList;
         

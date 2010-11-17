@@ -9,9 +9,9 @@ public class SzjdeConstants {
 	public final static String CMD_DUMP_CLASS="dumpClass";
 	public final static String CMD_OVERIDE="overide";
 	public final static String CMD_COPY_RESOURCE="copyResource";
-	
 	public final static String CMD_RUN_SYS="runSys";
 	public final static String CMD_FETCH_RESULT="fetchResult";
+	
 	public final static String PARAM_CLASSPATHXML="classPathXml";
 	public final static String PARAM_SOURCEFILE="sourceFile";
 	public final static String PARAM_CPT_TYPE="completionType";

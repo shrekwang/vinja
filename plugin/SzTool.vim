@@ -326,7 +326,14 @@ endfunction
 
 function LocateFile(newTab)
   call RunSzPyfile("locate.py")
-  python QuickLocater.runApp(vim.eval("a:newTab"))
+  python fcmgr = FileContentManager()
+  python QuickLocater.runApp(fcmgr,vim.eval("a:newTab"))
+endfunction
+
+function LocateMember()
+  call RunSzPyfile("locate.py")
+  python membermgr = JavaMemberContentManager()
+  python QuickLocater.runApp(membermgr,False )
 endfunction
 
 function StartMailAgent()
@@ -373,7 +380,8 @@ function! Jdext()
   map <C-n> :cn<cr>
   map <C-p> :cp<cr>
   vmap <silent><leader>gg          :python EditUtil.generateGseter()<cr>
-  nmap <silent><leader>gd          :python EditUtil.dumpClassInfo()<cr>
+  nmap <silent><leader>dc          :python EditUtil.dumpClassInfo()<cr>
+  nmap <silent><leader>gd          :python EditUtil.gotoDefinition()<cr>
   command! -nargs=0   AutoImport   :python AutoImport.autoImportVar()
   command! -nargs=0   Run          :python Runner.runCurrentFile()
   command! -nargs=0   Overide      :python EditUtil.overideMethod()
@@ -406,3 +414,18 @@ command! -nargs=0 SaveNote            :python Notext.saveBufContent()
 command! -nargs=0 MakeNoteTemplate    :python Notext.makeTemplate()
 command! -nargs=0 Less     :call Less()
 
+"sztools mapping
+nmap <silent><leader>zc  :python startScriptEdit()<cr>
+nmap <silent><leader>zd  :call SearchDict('<C-R><C-W>')<CR>
+vmap <silent><leader>zf  :python simpleFormatSQL()<cr>
+vmap <silent><leader>zm  :python markVisual()<cr>
+
+nmap <silent><leader>zl  :call Less()<CR>
+nmap <silent><leader>zs  :python startfile()<cr>
+nmap <silent><leader>zv  <C-Q>
+nmap <silent><leader>zw  :w<cr>
+
+nmap <silent><leader>ff  :python openInFirefox()<cr>
+nmap <silent><leader>lt  :call LocateFile('true')<cr>
+nmap <silent><leader>lw  :call LocateFile('false')<cr>
+nmap <silent><leader>zo  :call LocateMember()<cr>

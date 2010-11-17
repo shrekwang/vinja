@@ -2,6 +2,7 @@ import socket
 import vim
 import os.path
 import time
+import re
 from subprocess import Popen 
 from pyparsing import *
 
@@ -91,7 +92,9 @@ class ProjectManager(object):
     @staticmethod
     def getClassPathXml(filePath):
         projectRoot = ProjectManager.getProjectRoot(filePath)
-        if not projectRoot : return None
+        if not projectRoot : 
+            parent = os.path.dirname(filePath)
+            return parent
         return os.path.join(projectRoot,".classpath")
 
     @staticmethod
@@ -170,6 +173,16 @@ class Talker(object):
         params = dict()
         params["cmd"]="completion"
         params["completionType"] = memberType
+        params["classnames"] = ",".join(classnameList)
+        params["classPathXml"] = xmlPath
+        params["expTokens"] = ",".join(expTokens)
+        data = Talker.send(params)
+        return data
+
+    @staticmethod
+    def gotoDef(classnameList,xmlPath,expTokens):
+        params = dict()
+        params["cmd"]="gotoDef"
         params["classnames"] = ",".join(classnameList)
         params["classPathXml"] = xmlPath
         params["expTokens"] = ",".join(expTokens)
@@ -306,6 +319,32 @@ class EditUtil(object):
         allFullClassNames = Parser.getAllSuperClassFullNames()
         resultText = Talker.overideMethod(classPathXml,allFullClassNames)
         VimUtil.writeToJdeConsole(resultText)
+
+    @staticmethod
+    def gotoDefinition():
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        line = vim_buffer[row-1]
+        current_file_name = vim_buffer.name
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+        dotExpParser = Parser.getJavaDotExpParser()
+        expTokens = dotExpParser.searchString(line[0:col])[0]
+        logging.debug("exp Tokens is %s " % str(expTokens))
+        varName = expTokens[0]
+        if expTokens[-1] != "." :
+            expTokens = expTokens[1:-1]
+        else :
+            expTokens = expTokens[1:]
+
+        if varName[0].isupper():
+            classname = varName
+        else :
+            classname = Parser.getVarType(varName,row-1)
+            if not classname : 
+                classname = varName
+        classNameList = Parser.getFullClassNames(classname)
+        loc = Talker.gotoDef(classNameList,classPathXml,expTokens).split("\n")
+        logging.debug("loc is %s " % loc )
 
     @staticmethod
     def dumpClassInfo():
@@ -463,6 +502,40 @@ class AutoImport(object):
         
 
 class Parser(object):
+
+    @staticmethod
+    def parseAllMemberInfo(lines):
+        memberInfo = []
+        scopeCount = 0 
+        methodPat = re.compile(r"\b(?P<name>\w+)\(")
+        assignPat = re.compile("(?P<name>\w+)\s*=")
+        defPat = re.compile("(?P<name>\w+)\s*;")
+        for lineNum,line in enumerate(lines) :
+            if scopeCount == 1 :
+                if "(" in line :
+                    pat = methodPat
+                    decl = line[0: line.find("(")] + "()"
+                    mtype = "method"
+                elif "=" in line :
+                    pat = assignPat
+                    decl = line[0: line.find("=")]
+                    mtype = "field"
+                else :
+                    pat = defPat
+                    decl = line 
+                    mtype = "field"
+                search_res=pat.search(line)
+                if search_res :
+                    name = search_res.group("name")
+                    if mtype == "method" :
+                        name = name + "()"
+                    decl = decl.replace("\t", "  ").strip()
+                    memberInfo.append((name,decl,lineNum+1))
+            if "{" in line :
+                scopeCount = scopeCount + 1
+            if "}" in lines[lineNum] :
+                scopeCount = scopeCount - 1
+        return  memberInfo
 
     @staticmethod 
     def isJavaKeyword(word):
@@ -704,7 +777,7 @@ class SzJdeCompletion(object):
         return completeList
 
     @staticmethod
-    def getMemeberCompleteResult(completionType,base):
+    def getMemberCompleteResult(completionType,base):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]
@@ -776,7 +849,7 @@ class SzJdeCompletion(object):
             names = Talker.getPackageList(pkgname,classPathXml).split("\n")
             result = SzJdeCompletion.filterList(names,base)
         elif completionType == "member" :
-            result = SzJdeCompletion.getMemeberCompleteResult(completionType,base)
+            result = SzJdeCompletion.getMemberCompleteResult(completionType,base)
         elif completionType == "word" :
             if base[0].isupper():
                 classNameList = Talker.getClassList(base,classPathXml).split("\n")
