@@ -3,6 +3,7 @@ import vim
 import os.path
 import time
 import re
+from xml.etree.ElementTree import ElementTree
 from subprocess import Popen 
 from pyparsing import *
 
@@ -90,6 +91,21 @@ class ProjectManager(object):
         return projectRoot
 
     @staticmethod
+    def getSrcLocations(filePath):
+        tree = ElementTree()
+        classpathXml = ProjectManager.getClassPathXml(filePath)
+        if os.path.isdir(classpathXml) :
+            return [ classpathXml ]
+        project_root = ProjectManager.getProjectRoot(filePath)
+        tree.parse(classpathXml)
+        entries = tree.findall("classpathentry")
+        src_locs = []
+        for entry in  entries :
+            if entry.get("kind") == "src" :
+                src_locs.append(os.path.join(project_root,entry.get("path")))
+        return src_locs
+
+    @staticmethod
     def getClassPathXml(filePath):
         projectRoot = ProjectManager.getProjectRoot(filePath)
         if not projectRoot : 
@@ -173,16 +189,6 @@ class Talker(object):
         params = dict()
         params["cmd"]="completion"
         params["completionType"] = memberType
-        params["classnames"] = ",".join(classnameList)
-        params["classPathXml"] = xmlPath
-        params["expTokens"] = ",".join(expTokens)
-        data = Talker.send(params)
-        return data
-
-    @staticmethod
-    def gotoDef(classnameList,xmlPath,expTokens):
-        params = dict()
-        params["cmd"]="gotoDef"
         params["classnames"] = ",".join(classnameList)
         params["classPathXml"] = xmlPath
         params["expTokens"] = ",".join(expTokens)
@@ -328,13 +334,14 @@ class EditUtil(object):
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         dotExpParser = Parser.getJavaDotExpParser()
-        expTokens = dotExpParser.searchString(line[0:col])[0]
-        logging.debug("exp Tokens is %s " % str(expTokens))
+        tokenEndCol = col
+        for char in line[col:] :
+            if not re.match("\w",char) :
+                break
+            tokenEndCol += 1
+        expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
         varName = expTokens[0]
-        if expTokens[-1] != "." :
-            expTokens = expTokens[1:-1]
-        else :
-            expTokens = expTokens[1:]
+        memberName = expTokens[-1]
 
         if varName[0].isupper():
             classname = varName
@@ -343,8 +350,30 @@ class EditUtil(object):
             if not classname : 
                 classname = varName
         classNameList = Parser.getFullClassNames(classname)
-        loc = Talker.gotoDef(classNameList,classPathXml,expTokens).split("\n")
-        logging.debug("loc is %s " % loc )
+        # find exact match bin classname
+        abs_path = "abs"
+        has_match = False
+        if len(classNameList) == 1 :
+            rlt_path = classNameList[0].replace(".", os.path.sep)+".java"
+            src_locs = ProjectManager.getSrcLocations(current_file_name)
+            for src_loc in src_locs :
+                abs_path = os.path.join(src_loc, rlt_path)
+                if os.path.exists(abs_path) :
+                    has_match = True
+                    break
+                    #vim.command("edit %s" % abs_path)
+        if has_match :
+            matched_row = 0
+            lines = open(abs_path,"r").readlines()
+            members = Parser.parseAllMemberInfo(lines)
+            for name,decl,lineNum in members :
+                name = name.replace("(","")
+                name = name.replace(")","")
+                if name == memberName :
+                    matched_row = lineNum
+            vim.command("edit %s" % abs_path)
+            vim.command("normal %sG" % str(matched_row))
+        return 
 
     @staticmethod
     def dumpClassInfo():
