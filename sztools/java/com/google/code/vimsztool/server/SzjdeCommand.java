@@ -1,26 +1,19 @@
 package com.google.code.vimsztool.server;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.compiler.CompilerContextManager;
 
 public class SzjdeCommand {
 
 	protected String cmd;
 	protected Map<String,String> params;
-	protected static HashMap<String, CompilerContext> ctxCache = new HashMap<String, CompilerContext>();
+	protected CompilerContextManager ccm = CompilerContextManager.getInstnace();
 	
 	public CompilerContext getCompilerContext(String classPathXml) {
-		CompilerContext ctx=ctxCache.get(classPathXml);
-		if (ctx ==null) {
-			ctx=new CompilerContext(classPathXml);
-			ctxCache.put(classPathXml, ctx);
-		}
-		return ctx;
+		return ccm.getCompilerContext(classPathXml);
 	}
-
-
 	
 	public String getCmd() {
 		return cmd;

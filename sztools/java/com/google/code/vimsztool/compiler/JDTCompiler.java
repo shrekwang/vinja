@@ -88,7 +88,7 @@ public class JDTCompiler  {
             new DefaultProblemFactory(Locale.getDefault());
         
         List<String> problemList = new ArrayList<String>();
-        final ICompilerRequestor requestor = new CompilerRequestor(ctx.getOutputDir(),problemList);
+        final ICompilerRequestor requestor = new CompilerRequestor(ctx,problemList);
 
         ICompilationUnit[] compilationUnits = 
             new ICompilationUnit[classNames.length];

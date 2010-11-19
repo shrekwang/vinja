@@ -13,17 +13,15 @@ import org.eclipse.jdt.internal.compiler.ClassFile;
 import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.ICompilerRequestor;
 
-import com.google.code.vimsztool.omni.PackageInfo;
-
 public class CompilerRequestor implements ICompilerRequestor {
 	
 	 private List<String> problemList ; 
-	 private String outputDir;
+	 private CompilerContext ctx;
 	 
 	 private static final String FIELD_SEPERATOR="::";
 	 
-	 public CompilerRequestor(String outputDir, List<String> problemList) {
-		 this.outputDir=outputDir;
+	 public CompilerRequestor(CompilerContext ctx, List<String> problemList) {
+		 this.ctx = ctx;
 		 this.problemList=problemList;
 	 }
 	
@@ -66,8 +64,8 @@ public class CompilerRequestor implements ICompilerRequestor {
                         sep = ".";
                     }
                     byte[] bytes = classFile.getBytes();
-                    String outFile = outputDir + "/" + 
-                        className.replace('.', '/') + ".class";
+                    String outFile = ctx.getOutputDir() + "/" + 
+                    className.replace('.', '/') + ".class";
                     File parentFile=new File(outFile).getParentFile();
                     if (!parentFile.exists()) parentFile.mkdirs();
                     FileOutputStream fout = 
@@ -78,7 +76,7 @@ public class CompilerRequestor implements ICompilerRequestor {
                     bos.close();
                 }
             }
-            PackageInfo.cacheClassNameInDist(outputDir);
+            ctx.createNewClassLoader(); 
         } catch (IOException exc) {
         	exc.printStackTrace();
         }

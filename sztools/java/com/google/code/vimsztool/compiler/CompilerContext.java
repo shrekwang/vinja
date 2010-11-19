@@ -33,6 +33,13 @@ public class CompilerContext {
 	private List<String> srcLocations=new ArrayList<String>();
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	
+	
+	public void createNewClassLoader() {
+		if (loader == null) return;
+		URL[] urls = loader.getURLs();
+		loader = new ReflectAbleClassLoader(urls, this.getClass().getClassLoader());
+	}
+	
 	public CompilerContext(String classPathXml) {
 		
 		File file=new File(classPathXml);
