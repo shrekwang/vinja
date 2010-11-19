@@ -156,8 +156,11 @@ class LsCmd(object):
             pathname = args[0]
         else :
             pathname = "*"
+
+        if pathname.endswith(":") :
+            pathname = pathname + os.path.sep
             
-        if pathname.startswith("/"):
+        if pathname.startswith("/") or re.match("^.:.*",pathname) :
             abspath = pathname
         elif pathname.startswith("~"):
             abspath = os.path.expanduser(pathname)
@@ -1201,7 +1204,7 @@ class OutputNavigator(object):
         work_buffer = vim.current.buffer
         row,col = vim.current.window.cursor
         start_text = work_buffer[row-1][0:start_col+1]
-        work_buffer[row-1] = start_text + outputBuffer[ngt_index]
+        work_buffer[row-1] = start_text + outputBuffer[ngt_index].strip()
         length = len(work_buffer[row-1])
         vim.current.window.cursor = ( row , length )
         OutputNavigator.highlightLine(ngt_index + 1,length)

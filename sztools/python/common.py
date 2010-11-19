@@ -394,8 +394,13 @@ class SzToolsConfig(object):
         return self.cfg_dict.get(name,"")
 
 def initSztool():
-    LOG_FILENAME = os.path.join(getDataHome(), "sztools.log")
-    logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+    data_home = getDataHome()
+    if not os.path.exists(data_home):
+        os.mkdir(data_home)
+    log_filename = os.path.join(data_home, "sztools.log")
+    if not os.path.exists(log_filename) :
+        open(log_filename,"w").close()
+    logging.basicConfig(filename=log_filename,level=logging.DEBUG)
 
     gscope=globals()
     gscope["incValue"] = 0

@@ -81,8 +81,10 @@ class ProjectManager(object):
         projectRoot = None
         parent = filePath
         while True :
-            parent = os.path.dirname(parent)
-            if parent == "/" : break
+            tmpdir = os.path.dirname(parent) 
+            if tmpdir == "" or tmpdir == "/" or tmpdir == parent :
+                break
+            parent = tmpdir
             fullname = lambda name : os.path.join(parent,name)
             prj_names =[fullname(name) for name in [".project",".classpath"]]
             if os.path.exists(prj_names[0]) and os.path.exists(prj_names[1]):
@@ -396,7 +398,8 @@ class Compiler(object):
         line = vim_buffer[row-1]
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
-        if not classPathXml : return 
+        if not classPathXml : 
+            return 
         resultText = Talker.compileFile(classPathXml,current_file_name)
         errorMsgList = resultText.split("\n")
         hasError = False
