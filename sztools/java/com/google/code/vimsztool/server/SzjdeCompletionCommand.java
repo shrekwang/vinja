@@ -16,6 +16,8 @@ import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_VAR_NAMES;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
@@ -72,33 +74,30 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 			if (aClass != null)
 				break;
 		}
-		if (aClass == null)
-			return "";
+		if (aClass == null) return "";
 		Class fClass = null;
-		Field[] fields = aClass.getDeclaredFields();
-		for (Field tf : fields) {
-			int mod = tf.getModifiers();
-			if (Modifier.isPublic(mod) || Modifier.isProtected(mod)) {
-				if (tf.getName().equals(field)) {
-					fClass = tf.getType();
+		boolean foundField = false;
+		while (true) {
+			Field[] fields = aClass.getDeclaredFields();
+			for (Field tf : fields) {
+				int mod = tf.getModifiers();
+				if (Modifier.isPublic(mod) || Modifier.isProtected(mod)) {
+					if (tf.getName().equals(field)) {
+						fClass = tf.getType();
+						foundField = true;
+						break;
+					}
 				}
 			}
-
+			if (! foundField) {
+				aClass = aClass.getSuperclass();
+				if ( aClass ==null || aClass.getName().equals("java.lang.Object") ) {
+					break;
+				}
+			}
 		}
-		if (fClass == null) return "";
-		ClassInfo classInfo = new ClassInfo();
-		List<MemberInfo> memberInfos=null;
-		memberInfos = classInfo.getMemberInfo(fClass, false);
-		if (memberInfos == null) return "";
-		StringBuilder sb=new StringBuilder();
-		for (MemberInfo member : memberInfos) {
-			sb.append(member.getMemberType()).append(":");
-			sb.append(member.getName()).append(":");
-			sb.append(member.getParams()).append(":");
-			sb.append(member.getReturnType()).append(":");
-			sb.append(member.getExceptions()).append("\n");
-		}
-		return sb.toString();
+		if (!foundField) return "";
+		return getAllMember(fClass,CPT_TYPE_OBJECTMEMBER,false);
 	}
 	
 	public String completeMember(String classPathXml, String completionType) {
@@ -143,17 +142,34 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 				}
 			}
 		}
-		
+		return getAllMember(aClass,completionType,hasDotExp);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public String getAllMember(Class aClass,String completionType,boolean hasDotExp) {
 		ClassInfo classInfo = new ClassInfo();
-		List<MemberInfo> memberInfos=null;
-		if (completionType.equals(CPT_TYPE_OBJECTMEMBER) || hasDotExp ) {
-			memberInfos=classInfo.getMemberInfo(aClass,false);
-		} else if (completionType.equals(CPT_TYPE_CLASSMEMBER)){
-			memberInfos=classInfo.getMemberInfo(aClass,true);
-		} else if (completionType.equals(CPT_TYPE_CONSTRUCTOR)){
-			memberInfos=classInfo.getConstructorInfo(aClass);
+		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
+		LinkedList<Class> classList = new LinkedList<Class>();
+		Class tmpClass =  aClass;
+		while (true) {
+			classList.add(tmpClass);
+			tmpClass =  tmpClass.getSuperclass();
+			if (tmpClass == null) break;
+			if (tmpClass.getName().equals("java.lang.Object")) break;
 		}
-		if (memberInfos == null) return "";
+		for (Class cls : classList) {
+			List<MemberInfo> tmpInfoList = null;
+			if (completionType.equals(CPT_TYPE_OBJECTMEMBER) || hasDotExp ) {
+				tmpInfoList=classInfo.getMemberInfo(cls,false);
+			} else if (completionType.equals(CPT_TYPE_CLASSMEMBER)){
+				tmpInfoList=classInfo.getMemberInfo(cls,true);
+			} else if (completionType.equals(CPT_TYPE_CONSTRUCTOR)){
+				tmpInfoList=classInfo.getConstructorInfo(cls);
+			}
+			if (tmpInfoList == null) continue;
+			memberInfos.addAll(tmpInfoList);
+		}
+		
 		StringBuilder sb=new StringBuilder();
 		for (MemberInfo member : memberInfos) {
 			sb.append(member.getMemberType()).append(":");
