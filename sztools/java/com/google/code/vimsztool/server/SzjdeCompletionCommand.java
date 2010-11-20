@@ -89,11 +89,10 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 					}
 				}
 			}
-			if (! foundField) {
-				aClass = aClass.getSuperclass();
-				if ( aClass ==null || aClass.getName().equals("java.lang.Object") ) {
-					break;
-				}
+			if (foundField) break;
+			aClass = aClass.getSuperclass();
+			if ( aClass ==null || aClass.getName().equals("java.lang.Object") ) {
+				break;
 			}
 		}
 		if (!foundField) return "";
