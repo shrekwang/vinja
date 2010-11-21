@@ -372,6 +372,7 @@ function! Jdext()
   python SzJde.runApp()
   set completeopt=menuone
   autocmd BufEnter     *.java      set omnifunc=SzJdeCompletion
+  autocmd BufEnter     *.java      set foldmethod=syntax
   if exists("*SuperTabSetDefaultCompletionType")
     autocmd BufEnter *.java        call SuperTabSetDefaultCompletionType("<c-x><c-o>")
   endif
