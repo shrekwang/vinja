@@ -667,6 +667,8 @@ class Parser(object):
         vim_buffer = vim.current.buffer
         binNames = []
         currentPackage = Parser.getPackage()
+        if not classname :
+            return []
         if not currentPackage :
             currentPackage = ""
         hasExactMatch = False
@@ -828,7 +830,7 @@ class SzJdeCompletion(object):
         else :
             expTokens = expTokens[1:]
 
-        pat = re.compile("^%s.*" %base)
+        pat = re.compile("^%s.*" %base, re.IGNORECASE)
         result = []
 
         if varName[0].isupper():
@@ -839,17 +841,18 @@ class SzJdeCompletion(object):
             completionType = "objectmember"
         else :
             classname = Parser.getVarType(varName,row-1)
-            if not classname : 
-                classname = varName
-                completionType = "classmember"
-            else :
-                completionType = "objectmember"
+            completionType = "objectmember"
+
+        if not classname : 
+            classname = varName
+
         classNameList = Parser.getFullClassNames(classname)
         memberInfos = Talker.getMemberList(classNameList,classPathXml,completionType,expTokens).split("\n")
         if memberInfos == None or ( len(memberInfos) ==1 and memberInfos[0] == "") :
             superClassList = Parser.getAllSuperClassFullNames()
             memberInfos = Talker.getSuperFieldMemberList(superClassList,classPathXml,varName).split("\n")
         result = SzJdeCompletion.buildCptDictArrary(memberInfos, pat)
+
         if varName == "this" :
             members = Parser.parseAllMemberInfo(vim_buffer)
             for mname,mtype,rtntype,lineNum in members :
