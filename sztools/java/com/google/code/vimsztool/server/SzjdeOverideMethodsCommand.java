@@ -70,7 +70,7 @@ public class SzjdeOverideMethodsCommand extends SzjdeCommand {
 	
 	public List<String> addMethods(Class aClass,boolean mandatory) {
 		ClassInfo classInfo = new ClassInfo();
-		List<MemberInfo> memberInfos=classInfo.getMemberInfo(aClass, false);
+		List<MemberInfo> memberInfos=classInfo.getMemberInfo(aClass, false,true);
 		List<String> methods = new ArrayList<String>();
 		for (MemberInfo info : memberInfos ) {
 			if (info.getMemberType().equals(MemberInfo.TYPE_METHOD)) {

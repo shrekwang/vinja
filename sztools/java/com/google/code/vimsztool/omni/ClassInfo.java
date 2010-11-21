@@ -47,13 +47,13 @@ public class ClassInfo {
 		}
 		sb.append("\n");
 		sb.append("static members \n");
-		infos = getMemberInfo(aClass, true);
+		infos = getMemberInfo(aClass, true,false);
 		for (MemberInfo info : infos) {
 			sb.append("    ").append(info.getFullDecleration()).append("\n");
 		}
 		sb.append("\n");
 		sb.append("non-static members \n");
-		infos = getMemberInfo(aClass, false);
+		infos = getMemberInfo(aClass, false,false);
 		for (MemberInfo info : infos) {
 			sb.append("    ").append(info.getFullDecleration()).append("\n");
 		}
@@ -78,43 +78,50 @@ public class ClassInfo {
 		}
 		return memberInfos;
 	}
+	
+	public boolean isValidateModifier(boolean staticMember,boolean protectedMember,int mod) {
+		if (staticMember && ! Modifier.isStatic(mod)) return false;
+		if (!staticMember && Modifier.isStatic(mod)) return false;
+		if (protectedMember ) {
+			if ( Modifier.isProtected(mod) || Modifier.isPublic(mod)) return true;
+		} else {
+			if (Modifier.isPublic(mod)) return true;
+		}
+		return false;
+	}
 
 	@SuppressWarnings("unchecked")
-	public ArrayList<MemberInfo> getMemberInfo(Class aClass,boolean staticMember) {
-		
-		ArrayList<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
-		
+	public ArrayList<MemberInfo> getMemberInfo(Class aClass,
+			boolean staticMember, boolean protectedMember) {
+
+		ArrayList<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
+
 		Field[] fields = aClass.getDeclaredFields(); // Look up fields.
 		for (int i = 0; i < fields.length; i++) {
-			if (staticMember && Modifier.isStatic(fields[i].getModifiers())
-					|| ( !staticMember && !Modifier.isStatic(fields[i].getModifiers()) ) ) {
-				
-				if (Modifier.isPublic(fields[i].getModifiers())) {
-					MemberInfo memberInfo=new MemberInfo();
-					memberInfo.setModifiers(modifiers(fields[i].getModifiers()));
-					memberInfo.setMemberType(MemberInfo.TYPE_FIELD);
-					memberInfo.setName(fields[i].getName());
-					memberInfo.setReturnType(typeName(fields[i].getType()));
-					memberInfos.add(memberInfo);
-				}
-			}
+			int mod = fields[i].getModifiers();
+			if (!isValidateModifier(staticMember, protectedMember, mod))
+				continue;
+			MemberInfo memberInfo = new MemberInfo();
+			memberInfo.setModifiers(modifiers(fields[i].getModifiers()));
+			memberInfo.setMemberType(MemberInfo.TYPE_FIELD);
+			memberInfo.setName(fields[i].getName());
+			memberInfo.setReturnType(typeName(fields[i].getType()));
+			memberInfos.add(memberInfo);
 		}
 
 		Method[] methods = aClass.getDeclaredMethods(); // Look up methods.
 		for (int i = 0; i < methods.length; i++) {
-			if (staticMember && Modifier.isStatic(methods[i].getModifiers())
-					|| ( !staticMember && ! Modifier.isStatic(methods[i].getModifiers()) ) ) {
-				if (Modifier.isPublic(methods[i].getModifiers())) {
-					MemberInfo memberInfo=new MemberInfo();
-					memberInfo.setModifiers(modifiers(methods[i].getModifiers()));
-					memberInfo.setMemberType(MemberInfo.TYPE_METHOD);
-					memberInfo.setName(methods[i].getName());
-					memberInfo.setReturnType(typeName(methods[i].getReturnType()));
-					memberInfo.setExceptions(getExceptionInfo(methods[i]));
-					memberInfo.setParams(getParameterInfo(methods[i]));
-					memberInfos.add(memberInfo);
-				}
-			}
+			int mod = methods[i].getModifiers();
+			if (!isValidateModifier(staticMember, protectedMember, mod))
+				continue;
+			MemberInfo memberInfo = new MemberInfo();
+			memberInfo.setModifiers(modifiers(methods[i].getModifiers()));
+			memberInfo.setMemberType(MemberInfo.TYPE_METHOD);
+			memberInfo.setName(methods[i].getName());
+			memberInfo.setReturnType(typeName(methods[i].getReturnType()));
+			memberInfo.setExceptions(getExceptionInfo(methods[i]));
+			memberInfo.setParams(getParameterInfo(methods[i]));
+			memberInfos.add(memberInfo);
 		}
 		return memberInfos;
 

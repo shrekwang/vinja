@@ -4,6 +4,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_CLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_CLASSMEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_CONSTRUCTOR;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_OBJECTMEMBER;
+import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_INHERITMEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_PACKAGE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_SUPER_FIELD_MEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASSPATHXML;
@@ -37,6 +38,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 			return completePackage(classPathXml, pkgname);
 		} else if (completionType.equals(CPT_TYPE_CLASSMEMBER)
 				|| completionType.equals(CPT_TYPE_CONSTRUCTOR)
+				|| completionType.equals(CPT_TYPE_INHERITMEMBER)
 				|| completionType.equals(CPT_TYPE_OBJECTMEMBER) ) {
 			return completeMember(classPathXml, completionType);
 		} else if (completionType.equals(CPT_TYPE_SUPER_FIELD_MEMBER)) {
@@ -159,11 +161,13 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		for (Class cls : classList) {
 			List<MemberInfo> tmpInfoList = null;
 			if (completionType.equals(CPT_TYPE_OBJECTMEMBER) || hasDotExp ) {
-				tmpInfoList=classInfo.getMemberInfo(cls,false);
+				tmpInfoList=classInfo.getMemberInfo(cls,false,false);
 			} else if (completionType.equals(CPT_TYPE_CLASSMEMBER)){
-				tmpInfoList=classInfo.getMemberInfo(cls,true);
+				tmpInfoList=classInfo.getMemberInfo(cls,true,false);
 			} else if (completionType.equals(CPT_TYPE_CONSTRUCTOR)){
 				tmpInfoList=classInfo.getConstructorInfo(cls);
+			} else if (completionType.equals(CPT_TYPE_INHERITMEMBER)){
+				tmpInfoList=classInfo.getMemberInfo(cls,false,true);
 			}
 			if (tmpInfoList == null) continue;
 			memberInfos.addAll(tmpInfoList);

@@ -804,9 +804,13 @@ class SzJdeCompletion(object):
 
     @staticmethod
     def getWordCompleteResult(base):
-        bufferText = "\n".join([line for line in vim.current.buffer])
+        (row,col) = vim.current.window.cursor
+        visibleRowNum = Parser.getVisibleRowNum(row-1)
+        vim_buffer = vim.current.buffer
+        bufferText = "\n".join([vim_buffer[row] for row in visibleRowNum])
+        #bufferText = "\n".join([line for line in vim.current.buffer])
         pattern = r"\b%s\w+\b" % base.replace("*","\S+")
-        matches = re.findall(pattern,bufferText)
+        matches = re.findall(pattern,bufferText,re.IGNORECASE)
         completeList = []
         if matches :
             for item in matches :
@@ -838,7 +842,7 @@ class SzJdeCompletion(object):
             completionType = "classmember"
         elif varName == "super" or varName == "this" :
             classname = Parser.getSuperClass()
-            completionType = "objectmember"
+            completionType = "inheritmember"
         else :
             classname = Parser.getVarType(varName,row-1)
             completionType = "objectmember"
@@ -858,7 +862,7 @@ class SzJdeCompletion(object):
             for mname,mtype,rtntype,lineNum in members :
                 if not pat.match(mname): continue
                 menu = dict()
-                menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
+                #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
                 menu["word"] = mname
                 menu["menu"] = rtntype
                 result.append(menu)
@@ -873,12 +877,13 @@ class SzJdeCompletion(object):
             mtype,mname,mparams,mreturntype,mexceptions = memberInfo.split(":")
             if not pat.match(mname): continue
             menu = dict()
-            menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
-            if menu["kind"] == "m" :
-                menu["word"] = "%s(%s)" % (mname,mparams)
+            #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
+            if mtype == "method" :
+                menu["word"] = mname
+                menu["menu"] = "%s %s(%s)" % (mreturntype, mname,mparams)
             else :
                 menu["word"] = mname
-            menu["menu"] = mreturntype
+                menu["menu"] = mreturntype 
             result.append(menu)
         return result
 

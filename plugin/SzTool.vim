@@ -377,8 +377,8 @@ function! Jdext()
   if exists("*SuperTabSetDefaultCompletionType")
     autocmd BufEnter *.java        call SuperTabSetDefaultCompletionType("<c-x><c-o>")
   endif
-  autocmd BufWritePost *.java <buffer>  python Compiler.compileCurrentFile()
-  autocmd BufWritePost *      <buffer>  python Compiler.copyResource()
+  autocmd BufWritePost  *.java    python Compiler.compileCurrentFile()
+  autocmd BufWritePost  *         python Compiler.copyResource()
   map <C-n> :cn<cr>
   map <C-p> :cp<cr>
   vmap <silent><leader>gg          :python EditUtil.generateGseter()<cr>
