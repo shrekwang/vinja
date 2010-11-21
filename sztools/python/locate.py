@@ -194,7 +194,9 @@ class JavaMemberContentManager(object):
 
     def search_content(self,search_pat):
         result = []
-        for name ,decl,lineNum in self.memberInfo :
+        if not search_pat :
+            search_pat = "*"
+        for name ,mtype,rtntype,lineNum in self.memberInfo :
             if fnmatch.fnmatch(name, search_pat) :
                 result.append("\t".join((name,str(lineNum))))
         return result

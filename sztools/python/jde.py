@@ -10,6 +10,7 @@ from pyparsing import *
 HOST = 'localhost'
 PORT = 9527
 END_TOKEN = "==end=="
+MAX_CPT_COUNT = 20
 
 class SzJde(object):
     @staticmethod
@@ -80,6 +81,8 @@ class ProjectManager(object):
     def getProjectRoot(filePath):
         projectRoot = None
         parent = filePath
+        if not filePath :
+            return None
         while True :
             tmpdir = os.path.dirname(parent) 
             if tmpdir == "" or tmpdir == "/" or tmpdir == parent :
@@ -368,9 +371,9 @@ class EditUtil(object):
             matched_row = 0
             lines = open(abs_path,"r").readlines()
             members = Parser.parseAllMemberInfo(lines)
-            for name,decl,lineNum in members :
-                name = name.replace("(","")
-                name = name.replace(")","")
+            for name,mtype,rtntype,lineNum in members :
+                if mtype == "method" :
+                    name = name[0 : name.find("(")]
                 if name == memberName :
                     matched_row = lineNum
             vim.command("edit %s" % abs_path)
@@ -539,30 +542,32 @@ class Parser(object):
     def parseAllMemberInfo(lines):
         memberInfo = []
         scopeCount = 0 
-        methodPat = re.compile(r"\b(?P<name>\w+)\(")
-        assignPat = re.compile("(?P<name>\w+)\s*=")
-        defPat = re.compile("(?P<name>\w+)\s*;")
+        methodPat = re.compile(r"(?P<rtntype>[\w<>]+)\s+(?P<name>\w+\s*\(.*\))")
+        assignPat = re.compile("(?P<rtntype>[\w<>]+)\s+(?P<name>\w+)\s*=")
+        defPat = re.compile("(?P<rtntype>[\w<>]+)\s+(?P<name>\w+)\s*;")
         for lineNum,line in enumerate(lines) :
             if scopeCount == 1 :
+                fullDeclLine = line
                 if "(" in line :
+                    startLine = lineNum + 1
+                    while True :
+                        if ")" in fullDeclLine :
+                            break
+                        fullDeclLine = fullDeclLine +lines[startLine]
+                        startLine = startLine + 1
                     pat = methodPat
-                    decl = line[0: line.find("(")] + "()"
                     mtype = "method"
                 elif "=" in line :
                     pat = assignPat
-                    decl = line[0: line.find("=")]
                     mtype = "field"
                 else :
                     pat = defPat
-                    decl = line 
                     mtype = "field"
                 search_res=pat.search(line)
                 if search_res :
                     name = search_res.group("name")
-                    if mtype == "method" :
-                        name = name + "()"
-                    decl = decl.replace("\t", "  ").strip()
-                    memberInfo.append((name,decl,lineNum+1))
+                    rtntype = search_res.group("rtntype")
+                    memberInfo.append((name,mtype,rtntype,lineNum+1))
             if "{" in line :
                 scopeCount = scopeCount + 1
             if "}" in lines[lineNum] :
@@ -738,7 +743,6 @@ class Parser(object):
         return allFullClassNames
 
 class SzJdeCompletion(object):
-
     @staticmethod
     def completion(findstart,base):
         if str(findstart) == "1":
@@ -824,9 +828,15 @@ class SzJdeCompletion(object):
         else :
             expTokens = expTokens[1:]
 
+        pat = re.compile("^%s.*" %base)
+        result = []
+
         if varName[0].isupper():
             classname = varName
             completionType = "classmember"
+        elif varName == "super" or varName == "this" :
+            classname = Parser.getSuperClass()
+            completionType = "objectmember"
         else :
             classname = Parser.getVarType(varName,row-1)
             if not classname : 
@@ -839,7 +849,21 @@ class SzJdeCompletion(object):
         if memberInfos == None or ( len(memberInfos) ==1 and memberInfos[0] == "") :
             superClassList = Parser.getAllSuperClassFullNames()
             memberInfos = Talker.getSuperFieldMemberList(superClassList,classPathXml,varName).split("\n")
-        pat = re.compile("^%s.*" %base)
+        result = SzJdeCompletion.buildCptDictArrary(memberInfos, pat)
+        if varName == "this" :
+            members = Parser.parseAllMemberInfo(vim_buffer)
+            for mname,mtype,rtntype,lineNum in members :
+                if not pat.match(mname): continue
+                menu = dict()
+                menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
+                menu["word"] = mname
+                menu["menu"] = rtntype
+                result.append(menu)
+        return result
+
+
+    @staticmethod
+    def buildCptDictArrary(memberInfos,pat):
         result = []
         for memberInfo in memberInfos :
             if memberInfo == "" : continue
@@ -894,5 +918,7 @@ class SzJdeCompletion(object):
             else :
                 result = SzJdeCompletion.getWordCompleteResult(base)
 
+        if len(result) > MAX_CPT_COUNT :
+            result = result[0:MAX_CPT_COUNT]
         return str(result)
 
