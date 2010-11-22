@@ -834,7 +834,8 @@ class SzJdeCompletion(object):
         else :
             expTokens = expTokens[1:]
 
-        pat = re.compile("^%s.*" %base, re.IGNORECASE)
+        pat = re.compile("^%s.*" % base.replace("*",".*"), re.IGNORECASE)
+        #pat = re.compile("^%s.*" %base, re.IGNORECASE)
         result = []
 
         if varName[0].isupper():
