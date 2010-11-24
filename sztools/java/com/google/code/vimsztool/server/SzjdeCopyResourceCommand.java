@@ -13,6 +13,10 @@ public class SzjdeCopyResourceCommand  extends SzjdeCommand {
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
 		String srcPath = params.get(SzjdeConstants.PARAM_SOURCEFILE);
+		
+		File file = new File(classPathXml);
+		if (file.isDirectory()) return "";
+		
 		CompilerContext cc=getCompilerContext(classPathXml);
 		String dstPath = cc.getResourceDistFile(srcPath);
 		//srcPath not under any configured source path in .class xml

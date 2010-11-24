@@ -55,7 +55,7 @@ public class JdtUI {
 		initServer();
 		initUserLibConfig();
 		shell.setSize(700, 500);
-		shell.setText("jvifm"); //$NON-NLS-1$
+		shell.setText("SzTool"); //$NON-NLS-1$
 
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())
@@ -101,7 +101,7 @@ public class JdtUI {
 		img = new Image(Display.getDefault(), is);
 
 		systemTrayItem.setImage(img);
-		systemTrayItem.setToolTipText("jvifm"); //$NON-NLS-1$
+		systemTrayItem.setToolTipText("SzTool"); //$NON-NLS-1$
 
 		systemTrayItem.addListener(SWT.MenuDetect, new Listener() {
 			public void handleEvent(Event event) {
