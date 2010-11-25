@@ -23,8 +23,9 @@ class SzJde(object):
         except Exception , e :
             serverStarted = False
         if serverStarted : return
-        libpath = os.path.join(vim.eval("g:sztool_home"),"lib")
-        userlib_conf_path = os.path.join(vim.eval("g:sztool_home"),"share/conf/userlib.xml")
+        sztool_home = vim.eval("g:sztool_home")
+        libpath = os.path.join(sztool_home,"lib")
+        sztool_conf = os.path.join(sztool_home,"share/conf/sztools.cfg")
         cmdArray=["java"]
         cps=[os.path.join(libpath,item) for item in os.listdir(libpath) if item.endswith(".jar") ]
         if os.name == "nt" :
@@ -35,10 +36,8 @@ class SzJde(object):
         cmdArray.append("-classpath")
         cmdArray.append(os.path.pathsep.join(cps))
         cmdArray.append("com.google.code.vimsztool.ui.JdtUI")
-        cmdArray.append("--port")
-        cmdArray.append(str(PORT))
-        cmdArray.append("--conxml")
-        cmdArray.append(userlib_conf_path)
+        cmdArray.append("--conf")
+        cmdArray.append(sztool_conf)
 
         if os.name == "posix" :
             Popen(" ".join(cmdArray),shell = True)

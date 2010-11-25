@@ -20,27 +20,27 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.google.code.vimsztool.omni.PackageInfo;
+import com.google.code.vimsztool.util.Preference;
 import com.google.code.vimsztool.util.UserLibConfig;
 
 public class CompilerContext {
 
-	private String encoding = "utf-8";
-	private String srcVM = "1.6";
-	private String dstVM = "1.6";
+	private String encoding = null;
+	private String srcVM = null;
+	private String dstVM = null;
 	private String outputDir;
 	private String projectRoot;
 	private ReflectAbleClassLoader loader;
 	private List<String> srcLocations=new ArrayList<String>();
 	private List<URL> classPathUrls = new ArrayList<URL>();
+	private Preference pref = Preference.getInstance();
 	
-	
-	public void createNewClassLoader() {
-		if (loader == null) return;
-		URL[] urls = loader.getURLs();
-		loader = new ReflectAbleClassLoader(urls, this.getClass().getClassLoader());
-	}
 	
 	public CompilerContext(String classPathXml) {
+		
+		encoding = pref.getValue(Preference.JDE_COMPILE_ENCODING);
+		srcVM = pref.getValue(Preference.JDE_SRC_VM);
+		dstVM = pref.getValue(Preference.JDE_DST_VM);
 		
 		File file=new File(classPathXml);
 		String abpath = file.getAbsolutePath();
@@ -56,6 +56,12 @@ public class CompilerContext {
 			try { classPathUrls.add(file.toURL()); } catch (Exception e) {}
 		}
 		initClassLoader();
+	}
+	
+	public void createNewClassLoader() {
+		if (loader == null) return;
+		URL[] urls = loader.getURLs();
+		loader = new ReflectAbleClassLoader(urls, this.getClass().getClassLoader());
 	}
 	
 	private void initJdeProperty(String jdeXmlPath) {

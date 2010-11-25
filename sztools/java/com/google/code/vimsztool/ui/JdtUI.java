@@ -1,5 +1,6 @@
 package com.google.code.vimsztool.ui;
 
+import java.io.File;
 import java.io.InputStream;
 
 import org.eclipse.swt.SWT;
@@ -16,6 +17,7 @@ import org.eclipse.swt.widgets.Tray;
 import org.eclipse.swt.widgets.TrayItem;
 
 import com.google.code.vimsztool.server.SzjdeServer;
+import com.google.code.vimsztool.util.Preference;
 import com.google.code.vimsztool.util.UserLibConfig;
 
 public class JdtUI {
@@ -24,28 +26,23 @@ public class JdtUI {
 	private Image img;
 	private TrayItem systemTrayItem;
 	private Display display;
-	private static final int DEFAULT_PORT = 9527;
-	private String port;
-	private String conxml="/home/wsn/.vim/sztools/share/conf/userlib.xml";
+	private Preference pref = Preference.getInstance();
 
 	public static void main(String[] args) {
 
 		int i = 0;
-		String port = null;
-		String conxml = null;
+		String confPath = "";
 		while (i < args.length && args[i].startsWith("-")) {
 			String arg = args[i++];
-			if (arg.equals("--port") && (i < args.length)) {
-				port = args[i++];
-			}
-			if (arg.equals("--conxml") && (i < args.length)) {
-				conxml = args[i++];
+			if (arg.equals("--conf") && ( i<args.length)) {
+				confPath = args[i++];
 			}
 		}
-		JdtUI ui = new JdtUI();
-		if (port !=null) ui.setPort(port);
-		if (conxml !=null) ui.setConxml(conxml);
+		JdtUI ui = new JdtUI(confPath);
 		ui.run();
+	}
+	public JdtUI(String confPath) {
+		pref.init(confPath);
 	}
 
 	public void run() {
@@ -71,7 +68,8 @@ public class JdtUI {
 
 	private void initServer() {
 		try {
-			int portNum = (port == null) ? DEFAULT_PORT : Integer.parseInt(port);
+			String port=pref.getValue(Preference.JDE_SERVER_PORT);
+			int portNum = Integer.parseInt(port);
 			new SzjdeServer(portNum).start();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -79,7 +77,11 @@ public class JdtUI {
 	}
 
 	private void initUserLibConfig() {
-		UserLibConfig.init(conxml);
+		String conxml = pref.getValue(Preference.JDE_ECLIPSE_CONXML_PATH);
+		File file = new File(conxml);
+		if (file.exists() && file.isFile() && file.canRead()) {
+			UserLibConfig.init(conxml);
+		}
 	}
 
 	private void initSysTray() {
@@ -109,14 +111,6 @@ public class JdtUI {
 			}
 		});
 
-	}
-
-	public void setPort(String port) {
-		this.port = port;
-	}
-
-	public void setConxml(String conxml) {
-		this.conxml = conxml;
 	}
 
 }

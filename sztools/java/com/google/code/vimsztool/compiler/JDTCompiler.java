@@ -17,8 +17,6 @@ import org.eclipse.jdt.internal.compiler.env.INameEnvironment;
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
 
-import com.google.code.vimsztool.omni.PackageInfo;
-
 /**
  * JDT class compiler. This compiler will load source dependencies from the
  * context classloader, reducing dramatically disk access during 

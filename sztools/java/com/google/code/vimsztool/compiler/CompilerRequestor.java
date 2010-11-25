@@ -13,16 +13,22 @@ import org.eclipse.jdt.internal.compiler.ClassFile;
 import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.ICompilerRequestor;
 
+import com.google.code.vimsztool.util.Preference;
+
 public class CompilerRequestor implements ICompilerRequestor {
 	
 	 private List<String> problemList ; 
 	 private CompilerContext ctx;
+	 private Preference pref = Preference.getInstance();
+	 private boolean ignoreWarning ;
 	 
 	 private static final String FIELD_SEPERATOR="::";
 	 
 	 public CompilerRequestor(CompilerContext ctx, List<String> problemList) {
 		 this.ctx = ctx;
 		 this.problemList=problemList;
+		 String ignoreStr = pref.getValue(Preference.JDE_COMPILE_IGNORE_WARING);
+		 this.ignoreWarning = ignoreStr.equals("true") ? true : false;
 	 }
 	
     public void acceptResult(CompilationResult result) {
@@ -33,6 +39,9 @@ public class CompilerRequestor implements ICompilerRequestor {
                 for (int i = 0; i < problems.length; i++) {
                 	StringBuilder sb = new StringBuilder();
                     IProblem problem = problems[i];
+                    if (ignoreWarning && problem.isWarning()) {
+                    	continue;
+                    }
                     if (problem.isError()) {
                     	sb.append("E").append(FIELD_SEPERATOR);
                     } else {
