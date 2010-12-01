@@ -522,7 +522,8 @@ class AutoImport(object):
         if not currentPackage :
             currentPackage = ""
 
-        pat = re.compile(r"\b[A-Z]\w+\b")
+        # upercase words except preceded by "."
+        pat = re.compile(r"\b(?<!\.)[A-Z]\w+\b")
         searchText = "\n".join(vim_buffer)
         var_type_set=set(pat.findall(searchText))
         varNames=",".join(var_type_set)
@@ -916,13 +917,15 @@ class SzJdeCompletion(object):
             result = SzJdeCompletion.getMemberCompleteResult(completionType,base)
         elif completionType == "word" :
             if base[0].isupper():
-                classNameList = Talker.getClassList(base,classPathXml).split("\n")
-                for className in classNameList :
-                    menu = dict()
-                    menu["kind"] = "c"
-                    menu["word"] = className[ className.rfind(".") + 1 : ]
-                    menu["menu"] = className
-                    result.append(menu)
+                result = SzJdeCompletion.getWordCompleteResult(base)
+                if result == [] :
+                    classNameList = Talker.getClassList(base,classPathXml).split("\n")
+                    for className in classNameList :
+                        menu = dict()
+                        menu["kind"] = "c"
+                        menu["word"] = className[ className.rfind(".") + 1 : ]
+                        menu["menu"] = className
+                        result.append(menu)
             else :
                 result = SzJdeCompletion.getWordCompleteResult(base)
 

@@ -138,7 +138,7 @@ public class CompilerContext {
 		try {
 			Map<String,String> prop = new HashMap<String,String>();
 			DocumentBuilder db = dbf.newDocumentBuilder();
-			Document dom = db.parse(jdeXmlPath);
+			Document dom = db.parse(new File(jdeXmlPath));
 			Element docEle = dom.getDocumentElement();
 
 			NodeList nl = docEle.getElementsByTagName("property");
@@ -161,7 +161,7 @@ public class CompilerContext {
 		try {
 			List<ClassPathEntry> classPathEntries=new ArrayList<ClassPathEntry>();
 			DocumentBuilder db = dbf.newDocumentBuilder();
-			Document dom = db.parse(classPathXml);
+			Document dom = db.parse(new File(classPathXml));
 			Element docEle = dom.getDocumentElement();
 
 			//get a nodelist of elements

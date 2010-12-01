@@ -1,5 +1,6 @@
 package com.google.code.vimsztool.util;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,7 @@ public class UserLibConfig {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		try {
 			DocumentBuilder db = dbf.newDocumentBuilder();
-			Document dom = db.parse(xmlPath);
+			Document dom = db.parse(new File(xmlPath));
 			Element docEle = dom.getDocumentElement();
 
 			NodeList libNodeList = docEle.getElementsByTagName("library");
