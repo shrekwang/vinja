@@ -16,6 +16,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tray;
 import org.eclipse.swt.widgets.TrayItem;
 
+import com.google.code.vimsztool.locate.FileSystemWatcher;
 import com.google.code.vimsztool.server.SzjdeServer;
 import com.google.code.vimsztool.util.Preference;
 import com.google.code.vimsztool.util.UserLibConfig;
@@ -50,6 +51,7 @@ public class JdtUI {
 		shell = new Shell(display);
 		initSysTray();
 		initServer();
+		initFsWatcher();
 		initUserLibConfig();
 		shell.setSize(700, 500);
 		shell.setText("SzTool"); //$NON-NLS-1$
@@ -64,6 +66,11 @@ public class JdtUI {
 		img.dispose();
 		shell.dispose();
 		System.exit(0);
+	}
+	
+	private void initFsWatcher() {
+		FileSystemWatcher fs = new FileSystemWatcher();
+		fs.addWatch("/project/temp");
 	}
 
 	private void initServer() {
