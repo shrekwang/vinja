@@ -25,7 +25,7 @@ class SzJde(object):
         if serverStarted : return
         sztool_home = vim.eval("g:sztool_home")
         libpath = os.path.join(sztool_home,"lib")
-        sztool_conf = os.path.join(sztool_home,"share/conf/sztools.cfg")
+        #sztool_conf = os.path.join(sztool_home,"share/conf/sztools.cfg")
         cmdArray=["java"]
         cps=[os.path.join(libpath,item) for item in os.listdir(libpath) if item.endswith(".jar") ]
         if os.name == "nt" :
@@ -36,8 +36,8 @@ class SzJde(object):
         cmdArray.append("-classpath")
         cmdArray.append(os.path.pathsep.join(cps))
         cmdArray.append("com.google.code.vimsztool.ui.JdtUI")
-        cmdArray.append("--conf")
-        cmdArray.append(sztool_conf)
+        cmdArray.append("--sztool-home")
+        cmdArray.append(sztool_home)
 
         if os.name == "posix" :
             Popen(" ".join(cmdArray),shell = True)
@@ -185,6 +185,15 @@ class Talker(object):
         params["completionType"] = "class"
         params["className"] = classNameStart
         params["classPathXml"] = xmlPath
+        data = Talker.send(params)
+        return data
+
+    @staticmethod
+    def doSpCommand(args):
+        params = dict()
+        params["cmd"]="sp"
+        params["args"] = ";".join(args)
+        params["pwd"] = os.getcwd()
         data = Talker.send(params)
         return data
 

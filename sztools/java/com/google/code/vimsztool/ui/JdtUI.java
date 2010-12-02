@@ -32,18 +32,18 @@ public class JdtUI {
 	public static void main(String[] args) {
 
 		int i = 0;
-		String confPath = "";
+		String sztoolHome = "";
 		while (i < args.length && args[i].startsWith("-")) {
 			String arg = args[i++];
-			if (arg.equals("--conf") && ( i<args.length)) {
-				confPath = args[i++];
+			if (arg.equals("--sztool-home") && ( i<args.length)) {
+				sztoolHome = args[i++];
 			}
 		}
-		JdtUI ui = new JdtUI(confPath);
+		JdtUI ui = new JdtUI(sztoolHome);
 		ui.run();
 	}
-	public JdtUI(String confPath) {
-		pref.init(confPath);
+	public JdtUI(String sztoolHome) {
+		pref.init(sztoolHome);
 	}
 
 	public void run() {

@@ -4,6 +4,7 @@ public class SzjdeConstants {
 	
 	public final static String CMD_COMPILE="compile";
 	public final static String CMD_COMPLETE="completion";
+	public final static String CMD_SP="sp";
 	public final static String CMD_AUTOIMPORT="autoimport";
 	public final static String CMD_RUN="run";
 	public final static String CMD_DUMP_CLASS="dumpClass";
@@ -25,6 +26,8 @@ public class SzjdeConstants {
 	public final static String PARAM_RUN_IN_SHELL="runInShell";
 	public final static String PARAM_VIM_SERVER="vimServer";
 	public final static String PARAM_JOB_ID="jobId";
+	public final static String PARAM_ARGS="args";
+	public final static String PARAM_PWD="pwd";
 	
 	public final static String CPT_TYPE_PACKAGE="package";
 	public final static String CPT_TYPE_CLASS="class";

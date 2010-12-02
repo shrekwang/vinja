@@ -3,6 +3,7 @@ import glob,time,vim,re, sys, logging
 from subprocess import Popen, PIPE
 from optparse import OptionParser 
 from pysqlite2 import dbapi2 as sqlite
+from jde import Talker
 
 
 class ShextOptionParser(OptionParser):
@@ -1022,6 +1023,10 @@ class Shext(object):
         help_file.close()
         Shext.stdout(content)
 
+    def sp(self,args):
+        result = Talker.doSpCommand(args)
+        Shext.stdout(result)
+
     def ls(self):
         self.shUtil.ls(["*"])
 
@@ -1117,6 +1122,9 @@ class Shext(object):
         elif cmd[0] == "bmedit" :
             self.shUtil.bmspedit(True)
 
+        elif cmd[0] == "sp" :
+            self.sp(cmd[1:])
+
         elif cmd[0] == "spadd" :
             self.shUtil.bmspadd(False)
         elif cmd[0] == "splist" :
@@ -1195,6 +1203,7 @@ class Shext(object):
                 buffer[0] = line
             else :
                 buffer.append(line)
+
 
 class OutputNavigator(object):
 

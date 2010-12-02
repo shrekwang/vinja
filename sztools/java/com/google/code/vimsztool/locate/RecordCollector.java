@@ -15,17 +15,6 @@ public class RecordCollector extends DirectoryWalker<Record> {
 	private String startPath;
 	private List<Pattern> excludePatterns = new ArrayList<Pattern>();
 	
-	public static void main(String[] args) {
-		/*
-		RecordCollector app = new RecordCollector();
-		List<Record> records=app.collect("/project/vim-sztool","sztools/java/*,*.py,*.jar");
-		for (Record record : records) {
-			System.out.println(record.getName()+"," +record.getStartDir()+","+record.getRelativePath());
-		}
-		*/
-		FileSystemDb app = new FileSystemDb("/project/vim-sztool/test.db");
-		app.indexDir("/project/vim-sztool");
-	}
 	
 	private Pattern translate(String pat) {
 		if (pat == null || pat.trim().equals("")) return null;

@@ -3,11 +3,14 @@ package com.google.code.vimsztool.util;
 import java.io.FileInputStream;
 import java.util.Properties;
 
+import org.apache.commons.io.FilenameUtils;
+
 
 public class Preference {
 	
 	private static Preference instance  = new Preference();
 	private Properties prop  = null;
+	private String sztoolHome = null;
 	
 	private Preference() {}
 	
@@ -23,12 +26,18 @@ public class Preference {
 		return instance;
 	}
 	
-	public void init(String cfgPath) {
+	public void init(String sztoolHome) {
+		this.sztoolHome = sztoolHome;
 		prop  = new Properties();
+		String cfgPath = FilenameUtils.concat(sztoolHome, "share/conf/sztools.cfg");
 		try {
 			prop.load(new FileInputStream(cfgPath));
 		} catch (Exception e) { 
 		}
+	}
+	
+	public String getSztoolHome() {
+		return sztoolHome;
 	}
 	
 	public String getValue(String key) {

@@ -54,6 +54,7 @@ public class SqliteManager {
 			conn.commit();
 			return updateCounts;
 		} catch (Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 	}
@@ -62,10 +63,12 @@ public class SqliteManager {
 		Connection conn = null;
 		try {
 			conn = this.getConnection();
+			conn.setAutoCommit(false);
 			Statement stat = conn.createStatement();
 			stat.executeUpdate(sql);
 			conn.commit();
 		} catch (Exception e) {
+			e.printStackTrace();
 		} finally {
 			this.closeConnection(conn);
 		}
@@ -73,12 +76,11 @@ public class SqliteManager {
 	
 	 public List<String[]> query(String sql) {
 	        Connection conn = null;
-	        List<String[]> result = null;
+	        List<String[]> result = new ArrayList<String[]>();
 	        try {
 	            conn = getConnection();
 	            Statement statement = conn.createStatement();
 	            ResultSet rs = statement.executeQuery(sql);
-	            result = new ArrayList<String[]>();
 	            int columnCount = rs.getMetaData().getColumnCount();
 	            while(rs.next()) {
 	                String[] values = new String[ columnCount];
