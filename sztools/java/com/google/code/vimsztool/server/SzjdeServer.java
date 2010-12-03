@@ -9,7 +9,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_FETCH_RESULT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_SP;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -101,8 +101,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeCopyResourceCommand();
 	   } else if (cmdStr.equals(CMD_RUN_SYS) || cmdStr.endsWith(CMD_FETCH_RESULT)) {
 		   szjdeCommand = new SzjdeSystemCommand(cmdStr);
-	   } else if (cmdStr.equals(CMD_SP)) {
-		   szjdeCommand = new SzjdeLocateCommand();
+	   } else if (cmdStr.equals(CMD_LOCATEDB)) {
+		   szjdeCommand = new SzjdeLocatedbCommand();
 	   }
 	   if (szjdeCommand == null) {
 		   return ("can't find the command '"+cmdStr+"' definition.");

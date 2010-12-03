@@ -4,7 +4,7 @@ public class SzjdeConstants {
 	
 	public final static String CMD_COMPILE="compile";
 	public final static String CMD_COMPLETE="completion";
-	public final static String CMD_SP="sp";
+	public final static String CMD_LOCATEDB="locatedb";
 	public final static String CMD_AUTOIMPORT="autoimport";
 	public final static String CMD_RUN="run";
 	public final static String CMD_DUMP_CLASS="dumpClass";

@@ -2,6 +2,7 @@ import vim,os,re,sys,random
 from subprocess import Popen, PIPE
 import subprocess
 import logging
+import socket
 from StringIO import StringIO
 
 class FuzzyCompletion(object):
@@ -44,6 +45,36 @@ class FuzzyCompletion(object):
                     completeList.append(item)
         return completeList
 
+def startAgent():
+    agentStarted = True
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try :
+        s.connect((HOST, PORT))
+        s.close()
+    except Exception , e :
+        agentStarted = False
+    if agentStarted : return
+
+    sztool_home = vim.eval("g:sztool_home")
+    libpath = os.path.join(sztool_home,"lib")
+    cmdArray=["java"]
+    cps=[os.path.join(libpath,item) for item in os.listdir(libpath) if item.endswith(".jar") ]
+    if os.name == "nt" :
+        swtLibPath = os.path.join(libpath,"swt-win\\swt.jar")
+    else :
+        swtLibPath = os.path.join(libpath,"swt-linux/swt.jar")
+    cps.append(swtLibPath)
+    cmdArray.append("-classpath")
+    cmdArray.append(os.path.pathsep.join(cps))
+    cmdArray.append('-Djava.library.path="%s"' % libpath )
+    cmdArray.append("com.google.code.vimsztool.ui.JdtUI")
+    cmdArray.append("--sztool-home")
+    cmdArray.append(sztool_home)
+
+    if os.name == "posix" :
+        Popen(" ".join(cmdArray),shell = True)
+    else :
+        Popen(cmdArray,shell = True)
 
 def watchExample(name):
     examples_dir = os.path.join(getShareHome(),"examples")
@@ -305,8 +336,7 @@ def getAppHome():
     return sztool_app_home
 
 def getDataHome():
-    sztool_home=vim.eval("g:sztool_home")
-    sztool_data_home=os.path.join(sztool_home,"data")
+    sztool_data_home=os.path.join(os.getenv("HOME"),".sztools")
     return sztool_data_home
 
 def getShareHome():

@@ -409,6 +409,7 @@ command! -nargs=0 SzMineSweeper  :call SzMineSweeper()
 
 command! -nargs=1 Transform    :call Transform('<args>')
 
+command! -nargs=0 StartAgent  :python startAgent()
 command! -nargs=0 Shext       :call Shext()
 command! -nargs=0 Jdext       :call Jdext()
 command! -nargs=1 Ledit       :call Ledit('<args>')

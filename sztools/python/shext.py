@@ -324,9 +324,9 @@ class FindCmd(object):
                     self._search_file(abspath, filters)
 
 class LocateCmd(object):
-    def __init__(self, db_path,sp_path):
+
+    def __init__(self, db_path):
         self.db_path = db_path
-        self.sp_path = sp_path
         self.records = []
         self.default_exclude = [".svn",".cvs"]
 
@@ -335,148 +335,16 @@ class LocateCmd(object):
         parent_path = os.path.dirname(db_path)
         if not os.path.exists(parent_path):
           os.makedirs(parent_path)
-
-        ddl_dirlist = """ create table dirlist(
-            integer primary key, alias varchar(60), path varchar(160) ) """
-
-        ddl_locatedb = """ create table locatedb( 
-              integer primary key ,  root varchar(200),
-              name varchar(80),   path varchar(160) )  """
-
-        conn = sqlite.connect(self.db_path)
-        cur = conn.cursor()
-        cur.execute(ddl_dirlist)
-        cur.execute(ddl_locatedb)
-        conn.commit()
-        conn.close()
-
-    def _saveDirList(self,alias,path):
-        codepage = sys.getdefaultencoding()
-        conn = sqlite.connect(self.db_path)
-        cur = conn.cursor()
-        updateSql ="insert into dirlist(alias,path) values (?,?);"
-        cur.execute(updateSql, (alias.decode(codepage), path.decode(codepage) ))
-        conn.commit()
-        conn.close()
-
-    def _saveRecord(self) :
-        codepage = sys.getdefaultencoding()
-        conn = sqlite.connect(self.db_path)
-        cur = conn.cursor()
-        updateSql ="insert into locatedb(root,name,path) values (?,?,?);"
-        for (locate_root, file_name, relative_path) in self.records :
-            locate_root = locate_root.decode(codepage)
-            file_name = file_name.decode(codepage)
-            relative_path = relative_path.decode(codepage)
-            cur.execute(updateSql,(locate_root, file_name, relative_path))
-        conn.commit()
-        conn.close()
-
-    def _getPath(self, alias):
-        selectSql ="select path from dirlist where alias = ? or path = ? "
-        conn = sqlite.connect(self.db_path)
-        cur = conn.cursor()
-        alias = alias.decode(sys.getdefaultencoding())
-        cur.execute(selectSql,(alias, alias))
-        rows= [row for (row,) in  cur.fetchall()]
-        conn.close()
-        return rows
-
-    def _clearIndex(self,locate_root):
-        selectSql ="select distinct root from locatedb"
-        conn = sqlite.connect(self.db_path)
-        cur = conn.cursor()
-        cur.execute(selectSql)
-        rows= [row for (row,) in  cur.fetchall()]
-        isSubDir = lambda name : name.startswith(locate_root)
-        roots = "','".join(filter(isSubDir,rows))
-        roots = roots.decode(sys.getdefaultencoding())
-        updateSql = "delete from locatedb where root in ( '%s' )" % roots
-        updateSql2 = "delete from dirlist where path in ( '%s' )" % roots
-        cur.execute(updateSql)
-        cur.execute(updateSql2)
-        conn.commit()
-        conn.close()
-
-
-    def _index(self,locate_root,path,exclude_pattern):
-        file_list= os.listdir(path)
-        if file_list == [] : 
-            return 
-        if exclude_pattern : 
-            pattern_list = exclude_pattern.split(",")
-
-        for filename in file_list:
-            if filename in self.default_exclude : 
-                continue 
-            abs_path = os.path.join(path,filename)
-            relative_path = abs_path[len(locate_root)+1:]
-            if exclude_pattern :
-                should_exclude = False
-                for pattern in pattern_list :
-                    if fnmatch.fnmatch(relative_path, pattern) :
-                        should_exclude = True
-                if should_exclude :
-                    continue
-
-            record = [locate_root, filename, relative_path]
-            self.records.append(record)
-            if os.path.isdir(abs_path) and not filename.startswith("."):
-                self._index(locate_root,abs_path,exclude_pattern)
-
-    def updatedb(self,cmd_array):
-        parser = ShextOptionParser(usage="updatedb [options]")
-        parser.add_option("-n","--alias",action="store", dest="alias", 
-            help="alias name of current index entry, can be referenced by locate command.")
-        parser.add_option("-u","--path",action="store", dest="path",
-                default=".",help="the directory to be indexed. default is current dir")
-        parser.add_option("-e","--exclude",action="store", dest="exclude",
-                help="the comma seperated wildcard pattern of index entry which will not be excluded. " )
-        parser.add_option("-d","--delentry",action="store", dest="delentry",
-                help="the alias name of index entry to be removed. " )
-
-        (options, args) = parser.parse_args(cmd_array)
-        if parser.noAction : return 
-
-        if options.delentry :
-            path_entries = self._getPath(options.delentry)
-            Shext.stdout("removing index....")
-            for path in path_entries :
-                self._clearIndex(path)
-            return 
-
-        locate_root = os.getcwd()
-        if options.path :
-            if options.path != "." :
-                locate_root = options.path
-
-        alias= os.path.basename(locate_root)
-        if options.alias :
-            alias = options.alias
-
-        exclude_pattern = None
-        if options.exclude :
-            exclude_pattern = options.exclude
-        else :
-            exclude_pattern = sztoolsCfg.get("default_exclude_pattern")
-
-        self.records = []
-        Shext.stdout("indexing...")
-        self._clearIndex(locate_root)
-        self._index(locate_root,locate_root,exclude_pattern )
-        self._saveDirList(alias,locate_root)
-        self._saveRecord()
-        Shext.stdout("finished....",append = True)
-
+        
     def locateFile(self,fname,alias=None,searchPath=None):
         conn = sqlite.connect(self.db_path)
         cur = conn.cursor()
         oldfname = fname
-        selectSql = "select a.root,a.name,a.path from locatedb a, dirlist b where a.root = b.path "
+        selectSql = "select a.start_dir,a.name,a.rtl_path from fsdb_files a, fsdb_dirs b where a.start_dir = b.start_dir "
         if fname.find("*") > -1 or fname.find("?") > -1 :
             fname = fname.replace("*","%")
             fname = fname.replace("?","_")
-        selectSql += " and name like ?  " 
+        selectSql += " and a.name like ?  " 
         codepage = sys.getdefaultencoding()
         params = [ fname.decode(codepage) ]
 
@@ -484,7 +352,7 @@ class LocateCmd(object):
             if searchPath.find("*") > -1 or searchPath.find("?") > -1 :
                 searchPath = searchPath.replace("*","%")
                 searchPath = searchPath.replace("?","_")
-            selectSql += " and a.root||a.path like ?  " 
+            selectSql += " and a.start_dir||a.rtl_path like ?  " 
             searchPath = "%%%s%%" % searchPath.strip()
             params.append( searchPath.decode(codepage))
 
@@ -495,22 +363,12 @@ class LocateCmd(object):
         cur.execute(selectSql,tuple(params))
         rows = [os.path.join(root,path) for (root,name,path ) in cur.fetchall()]
         conn.close()
-        # add files from search paths
-        if os.path.exists(self.sp_path) :
-            search_paths = open(self.sp_path).readlines()
-            for sp in search_paths :
-                sp = sp.replace("\n","")
-                if not os.path.exists(sp) : 
-                    continue
-                for name in os.listdir(sp):
-                    if fnmatch.fnmatch(name, oldfname) :
-                        rows.append(os.path.join(sp,name))
         return rows
 
     def listLocatedDir(self):
         conn = sqlite.connect(self.db_path)
         cur = conn.cursor()
-        selectSql = "select alias, path from dirlist"
+        selectSql = "select alias, start_dir from fsdb_dirs"
         cur.execute(selectSql)
         rows = [alias.ljust(20)+path for (alias,path ) in cur.fetchall()]
         conn.close()
@@ -552,11 +410,8 @@ class ShUtil(object):
         self.shext_bm_path = os.path.join(getDataHome(), "shext-bm.txt")
         if not os.path.exists(self.shext_bm_path) :
             open(self.shext_bm_path, 'w').close()
-        self.shext_sp_path = os.path.join(getDataHome(), "shext-sp.txt")
-        if not os.path.exists(self.shext_sp_path) :
-            open(self.shext_sp_path, 'w').close()
-        shext_locatedb_path = os.path.join(getDataHome(), "shext-locatedb.dat")
-        self.locatecmd = LocateCmd(shext_locatedb_path,self.shext_sp_path)
+        shext_locatedb_path = os.path.join(getDataHome(), "locate.db")
+        self.locatecmd = LocateCmd(shext_locatedb_path)
         self.yank_buffer = yank_buffer
         self.cd_history = [os.getcwd()]
 
@@ -810,25 +665,21 @@ class ShUtil(object):
         Shext.stdout("%s items had been moved." % str(count))
         
 
-    def bmspadd(self, bm=False):
+    def bmadd(self, bm=False):
         pwd = os.getcwd()
-        bmfile = self.shext_bm_path if bm else self.shext_sp_path
-        bm_file_obj = open(bmfile,"a")
+        bm_file_obj = open(self.shext_bm_path,"a")
         basename = os.path.basename(pwd).replace(" ","")
-        if bm :
-            bm_file_obj.write(basename + " " + pwd +"\n")
-        else :
-            bm_file_obj.write(pwd+"\n")
+        bm_file_obj.write(basename + " " + pwd +"\n")
         bm_file_obj.close()
         Shext.stdout("the current dir has been added to bookmark.")
 
-    def bmsplist(self, bm=False):
-        bmfile = self.shext_bm_path if bm else self.shext_sp_path
+    def bmlist(self, bm=False):
+        bmfile = self.shext_bm_path 
         lines = [line.replace("\n","") for line in open(bmfile).readlines()]
         Shext.stdout(lines)
 
-    def bmspedit(self, bm=False):
-        bmfile = self.shext_bm_path if bm else self.shext_sp_path
+    def bmedit(self, bm=False):
+        bmfile = self.shext_bm_path
         self.edit([bmfile])
 
     def pwd(self):
@@ -1023,8 +874,8 @@ class Shext(object):
         help_file.close()
         Shext.stdout(content)
 
-    def sp(self,args):
-        result = Talker.doSpCommand(args)
+    def locatedb(self,args):
+        result = Talker.doLocatedbCommand(args)
         Shext.stdout(result)
 
     def ls(self):
@@ -1116,21 +967,14 @@ class Shext(object):
             self.shUtil.edit(cmd[1:])
             
         elif cmd[0] == "bmadd" :
-            self.shUtil.bmspadd(True)
+            self.shUtil.bmadd(True)
         elif cmd[0] == "bmlist" :
-            self.shUtil.bmsplist(True)
+            self.shUtil.bmlist(True)
         elif cmd[0] == "bmedit" :
-            self.shUtil.bmspedit(True)
+            self.shUtil.bmedit(True)
 
-        elif cmd[0] == "sp" :
-            self.sp(cmd[1:])
-
-        elif cmd[0] == "spadd" :
-            self.shUtil.bmspadd(False)
-        elif cmd[0] == "splist" :
-            self.shUtil.bmsplist(False)
-        elif cmd[0] == "spedit" :
-            self.shUtil.bmspedit(False)
+        elif cmd[0] == "locatedb" :
+            self.locatedb(cmd[1:])
 
         elif cmd[0] == "touch" :
             self.shUtil.touch(cmd[1:])

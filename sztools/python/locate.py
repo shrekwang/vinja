@@ -173,9 +173,8 @@ class QuickLocater(object) :
 
 class FileContentManager(object):
     def __init__(self):
-        shext_locatedb_path = os.path.join(getDataHome(), "shext-locatedb.dat")
-        shext_sp_path = os.path.join(getDataHome(), "shext-sp.txt")
-        self.locatecmd = LocateCmd(shext_locatedb_path,shext_sp_path)
+        shext_locatedb_path = os.path.join(getDataHome(), "locate.db")
+        self.locatecmd = LocateCmd(shext_locatedb_path)
 
     def search_content(self,search_pat):
         result = self.locatecmd.locateFile(search_pat)

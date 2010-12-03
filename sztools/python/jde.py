@@ -189,9 +189,9 @@ class Talker(object):
         return data
 
     @staticmethod
-    def doSpCommand(args):
+    def doLocatedbCommand(args):
         params = dict()
-        params["cmd"]="sp"
+        params["cmd"]="locatedb"
         params["args"] = ";".join(args)
         params["pwd"] = os.getcwd()
         data = Talker.send(params)

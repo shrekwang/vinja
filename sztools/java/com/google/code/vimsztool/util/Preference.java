@@ -20,6 +20,7 @@ public class Preference {
 	public static final String JDE_DST_VM = "jde_dst_vm" ; 
 	public static final String JDE_SERVER_PORT = "jde_server_port" ; 
 	public static final String JDE_ECLIPSE_CONXML_PATH = "jde_eclipse_conxml_path" ; 
+	public static final String DEFAULT_EXCLUDE_PATTERN = "default_exclude_pattern";
 
 	
 	public static Preference getInstance() {

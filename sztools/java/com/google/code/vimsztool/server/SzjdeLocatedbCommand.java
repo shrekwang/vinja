@@ -3,7 +3,7 @@ package com.google.code.vimsztool.server;
 import com.google.code.vimsztool.locate.FileSystemDb;
 
 
-public class SzjdeLocateCommand extends SzjdeCommand {
+public class SzjdeLocatedbCommand extends SzjdeCommand {
 	
 	private static FileSystemDb fileSystemDb = FileSystemDb.getInstance();
 	
@@ -18,27 +18,32 @@ public class SzjdeLocateCommand extends SzjdeCommand {
 		String[] args = params.get(SzjdeConstants.PARAM_ARGS	).split(";");
 		dir = params.get(SzjdeConstants.PARAM_PWD);
 		action = args[0];
-		name = args[1];
-		if (args.length < 2 ) {
+		if (args.length < 2 && ! action.equals("list")) {
 			return "not enough arguments.";
 		}
 		if (!isActionValid(action)) {
 			return "the action "+action+"  is not valid.";
 		}
+		
+		if (args.length > 1) {
+			name = args[1];
+		}
 		parseArgument(args);
 		boolean indexed = fileSystemDb.alreadyIndexed(name, dir);
 		if (action.equals("add")) {
 			if (indexed) return "dir or name already exists.";
-			fileSystemDb.indexDir(name, dir, excludes, depth);
+			fileSystemDb.addIndexedDir(name, dir, excludes, depth);
 		} else if (action.equals("remove")) {
 			if (!indexed) return "dir or name not exists.";
-			fileSystemDb.removeIndex(name);
+			fileSystemDb.removeIndexedDir(name);
 		} else if (action.equals("refresh")) {
 			if (!indexed) return "dir or name not exists.";
 			fileSystemDb.refreshIndex(name);
+		} else if (action.equals("list")) {
+			return fileSystemDb.listIndexedDir();
 		}
 		
-		return "sp command succeeded";
+		return "locatedb command succeeded";
 	}
 	
 	
@@ -64,7 +69,7 @@ public class SzjdeLocateCommand extends SzjdeCommand {
 	
 	
 	private boolean isActionValid(String action) {
-		String[] validActions = new String[] {"add","remove","refresh"};
+		String[] validActions = new String[] {"add","remove","refresh","list"};
 		for (String name : validActions) {
 			if (name.equals(action)) return true;
 		}
