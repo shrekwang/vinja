@@ -12,38 +12,6 @@ PORT = 9527
 END_TOKEN = "==end=="
 MAX_CPT_COUNT = 20
 
-class SzJde(object):
-    @staticmethod
-    def runApp():
-        serverStarted = True
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try :
-            s.connect((HOST, PORT))
-            s.close()
-        except Exception , e :
-            serverStarted = False
-        if serverStarted : return
-        sztool_home = vim.eval("g:sztool_home")
-        libpath = os.path.join(sztool_home,"lib")
-        #sztool_conf = os.path.join(sztool_home,"share/conf/sztools.cfg")
-        cmdArray=["java"]
-        cps=[os.path.join(libpath,item) for item in os.listdir(libpath) if item.endswith(".jar") ]
-        if os.name == "nt" :
-            swtLibPath = os.path.join(libpath,"swt-win\\swt.jar")
-        else :
-            swtLibPath = os.path.join(libpath,"swt-linux/swt.jar")
-        cps.append(swtLibPath)
-        cmdArray.append("-classpath")
-        cmdArray.append(os.path.pathsep.join(cps))
-        cmdArray.append("com.google.code.vimsztool.ui.JdtUI")
-        cmdArray.append("--sztool-home")
-        cmdArray.append(sztool_home)
-
-        if os.name == "posix" :
-            Popen(" ".join(cmdArray),shell = True)
-        else :
-            Popen(cmdArray,shell = True)
-    
 class VimUtil(object):
     @staticmethod
     def inputOption(options):

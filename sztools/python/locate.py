@@ -177,12 +177,23 @@ class FileContentManager(object):
         self.locatecmd = LocateCmd(shext_locatedb_path)
 
     def search_content(self,search_pat):
-        result = self.locatecmd.locateFile(search_pat)
+
+        result = self.locatecmd.locateFile(search_pat,startWithAlias=True)
         result = result[0:30]
-        return result
+        rows = []
+        self.start_dirs = {}
+        for apath,alias,start_dir in result :
+            rows.append(apath)
+            self.start_dirs[alias] = start_dir
+        return rows
 
     def open_content(self,line):
         fname = line.strip()
+        if not fname : return 
+
+        alias = fname[0: fname.find(os.path.sep)]
+        rtl_path = fname[fname.find(os.path.sep)+1:]
+        fname = os.path.join(self.start_dirs[alias], rtl_path)
         vim.command("edit %s "  %(fname))
 
 class JavaMemberContentManager(object):

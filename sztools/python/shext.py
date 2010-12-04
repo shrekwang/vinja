@@ -68,9 +68,9 @@ class LsCmd(object):
 
         col_max_widths = []
         for i in range(cols):
-            max = len(allValue[0][i])
+            max = strWidth(allValue[0][i])
             for j in range(rows):
-                if len(allValue[j][i]) > max : max = len(allValue[j][i])
+                if strWidth(allValue[j][i]) > max : max = strWidth(allValue[j][i])
             col_max_widths.append(max+self.col_pad)
 
         return allValue,col_max_widths
@@ -132,7 +132,7 @@ class LsCmd(object):
 
         nnlist = []
         for item in allValue:
-            nnlist.append("".join([col.ljust(col_max_widths[index]) for index,col in enumerate(item)]))
+            nnlist.append("".join([col+((col_max_widths[index]-strWidth(col))*" ") for index,col in enumerate(item)]))
         return nnlist
 
     def lsd(self):
@@ -336,11 +336,12 @@ class LocateCmd(object):
         if not os.path.exists(parent_path):
           os.makedirs(parent_path)
         
-    def locateFile(self,fname,alias=None,searchPath=None):
+    def locateFile(self,fname,alias=None,searchPath=None, startWithAlias = False):
         conn = sqlite.connect(self.db_path)
         cur = conn.cursor()
         oldfname = fname
-        selectSql = "select a.start_dir,a.name,a.rtl_path from fsdb_files a, fsdb_dirs b where a.start_dir = b.start_dir "
+        selectSql = ("select a.start_dir,a.name,a.rtl_path,b.alias "
+            " from fsdb_files a, fsdb_dirs b where a.start_dir = b.start_dir ")
         if fname.find("*") > -1 or fname.find("?") > -1 :
             fname = fname.replace("*","%")
             fname = fname.replace("?","_")
@@ -361,7 +362,10 @@ class LocateCmd(object):
             params.append(alias.decode(codepage))
 
         cur.execute(selectSql,tuple(params))
-        rows = [os.path.join(root,path) for (root,name,path ) in cur.fetchall()]
+        if startWithAlias :
+            rows = [(os.path.join(alias,path),alias,start_dir) for (start_dir,name,path,alias) in cur.fetchall()]
+        else :
+            rows = [os.path.join(start_dir,path) for (start_dir,name,path,alias) in cur.fetchall()]
         conn.close()
         return rows
 
@@ -370,24 +374,19 @@ class LocateCmd(object):
         cur = conn.cursor()
         selectSql = "select alias, start_dir from fsdb_dirs"
         cur.execute(selectSql)
-        rows = [alias.ljust(20)+path for (alias,path ) in cur.fetchall()]
+        rows = cur.fetchall()
         conn.close()
         return rows
 
     def locate(self, cmd_array) :
 
         parser = ShextOptionParser(usage="usage: locate [options] [name-pattern]")
-        parser.add_option("-l","--list-entries",action="store_true", dest="listdb",help="list indexd entries ")
         parser.add_option("-n","--alias",action="store", dest="alias" , help ="search in designated index entry" )
         parser.add_option("-p","--path", action="store", dest="path" , help = "the path need to match with")
         (options, args) = parser.parse_args(cmd_array)
         if parser.noAction : return 
-
-        if options.listdb :
-            rows = self.listLocatedDir()
-        else :
-            fname = args[0]
-            rows = self.locateFile(fname,options.alias,options.path)
+        fname = args[0]
+        rows = self.locateFile(fname,options.alias,options.path)
         Shext.stdout(rows)
 
     def grep(self,pattern,name,alias,path):
@@ -875,6 +874,9 @@ class Shext(object):
         Shext.stdout(content)
 
     def locatedb(self,args):
+        if not agentHasStarted():
+            shext.stdout("the sztool agent is not started. run :StartAgent to start.")
+            return
         result = Talker.doLocatedbCommand(args)
         Shext.stdout(result)
 

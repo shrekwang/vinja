@@ -369,7 +369,7 @@ endfunction
 
 function! Jdext()
   call RunSzPyfile("jde.py")
-  python SzJde.runApp()
+  python startAgent()
   set completeopt=menuone
   set foldmethod=syntax
   set foldlevelstart=1

@@ -5,6 +5,9 @@ import logging
 import socket
 from StringIO import StringIO
 
+HOST = 'localhost'
+PORT = 9527
+
 class FuzzyCompletion(object):
 
     @staticmethod
@@ -45,7 +48,7 @@ class FuzzyCompletion(object):
                     completeList.append(item)
         return completeList
 
-def startAgent():
+def agentHasStarted() :
     agentStarted = True
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try :
@@ -53,7 +56,11 @@ def startAgent():
         s.close()
     except Exception , e :
         agentStarted = False
-    if agentStarted : return
+    return agentStarted
+
+def startAgent():
+
+    if agentHasStarted() : return
 
     sztool_home = vim.eval("g:sztool_home")
     libpath = os.path.join(sztool_home,"lib")
@@ -75,6 +82,10 @@ def startAgent():
         Popen(" ".join(cmdArray),shell = True)
     else :
         Popen(cmdArray,shell = True)
+
+def strWidth(value):
+    if value == None : return 0
+    return int(vim.eval("strdisplaywidth('%s')" % value))
 
 def watchExample(name):
     examples_dir = os.path.join(getShareHome(),"examples")
