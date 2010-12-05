@@ -543,13 +543,16 @@ class Parser(object):
     def parseAllMemberInfo(lines):
         memberInfo = []
         scopeCount = 0 
-        methodPat = re.compile(r"(?P<rtntype>[\w<>]+)\s+(?P<name>\w+\s*\(.*\))")
-        assignPat = re.compile("(?P<rtntype>[\w<>]+)\s+(?P<name>\w+)\s*=")
-        defPat = re.compile("(?P<rtntype>[\w<>]+)\s+(?P<name>\w+)\s*;")
+        methodPat = re.compile(r"(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+\s*\(.*\))")
+        assignPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*=")
+        defPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*;")
         for lineNum,line in enumerate(lines) :
             if scopeCount == 1 :
                 fullDeclLine = line
-                if "(" in line :
+                if "=" in line :
+                    pat = assignPat
+                    mtype = "field"
+                elif "(" in line :
                     startLine = lineNum + 1
                     while True :
                         if ")" in fullDeclLine :
@@ -558,13 +561,10 @@ class Parser(object):
                         startLine = startLine + 1
                     pat = methodPat
                     mtype = "method"
-                elif "=" in line :
-                    pat = assignPat
-                    mtype = "field"
                 else :
                     pat = defPat
                     mtype = "field"
-                search_res=pat.search(line)
+                search_res=pat.search(fullDeclLine)
                 if search_res :
                     name = search_res.group("name")
                     rtntype = search_res.group("rtntype")
