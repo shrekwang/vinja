@@ -290,7 +290,7 @@ class Dbext(object):
             conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
                 passwd = profile["password"], db = profile["database"])
         elif server_type == "sqlite":
-            from pysqlite2 import dbapi2 as sqlite
+            import sqlite3 as sqlite
             conn = sqlite.connect(profile["file"])
         return conn
 

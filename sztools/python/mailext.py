@@ -7,7 +7,7 @@ import sys
 import pprint
 import ConfigParser
 from threading import Thread
-from pysqlite2 import dbapi2 as sqlite
+import sqlite3 as sqlite
 
 import smtplib
 import imaplib

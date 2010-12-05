@@ -2,7 +2,7 @@ import os,os.path,fnmatch,shutil
 import glob,time,vim,re, sys, logging
 from subprocess import Popen, PIPE
 from optparse import OptionParser 
-from pysqlite2 import dbapi2 as sqlite
+import sqlite3 as sqlite
 from jde import Talker
 
 

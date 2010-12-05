@@ -416,9 +416,8 @@ def startMailAgent():
 
 
 class SzToolsConfig(object):
-    
-    def __init__(self,cfg_path):
-        self.cfg_dict={}
+
+    def _loadCfg(self,cfg_path):
         if not os.path.exists(cfg_path):
             return
         lines = open(cfg_path,"r").readlines()
@@ -430,7 +429,13 @@ class SzToolsConfig(object):
             key = line[0:split_index].strip()
             value = line[split_index+1:].strip()
             self.cfg_dict[key] = value
-
+    
+    def __init__(self,cfg_path):
+        self.cfg_dict={}
+        user_cfg_path=os.path.join(os.getenv("HOME"),".sztools.cfg")
+        self._loadCfg(cfg_path)
+        self._loadCfg(user_cfg_path)
+        
     def get(self,name):
         return self.cfg_dict.get(name,"")
 

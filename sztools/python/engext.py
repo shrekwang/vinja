@@ -1,5 +1,5 @@
 from BeautifulSoup import BeautifulSoup
-from pysqlite2 import dbapi2 as sqlite  
+import sqlite3 as sqlite  
 import re , os , os.path
 import urllib2 ,random, vim
 
@@ -71,7 +71,7 @@ class ClassicReader(object):
         conn.close()
         
     def createDb(self):
-        from pysqlite2 import dbapi2 as sqlite
+        from sqlite3 import dbapi2 as sqlite
         ddlSql="""create table book_index(id integer primary key ,  
           genre varchar(30), author varchar(50), title varchar(200),
           url varchar(300) , sel_area varchar(2000) ) """

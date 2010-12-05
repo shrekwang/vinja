@@ -1,6 +1,9 @@
 package com.google.code.vimsztool.util;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.io.FilenameUtils;
@@ -9,7 +12,7 @@ import org.apache.commons.io.FilenameUtils;
 public class Preference {
 	
 	private static Preference instance  = new Preference();
-	private Properties prop  = null;
+	private Map<String,String> config  = new HashMap<String,String>();
 	private String sztoolHome = null;
 	
 	private Preference() {}
@@ -29,10 +32,23 @@ public class Preference {
 	
 	public void init(String sztoolHome) {
 		this.sztoolHome = sztoolHome;
-		prop  = new Properties();
-		String cfgPath = FilenameUtils.concat(sztoolHome, "share/conf/sztools.cfg");
+		String defaultCfgPath = FilenameUtils.concat(sztoolHome, "share/conf/sztools.cfg");
+		loadPrefFromFile(defaultCfgPath);
+		String userCfgPath = FilenameUtils.concat(VjdeUtil.getUserHome(), ".sztools.cfg");
+		loadPrefFromFile(userCfgPath);
+	}
+	
+	private void loadPrefFromFile(String filePath) {
+		File file = new File(filePath);
+		if (!file.exists() || !file.canRead()) return ;
+		Properties prop  = new Properties();
 		try {
-			prop.load(new FileInputStream(cfgPath));
+			prop.load(new FileInputStream(file));
+			for (Object key : prop.keySet() ) {
+				String keyStr = (String)key;
+				String value = prop.getProperty(keyStr, "");
+				config.put(keyStr, value);
+			}
 		} catch (Exception e) { 
 		}
 	}
@@ -42,7 +58,7 @@ public class Preference {
 	}
 	
 	public String getValue(String key) {
-		String value= prop.getProperty(key);
+		String value= config.get(key);
 		return value == null ? "" : value;
 	}
 	

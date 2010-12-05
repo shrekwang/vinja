@@ -374,6 +374,7 @@ function! Jdext()
   set foldmethod=syntax
   set foldlevelstart=1
   autocmd BufEnter     *.java      setlocal omnifunc=SzJdeCompletion
+  autocmd BufNewFile   *.java      python EditUtil.createSkeleton()
   "autocmd Syntax java setlocal foldmethod=syntax
   "autocmd Syntax java normal zR
   if exists("*SuperTabSetDefaultCompletionType")

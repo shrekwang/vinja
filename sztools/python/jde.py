@@ -6,6 +6,7 @@ import re
 from xml.etree.ElementTree import ElementTree
 from subprocess import Popen 
 from pyparsing import *
+from string import Template
 
 HOST = 'localhost'
 PORT = 9527
@@ -97,17 +98,17 @@ class ProjectManager(object):
     @staticmethod
     def initProject():
         pwd = os.getcwd()
-        if len(os.listdir(pwd)) > 0 :
-            print "can't init a project in unempty dir."
-            return
         projectName =  os.path.basename(os.getcwd())
         examples_dir = os.path.join(getShareHome(),"examples")
         projectInitXml = os.path.join(examples_dir,"project.xml")
         classpathInitXml = os.path.join(examples_dir,"classpath.xml")
         jdeInitXml = os.path.join(examples_dir,"jde.xml")
-        os.mkdir("src")
-        os.mkdir("lib")
-        os.mkdir("dst")
+        if not os.path.exists("src") :
+            os.mkdir("src")
+        if not os.path.exists("lib") :
+            os.mkdir("lib")
+        if not os.path.exists("dst") :
+            os.mkdir("dst")
         lines = open(projectInitXml).readlines()
         f = open(".project","w")
         for line in lines :
@@ -261,6 +262,30 @@ class Talker(object):
         return data
 
 class EditUtil(object):
+
+    @staticmethod
+    def createSkeleton():
+        vim_buffer = vim.current.buffer
+        cur_file = vim_buffer.name
+        cur_path = os.path.dirname(cur_file)
+        prj_root = ProjectManager.getProjectRoot(cur_file)
+        src_locs = ProjectManager.getSrcLocations(cur_file)
+        pkg = ""
+        for src_loc in src_locs :
+            abs_src = os.path.join(prj_root, src_loc)
+            if cur_path.startswith(abs_src) :
+                pkg = cur_path[ len(abs_src)+1 : ]
+        if pkg != "" :
+            vim_buffer.append("import %s;" % pkg.replace(os.path.sep,"."))
+            vim_buffer.append("")
+
+        class_name = os.path.splitext(os.path.basename(cur_file))[0]
+        s = Template("public class $name {\n\n}")
+        skeleton = s.substitute(name=class_name)
+        for line in skeleton.split("\n"):
+            vim_buffer.append(line)
+        del vim_buffer[0]
+
     @staticmethod
     def generateGseter():
         jdef_parser = Parser.getJavaVarDefParser(None,False)
@@ -512,7 +537,6 @@ class AutoImport(object):
         if location > 0 and vim_buffer[location-1].strip() != "" :
             vim.command("call append(%s,'')" %(str(location)))
         
-
 class Parser(object):
 
     @staticmethod
