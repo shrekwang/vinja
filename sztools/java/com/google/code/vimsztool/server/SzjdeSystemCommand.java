@@ -1,12 +1,11 @@
 package com.google.code.vimsztool.server;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.google.code.vimsztool.util.ProcessRunner;
 import com.google.code.vimsztool.util.VjdeUtil;
 
 public class SzjdeSystemCommand extends SzjdeCommand {
@@ -50,27 +49,15 @@ public class SzjdeSystemCommand extends SzjdeCommand {
 
 		public void run() {
 			try {
-				String line;
 				Process p ;
 				if (runInShell) {
 					p = Runtime.getRuntime().exec(new String[] {"cmd.exe", "/c",cmd});
 				} else {
 					p = Runtime.getRuntime().exec(cmd);
 				}
-				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(p.getInputStream()));
-				StringBuilder runResult = new StringBuilder();
-				while ((line = reader.readLine()) != null) {
-					runResult.append(line).append("\n");
-				}
-				
-				reader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				while ((line = reader.readLine()) != null) {
-					runResult.append(line).append("\n");
-				}
-	
-				reader.close();
-				cmdResults.put(uuid, runResult.toString());
+				ProcessRunner runner = new ProcessRunner();
+				String result = runner.communicate(p);
+				cmdResults.put(uuid, result);
 			} catch (Exception err) {
 				err.printStackTrace();
 				cmdResults.put(uuid, VjdeUtil.getExceptionValue(err));
