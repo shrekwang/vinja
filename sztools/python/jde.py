@@ -4,7 +4,7 @@ import os.path
 import time
 import re
 from xml.etree.ElementTree import ElementTree
-from subprocess import Popen 
+from subprocess import Popen
 from pyparsing import *
 from string import Template
 
@@ -52,7 +52,7 @@ class ProjectManager(object):
         if not filePath :
             return None
         while True :
-            tmpdir = os.path.dirname(parent) 
+            tmpdir = os.path.dirname(parent)
             if tmpdir == "" or tmpdir == "/" or tmpdir == parent :
                 break
             parent = tmpdir
@@ -81,7 +81,7 @@ class ProjectManager(object):
     @staticmethod
     def getClassPathXml(filePath):
         projectRoot = ProjectManager.getProjectRoot(filePath)
-        if not projectRoot : 
+        if not projectRoot :
             parent = os.path.dirname(filePath)
             return parent
         return os.path.join(projectRoot,".classpath")
@@ -276,7 +276,7 @@ class EditUtil(object):
             if cur_path.startswith(abs_src) :
                 pkg = cur_path[ len(abs_src)+1 : ]
         if pkg != "" :
-            vim_buffer.append("import %s;" % pkg.replace(os.path.sep,"."))
+            vim_buffer.append("package %s;" % pkg.replace(os.path.sep,"."))
             vim_buffer.append("")
 
         class_name = os.path.splitext(os.path.basename(cur_file))[0]
@@ -306,7 +306,6 @@ class EditUtil(object):
           """
 
         sb = []
-        VimUtil.writeToJdeConsole(str(results))
         for item in  results :
             tmp = []
             for type_token in item[0]:
@@ -320,14 +319,21 @@ class EditUtil(object):
             result = result.replace("$2",vartype)
             result = result.replace("$3",varname)
             sb.append(result)
-        VimUtil.writeToJdeConsole(sb)
+        if sb == [] :
+            return
+        endline = Parser.parseClassEnd()
+        del vim_buffer[endline]
+        output(sb,append=True)
+        output("}",append=True)
+        #format the getter,setter code
+        vim.command("normal %sGV200j=" % endline)
 
     @staticmethod
     def overideMethod():
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
-        if not classPathXml : return 
+        if not classPathXml : return
         allFullClassNames = Parser.getAllSuperClassFullNames()
         resultText = Talker.overideMethod(classPathXml,allFullClassNames)
         VimUtil.writeToJdeConsole(resultText)
@@ -353,7 +359,7 @@ class EditUtil(object):
             classname = varName
         else :
             classname = Parser.getVarType(varName,row-1)
-            if not classname : 
+            if not classname :
                 classname = varName
         classNameList = Parser.getFullClassNames(classname)
         # find exact match bin classname
@@ -379,7 +385,7 @@ class EditUtil(object):
                     matched_row = lineNum
             vim.command("edit %s" % abs_path)
             vim.command("normal %sG" % str(matched_row))
-        return 
+        return
 
     @staticmethod
     def dumpClassInfo():
@@ -388,7 +394,7 @@ class EditUtil(object):
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
-        if not classPathXml : return 
+        if not classPathXml : return
         classNameList = Parser.getFullClassNames(classname)
         result = Talker.dumpClass(classPathXml,classNameList)
         VimUtil.writeToJdeConsole(result)
@@ -402,8 +408,8 @@ class Compiler(object):
         line = vim_buffer[row-1]
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
-        if not classPathXml : 
-            return 
+        if not classPathXml :
+            return
         resultText = Talker.compileFile(classPathXml,current_file_name)
         errorMsgList = resultText.split("\n")
         hasError = False
@@ -417,7 +423,7 @@ class Compiler(object):
                 qflist.append(qfitem)
             except Exception , e:
                 logging.debug("error line is '%s', error msg is %s " % (line,str(e)))
-            
+
         vim.command("call setqflist(%s)" % qflist)
         if len(errorMsgList) > 0 :
             vim.command("cw")
@@ -431,7 +437,7 @@ class Compiler(object):
         if not current_file_name : return
         if current_file_name.endswith(".java") : return
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
-        if not classPathXml : return 
+        if not classPathXml : return
         resultText = Talker.copyResource(classPathXml,current_file_name)
         VimUtil.writeToJdeConsole(resultText)
 
@@ -536,13 +542,25 @@ class AutoImport(object):
         location = AutoImport.getImportInsertLocation()
         if location > 0 and vim_buffer[location-1].strip() != "" :
             vim.command("call append(%s,'')" %(str(location)))
-        
+
 class Parser(object):
+
+    @staticmethod
+    def parseClassEnd():
+        vim_buffer = vim.current.buffer
+        row_count = len(vim_buffer)
+        end_line = 0
+        for lineNum in range(row_count-1,-1,-1):
+            line = vim_buffer[lineNum]
+            if line.endswith("}") :
+                end_line = lineNum
+                break
+        return end_line
 
     @staticmethod
     def parseAllMemberInfo(lines):
         memberInfo = []
-        scopeCount = 0 
+        scopeCount = 0
         methodPat = re.compile(r"(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+\s*\(.*\))")
         assignPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*=")
         defPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*;")
@@ -575,7 +593,7 @@ class Parser(object):
                 scopeCount = scopeCount - 1
         return  memberInfo
 
-    @staticmethod 
+    @staticmethod
     def isJavaKeyword(word):
         keyword_str = """
             abstract    default    if            private      this
@@ -589,7 +607,7 @@ class Parser(object):
             const       for        new           switch
             continue    goto       package       synchronized """
         match=re.search(r"\b%s\b" % word ,keyword_str)
-        if match : 
+        if match :
             return True
         return False
 
@@ -628,7 +646,7 @@ class Parser(object):
             var_name = Word( alphas, alphanums ).setResultsName("var_name")
         else :
             var_name = Keyword(var_name).setResultsName("var_name")
-        statement = modifier_token + storage_token + Group(var_type) + var_name + restOfLine 
+        statement = modifier_token + storage_token + Group(var_type) + var_name + restOfLine
         return statement
 
     @staticmethod
@@ -652,7 +670,7 @@ class Parser(object):
             lineText = vim_buffer[row].strip()
             if lineText.startswith("*") or lineText.startswith("//") :
                 continue
-            if varName not in lineText : 
+            if varName not in lineText :
                 continue
             for result in jdef_parser.searchString(vim_buffer[row]):
                 if Parser.isJavaKeyword(result[0][0]) : continue
@@ -741,7 +759,7 @@ class Parser(object):
         allFullClassNames = []
         for name in allSuper :
             classNameList = Parser.getFullClassNames(name)
-            for fullName in classNameList : 
+            for fullName in classNameList :
                 allFullClassNames.append(fullName)
         return allFullClassNames
 
@@ -778,7 +796,7 @@ class SzJdeCompletion(object):
             dotExpParser = Parser.getJavaDotExpParser()
             result = dotExpParser.searchString(line)
             omniType = "word"
-            if len(result) > 0 and len(result[0]) > 1 : 
+            if len(result) > 0 and len(result[0]) > 1 :
                 if result[0][-1] == "." or result[0][-2] == "." :
                     omniType = "member"
         return omniType
@@ -849,7 +867,7 @@ class SzJdeCompletion(object):
             classname = Parser.getVarType(varName,row-1)
             completionType = "objectmember"
 
-        if not classname : 
+        if not classname :
             classname = varName
 
         classNameList = Parser.getFullClassNames(classname)
@@ -885,7 +903,7 @@ class SzJdeCompletion(object):
                 menu["menu"] = "%s %s(%s)" % (mreturntype, mname,mparams)
             else :
                 menu["word"] = mname
-                menu["menu"] = mreturntype 
+                menu["menu"] = mreturntype
             result.append(menu)
         return result
 

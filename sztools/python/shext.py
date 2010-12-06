@@ -620,14 +620,16 @@ class ShUtil(object):
 
     def yank(self,args,clearBuffer = True,mode="yank"):
         """mode can be one of ('yank','cut') """
-
         pwd = os.getcwd()
         if clearBuffer :
             self.yank_buffer = []
+        count = 0
         for arg in args :
             names = glob.glob(arg)
             for src in names :
+                count += 1
                 self.yank_buffer.append((mode,os.path.join(pwd,src)))
+        Shext.stdout("%s items had been yanked." % str(count))
 
     def yankbuffer(self):
         lines = [src for mode,src in self.yank_buffer ]

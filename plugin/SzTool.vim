@@ -324,16 +324,16 @@ function WatchExample(name)
   python watchExample(vim.eval("a:name"))
 endfunction
 
-function LocateFile(newTab)
+function LocateFile()
   call RunSzPyfile("locate.py")
   python fcmgr = FileContentManager()
-  python QuickLocater.runApp(fcmgr,vim.eval("a:newTab"))
+  python QuickLocater.runApp(fcmgr)
 endfunction
 
 function LocateMember()
   call RunSzPyfile("locate.py")
   python membermgr = JavaMemberContentManager()
-  python QuickLocater.runApp(membermgr,False )
+  python QuickLocater.runApp(membermgr)
 endfunction
 
 function StartMailAgent()
@@ -367,16 +367,19 @@ function RunAntBuild(...)
   endif
 endfunction 
 
+function JdeDotCompletion()
+  return  ".\<C-X>\<C-O>"
+endfunction
+
 function! Jdext()
   call RunSzPyfile("jde.py")
   python startAgent()
-  set completeopt=menuone
+  set completeopt=menuone,longest
   set foldmethod=syntax
   set foldlevelstart=1
   autocmd BufEnter     *.java      setlocal omnifunc=SzJdeCompletion
+  "autocmd BufEnter     *.java      inoremap <expr> . JdeDotCompletion()
   autocmd BufNewFile   *.java      python EditUtil.createSkeleton()
-  "autocmd Syntax java setlocal foldmethod=syntax
-  "autocmd Syntax java normal zR
   if exists("*SuperTabSetDefaultCompletionType")
     autocmd BufEnter *.java        call SuperTabSetDefaultCompletionType("<c-x><c-o>")
   endif
@@ -403,7 +406,6 @@ command! -nargs=0 ClassicReader :call ClassicReader()
 
 command! -nargs=0 CodeGen      :call CodeGen()
 command! -nargs=0 LoadDtd      :call LoadDtd()
-command! -nargs=0 Javadoc      :call Javadoc()
 
 command! -nargs=0 SzSudoku    :call SzSudoku()
 command! -nargs=0 SzMineSweeper  :call SzMineSweeper()
@@ -413,12 +415,10 @@ command! -nargs=1 Transform    :call Transform('<args>')
 command! -nargs=0 StartAgent  :python startAgent()
 command! -nargs=0 Shext       :call Shext()
 command! -nargs=0 Jdext       :call Jdext()
-command! -nargs=1 Ledit       :call Ledit('<args>')
 command! -nargs=0 Dbext       :call Dbext()
 command! -nargs=0 Notext      :call Notext()
 command! -nargs=0 SaveNote            :python Notext.saveBufContent()
 command! -nargs=0 MakeNoteTemplate    :python Notext.makeTemplate()
-command! -nargs=0 Less     :call Less()
 
 "sztools mapping
 nmap <silent><leader>zc  :python startScriptEdit()<cr>
@@ -426,12 +426,10 @@ nmap <silent><leader>zd  :call SearchDict('<C-R><C-W>')<CR>
 vmap <silent><leader>zf  :python simpleFormatSQL()<cr>
 vmap <silent><leader>zm  :python markVisual()<cr>
 
-nmap <silent><leader>zl  :call Less()<CR>
 nmap <silent><leader>zs  :python startfile()<cr>
 nmap <silent><leader>zv  <C-Q>
 nmap <silent><leader>zw  :w<cr>
 
 nmap <silent><leader>ff  :python openInFirefox()<cr>
-nmap <silent><leader>lt  :call LocateFile('true')<cr>
-nmap <silent><leader>lw  :call LocateFile('false')<cr>
+nmap <silent><leader>lw  :call LocateFile()<cr>
 nmap <silent><leader>zo  :call LocateMember()<cr>

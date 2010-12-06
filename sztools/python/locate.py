@@ -26,7 +26,6 @@ class QuickLocater(object) :
     def __init__(self, init_prompt_value,content_manager) :
         self.content_manager = content_manager
         self.prompt = Prompt(init_prompt_value)
-        self.create_tab = False
 
     def show_matched_result(self):
         pat = self.prompt.get_name() + "*"
@@ -71,14 +70,12 @@ class QuickLocater(object) :
         vim.command("highlight Cursor guifg=black guibg=%s" % (self.cursor_bg))
 
     @staticmethod
-    def runApp(content_manager , create_tab):
+    def runApp(content_manager ):
         global quickLocater
         name = vim.eval("expand('<cword>')")
         if name == None :
             name = ""
         quickLocater = QuickLocater(name,content_manager)
-        if create_tab != None and create_tab == "true":
-            quickLocater.create_tab = True
         quickLocater.create_explorer_buffer()
         if len(name) > 0 :
             quickLocater.prompt.show()
