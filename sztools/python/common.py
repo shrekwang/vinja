@@ -73,10 +73,12 @@ def startAgent():
     cps.append(swtLibPath)
     cmdArray.append("-classpath")
     cmdArray.append(os.path.pathsep.join(cps))
-    cmdArray.append('-Djava.library.path="%s"' % libpath )
+    cmdArray.append('-Djava.library.path=%s' % libpath )
     cmdArray.append("com.google.code.vimsztool.ui.JdtUI")
     cmdArray.append("--sztool-home")
     cmdArray.append(sztool_home)
+
+    logging.debug("cmd array is %s "  % str(cmdArray))
 
     if os.name == "posix" :
         Popen(" ".join(cmdArray),shell = True)

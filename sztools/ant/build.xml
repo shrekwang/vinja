@@ -12,7 +12,8 @@
   </path>
 
   <target name="build">
-    <javac classpathref="class.path" srcdir="${src}" destdir="${dist}" includeantruntime="false"  />
+    <javac classpathref="class.path" srcdir="${src}" destdir="${dist}" includeantruntime="false"  
+    	source="1.5" target="1.5" />
     <copy todir="${dist}">
       <fileset dir="${src}">
         <exclude name="**/*.java" />

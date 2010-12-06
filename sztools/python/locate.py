@@ -2,6 +2,7 @@ from  shext import LocateCmd
 from jde import Parser
 import fnmatch
 import os
+import re
 
 class Prompt(object) :
     def __init__(self, init_prompt_value):
@@ -126,6 +127,9 @@ class QuickLocater(object) :
         vim.command("%s  <Esc>    :python quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "ESC"))
         vim.command("%s  <C-j>    :python quickLocater.on_cursor_move('down')<cr>" %(mapcmd ))
         vim.command("%s  <C-k>    :python quickLocater.on_cursor_move('up')<cr>" %(mapcmd ))
+        vim.command("%s  <C-B>    :python quickLocater.open_content('buffer')<cr>" %(mapcmd ))
+        vim.command("%s  <C-T>    :python quickLocater.open_content('tab')<cr>" %(mapcmd ))
+        vim.command("%s  <C-Y>    :python quickLocater.yank_content()<cr>" %(mapcmd ))
         vim.command("%s  <C-v>    :python quickLocater.on_paste_content()<cr>" %(mapcmd ))
 
     def on_paste_content(self):
@@ -144,6 +148,23 @@ class QuickLocater(object) :
         else :
             if row < len(work_buffer) : win.cursor = ( row+1 , col)
 
+    def yank_content(self):
+        work_buffer=vim.current.buffer
+        row,col = vim.current.window.cursor
+        content = re.escape( work_buffer[row-1])
+        vim.command('let @@="%s"' % content )
+        print "line has been yanked."
+
+
+    def open_content(self,mode="local"):
+        "mode  { local, buffer, tab }"
+        work_buffer=vim.current.buffer
+        row,col = vim.current.window.cursor
+        line = work_buffer[row-1]
+        self.clean()
+        vim.command("exec '%s wincmd w'" % self.last_bufnr)
+        self.content_manager.open_content(line, mode)
+
     def on_key_pressed(self, key):
         if key == "Tab" :
             pass
@@ -152,13 +173,7 @@ class QuickLocater(object) :
             self.prompt.show()
             self.show_matched_result()
         elif key == "CR" :
-            work_buffer=vim.current.buffer
-            row,col = vim.current.window.cursor
-            line = work_buffer[row-1]
-            self.clean()
-            vim.command("exec '%s wincmd w'" % self.last_bufnr)
-            self.content_manager.open_content(line)
-
+            self.open_content()
         elif key == "ESC" :
             self.clean()
         else :
@@ -187,14 +202,20 @@ class FileContentManager(object):
             self.start_dirs[alias] = start_dir
         return rows
 
-    def open_content(self,line):
+    def open_content(self,line,mode="local"):
         fname = line.strip()
         if not fname : return 
 
         alias = fname[0: fname.find(os.path.sep)]
         rtl_path = fname[fname.find(os.path.sep)+1:]
         fname = os.path.join(self.start_dirs[alias], rtl_path)
-        vim.command("edit %s "  %(fname))
+        if mode == "local" :
+            vim.command("edit %s "  %(fname))
+        elif mode == "buffer" :
+            vim.command("split %s "  %(fname))
+        elif mode == "tab" :
+            vim.command("tabedit %s "  %(fname))
+
 
 class JavaMemberContentManager(object):
 
