@@ -347,7 +347,8 @@ def getAppHome():
     return sztool_app_home
 
 def getDataHome():
-    sztool_data_home=os.path.join(os.getenv("HOME"),".sztools")
+    user_home = os.path.expanduser('~')
+    sztool_data_home=os.path.join(user_home,".sztools")
     return sztool_data_home
 
 def getShareHome():
@@ -432,7 +433,8 @@ class SzToolsConfig(object):
     
     def __init__(self,cfg_path):
         self.cfg_dict={}
-        user_cfg_path=os.path.join(os.getenv("HOME"),".sztools.cfg")
+        user_home = os.path.expanduser('~')
+        user_cfg_path=os.path.join(user_home , ".sztools.cfg")
         self._loadCfg(cfg_path)
         self._loadCfg(user_cfg_path)
         
