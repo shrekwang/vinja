@@ -75,7 +75,7 @@ public class CompilerContext {
 		if (source != null && ! source.trim().equals("")) {
 			this.srcVM = source;
 		}
-		String encoding = prop.get("utf-8");
+		String encoding = prop.get("encoding");
 		if (encoding != null && ! source.trim().equals("")) {
 			this.encoding = encoding;
 		}

@@ -98,7 +98,15 @@ public class FileSystemDb  implements JNotifyListener {
    
     
     public void refreshIndex(String alias) {
-    	//todo
+    	String sql = " select start_dir,excludes,depth from fsdb_dirs where alias='"+alias+"'";
+    	List<String[]> values = sqliteManager.query(sql);
+    	if (values.size()==0) return;
+    	String[] valueArray = values.get(0);
+    	String startDir = valueArray[0];
+    	String excludes = valueArray[1];
+    	String depth = valueArray[2];
+    	this.removeIndexedDir(alias);
+    	addIndexedDir(alias, startDir, excludes, Integer.parseInt(depth));
     }
     
     public String listIndexedDir() {
@@ -143,16 +151,14 @@ public class FileSystemDb  implements JNotifyListener {
     	removeWatch(path);
     }
     
+   
+    
     public void addIndexedDir(String alias, String dir,String excludes, int depth) {
     	RecordCollector recordCollector=new RecordCollector();
     	String defaultExcludes = pref.getValue(Preference.DEFAULT_EXCLUDE_PATTERN);
     	
-    	if (defaultExcludes != null) {
-    		if (excludes !=null) {
-    			excludes =defaultExcludes+","+excludes;
-    		} else {
-    			excludes = defaultExcludes;
-    		}
+    	if (excludes == null ) {
+    		excludes = defaultExcludes;
     	}
     	
     	List<Record> records=recordCollector.collect(dir, excludes);

@@ -66,7 +66,7 @@ public class JDTCompiler  {
        
 
         // Source JVM
-        if(ctx.getEncoding() != null ) {
+        if(ctx.getSrcVM() != null ) {
             settings.put(CompilerOptions.OPTION_Source, ctx.getSrcVM());
         } else {
             // Default to 1.5
