@@ -181,6 +181,7 @@ public class FileSystemDb  implements JNotifyListener {
     	if  (indexedData == null ) return ;
     	String startDir = indexedData[0];
     	String rtlPath = indexedData[1];
+    	name = FilenameUtils.getName(name);
     	
     	String sql = "insert into fsdb_files (name,start_dir,rtl_path) values(?,?,?)";
     	List<String[]> values = new ArrayList<String[]>();

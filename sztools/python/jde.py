@@ -11,7 +11,7 @@ from string import Template
 HOST = 'localhost'
 PORT = 9527
 END_TOKEN = "==end=="
-MAX_CPT_COUNT = 20
+MAX_CPT_COUNT = 200
 
 class VimUtil(object):
     @staticmethod

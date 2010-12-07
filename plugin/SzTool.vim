@@ -378,6 +378,7 @@ function! Jdext()
   set foldmethod=syntax
   set foldlevelstart=1
   autocmd BufEnter     *.java      setlocal omnifunc=SzJdeCompletion
+  autocmd BufEnter     *.java      nmap <silent><leader>, :python Runner.runCurrentFile()<cr>
   "autocmd BufEnter     *.java      inoremap <expr> . JdeDotCompletion()
   autocmd BufNewFile   *.java      python EditUtil.createSkeleton()
   if exists("*SuperTabSetDefaultCompletionType")
