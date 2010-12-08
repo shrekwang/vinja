@@ -374,12 +374,9 @@ endfunction
 function! Jdext()
   call RunSzPyfile("jde.py")
   python startAgent()
-  set completeopt=menuone,longest
-  set foldmethod=syntax
-  set foldlevelstart=1
+  set completeopt=menuone
   autocmd BufEnter     *.java      setlocal omnifunc=SzJdeCompletion
   autocmd BufEnter     *.java      nmap <silent><leader>, :python Runner.runCurrentFile()<cr>
-  "autocmd BufEnter     *.java      inoremap <expr> . JdeDotCompletion()
   autocmd BufNewFile   *.java      python EditUtil.createSkeleton()
   if exists("*SuperTabSetDefaultCompletionType")
     autocmd BufEnter *.java        call SuperTabSetDefaultCompletionType("<c-x><c-o>")

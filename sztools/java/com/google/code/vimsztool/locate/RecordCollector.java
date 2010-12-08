@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,38 +15,13 @@ import org.apache.commons.io.DirectoryWalker;
 public class RecordCollector extends DirectoryWalker<Record> {
 	
 	private String startPath;
-	private List<Pattern> excludePatterns = new ArrayList<Pattern>();
+	private String excludes;
 	
-	
-	private Pattern translate(String pat) {
-		if (pat == null || pat.trim().equals("")) return null;
-		StringBuilder sb= new StringBuilder(".*/");
-		for (int i=0; i<pat.length(); i++) {
-			char c = pat.charAt(i);
-			switch (c) {
-			case '*':
-				sb.append(".*");
-				break;
-			case '?':
-				sb.append(".");
-				break;
-			default:
-				sb.append(Pattern.quote(String.valueOf(c)));
-			}
-		}
-		return Pattern.compile(sb.toString());
-	}
 
     public List<Record> collect(String startPath,String excludes) {
       List<Record> results = new ArrayList<Record>();
-      if (excludes!=null) {
-	      String[] excludeStrs = excludes.split(",");
-	      for (String str : excludeStrs) {
-	    	  this.excludePatterns.add(translate(str));
-	      }
-      }
-      
       this.startPath = startPath;
+      this.excludes = excludes;
       try {
     	  File startDirectory = new File(startPath);
 	      walk(startDirectory, results);
@@ -59,7 +36,7 @@ public class RecordCollector extends DirectoryWalker<Record> {
 			Collection<Record> results) throws IOException {
     	if (isVcsMetaDir(directory)) return false;
     	if (! directory.getPath().equals(startPath)
-    			&& ! isExclude(directory)) {
+    			&& ! PatternUtil.isExclude(this.excludes, directory)) {
 	    	results.add(buildRecord(directory));
     	}
     	return true;
@@ -68,7 +45,7 @@ public class RecordCollector extends DirectoryWalker<Record> {
 	@Override
 	protected void handleFile(File file, int depth, Collection<Record> results)
 			throws IOException {
-		if (! isExclude(file)) {
+		if (! PatternUtil.isExclude(this.excludes, file)) {
 			results.add(buildRecord(file));
 		}
 	}
@@ -87,15 +64,7 @@ public class RecordCollector extends DirectoryWalker<Record> {
     	return record;
     }
     
-    private boolean isExclude(File file) {
-    	if (this.excludePatterns.size() == 0 ) return false;
-    	String name = file.getAbsolutePath();
-    	for (Pattern pat : this.excludePatterns) {
-    		Matcher matcher = pat.matcher(name);
-    		if (matcher.matches()) return true;
-    	}
-    	return false;
-    }
+  
     
     private boolean isVcsMetaDir(File dir) {
     	String dirName= dir.getName();

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyListener;
@@ -18,7 +19,7 @@ import com.google.code.vimsztool.util.VjdeUtil;
 public class FileSystemDb  implements JNotifyListener {
 	
 	private SqliteManager sqliteManager ;
-	private Map<String,String> watchedDir= new HashMap<String,String>();
+	private Map<String,WatchedDirInfo> watchedDir= new HashMap<String,WatchedDirInfo>();
 	private static final FileSystemDb instance = new FileSystemDb();
   	private Preference pref =  Preference.getInstance();
 	
@@ -43,7 +44,7 @@ public class FileSystemDb  implements JNotifyListener {
 			try {
 				file.createNewFile();
 			} catch (Exception e) {
-				
+				e.printStackTrace();
 			}
 			this.initTable();
 		}
@@ -54,30 +55,33 @@ public class FileSystemDb  implements JNotifyListener {
 	}
 	
 	public void initWatchOnIndexedDir() {
-		List<String> dirs =getIndexedDirs();
-		for (String dir : dirs) {
-			addWatch(dir);
+		List<WatchedDirInfo> dirs =getIndexedDirs();
+		for (WatchedDirInfo dirInfo : dirs) {
+			addWatch(dirInfo);
 		}
 	}
 		
 	public void removeWatch(String path) {
-		String IdStr = watchedDir.get(path);
-		if (IdStr == null) return ;
+		WatchedDirInfo dirInfo = watchedDir.get(path);
+		if (dirInfo == null) return ;
 		try {
-			JNotify.removeWatch(Integer.parseInt(IdStr));
+			JNotify.removeWatch(dirInfo.getWatchId());
 		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		watchedDir.remove(path);
 	}
-	public void addWatch(String path) {
+	public void addWatch(WatchedDirInfo dirInfo) {
 		
-		if (watchedDir.get(path)!=null ) return;
+		String startDir = dirInfo.getStartDir();
+		if (watchedDir.get(startDir)!=null ) return;
 		
 		int mask = JNotify.FILE_CREATED | JNotify.FILE_DELETED | JNotify.FILE_RENAMED;
 		boolean watchSubtree = true;
 		try {
-			int watchID = JNotify.addWatch(path, mask, watchSubtree, this);
-			watchedDir.put(path, String.valueOf(watchID)	);
+			int watchId = JNotify.addWatch(startDir, mask, watchSubtree, this);
+			dirInfo.setWatchId(watchId);
+			watchedDir.put(startDir, dirInfo);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -85,12 +89,17 @@ public class FileSystemDb  implements JNotifyListener {
 
 
 	
-	public List<String> getIndexedDirs() {
-		String sql = " select start_dir from fsdb_dirs ";
+	public List<WatchedDirInfo> getIndexedDirs() {
+		
+		String sql = " select start_dir,alias,excludes,depth from fsdb_dirs ";
     	List<String[]> values = sqliteManager.query(sql);
-    	List<String> result = new ArrayList<String>();
+    	List<WatchedDirInfo> result = new ArrayList<WatchedDirInfo>();
     	for (String[] valueArray : values ) {
-    		result.add(valueArray[0]);
+    		WatchedDirInfo dirInfo = new WatchedDirInfo();
+    		dirInfo.setStartDir(valueArray[0]);
+    		dirInfo.setAlias(valueArray[1]);
+    		dirInfo.setExcludes(valueArray[2]);
+    		dirInfo.setDepth(Integer.parseInt(valueArray[3]));
     	}
     	return result;
 	}
@@ -178,26 +187,36 @@ public class FileSystemDb  implements JNotifyListener {
     	values.add(new String[]{alias,dir,excludes,String.valueOf(depth)});
     	sqliteManager.batchUpdate(sql, values);
     	
-    	addWatch(dir);
+    	WatchedDirInfo info = new WatchedDirInfo();
+    	info.setAlias(alias);
+    	info.setStartDir(dir);
+    	info.setExcludes(excludes);
+    	info.setDepth(depth);
+    	addWatch(info);
     	
     }
 	
     public void fileCreated(int wd, String rootPath, String name) {
-    	String[] indexedData = getIndexedData(rootPath, name);
+    	String absPath = FilenameUtils.concat(rootPath, name);
+    	String[] indexedData = getIndexedData(absPath);
     	if  (indexedData == null ) return ;
     	String startDir = indexedData[0];
     	String rtlPath = indexedData[1];
     	name = FilenameUtils.getName(name);
+    	WatchedDirInfo watchedDirInfo=watchedDir.get(startDir);
     	
-    	String sql = "insert into fsdb_files (name,start_dir,rtl_path) values(?,?,?)";
-    	List<String[]> values = new ArrayList<String[]>();
-    	values.add(new String[] {name,startDir,rtlPath});
-    	sqliteManager.batchUpdate(sql, values);
+    	if (! PatternUtil.isExclude(watchedDirInfo.getExcludes(), new File(absPath))) {
+	    	String sql = "insert into fsdb_files (name,start_dir,rtl_path) values(?,?,?)";
+	    	List<String[]> values = new ArrayList<String[]>();
+	    	values.add(new String[] {name,startDir,rtlPath});
+	    	sqliteManager.batchUpdate(sql, values);
+    	}
     	
     }
     
     public void fileDeleted(int wd, String rootPath, String name) {
-    	String[] indexedData = getIndexedData(rootPath, name);
+    	String absPath = FilenameUtils.concat(rootPath, name);
+    	String[] indexedData = getIndexedData(absPath);
     	if  (indexedData == null ) return ;
     	String startDir = indexedData[0];
     	String rtlPath = indexedData[1];
@@ -208,19 +227,23 @@ public class FileSystemDb  implements JNotifyListener {
     	sqliteManager.batchUpdate(sql, values);
     }
     
-    public void fileRenamed(int wd, String rootPath, String oldName, String newName) { }
-	public void fileModified(int wd, String rootPath, String name) { }
+    public void fileRenamed(int wd, String rootPath, String oldName, String newName) {
+    	fileDeleted(wd, rootPath, oldName);
+    	fileCreated(wd, rootPath, newName);
+    }
+    
+	public void fileModified(int wd, String rootPath, String name) { 
+	}
 	
-    private String[] getIndexedData(String root,String name) {
-    	List<String> dirs = getIndexedDirs();
+    private String[] getIndexedData(String absPath) {
+    	Set<String> dirs = watchedDir.keySet();
     	String startDir = null;
     	for (String dir : dirs) {
-    		if (root.startsWith(dir)) {
+    		if (absPath.startsWith(dir)) {
     			startDir = dir;
     		}
     	}
     	if (startDir == null) return null;
-    	String absPath = FilenameUtils.concat(root, name);
     	
     	int sepIndex = startDir.length() ;
     	if (! startDir.endsWith(File.separator)) {
