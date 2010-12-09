@@ -885,6 +885,7 @@ class SzJdeCompletion(object):
                 #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
                 menu["word"] = mname
                 menu["menu"] = rtntype
+                menu["icase"] = "1"
                 result.append(menu)
         return result
 
@@ -897,12 +898,12 @@ class SzJdeCompletion(object):
             mtype,mname,mparams,mreturntype,mexceptions = memberInfo.split(":")
             if not pat.match(mname): continue
             menu = dict()
+            menu["word"] = mname
+            menu["icase"] = "1"
             #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
             if mtype == "method" :
-                menu["word"] = mname
                 menu["menu"] = "%s %s(%s)" % (mreturntype, mname,mparams)
             else :
-                menu["word"] = mname
                 menu["menu"] = mreturntype
             result.append(menu)
         return result
