@@ -829,7 +829,9 @@ class SzJdeCompletion(object):
         bufferText = "\n".join([vim_buffer[row] for row in visibleRowNum])
         #bufferText = "\n".join([line for line in vim.current.buffer])
         pattern = r"\b%s\w+\b" % base.replace("*","\S+")
-        matches = re.findall(pattern,bufferText,re.IGNORECASE)
+        matches = re.findall(pattern,bufferText)
+        if not matches :
+            matches = re.findall(pattern,bufferText,re.IGNORECASE)
         completeList = []
         if matches :
             for item in matches :
