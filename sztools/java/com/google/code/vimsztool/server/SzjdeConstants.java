@@ -35,7 +35,6 @@ public class SzjdeConstants {
 	public final static String CPT_TYPE_OBJECTMEMBER="objectmember";
 	public final static String CPT_TYPE_INHERITMEMBER="inheritmember";
 	public final static String CPT_TYPE_CONSTRUCTOR="constructor";
-	public final static String CPT_TYPE_SUPER_FIELD_MEMBER="superfieldmember";
 	
 
 }

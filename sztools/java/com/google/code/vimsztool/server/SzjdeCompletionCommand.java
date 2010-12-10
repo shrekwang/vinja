@@ -6,15 +6,13 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_CONSTRUCT
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_INHERITMEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_OBJECTMEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_PACKAGE;
-import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_SUPER_FIELD_MEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASSPATHXML;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASS_NAME;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CPT_TYPE;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_EXP_TOKENS;
-import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_SUPER_CLASS;
-import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_VAR_NAMES;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -41,10 +39,6 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 				|| completionType.equals(CPT_TYPE_INHERITMEMBER)
 				|| completionType.equals(CPT_TYPE_OBJECTMEMBER) ) {
 			return completeMember(classPathXml, completionType);
-		} else if (completionType.equals(CPT_TYPE_SUPER_FIELD_MEMBER)) {
-			String superClass =params.get(PARAM_SUPER_CLASS);
-			String field = params.get(PARAM_VAR_NAMES);
-			return completeSuperFieldMember(classPathXml, superClass, field);
 		} else if (completionType.equals(CPT_TYPE_CLASS)){
 			String nameStart = params.get(PARAM_CLASS_NAME);
 			return completeClass(classPathXml,nameStart);
@@ -62,30 +56,65 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		return sb.toString();
 	}
 	
-	public String completeSuperFieldMember(String classPathXml, String superClass,
-			String field) {
-		String[] classNameList = superClass.split(",");
-		CompilerContext ctx = getCompilerContext(classPathXml);
-		ReflectAbleClassLoader classLoader = ctx.getClassLoader();
-		Class aClass = null;
-		for (String className : classNameList) {
-			try {
-				aClass = classLoader.loadClass(className);
-			} catch (ClassNotFoundException e) {
-			}
-			if (aClass != null)
-				break;
-		}
+	
+	@SuppressWarnings("unchecked")
+	public String completeMember(String classPathXml, String completionType) {
+		String[] classNameList = params.get("classnames").split(",");
+		String[] tokens = params.get(PARAM_EXP_TOKENS).split(",");
+	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
+		Class aClass = getExistedClass(classPathXml, classNameList, sourceFile);
 		if (aClass == null) return "";
+		aClass = this.parseExpResultType(tokens, aClass,completionType);
+		if (aClass == null) return "";
+		boolean hasDotExp = false;
+		if (tokens.length > 1 ) {
+			hasDotExp = true;
+		}
+		return getAllMember(aClass,completionType,hasDotExp);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private Class parseExpResultType(String[] tokens, Class aClass,String completionType) {
+		if (tokens == null || tokens.length == 0) return aClass;
+		boolean self = false;
+		if (completionType.equals(CPT_TYPE_INHERITMEMBER)) self=true;
+
+		String memberType = "";
+		for (String token : tokens) {
+			if (token.equals(".")) continue;
+			if (token.indexOf("(") > 0) {
+				memberType = "method";
+				token=token.substring(0, token.indexOf("("));
+			} else {
+				memberType = "field";
+			}
+			aClass = searchMemberTypeInHierarchy(aClass, token, memberType, self);
+			self = false;
+			if (aClass == null) return null;
+		}
+		return aClass;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private Class searchMemberTypeInHierarchy(Class aClass,String memberName,String memberType,boolean self) {
 		Class fClass = null;
 		boolean foundField = false;
 		while (true) {
-			Field[] fields = aClass.getDeclaredFields();
-			for (Field tf : fields) {
+			Member[] members = null;
+			if (memberType.equals("field")) {
+				 members = aClass.getDeclaredFields();
+			} else {
+				members = aClass.getDeclaredMethods();
+			}
+			for (Member tf : members) {
 				int mod = tf.getModifiers();
-				if (Modifier.isPublic(mod) || Modifier.isProtected(mod)) {
-					if (tf.getName().equals(field)) {
-						fClass = tf.getType();
+				if (Modifier.isPublic(mod) || (self && Modifier.isProtected(mod)) ) {
+					if (tf.getName().equals(memberName)) {
+						if (memberType.equals("field")) {
+							fClass = ((Field)tf).getType();
+						} else {
+							fClass = ((Method)tf).getReturnType();
+						}
 						foundField = true;
 						break;
 					}
@@ -97,18 +126,18 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 				break;
 			}
 		}
-		if (!foundField) return "";
-		return getAllMember(fClass,CPT_TYPE_OBJECTMEMBER,false);
+		return fClass;
 	}
 	
-	public String completeMember(String classPathXml, String completionType) {
-		String[] classNameList = params.get("classnames").split(",");
-		String[] tokens = params.get(PARAM_EXP_TOKENS).split(",");
-		
+	@SuppressWarnings("unchecked")
+	private Class getExistedClass(String classPathXml , String[] classNameList,String sourceFile) {
 		CompilerContext ctx = getCompilerContext(classPathXml);
 		ReflectAbleClassLoader classLoader = ctx.getClassLoader();
 		Class aClass = null;
 		for (String className : classNameList) {
+			if (className.equals("this") && sourceFile !=null ) {
+				className = ctx.buildClassName(sourceFile);
+			}
 			try {
 				aClass = classLoader.loadClass(className);
 			} catch (ClassNotFoundException e) {
@@ -118,32 +147,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 			}
 			if (aClass != null) break;
 		}
-		if (aClass == null) return "";
-		boolean hasDotExp = false;
-		if (tokens.length > 0) {
-			for (String token : tokens) {
-				if (token.equals(".")) continue;
-				if (token.indexOf("(") > 0) {
-					Method[] methods=aClass.getMethods();
-					for (Method method : methods) {
-						if (method.getName().equals(token.substring(0,token.indexOf("(")))){
-							aClass = method.getReturnType();
-							hasDotExp = true;
-							break;
-						}
-					}
-				} else {
-					try {
-						aClass=aClass.getDeclaredField(token).getType();
-						hasDotExp = true;
-						break;
-					} catch (NoSuchFieldException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}
-		return getAllMember(aClass,completionType,hasDotExp);
+		return aClass;
 	}
 	
 	@SuppressWarnings("unchecked")

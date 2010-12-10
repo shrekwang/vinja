@@ -3,6 +3,8 @@ import vim
 import os.path
 import time
 import re
+import traceback
+import StringIO
 from xml.etree.ElementTree import ElementTree
 from subprocess import Popen
 from pyparsing import *
@@ -167,24 +169,15 @@ class Talker(object):
         return data
 
     @staticmethod
-    def getMemberList(classnameList,xmlPath,memberType,expTokens):
+    def getMemberList( args ):
         params = dict()
+        sourceFile ,classnameList,xmlPath,memberType,expTokens = args
         params["cmd"]="completion"
+        params["sourceFile"] = sourceFile
         params["completionType"] = memberType
         params["classnames"] = ",".join(classnameList)
         params["classPathXml"] = xmlPath
         params["expTokens"] = ",".join(expTokens)
-        data = Talker.send(params)
-        return data
-
-    @staticmethod
-    def getSuperFieldMemberList(superClassList,xmlPath,varName):
-        params = dict()
-        params["cmd"]="completion"
-        params["completionType"] = "superfieldmember"
-        params["superClass"] = ",".join(superClassList)
-        params["classPathXml"] = xmlPath
-        params["varNames"] = varName
         data = Talker.send(params)
         return data
 
@@ -652,7 +645,8 @@ class Parser(object):
     @staticmethod
     def getJavaDotExpParser():
         java_exp = Forward()
-        func_param = "("+Suppress(Optional(delimitedList(java_exp))) + ")"
+        param_atom = java_exp | Optional('"')+Word(alphanums)+Optional('"')  
+        func_param = "("+Suppress(Optional(delimitedList(param_atom))) + ")"
         atom_exp =  Combine(Word(alphas,alphanums) + Optional(func_param))
         java_exp << atom_exp + Optional(OneOrMore("." + atom_exp))
         comp_exp = java_exp + Optional(".") +  lineEnd
@@ -780,7 +774,10 @@ class SzJdeCompletion(object):
             try :
                 result = SzJdeCompletion.getCompleteResult(base)
             except Exception , e :
-                logging.debug("completion error: %s" % str(e) )
+                fp = StringIO.StringIO()
+                traceback.print_exc(file=fp)
+                message = fp.getvalue()
+                logging.debug(message)
                 result = []
             cmd = "let g:SzJdeCompletionResult = %s" % result
         vim.command(cmd)
@@ -850,6 +847,8 @@ class SzJdeCompletion(object):
         dotExpParser = Parser.getJavaDotExpParser()
         expTokens = dotExpParser.searchString(line[0:col])[0]
         varName = expTokens[0]
+        superClass = Parser.getSuperClass()
+        # expTokens not include base and type
         if expTokens[-1] != "." :
             expTokens = expTokens[1:-1]
         else :
@@ -859,27 +858,32 @@ class SzJdeCompletion(object):
         #pat = re.compile("^%s.*" %base, re.IGNORECASE)
         result = []
 
+
         if varName[0].isupper():
             classname = varName
             completionType = "classmember"
-        elif varName == "super" or varName == "this" :
-            classname = Parser.getSuperClass()
+        elif varName == "super" :
+            classname = superClass
+            completionType = "inheritmember"
+        elif varName == "this" :
+            classname = "this"
             completionType = "inheritmember"
         else :
             classname = Parser.getVarType(varName,row-1)
             completionType = "objectmember"
 
         if not classname :
-            classname = varName
+            if not superClass : return []
+            expTokens.insert(0,varName)
+            classname = superClass
+            completionType = "inheritmember"
 
         classNameList = Parser.getFullClassNames(classname)
-        memberInfos = Talker.getMemberList(classNameList,classPathXml,completionType,expTokens).split("\n")
-        if memberInfos == None or ( len(memberInfos) ==1 and memberInfos[0] == "") :
-            superClassList = Parser.getAllSuperClassFullNames()
-            memberInfos = Talker.getSuperFieldMemberList(superClassList,classPathXml,varName).split("\n")
+        params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
+        memberInfos = Talker.getMemberList(params).split("\n")
         result = SzJdeCompletion.buildCptDictArrary(memberInfos, pat)
 
-        if varName == "this" :
+        if varName == "this" and expTokens:
             members = Parser.parseAllMemberInfo(vim_buffer)
             for mname,mtype,rtntype,lineNum in members :
                 if not pat.match(mname): continue

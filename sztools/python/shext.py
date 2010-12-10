@@ -127,7 +127,7 @@ class LsCmd(object):
                 filetype = self.file_types.get(colValue)
                 if filetype :
                     start,end = col_bounds[colIndex]
-                    colorInfo = """syn match shext%s "\%%%sl\%%>%sc.\%%<%sc" """ %(filetype,rowIndex+1,start,end)
+                    colorInfo = """syn match shext%s "\%%%sl\%%>%sv.\%%<%sv" """ %(filetype,rowIndex+1,start,end)
                     self.colorInfos.append(colorInfo)
 
         nnlist = []
