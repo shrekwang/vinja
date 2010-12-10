@@ -107,7 +107,8 @@ public class CompilerContext {
 				srcLocations.add(entryAbsPath);
 			} else if (entry.kind.equals("output")) {
 				File libFile = new File(entryAbsPath);
-				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {}
+				//output path should be searched first in classpath
+				try { classPathUrls.add(0, libFile.toURL()); } catch (Exception e) {}
 				outputDir=entryAbsPath;
 			} else if (entry.kind.equals("con")) {
 				addUserLib(entry.path);
