@@ -3,8 +3,8 @@ package com.google.code.vimsztool.server;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_CLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_CLASSMEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_CONSTRUCTOR;
-import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_OBJECTMEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_INHERITMEMBER;
+import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_OBJECTMEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_PACKAGE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CPT_TYPE_SUPER_FIELD_MEMBER;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASSPATHXML;
@@ -151,12 +151,19 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		ClassInfo classInfo = new ClassInfo();
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
 		LinkedList<Class> classList = new LinkedList<Class>();
-		Class tmpClass =  aClass;
-		while (true) {
-			classList.add(tmpClass);
-			tmpClass =  tmpClass.getSuperclass();
-			if (tmpClass == null) break;
-			if (tmpClass.getName().equals("java.lang.Object")) break;
+		if (aClass.isInterface()) {
+			classList.add(aClass);
+			for (Class tmpIntf : aClass.getInterfaces()) {
+				classList.add(tmpIntf);
+			}
+		} else {
+			Class tmpClass =  aClass;
+			while (true) {
+				classList.add(tmpClass);
+				tmpClass =  tmpClass.getSuperclass();
+				if (tmpClass == null) break;
+				if (tmpClass.getName().equals("java.lang.Object")) break;
+			}
 		}
 		for (Class cls : classList) {
 			List<MemberInfo> tmpInfoList = null;
