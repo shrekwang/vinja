@@ -14,6 +14,7 @@ import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.ICompilerRequestor;
 
 import com.google.code.vimsztool.util.Preference;
+import com.sun.naming.internal.FactoryEnumeration;
 
 public class CompilerRequestor implements ICompilerRequestor {
 	
@@ -50,7 +51,9 @@ public class CompilerRequestor implements ICompilerRequestor {
                     String filename=String.valueOf(problem.getOriginatingFileName());
                     sb.append(filename).append(FIELD_SEPERATOR);
                     sb.append(problem.getSourceLineNumber()).append(FIELD_SEPERATOR);
-                    sb.append(problem.getMessage()).append("\n");
+                    sb.append(problem.getMessage()).append(FIELD_SEPERATOR);
+                    sb.append(problem.getSourceStart()).append(FIELD_SEPERATOR);
+                    sb.append(problem.getSourceEnd()).append("\n");
                     problemList.add(sb.toString());
                     
                     if (problem.isError()) {

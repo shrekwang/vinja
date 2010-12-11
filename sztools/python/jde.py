@@ -395,9 +395,22 @@ class EditUtil(object):
 class Compiler(object):
 
     @staticmethod
+    def highlightErrorGroup(errorRow,start,end):
+        errorRow,start,end = int(errorRow), int(start), int(end)
+        vim_buffer = vim.current.buffer
+        charCount = 0
+        for row in vim_buffer[0:errorRow-1] :
+            charCount += len(row) + 1
+        rowStart = 0 if start - charCount < 0 else start - charCount
+        rowEnd = end - charCount + 3
+        syncmd = """syn match SzjdeError "\%%%sl\%%>%sc.\%%<%sc" """ %(errorRow, rowStart, rowEnd)
+        vim.command(syncmd)
+
+    @staticmethod
     def compileCurrentFile():
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
+
         line = vim_buffer[row-1]
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
@@ -407,15 +420,21 @@ class Compiler(object):
         errorMsgList = resultText.split("\n")
         hasError = False
         qflist = []
+        vim.command("highlight link SzjdeError SpellBad")
+        vim.command("syntax clear SzjdeError")
         for line in errorMsgList:
             if line.strip() == "" : continue
             try :
-                errorType,filename,lnum,text = line.split("::")
+                errorType,filename,lnum,text,lstart,lend = line.split("::")
                 bufnr=str(vim.eval("bufnr('%')"))
+                Compiler.highlightErrorGroup(lnum,lstart,lend)
                 qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
                 qflist.append(qfitem)
             except Exception , e:
-                logging.debug("error line is '%s', error msg is %s " % (line,str(e)))
+                fp = StringIO.StringIO()
+                traceback.print_exc(file=fp)
+                message = fp.getvalue()
+                logging.debug(message)
 
         vim.command("call setqflist(%s)" % qflist)
         if len(errorMsgList) > 0 :
