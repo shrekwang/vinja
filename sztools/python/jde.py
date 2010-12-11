@@ -403,8 +403,12 @@ class Compiler(object):
             charCount += len(row) + 1
         rowStart = 0 if start - charCount < 0 else start - charCount
         rowEnd = end - charCount + 3
+        signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
+        bufnr=str(vim.eval("bufnr('%')"))
+        signcmd =signcmd.substitute(id=errorRow,lnum=errorRow,name="SzjdeError", nr=bufnr)
         syncmd = """syn match SzjdeError "\%%%sl\%%>%sc.\%%<%sc" """ %(errorRow, rowStart, rowEnd)
         vim.command(syncmd)
+        vim.command(signcmd)
 
     @staticmethod
     def compileCurrentFile():
@@ -421,7 +425,9 @@ class Compiler(object):
         hasError = False
         qflist = []
         vim.command("highlight link SzjdeError SpellBad")
+        vim.command("sign define SzjdeError text=>> texthl=ErrorMsg")
         vim.command("syntax clear SzjdeError")
+        vim.command("sign unplace *")
         for line in errorMsgList:
             if line.strip() == "" : continue
             try :
@@ -441,6 +447,8 @@ class Compiler(object):
             vim.command("cw")
             listwinnr=str(vim.eval("winnr('#')"))
             vim.command("exec '%s wincmd w'" % listwinnr)
+        if len(qflist) > 0 :
+            vim.command("cfirst")
 
     @staticmethod
     def copyResource():
