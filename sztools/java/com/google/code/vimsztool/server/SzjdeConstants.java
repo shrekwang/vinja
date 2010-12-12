@@ -10,6 +10,7 @@ public class SzjdeConstants {
 	public final static String CMD_DUMP_CLASS="dumpClass";
 	public final static String CMD_OVERIDE="overide";
 	public final static String CMD_COPY_RESOURCE="copyResource";
+	public final static String CMD_SET_HOTSWAP="setHotswap";
 	public final static String CMD_RUN_SYS="runSys";
 	public final static String CMD_FETCH_RESULT="fetchResult";
 	
@@ -28,6 +29,8 @@ public class SzjdeConstants {
 	public final static String PARAM_JOB_ID="jobId";
 	public final static String PARAM_ARGS="args";
 	public final static String PARAM_PWD="pwd";
+	public final static String PARAM_HOTSWAP_ENABLED="hotSwapEnabled";
+	public final static String PARAM_HOTSWAP_PORT="hotSwapPort";
 	
 	public final static String CPT_TYPE_PACKAGE="package";
 	public final static String CPT_TYPE_CLASS="class";

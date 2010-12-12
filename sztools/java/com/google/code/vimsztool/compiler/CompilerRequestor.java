@@ -14,20 +14,19 @@ import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.ICompilerRequestor;
 
 import com.google.code.vimsztool.util.Preference;
-import com.sun.naming.internal.FactoryEnumeration;
 
 public class CompilerRequestor implements ICompilerRequestor {
 	
-	 private List<String> problemList ; 
 	 private CompilerContext ctx;
+	 private CompileResultInfo compileResult;
 	 private Preference pref = Preference.getInstance();
 	 private boolean ignoreWarning ;
 	 
 	 private static final String FIELD_SEPERATOR="::";
 	 
-	 public CompilerRequestor(CompilerContext ctx, List<String> problemList) {
+	 public CompilerRequestor(CompilerContext ctx,  CompileResultInfo compileResult) {
 		 this.ctx = ctx;
-		 this.problemList=problemList;
+		 this.compileResult = compileResult;
 		 String ignoreStr = pref.getValue(Preference.JDE_COMPILE_IGNORE_WARING);
 		 this.ignoreWarning = ignoreStr.equals("true") ? true : false;
 	 }
@@ -54,14 +53,16 @@ public class CompilerRequestor implements ICompilerRequestor {
                     sb.append(problem.getMessage()).append(FIELD_SEPERATOR);
                     sb.append(problem.getSourceStart()).append(FIELD_SEPERATOR);
                     sb.append(problem.getSourceEnd()).append("\n");
-                    problemList.add(sb.toString());
+                    compileResult.addProblemInfo(sb.toString());
                     
                     if (problem.isError()) {
                     	errorList.add(problem);
                     }
                 }
             }
+        	compileResult.setError(true);
             if (errorList.isEmpty()) {
+            	compileResult.setError(false);
                 ClassFile[] classFiles = result.getClassFiles();
                 for (int i = 0; i < classFiles.length; i++) {
                     ClassFile classFile = classFiles[i];
@@ -76,16 +77,17 @@ public class CompilerRequestor implements ICompilerRequestor {
                         sep = ".";
                     }
                     byte[] bytes = classFile.getBytes();
-                    String outFile = ctx.getOutputDir() + "/" + 
-                    className.replace('.', '/') + ".class";
+                    String outFile = ctx.getOutputDir() + "/" + className.replace('.', '/') + ".class";
                     File parentFile=new File(outFile).getParentFile();
                     if (!parentFile.exists()) parentFile.mkdirs();
-                    FileOutputStream fout = 
-                        new FileOutputStream(outFile);
-                    BufferedOutputStream bos = 
-                        new BufferedOutputStream(fout);
+                    FileOutputStream fout = new FileOutputStream(outFile);
+                    BufferedOutputStream bos = new BufferedOutputStream(fout);
                     bos.write(bytes);
                     bos.close();
+                    
+                    compileResult.addOutputInfo(className, outFile);
+                    
+                    
                 }
             }
             ctx.createNewClassLoader(); 

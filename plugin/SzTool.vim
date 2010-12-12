@@ -367,6 +367,15 @@ function RunAntBuild(...)
   endif
 endfunction 
 
+function JdeHotSwapEnable(port)
+  python Talker.hotswapEnabled("true",vim.eval("a:port"))
+endfunction 
+
+function JdeHotSwapDisable()
+  python Talker.hotswapEnabled("false")
+endfunction 
+
+
 function JdeDotCompletion()
   return  ".\<C-X>\<C-O>"
 endfunction
@@ -394,6 +403,8 @@ function! Jdext()
   command! -nargs=0   InitProject  :python ProjectManager.initProject()
   command! -nargs=?   Ant          :call RunAntBuild('<args>')
   command! -nargs=1   FetchResult  :call FetchResult('<args>')
+  command! -nargs=0   StopHotswap  :call JdeHotSwapDisable()
+  command! -nargs=1   StartHotswap  :call JdeHotSwapEnable('<args>')
 endfunction
 
 command! -nargs=1 Example       :call WatchExample('<args>')

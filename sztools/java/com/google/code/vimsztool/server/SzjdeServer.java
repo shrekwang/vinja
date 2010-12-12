@@ -10,6 +10,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_SET_HOTSWAP;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -103,6 +104,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeSystemCommand(cmdStr);
 	   } else if (cmdStr.equals(CMD_LOCATEDB)) {
 		   szjdeCommand = new SzjdeLocatedbCommand();
+	   } else if (cmdStr.equals(CMD_SET_HOTSWAP)) {
+		   szjdeCommand = new SzjdeHotswapCommand();
 	   }
 	   if (szjdeCommand == null) {
 		   return ("can't find the command '"+cmdStr+"' definition.");

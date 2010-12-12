@@ -42,7 +42,7 @@ public class JDTCompiler  {
      * Compile the servlet from .java file to .class file
      */
     @SuppressWarnings({ "unchecked", "deprecation" })
-	public List<String> generateClass( final String sourceFile ) {
+	public CompileResultInfo generateClass( final String sourceFile ) {
         
     	String targetClassName=ctx.buildClassName(sourceFile);
         String[] fileNames = new String[] {sourceFile};
@@ -85,8 +85,8 @@ public class JDTCompiler  {
         final IProblemFactory problemFactory = 
             new DefaultProblemFactory(Locale.getDefault());
         
-        List<String> problemList = new ArrayList<String>();
-        final ICompilerRequestor requestor = new CompilerRequestor(ctx,problemList);
+        CompileResultInfo compileResult = new CompileResultInfo();
+        final ICompilerRequestor requestor = new CompilerRequestor(ctx,compileResult);
 
         ICompilationUnit[] compilationUnits = 
             new ICompilationUnit[classNames.length];
@@ -99,7 +99,7 @@ public class JDTCompiler  {
         
        
         
-        return problemList;
+        return compileResult;
         
     }
     

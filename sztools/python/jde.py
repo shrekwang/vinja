@@ -254,6 +254,16 @@ class Talker(object):
         data = Talker.send(params)
         return data
 
+    @staticmethod
+    def hotswapEnabled(enabled,port=None):
+        params = dict()
+        params["cmd"]="setHotswap"
+        params["hotSwapEnabled"] = enabled
+        if enabled == "true" and port != None :
+            params["hotSwapPort"] = port
+        data = Talker.send(params)
+        return data
+
 class EditUtil(object):
 
     @staticmethod
