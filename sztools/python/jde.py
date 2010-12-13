@@ -409,8 +409,13 @@ class Compiler(object):
         errorRow,start,end = int(errorRow), int(start), int(end)
         vim_buffer = vim.current.buffer
         charCount = 0
+        fileformat = vim.eval("&fileformat")
+        newLineCount =1 
+        if fileformat == "dos" :
+            newLineCount = 2
+
         for row in vim_buffer[0:errorRow-1] :
-            charCount += len(row) + 1
+            charCount += len(row) +  newLineCount
         rowStart = 0 if start - charCount < 0 else start - charCount
         rowEnd = end - charCount + 3
         signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
