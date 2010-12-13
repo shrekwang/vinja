@@ -71,6 +71,8 @@ def startAgent():
     else :
         swtLibPath = os.path.join(libpath,"swt-linux/swt.jar")
     cps.append(swtLibPath)
+    toolsJarPath = os.path.join(os.getenv("JAVA_HOME"),"lib/tools.jar")
+    cps.append(toolsJarPath)
     cmdArray.append("-classpath")
     cmdArray.append(os.path.pathsep.join(cps))
     cmdArray.append('-Djava.library.path=%s' % libpath )

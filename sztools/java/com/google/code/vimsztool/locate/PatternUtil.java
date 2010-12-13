@@ -53,6 +53,9 @@ public class PatternUtil {
 			case '?':
 				sb.append(".");
 				break;
+			case '/':
+				sb.append(Pattern.quote(File.separator));
+				break;
 			default:
 				sb.append(Pattern.quote(String.valueOf(c)));
 			}
