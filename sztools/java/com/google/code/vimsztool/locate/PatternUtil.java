@@ -29,6 +29,8 @@ public class PatternUtil {
 	}
 
 	public static boolean isExclude(String excludes, File file) {
+		
+		if (isVcsMetaData(file)) return true;
 		List<Pattern> excludePatterns=getPatternList(excludes);
 		if (excludePatterns.size() == 0) return false;
 		String name = file.getAbsolutePath();
@@ -36,6 +38,15 @@ public class PatternUtil {
 			Matcher matcher = pat.matcher(name);
 			if (matcher.matches())
 				return true;
+		}
+		return false;
+	}
+	
+	private static boolean isVcsMetaData(File file) {
+		String[] metaPatterns = new String[] {".svn",".hg",".git",".cvs"};
+		String path = file.getPath();
+		for (String pat : metaPatterns ) {
+			if (path.indexOf(pat) > -1) return true;
 		}
 		return false;
 	}
