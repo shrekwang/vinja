@@ -381,9 +381,7 @@ class EditUtil(object):
             matched_row = 0
             lines = open(abs_path,"r").readlines()
             members = Parser.parseAllMemberInfo(lines)
-            for name,mtype,rtntype,lineNum in members :
-                if mtype == "method" :
-                    name = name[0 : name.find("(")]
+            for name,mtype,rtntype,param,lineNum in members :
                 if name == memberName :
                     matched_row = lineNum
             vim.command("edit %s" % abs_path)
@@ -596,7 +594,7 @@ class Parser(object):
     def parseAllMemberInfo(lines):
         memberInfo = []
         scopeCount = 0
-        methodPat = re.compile(r"(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+\s*\(.*\))")
+        methodPat = re.compile(r"(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*\((?P<param>.*\))")
         assignPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*=")
         defPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*;")
         for lineNum,line in enumerate(lines) :
@@ -621,7 +619,11 @@ class Parser(object):
                 if search_res :
                     name = search_res.group("name")
                     rtntype = search_res.group("rtntype")
-                    memberInfo.append((name,mtype,rtntype,lineNum+1))
+                    if mtype == "method" :
+                        param = search_res.group("param")
+                    else :
+                        param = ""
+                    memberInfo.append((name,mtype,rtntype,param,lineNum+1))
             if "{" in line :
                 scopeCount = scopeCount + 1
             if "}" in lines[lineNum] :
@@ -925,15 +927,20 @@ class SzJdeCompletion(object):
         memberInfos = Talker.getMemberList(params).split("\n")
         result = SzJdeCompletion.buildCptDictArrary(memberInfos, pat)
 
-        if varName == "this" and expTokens:
+        if varName == "this" and len(expTokens) < 2 :
             members = Parser.parseAllMemberInfo(vim_buffer)
-            for mname,mtype,rtntype,lineNum in members :
+            for mname,mtype,rtntype,param,lineNum in members :
                 if not pat.match(mname): continue
                 menu = dict()
-                #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
-                menu["word"] = mname
                 menu["menu"] = rtntype
                 menu["icase"] = "1"
+                menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
+                if mtype == "method" :
+                    menu["word"] = mname + "("
+                    menu["menu"] = "%s %s(%s)" % (rtntype, mname,param)
+                else :
+                    menu["word"] = mname
+                    menu["menu"] = rtntype
                 result.append(menu)
         return result
 
@@ -946,12 +953,14 @@ class SzJdeCompletion(object):
             mtype,mname,mparams,mreturntype,mexceptions = memberInfo.split(":")
             if not pat.match(mname): continue
             menu = dict()
-            menu["word"] = mname
             menu["icase"] = "1"
-            #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
+            menu["dup"] = "1"
+            menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
             if mtype == "method" :
+                menu["word"] = mname + "("
                 menu["menu"] = "%s %s(%s)" % (mreturntype, mname,mparams)
             else :
+                menu["word"] = mname
                 menu["menu"] = mreturntype
             result.append(menu)
         return result
@@ -959,11 +968,11 @@ class SzJdeCompletion(object):
     @staticmethod
     def getMemberTypeAbbr(mtype):
         if mtype=="method":
-            return "m"
-        if mtype=="field":
             return "f"
+        if mtype=="field":
+            return "v"
         if mtype=="constructor":
-            return "c"
+            return "d"
         return "x"
 
     @staticmethod

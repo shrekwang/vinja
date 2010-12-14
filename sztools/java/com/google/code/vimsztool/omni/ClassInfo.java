@@ -81,7 +81,7 @@ public class ClassInfo {
 	
 	public boolean isValidateModifier(boolean staticMember,boolean protectedMember,int mod) {
 		if (staticMember && ! Modifier.isStatic(mod)) return false;
-		if (!staticMember && Modifier.isStatic(mod)) return false;
+		//if (!staticMember && Modifier.isStatic(mod)) return false;
 		if (protectedMember ) {
 			if ( Modifier.isProtected(mod) || Modifier.isPublic(mod)) return true;
 		} else {

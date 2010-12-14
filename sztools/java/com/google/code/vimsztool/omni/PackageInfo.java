@@ -20,12 +20,12 @@ import org.apache.commons.io.FilenameUtils;
 
 public class PackageInfo {
 	
-	private static Map<String,Set<String>> cache = new HashMap<String,Set<String>>();
-	private static Map<String, String> cachedPath = new HashMap<String,String>();
+	private Map<String,Set<String>> cache = new HashMap<String,Set<String>>();
+	private Map<String, String> cachedPath = new HashMap<String,String>();
 	
 	
 	
-	public static List<String> findClass(String nameStart) {
+	public List<String> findClass(String nameStart) {
 		List<String> result = new ArrayList<String>();
 		for (String pkgname : cache.keySet()) {
 			Set<String> classNames = cache.get(pkgname);
@@ -39,7 +39,7 @@ public class PackageInfo {
 	}
     
 	
-	public static List<String> findPackage(String className) {
+	public List<String> findPackage(String className) {
 		List<String> result = new ArrayList<String>();
 		for (String pkgname : cache.keySet()) {
 			if (cache.get(pkgname).contains(className)) {
@@ -49,7 +49,7 @@ public class PackageInfo {
 		return result;
 	}
 	
-	private static void addClassNameToCache(String className) {
+	private void addClassNameToCache(String className) {
 		//don't cache class under sun or com.sun package
 		if (className == null || className.startsWith("sun") 
 				|| className.startsWith("com.sun")) return ;
@@ -71,8 +71,7 @@ public class PackageInfo {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static void cacheClassNameInDist(String outputDir) {
-		Map<String,Set<String>> result = new HashMap<String,Set<String>>();
+	public void cacheClassNameInDist(String outputDir) {
 		File dir = new File(outputDir) ;
 		Iterator it=FileUtils.iterateFiles(dir, new String[] {"class"}	,true);
 		while (it.hasNext()) {
@@ -84,7 +83,7 @@ public class PackageInfo {
 		}
 	}
 	
-	public static void cacheClassNameInJar(String path) {
+	public void cacheClassNameInJar(String path) {
 		File file = new File(path);
 		if (! file.exists()) return;
 		String hadCached=cachedPath.get(path);
@@ -105,7 +104,7 @@ public class PackageInfo {
 		return ;
 	}
 	
-	public static void  cacheSystemRtJar() {
+	public void  cacheSystemRtJar() {
 		String javaHome=System.getProperty("java.home");
 		File rtjarFile=new File(FilenameUtils.concat(javaHome, "jre/lib/rt.jar"));
 		if (! rtjarFile.exists())
@@ -115,7 +114,7 @@ public class PackageInfo {
 	}
 	 
 
-	public static List<String> getClassesForPackage(String pkgname,ClassLoader classLoader) {
+	public List<String> getClassesForPackage(String pkgname,ClassLoader classLoader) {
 	    List<String> classNames=new ArrayList<String>();
 	    File directory = null;
 	    String fullPath;
