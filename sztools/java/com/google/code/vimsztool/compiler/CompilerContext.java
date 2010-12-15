@@ -34,6 +34,7 @@ public class CompilerContext {
 	private List<String> srcLocations=new ArrayList<String>();
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	private Preference pref = Preference.getInstance();
+	private PackageInfo packageInfo = new PackageInfo();
 	
 	
 	public CompilerContext(String classPathXml) {
@@ -124,14 +125,14 @@ public class CompilerContext {
 	}
 	
 	private void cachePackageInfo(URL[] urls,String outputDir) {
-		PackageInfo.cacheSystemRtJar();
+		packageInfo.cacheSystemRtJar();
 		for (URL url : urls) {
 			String path = url.getPath();
 			if (path.endsWith(".jar")) {
-				PackageInfo.cacheClassNameInJar(path);
+				packageInfo.cacheClassNameInJar(path);
 			}
 		}
-		PackageInfo.cacheClassNameInDist(outputDir);
+		packageInfo.cacheClassNameInDist(outputDir);
 	}
 	
 	private Map<String,String> parseJdeXmlFile(String jdeXmlPath ) {
@@ -289,6 +290,10 @@ public class CompilerContext {
 
 	public String getProjectRoot() {
 		return projectRoot;
+	}
+
+	public PackageInfo getPackageInfo() {
+		return packageInfo;
 	}
 
 

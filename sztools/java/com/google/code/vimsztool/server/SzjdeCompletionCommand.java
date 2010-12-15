@@ -48,7 +48,8 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 	public String completeClass(String classPathXml, String nameStart) {
 		if (classPathXml ==null || nameStart == null) return "";
 		CompilerContext ctx = getCompilerContext(classPathXml);
-		List<String> classNameList=PackageInfo.findClass(nameStart);
+		PackageInfo packageInfo = ctx.getPackageInfo();
+		List<String> classNameList=packageInfo.findClass(nameStart);
 		StringBuilder sb=new StringBuilder();
 		for (String name : classNameList) {
 			sb.append(name).append("\n");
@@ -164,6 +165,9 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 			Class tmpClass =  aClass;
 			while (true) {
 				classList.add(tmpClass);
+				for (Class tmpIntf : tmpClass.getInterfaces()) {
+					classList.add(tmpIntf);
+				}
 				tmpClass =  tmpClass.getSuperclass();
 				if (tmpClass == null) break;
 				if (tmpClass.getName().equals("java.lang.Object")) break;
@@ -200,7 +204,8 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 	public String completePackage(String classPathXml, String pkgname) {
 		CompilerContext ctx = getCompilerContext(classPathXml);
 		ReflectAbleClassLoader classLoader = ctx.getClassLoader();
-		List<String> subNames=PackageInfo.getClassesForPackage(pkgname, classLoader);
+		PackageInfo packageInfo = ctx.getPackageInfo();
+		List<String> subNames=packageInfo.getClassesForPackage(pkgname, classLoader);
 		StringBuilder sb=new StringBuilder();
 		for (String name : subNames) {
 			sb.append(name).append("\n");

@@ -100,6 +100,7 @@ public class FileSystemDb  implements JNotifyListener {
     		dirInfo.setAlias(valueArray[1]);
     		dirInfo.setExcludes(valueArray[2]);
     		dirInfo.setDepth(Integer.parseInt(valueArray[3]));
+    		result.add(dirInfo);
     	}
     	return result;
 	}

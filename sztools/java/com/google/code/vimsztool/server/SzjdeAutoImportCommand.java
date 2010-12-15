@@ -2,6 +2,7 @@ package com.google.code.vimsztool.server;
 
 import java.util.List;
 
+import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.omni.PackageInfo;
 
 public class SzjdeAutoImportCommand extends SzjdeCommand  {
@@ -11,14 +12,16 @@ public class SzjdeAutoImportCommand extends SzjdeCommand  {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
 		String currentPkg = params.get(SzjdeConstants.PARAM_PKG_NAME);
 		String[] varNames = params.get(SzjdeConstants.PARAM_VAR_NAMES).split(",");
-		getCompilerContext(classPathXml);
+		CompilerContext ctx = getCompilerContext(classPathXml);
+		PackageInfo packageInfo =ctx.getPackageInfo();
 		
 		StringBuilder sb = new StringBuilder();
 		for (String varName : varNames ) {
 			varName = varName.trim();
 			if (isKeyword(varName)) continue;
 			StringBuilder tmpSb = new StringBuilder();
-			List<String> binClassNames=PackageInfo.findPackage(varName);
+			
+			List<String> binClassNames=packageInfo.findPackage(varName);
 			if (binClassNames.size() == 0) continue;
 			boolean noNeedImport = false;
 			for (String binClassName : binClassNames) {
