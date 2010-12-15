@@ -563,10 +563,15 @@ class AutoImport(object):
         if not currentPackage :
             currentPackage = ""
 
-        # upercase words except preceded by "."
-        pat = re.compile(r"\b(?<!\.)[A-Z]\w+\b")
         searchText = "\n".join(vim_buffer)
-        var_type_set=set(pat.findall(searchText))
+        #remove comments
+        commentPat = re.compile(r"(\/\*.*?\*\/)|((\/\/.*?)(?=\n))", re.DOTALL)
+        searchText = commentPat.sub("",searchText)
+
+        # upercase words except preceded by "."
+        classNamePat = re.compile(r"\b(?<!\.)[A-Z]\w+\b")
+        var_type_set=set(classNamePat.findall(searchText))
+
         varNames=",".join(var_type_set)
         resultText = Talker.autoImport(classPathXml,varNames,currentPackage)
         lines = resultText.split("\n")
