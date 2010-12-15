@@ -869,7 +869,8 @@ class SzJdeCompletion(object):
         vim_buffer = vim.current.buffer
         bufferText = "\n".join([vim_buffer[row] for row in visibleRowNum])
         #bufferText = "\n".join([line for line in vim.current.buffer])
-        pattern = r"\b%s\w+\b" % base.replace("*","\S+")
+
+        pattern = r"\b%s\w*\b" % base.replace("*","\w*")
         matches = re.findall(pattern,bufferText)
         if not matches :
             matches = re.findall(pattern,bufferText,re.IGNORECASE)
@@ -1000,6 +1001,7 @@ class SzJdeCompletion(object):
                     for className in classNameList :
                         menu = dict()
                         menu["kind"] = "c"
+                        menu["dup"] = "1"
                         menu["word"] = className[ className.rfind(".") + 1 : ]
                         menu["menu"] = className
                         result.append(menu)
