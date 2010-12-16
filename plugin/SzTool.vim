@@ -380,6 +380,14 @@ function JdeDotCompletion()
   return  ".\<C-X>\<C-O>"
 endfunction
 
+function DisplayMsg(msg)
+    let x=&ruler | let y=&showcmd
+    set noruler noshowcmd
+    redraw
+    echo strpart(a:msg, 0, &columns-1)
+    let &ruler=x | let &showcmd=y
+endfun
+
 function! Jdext()
   call RunSzPyfile("jde.py")
   python startAgent()
@@ -387,6 +395,8 @@ function! Jdext()
   autocmd BufEnter     *.java      setlocal omnifunc=SzJdeCompletion
   autocmd BufEnter     *.java      nmap <silent><leader>, :python Runner.runCurrentFile()<cr>
   autocmd BufNewFile   *.java      python EditUtil.createSkeleton()
+  autocmd BufEnter     *.java      au CursorHold <buffer> :python Compiler.displayMsg()
+  autocmd BufEnter     *.java      au CursorMoved <buffer> :python Compiler.displayMsg()
   if exists("*SuperTabSetDefaultCompletionType")
     autocmd BufEnter *.java        call SuperTabSetDefaultCompletionType("<c-x><c-o>")
   endif
@@ -406,6 +416,7 @@ function! Jdext()
   command! -nargs=0   StopHotswap  :call JdeHotSwapDisable()
   command! -nargs=1   StartHotswap  :call JdeHotSwapEnable('<args>')
 endfunction
+
 
 command! -nargs=1 Example       :call WatchExample('<args>')
 command! -nargs=1 Dict          :call SearchDict('<args>')
