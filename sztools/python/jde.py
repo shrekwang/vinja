@@ -403,7 +403,27 @@ class EditUtil(object):
 class Compiler(object):
 
     @staticmethod
-    def highlightErrorGroup(errorRow,start,end):
+    def displayMsg():
+        allErrorMsg = globals().get("allErrorMsg")
+        if allErrorMsg == None :
+            return 
+        vim_buffer = vim.current.buffer
+        bufErrorMsg = allErrorMsg.get(vim_buffer.name)
+        if bufErrorMsg == None : 
+            return
+        (row,col) = vim.current.window.cursor
+        errorText = bufErrorMsg.get(str(row))
+        if errorText == None :
+            return
+        vim.command("call DisplayMsg('%s')" % errorText)
+
+    @staticmethod
+    def highlightErrorGroup(errorRow,start,end,errorType):
+        if errorType == "W" :
+            group = "SzjdeWarning"
+        else :
+            group = "SzjdeError"
+
         errorRow,start,end = int(errorRow), int(start), int(end)
         vim_buffer = vim.current.buffer
         charCount = 0
@@ -418,8 +438,8 @@ class Compiler(object):
         rowEnd = end - charCount + 3
         signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
         bufnr=str(vim.eval("bufnr('%')"))
-        signcmd =signcmd.substitute(id=errorRow,lnum=errorRow,name="SzjdeError", nr=bufnr)
-        syncmd = """syn match SzjdeError "\%%%sl\%%>%sc.\%%<%sc" """ %(errorRow, rowStart, rowEnd)
+        signcmd =signcmd.substitute(id=errorRow,lnum=errorRow,name=group, nr=bufnr)
+        syncmd = """syn match %s "\%%%sl\%%>%sc.\%%<%sc" """ %(group, errorRow, rowStart, rowEnd)
         vim.command(syncmd)
         vim.command(signcmd)
 
@@ -438,15 +458,22 @@ class Compiler(object):
         hasError = False
         qflist = []
         vim.command("highlight link SzjdeError SpellBad")
+        vim.command("highlight link SzjdeWarning SpellLocal")
         vim.command("sign define SzjdeError text=>> texthl=ErrorMsg")
+        vim.command("sign define SzjdeWarning text=>> texthl=TODO")
         vim.command("syntax clear SzjdeError")
+        vim.command("syntax clear SzjdeWarning")
         vim.command("sign unplace *")
+        global allErrorMsg 
+        allErrorMsg = {}
+        bufErrorMsg = {} 
         for line in errorMsgList:
             if line.strip() == "" : continue
             try :
                 errorType,filename,lnum,text,lstart,lend = line.split("::")
+                bufErrorMsg[lnum]=text
                 bufnr=str(vim.eval("bufnr('%')"))
-                Compiler.highlightErrorGroup(lnum,lstart,lend)
+                Compiler.highlightErrorGroup(lnum,lstart,lend,errorType)
                 qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
                 qflist.append(qfitem)
             except Exception , e:
@@ -454,14 +481,17 @@ class Compiler(object):
                 traceback.print_exc(file=fp)
                 message = fp.getvalue()
                 logging.debug(message)
+        allErrorMsg[current_file_name] = bufErrorMsg
 
         vim.command("call setqflist(%s)" % qflist)
+        """
         if len(errorMsgList) > 0 :
             vim.command("cw")
             listwinnr=str(vim.eval("winnr('#')"))
             vim.command("exec '%s wincmd w'" % listwinnr)
         if len(qflist) > 0 :
             vim.command("cfirst")
+        """
 
     @staticmethod
     def copyResource():
