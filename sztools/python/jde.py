@@ -433,9 +433,11 @@ class Compiler(object):
             newLineCount = 2
 
         for row in vim_buffer[0:errorRow-1] :
-            charCount += len(row) +  newLineCount
+            charCount += len(unicode(row)) +  newLineCount
         rowStart = 0 if start - charCount < 0 else start - charCount
         rowEnd = end - charCount + 3
+        if rowEnd < 0 :
+            rowEnd = rowStart + len(unicode(vim_buffer[errorRow]))  
         signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
         bufnr=str(vim.eval("bufnr('%')"))
         signcmd =signcmd.substitute(id=errorRow,lnum=errorRow,name=group, nr=bufnr)
