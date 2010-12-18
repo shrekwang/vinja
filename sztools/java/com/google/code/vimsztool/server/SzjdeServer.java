@@ -11,6 +11,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_SET_HOTSWAP;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -106,6 +107,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeLocatedbCommand();
 	   } else if (cmdStr.equals(CMD_SET_HOTSWAP)) {
 		   szjdeCommand = new SzjdeHotswapCommand();
+	   } else if (cmdStr.endsWith(CMD_PROJECT_CLEAN)) {
+		   szjdeCommand = new SzjdeProjectClean();
 	   }
 	   if (szjdeCommand == null) {
 		   return ("can't find the command '"+cmdStr+"' definition.");

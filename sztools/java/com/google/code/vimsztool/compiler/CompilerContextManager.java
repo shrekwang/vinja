@@ -21,5 +21,10 @@ public class CompilerContextManager {
 		}
 		return ctx;
 	}
+	
+	public void reloadCompilerContext(String classPathXml) {
+		CompilerContext ctx=new CompilerContext(classPathXml);
+		ctxCache.put(classPathXml, ctx);
+	}
 
 }

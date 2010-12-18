@@ -98,7 +98,7 @@ class ProjectManager(object):
         return None
 
     @staticmethod
-    def initProject():
+    def projectInit():
         pwd = os.getcwd()
         projectName =  os.path.basename(os.getcwd())
         examples_dir = os.path.join(getShareHome(),"examples")
@@ -120,6 +120,13 @@ class ProjectManager(object):
         shutil.copy2(classpathInitXml, "./.classpath")
         shutil.copy2(jdeInitXml, "./.jde")
         print "project initialized in current dir succeed."
+
+    @staticmethod
+    def projectClean():
+        vim_buffer = vim.current.buffer
+        current_file_name = vim_buffer.name
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+        Talker.projectClean(classPathXml)
 
 class Talker(object):
     @staticmethod
@@ -263,6 +270,15 @@ class Talker(object):
             params["hotSwapPort"] = port
         data = Talker.send(params)
         return data
+
+    @staticmethod
+    def projectClean(xmlPath):
+        params = dict()
+        params["cmd"]="projectClean"
+        params["classPathXml"] = xmlPath
+        data = Talker.send(params)
+        return data
+
 
 class EditUtil(object):
 

@@ -30,29 +30,29 @@ public class ClassInfo {
 			tmpClass=tmpClass.getSuperclass();
 		}
 		sb.append("Class ").append(aClass.getName()).append("\n\n");
-		sb.append("SuperClass \n");
+		sb.append("Hierarchy: \n");
 		for (String name : superClassNames) {
 			sb.append("    ").append(name).append("\n");
 		}
 		sb.append("\n");
-		sb.append("Interface \n");
+		sb.append("Interface: \n");
 		for (String name : interfaceNames) {
 			sb.append("    ").append(name).append("\n");
 		}
 		sb.append("\n");
-		sb.append("Constructor \n");
+		sb.append("Constructor: \n");
 		List<MemberInfo> infos = getConstructorInfo(aClass);
 		for (MemberInfo info : infos) {
 			sb.append("    ").append(info.getFullDecleration()).append("\n");
 		}
 		sb.append("\n");
-		sb.append("static members \n");
+		sb.append("static members: \n");
 		infos = getMemberInfo(aClass, true,false);
 		for (MemberInfo info : infos) {
 			sb.append("    ").append(info.getFullDecleration()).append("\n");
 		}
 		sb.append("\n");
-		sb.append("non-static members \n");
+		sb.append("non-static members: \n");
 		infos = getMemberInfo(aClass, false,false);
 		for (MemberInfo info : infos) {
 			sb.append("    ").append(info.getFullDecleration()).append("\n");

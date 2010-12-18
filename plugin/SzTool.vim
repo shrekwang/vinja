@@ -407,10 +407,13 @@ function! Jdext()
   vmap <silent><leader>gg          :python EditUtil.generateGseter()<cr>
   nmap <silent><leader>dc          :python EditUtil.dumpClassInfo()<cr>
   nmap <silent><leader>gd          :python EditUtil.gotoDefinition()<cr>
+
+  command! -nargs=0   DumpClass    :python EditUtil.dumpClassInfo()
   command! -nargs=0   AutoImport   :python AutoImport.autoImportVar()
   command! -nargs=0   Run          :python Runner.runCurrentFile()
   command! -nargs=0   Overide      :python EditUtil.overideMethod()
-  command! -nargs=0   InitProject  :python ProjectManager.initProject()
+  command! -nargs=0   ProjectInit  :python ProjectManager.projectInit()
+  command! -nargs=0   ProjectClean :python ProjectManager.projectClean()
   command! -nargs=?   Ant          :call RunAntBuild('<args>')
   command! -nargs=1   FetchResult  :call FetchResult('<args>')
   command! -nargs=0   StopHotswap  :call JdeHotSwapDisable()
