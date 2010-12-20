@@ -24,6 +24,7 @@ public class Preference {
 	public static final String JDE_SERVER_PORT = "jde_server_port" ; 
 	public static final String JDE_ECLIPSE_CONXML_PATH = "jde_eclipse_conxml_path" ; 
 	public static final String DEFAULT_EXCLUDE_PATTERN = "default_exclude_pattern";
+	public static final String JDE_RUN_TIMEOUT = "jde_run_timeout";
 
 	
 	public static Preference getInstance() {
