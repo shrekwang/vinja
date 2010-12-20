@@ -64,6 +64,7 @@ public class JdtUI {
 
 	private void exit() {
 		img.dispose();
+		systemTray.dispose();
 		shell.dispose();
 		System.exit(0);
 	}

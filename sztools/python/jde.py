@@ -1049,17 +1049,28 @@ class SzJdeCompletion(object):
         elif completionType == "word" :
             if base[0].isupper():
                 result = SzJdeCompletion.getWordCompleteResult(base)
-                if result == [] :
-                    classNameList = Talker.getClassList(base,classPathXml).split("\n")
-                    for className in classNameList :
-                        menu = dict()
-                        menu["kind"] = "c"
-                        menu["dup"] = "1"
-                        menu["word"] = className[ className.rfind(".") + 1 : ]
-                        menu["menu"] = className
-                        result.append(menu)
+                classNameList = Talker.getClassList(base,classPathXml).split("\n")
+                for className in classNameList :
+                    menu = dict()
+                    shortName = className[ className.rfind(".") + 1 : ]
+                    if shortName in result :
+                        continue
+                    menu["kind"] = "c"
+                    menu["dup"] = "1"
+                    menu["word"] = shortName
+                    menu["menu"] = className
+                    result.append(menu)
             else :
                 result = SzJdeCompletion.getWordCompleteResult(base)
+                completionType = "inheritmember"
+                classNameList = ["this"]
+                expTokens = []
+                params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
+                memberInfos = Talker.getMemberList(params).split("\n")
+                pat = re.compile("^%s.*" % base.replace("*",".*"), re.IGNORECASE)
+                inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat)
+                for item in inheritMembers :
+                    result.append(item)
 
         if len(result) > MAX_CPT_COUNT :
             result = result[0:MAX_CPT_COUNT]

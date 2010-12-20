@@ -82,7 +82,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 
 		String memberType = "";
 		for (String token : tokens) {
-			if (token.equals(".")) continue;
+			if (token.trim().equals("") || token.equals(".") ) continue;
 			if (token.indexOf("(") > 0) {
 				memberType = "method";
 				token=token.substring(0, token.indexOf("("));
