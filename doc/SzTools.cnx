@@ -1,0 +1,108 @@
+*SzTools.txt* plugin 
+
+               By Shrek Wang <shrek.wang@gmail.com>
+
+Jdext                                     |Jdext|
+Shext                                     |Shext|
+Dbext                                     |Dbext|
+Notext                                    |Notext|
+Scratch                                   |Scratch|
+
+===============================================================================
+Jdext                                                    *Jdext*
+
+  Jdext是一组用于帮助编写java代码的命令，主要有代码补全，编译，执行，get和set方
+法生成，自动导入，dump类信息等。
+
+  Jdext采用了和eclipse一样的.classpath来管理类路径，所以如果已经有在用eclipse管
+理的项目，就不需要再做类路径的设置。对于新建的项目，可以用ProjectInit命令来初始
+化目录结构和建立.classpath 文件,对于没有建项目的单个java文件，Jdext也一样可以补
+全编译和执行，只是把源码目录和输出目录默认为当前文件所在的目录。另外Jdext的项目
+根目录项可以建一个.jde 的xml配置文件，用来配置此项目的java encoding和jdk兼容级
+等。文件内容可以参见sztools/share/examples/jde.xml。
+
+  Jdext命令默认是不开启的，只有用 :Jdext启动后，补全，编译，执行等功能才可以用，
+启动后在托盘区会有个图标，这个是独立的java进程, vim通过socket和它通信，可以被多
+个vim实例共用,默认端口9527.
+
+  Jdext服务端程序启动时读取sztools/share/conf/sztools.cfg以设置一些全局参数，可
+以设的值有(其中一些可以在.jde中单独设置):
+
+jde_compile_encoding : 默认的java encoding
+jde_compile_ignore_waring : 编译时是否忽略警告
+jde_run_timeout : 运行默认超时，单位为秒。默认30秒,如果运行超过这个时间，则返回
+jde_src_vm : java源码的jdk版本兼容级，默认为1.6
+jde_dst_vm : java编译后class文件的jdk版本兼容级, 默认1.6
+jde_server_port : Jdext服务端程序的监听端口，默认9527
+
+ Jdext启动后可用的功能
+
+0: 补全. 可以对类名，成员名，等进行补全。
+    a: 用<ctrl-x><ctrl-o>启动omni补全, 如果已经装了supertab插件,则直接可以用tab
+       来进行补全.
+    b: 方法的补全是忽略大小写的，而且可以用*来匹配任意字符, 比如
+       employee.get*id, 可以匹配 employee.getDeptId();
+    c: 对于没有import的类名，也可以直接补全。
+
+1: 保存java时自动编译，编译错误自动设为quickfix列表,可以通过<ctrl-n>,<ctrl-p>跳
+   转。Waring默认也是在quickfix列表里的，可以通过sztools.cfg配置为编译时忽略警
+   告。
+
+2: :Run来运行当前的class, 如果程序有死循环，则默认是30秒后自动返回。
+
+3: visual选中field,然后用<leader>gg可以为这些field生成getter和setter.
+
+4: 对于在光标下的类，可以用<leader>dc来dump一些类信息（类继承，成员等)
+
+5: 对于所有没有import的类，用:AutoImport来进行自动导入，如果有些类可能位于多个
+   package的，则会进行提示选择。
+
+6: :Ant命令执行ant, 默认查找项目根目录的build.xml,此命令可以加参数，比如
+   :Ant deploy, :Ant build 
+
+7: 在没有项目配置的目录，可以执行:ProjectInit来初始化项目设置。
+
+8: 如果修改了项目的.classpath或.jde配置，可以用:ProjectClean来更新这些设置.
+
+===============================================================================
+Dbext                                                *Dbext*
+
+Dbext, like dbext , but written in python. support oracle, sqlserver, mysql.
+(need cx_oracle, pyodbc, mysql_python )
+        
+ :Dbext Start the Dbext
+ ,,    Execute the query(visual selected), and show results.
+ ,lt   list the table name contains the word under the cursor.
+ ,dt   describe the table schema 
+ ,go   prompt the db connection
+ ,gg   generate db table ddl of the current table
+
+===============================================================================
+Shext                                                *Shext*
+
+
+Shext, some sort of shell, supports limited command. like 
+cd,rm,touch,mkdir,rmdir etc. 
+
+bmadd  add current dir to bookmarks
+bmlist list all bookmarks
+
+
+===============================================================================
+Notext                                                *Notext*
+
+note manager , save note in a lite db (sqlite )
+
+:Notext start the Notext
+i   :  make a new note
+o   :  open the current note
+:RemoveItem    Remove the note item 
+:SaveItem    Save the note item
+
+===============================================================================
+Scratch                                                *Scratch*
+
+Split a scratch python window,  code can be runned
+with key mapping ",,".
+
+
