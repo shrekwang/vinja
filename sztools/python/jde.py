@@ -707,17 +707,32 @@ class Parser(object):
         scopeCount = 0
         scopeUnvisible = False
         visibleRowNum = []
+        commentLine = False
+        methodPat = re.compile(r"(?P<modifier>\w+\s+)?(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*\((?P<param>.*\)).*$")
         for lineNum in range(cursorRow,-1,-1):
-            if "}" in vim_buffer[lineNum] :
+            lineText = vim_buffer[lineNum].strip()
+            if lineText.startswith("//"):
+                continue
+            if lineText.endswith("*/") :
+                commentLine = True
+            if lineText.startswith("/*"):
+                commentLine = False
+                continue
+            if commentLine :
+                continue
+
+            if "}" in lineText :
                 scopeCount = scopeCount - 1
                 scopeUnvisible = True
-            if "{" in vim_buffer[lineNum] and scopeUnvisible :
+            if "{" in lineText and scopeUnvisible :
                 scopeCount = scopeCount + 1
                 if (scopeCount > -1 ) :
                     scopeUnvisible = False
-                continue
+                if methodPat.match(lineText):
+                    continue
             if not scopeUnvisible :
                 visibleRowNum.append(lineNum)
+
         return visibleRowNum
 
     @staticmethod
