@@ -185,7 +185,18 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 				tmpInfoList=classInfo.getMemberInfo(cls,false,true);
 			}
 			if (tmpInfoList == null) continue;
-			memberInfos.addAll(tmpInfoList);
+			for (MemberInfo tmpMember : tmpInfoList) {
+				boolean added = false;
+				for (MemberInfo member : memberInfos) {
+					if ( member.getName().equals(tmpMember.getName() )
+							&& member.getParams().equals(tmpMember.getParams()) ) {
+						added = true;
+					}
+				}
+				if (! added ) {
+					memberInfos.add(tmpMember);
+				}
+			}
 		}
 		
 		StringBuilder sb=new StringBuilder();
