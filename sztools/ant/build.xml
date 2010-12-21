@@ -3,6 +3,8 @@
   <property name="src" value="java" />
   <property name="dist" value="classes" />
   <property name="lib" value="lib" />
+  <property name="rootDir" value=".." />
+  <property name="version" value="0.1" />
 
   <path id="class.path">
     <fileset dir="${lib}">
@@ -25,6 +27,14 @@
 
   <target name="jar" depends="build">
     <jar jarfile="${lib}/szjde.jar" basedir="${dist}" />
+  </target>
+	
+  <target name="release" depends="jar">
+    <zip zipfile="${rootDir}/sztools-${version}.jar" basedir="${rootDir}" >
+    	<include name="doc/**"/>
+    	<include name="plugin/**"/>
+    	<include name="sztools/**"/>
+  	</zip>
   </target>
 
 </project>

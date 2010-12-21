@@ -5,104 +5,155 @@
 Jdext                                     |Jdext|
 Shext                                     |Shext|
 Dbext                                     |Dbext|
-Notext                                    |Notext|
 Scratch                                   |Scratch|
 
-===============================================================================
+==============================================================================
 Jdext                                                    *Jdext*
 
-  Jdext是一组用于帮助编写java代码的命令，主要有代码补全，编译，执行，get和set方
-法生成，自动导入，dump类信息等。
+  Jdext是一组用于帮助编写java代码的命令,主要有代码补全,编译,执行,get和set方法
+生成,自动导入,dump类信息等.
 
-  Jdext采用了和eclipse一样的.classpath来管理类路径，所以如果已经有在用eclipse管
-理的项目，就不需要再做类路径的设置。对于新建的项目，可以用ProjectInit命令来初始
-化目录结构和建立.classpath 文件,对于没有建项目的单个java文件，Jdext也一样可以补
-全编译和执行，只是把源码目录和输出目录默认为当前文件所在的目录。另外Jdext的项目
-根目录项可以建一个.jde 的xml配置文件，用来配置此项目的java encoding和jdk兼容级
-等。文件内容可以参见sztools/share/examples/jde.xml。
+  Jdext采用了和eclipse一样的.classpath来管理类路径,所以如果已经有在用eclipse管
+理的项目,就不需要再做类路径的设置.对于新建的项目,可以用ProjectInit命令来初始化
+目录结构和建立.classpath 文件,对于没有建项目的单个java文件,Jdext也一样可以补全
+编译和执行,只是把源码目录和输出目录默认为当前文件所在的目录.另外Jdext的项目根
+目录项可以建一个.jde 的xml配置文件,用来配置此项目的java encoding和jdk兼容级等.
+文件内容可以参见sztools/share/examples/jde.xml.
 
-  Jdext命令默认是不开启的，只有用 :Jdext启动后，补全，编译，执行等功能才可以用，
-启动后在托盘区会有个图标，这个是独立的java进程, vim通过socket和它通信，可以被多
-个vim实例共用,默认端口9527.
+  Jdext命令默认是不开启的,只有用:Jdext启动后,补全,编译,执行等功能才可以用,启动
+后在托盘区会有个图标,这个是独立的java进程, vim通过socket和它通信,可以被多个vim
+实例共用,默认端口9527.
 
-  Jdext服务端程序启动时读取sztools/share/conf/sztools.cfg以设置一些全局参数，可
+  Jdext服务端程序启动时读取sztools/share/conf/sztools.cfg以设置一些全局参数,可
 以设的值有(其中一些可以在.jde中单独设置):
 
-jde_compile_encoding : 默认的java encoding
-jde_compile_ignore_waring : 编译时是否忽略警告
-jde_run_timeout : 运行默认超时，单位为秒。默认30秒,如果运行超过这个时间，则返回
-jde_src_vm : java源码的jdk版本兼容级，默认为1.6
-jde_dst_vm : java编译后class文件的jdk版本兼容级, 默认1.6
-jde_server_port : Jdext服务端程序的监听端口，默认9527
+  jde_compile_encoding : 默认的java encoding
+  jde_compile_ignore_waring : 编译时是否忽略警告
+  jde_run_timeout : 运行默认超时,单位为秒.默认30秒,如果运行超过这个时间,则返回
+  jde_src_vm : java源码的jdk版本兼容级,默认为1.6
+  jde_dst_vm : java编译后class文件的jdk版本兼容级, 默认1.6
+  jde_server_port : Jdext服务端程序的监听端口,默认9527
 
- Jdext启动后可用的功能
+Jdext启动后可用的功能
 
-0: 补全. 可以对类名，成员名，等进行补全。
-    a: 用<ctrl-x><ctrl-o>启动omni补全, 如果已经装了supertab插件,则直接可以用tab
-       来进行补全.
-    b: 方法的补全是忽略大小写的，而且可以用*来匹配任意字符, 比如
+0: 补全. 可以对类名,成员名,等进行补全.
+    a: 用"<ctrl-x><ctrl-o>"启动omni补全, 如果已经装了supertab插件,则直接可以用
+       <tab>来进行补全.
+    b: 方法的补全是忽略大小写的,而且可以用*来匹配任意字符, 比如
        employee.get*id, 可以匹配 employee.getDeptId();
-    c: 对于没有import的类名，也可以直接补全。
+    c: 对于没有import的类名,也可以直接补全.
 
-1: 保存java时自动编译，编译错误自动设为quickfix列表,可以通过<ctrl-n>,<ctrl-p>跳
-   转。Waring默认也是在quickfix列表里的，可以通过sztools.cfg配置为编译时忽略警
-   告。
+1: 保存java时自动编译,编译错误自动设为quickfix列表,可以通过<ctrl-n>,<ctrl-p>跳
+   转.Waring默认也是在quickfix列表里的,可以通过sztools.cfg配置为编译时忽略警
+   告.
 
-2: :Run来运行当前的class, 如果程序有死循环，则默认是30秒后自动返回。
+2: ":Run"来运行当前的class, 如果程序有死循环,则默认是30秒后自动返回.
+   也可以用"<leader>,"来运行当前类
 
-3: visual选中field,然后用<leader>gg可以为这些field生成getter和setter.
+3: visual选中field,然后用"<leader>gg"可以为这些field生成getter和setter.
 
-4: 对于在光标下的类，可以用<leader>dc来dump一些类信息（类继承，成员等)
+4: 对于在光标下的类,可以用"<leader>dc"来dump一些类信息（类继承,成员等)
 
-5: 对于所有没有import的类，用:AutoImport来进行自动导入，如果有些类可能位于多个
-   package的，则会进行提示选择。
+5: 对于所有没有import的类,用":AutoImport"来进行自动导入,如果有些类可能位于多个
+   package的,则会进行提示选择.
 
-6: :Ant命令执行ant, 默认查找项目根目录的build.xml,此命令可以加参数，比如
-   :Ant deploy, :Ant build 
+6: ":Ant"命令执行ant, 默认查找项目根目录的build.xml,此命令可以加参数,比如
+   ":Ant deploy", ":Ant build"
 
-7: 在没有项目配置的目录，可以执行:ProjectInit来初始化项目设置。
+7: 在没有项目配置的目录,可以执行":ProjectInit"来初始化项目设置.
 
-8: 如果修改了项目的.classpath或.jde配置，可以用:ProjectClean来更新这些设置.
+8: 如果修改了项目的.classpath或.jde配置,可以用":ProjectClean"来更新这些设置.
 
-===============================================================================
-Dbext                                                *Dbext*
 
-Dbext, like dbext , but written in python. support oracle, sqlserver, mysql.
-(need cx_oracle, pyodbc, mysql_python )
-        
- :Dbext Start the Dbext
- ,,    Execute the query(visual selected), and show results.
- ,lt   list the table name contains the word under the cursor.
- ,dt   describe the table schema 
- ,go   prompt the db connection
- ,gg   generate db table ddl of the current table
-
-===============================================================================
+==============================================================================
 Shext                                                *Shext*
 
+  Shext不是一个shell插件,Shext是个命令执行器类似的东西.启动Shext后,会split一
+个buffer出来.上下两个buffer, 上面是执行命令的,下面一个显示命令的输出, 除了在命
+令buffer按回车(插入模式和normal模式)是执行命令外,命令buffer和输出buffer都是普
+通buffer,可以做vim任意操作.因为每执行一次命令就更新一次输出,所以输出buffer只能
+显示最近一条命令的输出. 
 
-Shext, some sort of shell, supports limited command. like 
-cd,rm,touch,mkdir,rmdir etc. 
+开始之前 :
+  1: 命令参数由空格分隔,如果参数字符串中包含空格,用"\ "来转义
+  2: shext自已实现的命令会优先查找,如果shext没有实现,则执行os定义的命令.
+  3: 交互式命令如mysql,telnet,ftp等不能支持
+  4: arg表示只能一个参数,args表示多个参数,并用空格分隔
+  5: 在命令buffer,可以用$[n]来引用输出buffer的内容,n代行输出buffer的行
+  6: 用:Shext启动 shext模式
+  7: 目录名和压缩文件等用语法高亮了,这个高亮颜色可以在sztools.cfg中配置
 
-bmadd  add current dir to bookmarks
-bmlist list all bookmarks
+命令参考 :
+  更改目录和显示 :
+    pwd : 显示当前目录
+    cd [arg] : 更改目录,可以使用书签或通配符.
+    cdlist   : 列出cd命令的历史
+    lsd     : 列出当前目录下的子目录
+
+    ls [ -l | -L ][ -t | -s | -n ] [ --help ] [args] : 列当前目录
+
+  书签 :
+    bmadd   : 把当前目录加到书签中
+    bmedit  : 编辑书签文件
+    bmlist  : 列出所有书签
+
+  文件管理:
+    touch [args]          : 新建文件或更新文件时间戳
+    rm  [args] [-r]       : 删除文件
+    mkdir [args]          : 建立目录
+    rmdir [args]          : 删除空目录
+    cp  [src...][dst]     : 复制文件
+    mv  [src...][dst]     : 移动文件
+    echo [args]           : echo ...
+    yank [args]           : 把文件名保存到缓存区,可以通过paste粘贴
+    yankadd [args]        : 把文件名追加到缓存区,可以通过paste粘贴
+    cut  [args]           : 把文件名保存到缓存区,可以通过paste粘贴, 粘贴时删除
+                            原文件
+    cutadd [args]         : 把文件名追加到缓存区,可以通过paste粘贴, 粘贴时删除
+                            原文件
+    paste                 : 粘贴文件
+    yankbuffer            : 显示缓存区的内容
+    merge [src...][dst]   : 将多个文本文件合为一个
+
+    find [-n name][-t text] [-s size] [-p path] [--help] [args] : 查找文件.
+           -n 文件名 -t 文件内容 -s 文件大写 -p 文件路径
+
+  文件显示和编辑:
+    cat [arg]      : 显示文件内容
+    head [arg]     : 显示文件内容 (前10行)
+    edit [args]    : 在新的tab中编辑文件
+
+  文件位置索引 :
+    locatedb command entry_name [--dir dir][--depth depth][--excludes pattern]  
+      这个是一系列命令, command可以是{"add","remove","refresh"}中的一个, add时
+    把当前目录保存到entry_name中,后面可以根据entry_name来删除和刷新.在对文件夹
+    进行索引后,用"<leader>lw"来定位文件(功能类似于eclipse的<ctrl><shift>R),可
+    以使用通配符.
+
+    locate   [-n entry_name][-p path][--help]  : 在数据库中查找文件名,查出来
+      后, 可以在命令buffer用 $[n]来引用.
+
+  杂项 :
+    help           : 打印帮助
+    exit           : 退出Shext
+
+==============================================================================
+Dbext                                                *Dbext*
+
+   Dbext是个SQL语句执行器,可以支持oracle,mssql,mysql(部份), 如果想要支持这些功
+能,需要安装相应的模块,分别是cx_oracle, pyodbc, mysql_python. 这个插件和shext差
+不多,也分命令buffer和输出buffer.
+        
+ ,,    执行sql并显示结果(需要visual选中sql,多条sql用";"分隔)
+ ,lt   列出包含光标下的单词的所有表名
+ ,dt   列出光标下数据表的字段信息
+ ,go   提示选择连接信息
+ ,gg   生成insert和update语句
 
 
-===============================================================================
-Notext                                                *Notext*
-
-note manager , save note in a lite db (sqlite )
-
-:Notext start the Notext
-i   :  make a new note
-o   :  open the current note
-:RemoveItem    Remove the note item 
-:SaveItem    Save the note item
-
-===============================================================================
+==============================================================================
 Scratch                                                *Scratch*
 
-Split a scratch python window,  code can be runned
-with key mapping ",,".
-
+   Split一个临时buffer, 可以写一些python代码,并用",,"来执行,无需保存. 在同一个
+vim实列中,临时buffer的内容是一直保持的,关闭buffer后打开这个内容还是存在
 
