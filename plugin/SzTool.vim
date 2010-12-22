@@ -393,7 +393,6 @@ function! Jdext()
   python startAgent()
   set completeopt=menuone
   autocmd BufEnter     *.java      setlocal omnifunc=SzJdeCompletion
-  autocmd BufEnter     *.java      nmap <silent><leader>, :python Runner.runCurrentFile()<cr>
   autocmd BufNewFile   *.java      python EditUtil.createSkeleton()
   autocmd BufEnter     *.java      au CursorHold <buffer> :python Compiler.displayMsg()
   autocmd BufEnter     *.java      au CursorMoved <buffer> :python Compiler.displayMsg()
@@ -404,9 +403,6 @@ function! Jdext()
   autocmd BufWritePost  *         python Compiler.copyResource()
   map <C-n> :cn<cr>
   map <C-p> :cp<cr>
-  vmap <silent><leader>gg          :python EditUtil.generateGseter()<cr>
-  nmap <silent><leader>dc          :python EditUtil.dumpClassInfo()<cr>
-  nmap <silent><leader>gd          :python EditUtil.locateDefinition()<cr>
 
   command! -nargs=0   DumpClass    :python EditUtil.dumpClassInfo()
   command! -nargs=0   AutoImport   :python AutoImport.autoImportVar()
@@ -418,6 +414,13 @@ function! Jdext()
   command! -nargs=1   FetchResult  :call FetchResult('<args>')
   command! -nargs=0   StopHotswap  :call JdeHotSwapDisable()
   command! -nargs=1   StartHotswap  :call JdeHotSwapEnable('<args>')
+
+  autocmd BufEnter     *.java      nmap <silent><leader>,   :python Runner.runCurrentFile()<cr>
+  autocmd BufEnter     *.java      vmap <silent><leader>gg  :python EditUtil.generateGseter()<cr>
+  autocmd BufEnter     *.java      nmap <silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
+  autocmd BufEnter     *.java      nmap <silent><leader>gd  :python EditUtil.locateDefinition()<cr>
+  autocmd BufEnter     *.java      nmap <silent><leader>ai  :python AutoImport.autoImportVar()<cr>
+  
 endfunction
 
 

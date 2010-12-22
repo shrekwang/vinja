@@ -643,6 +643,7 @@ class AutoImport(object):
 
     @staticmethod
     def autoImportVar():
+        AutoImport.removeUnusedImport()
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
@@ -669,6 +670,23 @@ class AutoImport(object):
         location = AutoImport.getImportInsertLocation()
         if location > 0 and vim_buffer[location-1].strip() != "" :
             vim.command("call append(%s,'')" %(str(location)))
+
+    @staticmethod
+    def removeUnusedImport():
+        vim_buffer = vim.current.buffer
+        rowIndex = 0
+        while True :
+            line = vim_buffer[rowIndex].strip()
+            if line.startswith("import") :
+                lastName = line[7:-1].split(".")[-1]
+                groups = re.findall(r"\b%s\b" % lastName, "\n".join(vim_buffer))
+                if len(groups) <= 1 :
+                    del vim_buffer[rowIndex]
+                    continue
+            rowIndex += 1
+            if rowIndex > len(vim_buffer) -1 :
+                break
+
 
 class Parser(object):
 
