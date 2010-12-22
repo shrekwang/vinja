@@ -176,7 +176,7 @@ class Talker(object):
         return data
 
     @staticmethod
-    def getMemberList( args ):
+    def getMemberList(args):
         params = dict()
         sourceFile ,classnameList,xmlPath,memberType,expTokens = args
         params["cmd"]="completion"
@@ -187,6 +187,19 @@ class Talker(object):
         params["expTokens"] = ",".join(expTokens)
         data = Talker.send(params)
         return data
+
+    @staticmethod
+    def getDefClassName(args):
+        params = dict()
+        sourceFile ,classnameList,xmlPath,expTokens= args
+        params["cmd"]="getDefClassName"
+        params["sourceFile"] = sourceFile
+        params["classnames"] = ",".join(classnameList)
+        params["classPathXml"] = xmlPath
+        params["expTokens"] = ",".join(expTokens)
+        data = Talker.send(params)
+        return data
+
 
     @staticmethod
     def compileFile(xmlPath,sourceFile):
@@ -358,12 +371,13 @@ class EditUtil(object):
         VimUtil.writeToJdeConsole(resultText)
 
     @staticmethod
-    def gotoDefinition():
+    def locateDefinition():
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
+
         dotExpParser = Parser.getJavaDotExpParser()
         tokenEndCol = col
         for char in line[col:] :
@@ -371,30 +385,57 @@ class EditUtil(object):
                 break
             tokenEndCol += 1
         expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
+        if not expTokens :
+            return 
         varName = expTokens[0]
-        memberName = expTokens[-1]
+        endTokenIndex = 0 if len(expTokens)==1 else -1
+        if len(expTokens) == 1 or (len(expTokens) == 3  and varName == "this"):
+            if len(expTokens) ==1 :
+                memberName = expTokens[0]
+            else :
+                memberName = expTokens[2]
+            members = Parser.parseAllMemberInfo(vim_buffer)
+            for name,mtype,rtntype,param,lineNum in members :
+                if name == memberName :
+                    matched_row = lineNum
+                    vim.command("normal %sG" % str(matched_row))
+                    return
+        else :
+            expTokens = expTokens[1:]
+            memberName = expTokens[-1]
+        if line[tokenEndCol] == "(":
+            expTokens[endTokenIndex] = expTokens[endTokenIndex] + "()"
 
         if varName[0].isupper():
             classname = varName
+        elif varName == "this" :
+            classname = "this"
         else :
             classname = Parser.getVarType(varName,row-1)
-            if not classname :
-                classname = varName
+
+        superClass = Parser.getSuperClass()
+        if not classname :
+            if not superClass : return
+            expTokens.insert(0,varName)
+            classname = superClass
+
         classNameList = Parser.getFullClassNames(classname)
-        # find exact match bin classname
+        params =(current_file_name,classNameList,classPathXml,expTokens)
+        defClassName = Talker.getDefClassName(params)
+        if defClassName == "" :
+            return
+
         abs_path = "abs"
         has_match = False
-        if len(classNameList) == 1 :
-            rlt_path = classNameList[0].replace(".", os.path.sep)+".java"
-            src_locs = ProjectManager.getSrcLocations(current_file_name)
-            for src_loc in src_locs :
-                abs_path = os.path.join(src_loc, rlt_path)
-                if os.path.exists(abs_path) :
-                    has_match = True
-                    break
-                    #vim.command("edit %s" % abs_path)
+        rlt_path = defClassName.replace(".", os.path.sep)+".java"
+        src_locs = ProjectManager.getSrcLocations(current_file_name)
+        for src_loc in src_locs :
+            abs_path = os.path.join(src_loc, rlt_path)
+            if os.path.exists(abs_path) :
+                has_match = True
+                break
         if has_match :
-            matched_row = 0
+            matched_row = 1
             lines = open(abs_path,"r").readlines()
             members = Parser.parseAllMemberInfo(lines)
             for name,mtype,rtntype,param,lineNum in members :
@@ -759,7 +800,7 @@ class Parser(object):
         java_exp = Forward()
         param_atom = java_exp | Optional('"')+Word(alphanums)+Optional('"')  
         func_param = "("+Suppress(Optional(delimitedList(param_atom))) + ")"
-        atom_exp =  Combine(Word(alphas,alphanums) + Optional(func_param))
+        atom_exp =  Combine(Word(alphas,alphanums+"_") + Optional(func_param))
         java_exp << atom_exp + Optional(OneOrMore("." + atom_exp))
         comp_exp = java_exp + Optional(".") +  lineEnd
         return comp_exp

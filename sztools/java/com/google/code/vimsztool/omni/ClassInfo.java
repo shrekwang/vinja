@@ -6,10 +6,14 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
+import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.compiler.CompilerContextManager;
+import com.google.code.vimsztool.compiler.ReflectAbleClassLoader;
+
 public class ClassInfo {
-	
 	
 	
 	@SuppressWarnings("unchecked")
@@ -192,5 +196,55 @@ public class ClassInfo {
 		}
 		return sb.toString();
 	}
+	
+	@SuppressWarnings("unchecked")
+	public static LinkedList<Class> getAllSuperClass(Class aClass) {
+		LinkedList<Class> classList = new LinkedList<Class>();
+		if (aClass == null) return classList;
+		if (aClass.isInterface()) {
+			classList.add(aClass);
+			for (Class tmpIntf : aClass.getInterfaces()) {
+				classList.add(tmpIntf);
+			}
+		} else {
+			Class tmpClass =  aClass;
+			while (true) {
+				classList.add(tmpClass);
+				for (Class tmpIntf : tmpClass.getInterfaces()) {
+					classList.add(tmpIntf);
+				}
+				tmpClass =  tmpClass.getSuperclass();
+				if (tmpClass == null) break;
+				if (tmpClass.getName().equals("java.lang.Object")) break;
+			}
+		}
+		return classList;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static Class getExistedClass(String classPathXml , String[] classNameList,String sourceFile) {
+		CompilerContextManager ccm = CompilerContextManager.getInstnace();
+		CompilerContext ctx = ccm.getCompilerContext(classPathXml);
+		ReflectAbleClassLoader classLoader = ctx.getClassLoader();
+		Class aClass = null;
+		
+		for (String className : classNameList) {
+			if (className.equals("this") && sourceFile !=null ) {
+				className = ctx.buildClassName(sourceFile);
+			}
+			try {
+				aClass = classLoader.loadClass(className);
+			} catch (ClassNotFoundException e) {
+				try {
+					aClass = classLoader.loadClass("java.lang."+className);
+				} catch (ClassNotFoundException e2) { }
+			}
+			if (aClass != null) break;
+		}
+		return aClass;
+	}
+	
+	
+	
 
 }

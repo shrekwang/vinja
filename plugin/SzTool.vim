@@ -406,7 +406,7 @@ function! Jdext()
   map <C-p> :cp<cr>
   vmap <silent><leader>gg          :python EditUtil.generateGseter()<cr>
   nmap <silent><leader>dc          :python EditUtil.dumpClassInfo()<cr>
-  nmap <silent><leader>gd          :python EditUtil.gotoDefinition()<cr>
+  nmap <silent><leader>gd          :python EditUtil.locateDefinition()<cr>
 
   command! -nargs=0   DumpClass    :python EditUtil.dumpClassInfo()
   command! -nargs=0   AutoImport   :python AutoImport.autoImportVar()

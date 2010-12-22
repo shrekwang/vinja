@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +18,8 @@ import java.util.jar.JarFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
+import com.google.code.vimsztool.compiler.CompilerContext;
+
 
 public class PackageInfo {
 	
@@ -24,6 +27,39 @@ public class PackageInfo {
 	private Map<String, String> cachedPath = new HashMap<String,String>();
 	
 	
+	@SuppressWarnings("unchecked")
+	public List<Class> findSubClass(CompilerContext ctx, String searchClassName) {
+		ClassLoader classLoader = ctx.getClassLoader();
+		List<Class> resultList = new ArrayList<Class>();
+		for (String pkgname : cache.keySet()) {
+			Set<String> classNames = cache.get(pkgname);
+			if (pkgname.startsWith("java") || pkgname.startsWith("com.sun")) continue;
+			for (String className : classNames) {
+				String binClassName = pkgname+"."+className;
+				Class aClass = null;
+				try {
+					aClass = classLoader.loadClass(binClassName);
+				} catch (Throwable e) {
+				}
+				if (aClass == null)
+					continue;
+				LinkedList<Class> classList = ClassInfo.getAllSuperClass(aClass);
+				boolean isSuperior = false;
+				for (Class tmpClass : classList) {
+					if (tmpClass.getName().equals(className)) {
+						isSuperior = true;
+						break;
+					}
+				}
+				if (isSuperior ) {
+					resultList.add(aClass);
+				}
+			}
+		}
+		return resultList;
+		
+		
+	}
 	
 	public List<String> findClass(String nameStart) {
 		List<String> result = new ArrayList<String>();

@@ -63,7 +63,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		String[] classNameList = params.get("classnames").split(",");
 		String[] tokens = params.get(PARAM_EXP_TOKENS).split(",");
 	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
-		Class aClass = getExistedClass(classPathXml, classNameList, sourceFile);
+		Class aClass = ClassInfo.getExistedClass(classPathXml, classNameList, sourceFile);
 		if (aClass == null) return "";
 		aClass = this.parseExpResultType(tokens, aClass,completionType);
 		if (aClass == null) return "";
@@ -130,49 +130,14 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		return fClass;
 	}
 	
-	@SuppressWarnings("unchecked")
-	private Class getExistedClass(String classPathXml , String[] classNameList,String sourceFile) {
-		CompilerContext ctx = getCompilerContext(classPathXml);
-		ReflectAbleClassLoader classLoader = ctx.getClassLoader();
-		Class aClass = null;
-		for (String className : classNameList) {
-			if (className.equals("this") && sourceFile !=null ) {
-				className = ctx.buildClassName(sourceFile);
-			}
-			try {
-				aClass = classLoader.loadClass(className);
-			} catch (ClassNotFoundException e) {
-				try {
-					aClass = classLoader.loadClass("java.lang."+className);
-				} catch (ClassNotFoundException e2) { }
-			}
-			if (aClass != null) break;
-		}
-		return aClass;
-	}
+	
 	
 	@SuppressWarnings("unchecked")
 	public String getAllMember(Class aClass,String completionType,boolean hasDotExp) {
 		ClassInfo classInfo = new ClassInfo();
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
-		LinkedList<Class> classList = new LinkedList<Class>();
-		if (aClass.isInterface()) {
-			classList.add(aClass);
-			for (Class tmpIntf : aClass.getInterfaces()) {
-				classList.add(tmpIntf);
-			}
-		} else {
-			Class tmpClass =  aClass;
-			while (true) {
-				classList.add(tmpClass);
-				for (Class tmpIntf : tmpClass.getInterfaces()) {
-					classList.add(tmpIntf);
-				}
-				tmpClass =  tmpClass.getSuperclass();
-				if (tmpClass == null) break;
-				if (tmpClass.getName().equals("java.lang.Object")) break;
-			}
-		}
+		LinkedList<Class> classList = ClassInfo.getAllSuperClass(aClass);
+	
 		for (Class cls : classList) {
 			List<MemberInfo> tmpInfoList = null;
 			if (completionType.equals(CPT_TYPE_OBJECTMEMBER) || hasDotExp ) {

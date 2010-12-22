@@ -8,6 +8,7 @@ public class SzjdeConstants {
 	public final static String CMD_AUTOIMPORT="autoimport";
 	public final static String CMD_RUN="run";
 	public final static String CMD_DUMP_CLASS="dumpClass";
+	public final static String CMD_GET_DEFCLASS="getDefClassName";
 	public final static String CMD_OVERIDE="overide";
 	public final static String CMD_COPY_RESOURCE="copyResource";
 	public final static String CMD_SET_HOTSWAP="setHotswap";
