@@ -3,6 +3,7 @@ from jde import Parser
 import fnmatch
 import os
 import re
+import vim
 
 class Prompt(object) :
     def __init__(self, init_prompt_value):
@@ -72,12 +73,11 @@ class QuickLocater(object) :
     @staticmethod
     def runApp(content_manager ):
         global quickLocater
-        name = vim.eval("expand('<cword>')")
-        if name == None :
-            name = ""
+        
+        name = content_manager.get_init_prompt()
         quickLocater = QuickLocater(name,content_manager)
         quickLocater.create_explorer_buffer()
-        if len(name) > 0 :
+        if content_manager.show_on_open or name.strip() != ""  :
             quickLocater.prompt.show()
             quickLocater.show_matched_result()
 
@@ -187,6 +187,13 @@ class FileContentManager(object):
     def __init__(self):
         shext_locatedb_path = os.path.join(getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
+        self.show_on_open = False
+
+    def get_init_prompt(self):
+        name = vim.eval("expand('<cword>')")
+        if name == None :
+            name = ""
+        return name
 
     def search_content(self,search_pat):
 
@@ -219,18 +226,27 @@ class JavaMemberContentManager(object):
     def __init__(self):
         work_buffer=vim.current.buffer
         self.memberInfo = Parser.parseAllMemberInfo(work_buffer)
+        self.show_on_open = True
+
+    def get_init_prompt(self):
+        name = ""
+        return name
 
     def search_content(self,search_pat):
         result = []
         if not search_pat :
             search_pat = "*"
-        for name ,mtype,rtntype,lineNum in self.memberInfo :
+
+        for name ,mtype,rtntype,param,lineNum in self.memberInfo :
             if fnmatch.fnmatch(name, search_pat) :
-                result.append("\t".join((name,str(lineNum))))
+                if mtype == "method" :
+                    tipStr = "%s(%s) : %s " % (name,param,rtntype)
+                else :
+                    tipStr = name
+                result.append("\t".join((tipStr,str(lineNum))))
         return result
 
-    def open_content(self,line):
-        print line
+    def open_content(self,line,mode):
         name,lineNum = line.split("\t")
         vim.command("normal %sG" % str(lineNum))
         

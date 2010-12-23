@@ -128,6 +128,17 @@ class ProjectManager(object):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         Talker.projectClean(classPathXml)
 
+    @staticmethod
+    def projectTree():
+        vim_buffer = vim.current.buffer
+        cur_file = vim_buffer.name
+        project_root = ProjectManager.getProjectRoot(cur_file)
+        project_root.replace(" ", "\ ")
+        vim.command("NERDTree %s" % project_root)
+        edit_buffer=str(vim.eval("winnr('#')"))
+        vim.command("exec '%s wincmd w'" % edit_buffer)
+        vim.command("NERDTreeFind")
+
 class Talker(object):
     @staticmethod
     def send(params):
@@ -1060,12 +1071,11 @@ class SzJdeCompletion(object):
             for mname,mtype,rtntype,param,lineNum in members :
                 if not pat.match(mname): continue
                 menu = dict()
-                menu["menu"] = rtntype
                 menu["icase"] = "1"
                 menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
                 if mtype == "method" :
                     menu["word"] = mname + "("
-                    menu["menu"] = "%s %s(%s)" % (rtntype, mname,param)
+                    menu["menu"] = "%s(%s) : %s " % (mname,param,rtntype)
                 else :
                     menu["word"] = mname
                     menu["menu"] = rtntype
@@ -1086,7 +1096,7 @@ class SzJdeCompletion(object):
             menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
             if mtype == "method" :
                 menu["word"] = mname + "("
-                menu["menu"] = "%s %s(%s)" % (mreturntype, mname,mparams)
+                menu["menu"] = "%s(%s) : %s " % (mname,mparams,mreturntype)
             else :
                 menu["word"] = mname
                 menu["menu"] = mreturntype

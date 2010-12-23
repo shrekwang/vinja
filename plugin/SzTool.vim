@@ -410,6 +410,7 @@ function! Jdext()
   command! -nargs=0   Overide      :python EditUtil.overideMethod()
   command! -nargs=0   ProjectInit  :python ProjectManager.projectInit()
   command! -nargs=0   ProjectClean :python ProjectManager.projectClean()
+  command! -nargs=0   ProjectTree  :python ProjectManager.projectTree()
   command! -nargs=?   Ant          :call RunAntBuild('<args>')
   command! -nargs=1   FetchResult  :call FetchResult('<args>')
   command! -nargs=0   StopHotswap  :call JdeHotSwapDisable()
@@ -420,6 +421,7 @@ function! Jdext()
   autocmd BufEnter     *.java      nmap <silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>gd  :python EditUtil.locateDefinition()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>ai  :python AutoImport.autoImportVar()<cr>
+  autocmd BufEnter     *.java      nmap <silent><leader>pt  :python ProjectManager.projectTree()<cr>
   
 endfunction
 
