@@ -11,10 +11,6 @@ import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASS_NAME;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CPT_TYPE;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_EXP_TOKENS;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,8 +18,10 @@ import java.util.List;
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.ReflectAbleClassLoader;
 import com.google.code.vimsztool.omni.ClassInfo;
+import com.google.code.vimsztool.omni.JavaExpUtil;
 import com.google.code.vimsztool.omni.MemberInfo;
 import com.google.code.vimsztool.omni.PackageInfo;
+import com.google.code.vimsztool.util.ModifierFilter;
 
 
 public class SzjdeCompletionCommand extends SzjdeCommand {
@@ -65,7 +63,13 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
 		Class aClass = ClassInfo.getExistedClass(classPathXml, classNameList, sourceFile);
 		if (aClass == null) return "";
-		aClass = this.parseExpResultType(tokens, aClass,completionType);
+		boolean acceptPrctMember = false;
+		if (completionType.equals(CPT_TYPE_INHERITMEMBER)) {
+			acceptPrctMember=true;
+		}
+		ModifierFilter filter = new ModifierFilter(false,acceptPrctMember);
+		aClass = JavaExpUtil.parseExpResultType(tokens, aClass,filter);
+		
 		if (aClass == null) return "";
 		boolean hasDotExp = false;
 		if (tokens.length > 1 ) {
@@ -74,61 +78,6 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		return getAllMember(aClass,completionType,hasDotExp);
 	}
 	
-	@SuppressWarnings("unchecked")
-	private Class parseExpResultType(String[] tokens, Class aClass,String completionType) {
-		if (tokens == null || tokens.length == 0) return aClass;
-		boolean self = false;
-		if (completionType.equals(CPT_TYPE_INHERITMEMBER)) self=true;
-
-		String memberType = "";
-		for (String token : tokens) {
-			if (token.trim().equals("") || token.equals(".") ) continue;
-			if (token.indexOf("(") > 0) {
-				memberType = "method";
-				token=token.substring(0, token.indexOf("("));
-			} else {
-				memberType = "field";
-			}
-			aClass = searchMemberTypeInHierarchy(aClass, token, memberType, self);
-			self = false;
-			if (aClass == null) return null;
-		}
-		return aClass;
-	}
-	
-	@SuppressWarnings("unchecked")
-	private Class searchMemberTypeInHierarchy(Class aClass,String memberName,String memberType,boolean self) {
-		Class fClass = null;
-		boolean foundField = false;
-		while (true) {
-			Member[] members = null;
-			if (memberType.equals("field")) {
-				 members = aClass.getDeclaredFields();
-			} else {
-				members = aClass.getDeclaredMethods();
-			}
-			for (Member tf : members) {
-				int mod = tf.getModifiers();
-				if (Modifier.isPublic(mod) || (self && Modifier.isProtected(mod)) ) {
-					if (tf.getName().equals(memberName)) {
-						if (memberType.equals("field")) {
-							fClass = ((Field)tf).getType();
-						} else {
-							fClass = ((Method)tf).getReturnType();
-						}
-						foundField = true;
-						break;
-					}
-				}
-			}
-			if (foundField) break;
-			aClass = aClass.getSuperclass();
-			if ( aClass ==null || aClass.getName().equals("java.lang.Object") ) {
-				break;
-			}
-		}
-		return fClass;
-	}
 	
 	
 	

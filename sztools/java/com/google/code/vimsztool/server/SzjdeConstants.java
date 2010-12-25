@@ -9,6 +9,7 @@ public class SzjdeConstants {
 	public final static String CMD_RUN="run";
 	public final static String CMD_DUMP_CLASS="dumpClass";
 	public final static String CMD_GET_DEFCLASS="getDefClassName";
+	public final static String CMD_GET_METHODDEFS="getMethodDefs";
 	public final static String CMD_OVERIDE="overide";
 	public final static String CMD_COPY_RESOURCE="copyResource";
 	public final static String CMD_SET_HOTSWAP="setHotswap";
@@ -23,6 +24,7 @@ public class SzjdeConstants {
 	public final static String PARAM_VAR_NAMES="varNames";
 	public final static String PARAM_EXP_TOKENS="expTokens";
 	public final static String PARAM_CLASS_NAME="className";
+	public final static String PARAM_MEMBER_NAME="memberName";
 	public final static String PARAM_PKG_NAME="pkgName";
 	public final static String PARAM_SUPER_CLASS="superClass";
 	public final static String PARAM_CMD_NAME="cmdName";

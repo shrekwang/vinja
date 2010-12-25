@@ -13,6 +13,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_SET_HOTSWAP;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFS;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -112,6 +113,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeProjectClean();
 	   } else if (cmdStr.equals(CMD_GET_DEFCLASS)) {
 		   szjdeCommand = new SzjdeGetDefClassCommand();
+	   } else if (cmdStr.equals(CMD_GET_METHODDEFS)) {
+		   szjdeCommand = new SzjdeGetMethodDefs();
 	   }
 	   if (szjdeCommand == null) {
 		   return ("can't find the command '"+cmdStr+"' definition.");

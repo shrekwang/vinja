@@ -202,12 +202,26 @@ class Talker(object):
     @staticmethod
     def getDefClassName(args):
         params = dict()
-        sourceFile ,classnameList,xmlPath,expTokens= args
+        sourceFile ,classnameList,xmlPath,expTokens,memberName= args
         params["cmd"]="getDefClassName"
         params["sourceFile"] = sourceFile
         params["classnames"] = ",".join(classnameList)
         params["classPathXml"] = xmlPath
         params["expTokens"] = ",".join(expTokens)
+        params["memberName"] = memberName
+        data = Talker.send(params)
+        return data
+
+    @staticmethod
+    def getMethodDefs(args):
+        params = dict()
+        sourceFile ,classnameList,xmlPath,expTokens,memberName= args
+        params["cmd"]="getMethodDefs"
+        params["sourceFile"] = sourceFile
+        params["classnames"] = ",".join(classnameList)
+        params["classPathXml"] = xmlPath
+        params["expTokens"] = ",".join(expTokens)
+        params["memberName"] = memberName
         data = Talker.send(params)
         return data
 
@@ -431,7 +445,9 @@ class EditUtil(object):
             classname = superClass
 
         classNameList = Parser.getFullClassNames(classname)
-        params =(current_file_name,classNameList,classPathXml,expTokens)
+        expTokens = expTokens[:-1]
+        tmpName = memberName + "()" if line[tokenEndCol] == "(" else memberName 
+        params =(current_file_name,classNameList,classPathXml,expTokens,tmpName)
         defClassName = Talker.getDefClassName(params)
         if defClassName == "" :
             return
@@ -454,6 +470,60 @@ class EditUtil(object):
                     matched_row = lineNum
             vim.command("edit %s" % abs_path)
             vim.command("normal %sG" % str(matched_row))
+        return
+
+    @staticmethod
+    def tipMethodParameter():
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        line = vim_buffer[row-1]
+        current_file_name = vim_buffer.name
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+
+        dotExpParser = Parser.getJavaDotExpParser()
+        tokenEndCol = line[0:col+1].rfind("(")
+        if tokenEndCol < 0 : return
+        expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
+        if not expTokens : return 
+        varName = expTokens[0]
+        endTokenIndex = 0 if len(expTokens)==1 else -1
+
+        if len(expTokens) == 1 or (len(expTokens) == 3  and varName == "this"):
+            if len(expTokens) ==1 :
+                memberName = expTokens[0]
+            else :
+                memberName = expTokens[2]
+            members = Parser.parseAllMemberInfo(vim_buffer)
+            for name,mtype,rtntype,param,lineNum in members :
+                if name == memberName :
+                    matched_row = lineNum
+                    vim.command("normal %sG" % str(matched_row))
+                    return
+        else :
+            expTokens = expTokens[1:]
+            memberName = expTokens[-1]
+
+        if varName[0].isupper():
+            classname = varName
+        elif varName == "this" :
+            classname = "this"
+        else :
+            classname = Parser.getVarType(varName,row-1)
+
+        superClass = Parser.getSuperClass()
+        if not classname :
+            if not superClass : return
+            expTokens.insert(0,varName)
+            classname = superClass
+
+        classNameList = Parser.getFullClassNames(classname)
+        expTokens = expTokens[:-1]
+        params =(current_file_name,classNameList,classPathXml,expTokens,memberName)
+        methodDefs = Talker.getMethodDefs(params)
+        if methodDefs == "" :
+            return
+        VimUtil.writeToJdeConsole(methodDefs)
+        
         return
 
     @staticmethod
@@ -697,7 +767,6 @@ class AutoImport(object):
             rowIndex += 1
             if rowIndex > len(vim_buffer) -1 :
                 break
-
 
 class Parser(object):
 
