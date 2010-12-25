@@ -418,12 +418,14 @@ function! Jdext()
 
   autocmd BufEnter     *.java      nmap <silent><leader>,   :python Runner.runCurrentFile()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>o   :only<cr>
-  autocmd BufEnter     *.java      vmap <silent><leader>gg  :python EditUtil.generateGseter()<cr>
+  autocmd BufEnter     *.java      vmap <silent><leader>gs  :python EditUtil.generateGseter()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>gd  :python EditUtil.locateDefinition()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>ai  :python AutoImport.autoImportVar()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>pt  :python ProjectManager.projectTree()<cr>
+  autocmd BufEnter     *.java      nmap <silent><leader>zo  :call LocateMember()<cr>
   autocmd BufEnter     *.java      imap <silent>mm  <c-o>:python EditUtil.tipMethodParameter()<cr>
+  autocmd BufEnter     *.java      imap <silent>gg  <c-o>:only<cr>
   
 endfunction
 
@@ -462,4 +464,3 @@ nmap <silent><leader>zw  :w<cr>
 
 nmap <silent><leader>ff  :python openInFirefox()<cr>
 nmap <silent><leader>lw  :call LocateFile()<cr>
-nmap <silent><leader>zo  :call LocateMember()<cr>

@@ -43,26 +43,38 @@ Jdext启动后可用的功能
        employee.get*id, 可以匹配 employee.getDeptId();
     c: 对于没有import的类名,也可以直接补全.
 
-1: 保存java时自动编译,编译错误自动设为quickfix列表,可以通过<ctrl-n>,<ctrl-p>跳
+1: 补全完，在括号面输参数时如果忘了参数的类型，可以在插入模式下按mm, 可以提示
+   方法的参数类型，按gg, 提示小窗口就不见了
+
+2: 用"<leader>gd" 实现goto definition的功能
+
+3: 对于在光标下的类,可以用"<leader>dc"来dump一些类信息（类继承,成员等)
+
+4: 保存java时自动编译,编译错误自动设为quickfix列表,可以通过<ctrl-n>,<ctrl-p>跳
    转.Waring默认也是在quickfix列表里的,可以通过sztools.cfg配置为编译时忽略警
    告.
 
-2: ":Run"来运行当前的class, 如果程序有死循环,则默认是30秒后自动返回.
+5: ":Run"来运行当前的class, 如果程序有死循环,则默认是30秒后自动返回.
    也可以用"<leader>,"来运行当前类
 
-3: visual选中field,然后用"<leader>gg"可以为这些field生成getter和setter.
+6: visual选中field,然后用"<leader>gs"可以为这些field生成getter和setter.
 
-4: 对于在光标下的类,可以用"<leader>dc"来dump一些类信息（类继承,成员等)
+7: 对于所有没有import的类,用":AutoImport"来进行自动导入,如果有些类可能位于多个
+   package的,则会进行提示选择. 也可以用默认的mapping "<leader>ai"来自动导入
 
-5: 对于所有没有import的类,用":AutoImport"来进行自动导入,如果有些类可能位于多个
-   package的,则会进行提示选择.
-
-6: ":Ant"命令执行ant, 默认查找项目根目录的build.xml,此命令可以加参数,比如
+8: ":Ant"命令执行ant, 默认查找项目根目录的build.xml,此命令可以加参数,比如
    ":Ant deploy", ":Ant build"
 
-7: 在没有项目配置的目录,可以执行":ProjectInit"来初始化项目设置.
+9: 在没有项目配置的目录,可以执行":ProjectInit"来初始化项目设置.
 
-8: 如果修改了项目的.classpath或.jde配置,可以用":ProjectClean"来更新这些设置.
+10: 如果已经安装了NERDTree插件，用"ProjectTree"来打开项目树，并定位当前文件
+
+11: 如果修改了项目的.classpath或.jde配置,可以用":ProjectClean"来更新这些设置.
+
+12: "<leader>zo" 实现快速成员跳转,类似 eclipse中的<ctrl-o>功能
+
+13: "<leader>lw" 实现文件快速定位,不过需要先在shext中进行索引 ,参见 *Shext*
+
 
 
 ==============================================================================
@@ -123,15 +135,26 @@ Shext                                                *Shext*
     head [arg]     : 显示文件内容 (前10行)
     edit [args]    : 在新的tab中编辑文件
 
+==============================================================================
+
   文件位置索引 :
     locatedb command entry_name [--dir dir][--depth depth][--excludes pattern]  
       这个是一系列命令, command可以是{"add","remove","refresh"}中的一个, add时
     把当前目录保存到entry_name中,后面可以根据entry_name来删除和刷新.在对文件夹
     进行索引后,用"<leader>lw"来定位文件(功能类似于eclipse的<ctrl><shift>R),可
     以使用通配符.
+    
+      在<leader>lw弹出快速定位buffer后,可用的功能健如下
+	      <cr> : 在当前buffer打开选中的文件
+	      <c-t> : 在新的tab中打开选中的文件
+	      <c-b> : 在split出来的buffer 中打开选中的文件
+	      <c-j> : 光标下移
+	      <c-k> : 光标上移
+	      <esc> : 取消文件快速定位
 
     locate   [-n entry_name][-p path][--help]  : 在数据库中查找文件名,查出来
       后, 可以在命令buffer用 $[n]来引用.
+      
 
   杂项 :
     help           : 打印帮助
