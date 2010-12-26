@@ -46,6 +46,10 @@ class VimUtil(object):
         listwinnr=str(vim.eval("winnr('#')"))
         vim.command("exec '%s wincmd w'" % listwinnr)
 
+    @staticmethod
+    def closeJdeConsole():
+        closeOutputBuffer("JdeConsole")
+
 class ProjectManager(object):
     @staticmethod
     def getProjectRoot(filePath):

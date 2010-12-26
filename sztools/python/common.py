@@ -148,36 +148,19 @@ def getLastBuffer():
     vim.command("exec '%s wincmd w'" % listwinnr)
     return buffer
 
-def getWorkBuffer(bufName):
-    work_buffer=None
-
-    for buffer in vim.buffers:
-        if buffer.name == bufName :
-            work_buffer=buffer
-            break
-    return work_buffer
-
 def getOutputBuffer(name):
-        shext_buffer=None
-        for buffer in vim.buffers:
-            if buffer.name and "SzToolView_%s" % name in buffer.name :
-                shext_buffer=buffer
-                break
-        return shext_buffer
+    shext_buffer=None
+    for buffer in vim.buffers:
+        if buffer.name and "SzToolView_%s" % name in buffer.name :
+            shext_buffer=buffer
+            break
+    return shext_buffer
 
-def pydoc(name):
-    """ invoke help(name) to print help info, the text will be
-    output to a splited buffer.
-    """
-    old_stdout=sys.stdout
-    sys.stdout=StringIO()
-    help(name)
-    help_text=sys.stdout.getvalue().split("\n")
-    sys.stdout=old_stdout
-    createOutputBuffer("pydoc")
-    outbuffer=getOutputBuffer("pydoc")
-    output(help_text,outbuffer)
-
+def closeOutputBuffer(name):
+    bufnr = vim.eval("bufnr('SzToolView_%s')" % name)    
+    if bufnr == "-1" :
+        return 
+    vim.command("bd %s" % bufnr)
 
 def startfile():
     """ invoke os.startfile to open the file under the cursor"""
@@ -272,7 +255,6 @@ def saveScratchText():
     for line in vim.current.buffer :
         scratch_buf.append(line.replace("\n",""))
 
-
 def printScriptResult(result):
     """ output to result to a temp vim buffer named "scriptResult" """
     vim.command("call SwitchToSzToolView('scriptResult')")    
@@ -300,7 +282,6 @@ def playWordSound(word):
             word_file=os.path.join(word_dir, word[:-1]+".wav")
         if os.path.exists(word_file):
             pid = Popen([word_player +" " +word_file],shell=True).pid
-
 
 def getWordDef(stardict, word):
     word=word.lower()
@@ -343,7 +324,6 @@ def searchDict(word):
     codepage=sys.getdefaultencoding()
     result=result.encode(codepage,"replace")
     output(result,outbuffer)
-
 
 def getAppHome():
     sztool_home=vim.eval("g:sztool_home")
@@ -418,7 +398,6 @@ def startMailAgent():
     except Exception as e :
         logging.debug(e)
         logging.debug("start ageng error")
-
 
 class SzToolsConfig(object):
 

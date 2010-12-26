@@ -7,13 +7,13 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_COPY_RESOURCE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DUMP_CLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_FETCH_RESULT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_DEFCLASS;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_SET_HOTSWAP;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFS;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,11 +26,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
+import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.VjdeUtil;
 
 public class SzjdeServer extends Thread {
-
+	Logger log = JdeLogger.getLogger("SzjdeServer");
+ 
    private ServerSocket ss;
    private final static String END_TOKEN="==end==";
    
@@ -57,9 +60,9 @@ public class SzjdeServer extends Thread {
     		 pw.write(msg);
              pw.flush();
          }catch (Exception e) {
-        	e.printStackTrace();
+    		String errorMsg = VjdeUtil.getExceptionValue(e);
+    		log.info(errorMsg);
         	if (pw != null ) {
-        		String errorMsg = VjdeUtil.getExceptionValue(e);
         		pw.write(errorMsg);
 	            pw.flush();
         	}
@@ -72,6 +75,7 @@ public class SzjdeServer extends Thread {
    }
    
    public String handleInput(List<String> inputs) {
+	   
 	   Map<String,String> params=new HashMap<String,String>();
 	   String cmdStr = "";
 	   for (String line : inputs) {
@@ -122,6 +126,7 @@ public class SzjdeServer extends Thread {
 	   szjdeCommand.setParams(params);
 	   String result=szjdeCommand.execute();
 	   return result;
+	   
    }
    
 }
