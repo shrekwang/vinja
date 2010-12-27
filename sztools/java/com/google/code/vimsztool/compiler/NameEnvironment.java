@@ -106,7 +106,6 @@ public class NameEnvironment implements INameEnvironment {
 	        InputStream is = classLoader.getResourceAsStream(resourceName);
 	        return is == null;
         } catch (Exception e) {
-        	e.printStackTrace();
         }
         return false;
     }

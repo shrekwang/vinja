@@ -8,7 +8,7 @@ import org.apache.commons.io.FilenameUtils;
 
 public class VjdeUtil {
 	
-	public static String getExceptionValue(Exception e) {
+	public static String getExceptionValue(Throwable e) {
 		StringWriter sw = new StringWriter();
 		PrintWriter pwd = new PrintWriter(sw);
 		e.printStackTrace(pwd);

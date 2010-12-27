@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -20,11 +21,13 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.google.code.vimsztool.omni.PackageInfo;
+import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.Preference;
 import com.google.code.vimsztool.util.UserLibConfig;
+import com.google.code.vimsztool.util.VjdeUtil;
 
 public class CompilerContext {
-
+	private static Logger log = JdeLogger.getLogger("CompilerContext");
 	private String encoding = null;
 	private String srcVM = null;
 	private String dstVM = null;
@@ -91,7 +94,10 @@ public class CompilerContext {
 			if (jarPaths == null ) return;
 			for (String path : jarPaths) {
 				File libFile = new File(path);
-				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {}
+				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {
+					String errorMsg = VjdeUtil.getExceptionValue(e);
+		    		log.info(errorMsg);
+				}
 			}
 		}
 	}
@@ -154,7 +160,10 @@ public class CompilerContext {
 				}
 			}
 			return prop;
-		}catch(Exception e) { }
+		}catch(Exception e) {
+			String errorMsg = VjdeUtil.getExceptionValue(e);
+    		log.info(errorMsg);
+		}
 		return null;
 	}
 	

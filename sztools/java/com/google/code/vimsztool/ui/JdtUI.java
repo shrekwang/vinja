@@ -2,6 +2,7 @@ package com.google.code.vimsztool.ui;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.logging.Logger;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -18,10 +19,14 @@ import org.eclipse.swt.widgets.TrayItem;
 
 import com.google.code.vimsztool.locate.FileSystemDb;
 import com.google.code.vimsztool.server.SzjdeServer;
+import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.Preference;
 import com.google.code.vimsztool.util.UserLibConfig;
+import com.google.code.vimsztool.util.VjdeUtil;
 
 public class JdtUI {
+	
+	private static Logger log = JdeLogger.getLogger("JdtUI");
 	private Shell shell;
 	private Tray systemTray;
 	private Image img;
@@ -66,6 +71,7 @@ public class JdtUI {
 		img.dispose();
 		systemTray.dispose();
 		shell.dispose();
+		JdeLogger.closeHandler();
 		System.exit(0);
 	}
 	
@@ -79,7 +85,8 @@ public class JdtUI {
 			int portNum = Integer.parseInt(port);
 			new SzjdeServer(portNum).start();
 		} catch (Exception e) {
-			e.printStackTrace();
+			String errorMsg = VjdeUtil.getExceptionValue(e);
+    		log.info(errorMsg);
 		}
 	}
 

@@ -2,13 +2,17 @@ package com.google.code.vimsztool.server;
 
 import java.io.File;
 import java.util.List;
+import java.util.logging.Logger;
 
 import com.google.code.vimsztool.compiler.CompileResultInfo;
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.JDTCompiler;
 import com.google.code.vimsztool.util.HotSwapUtil;
+import com.google.code.vimsztool.util.JdeLogger;
+import com.google.code.vimsztool.util.VjdeUtil;
 
 public class SzjdeCompilerCommand extends SzjdeCommand {
+	private static Logger log = JdeLogger.getLogger("SzjdeCompilerCommand");
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -24,6 +28,8 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 			try {
 				hotSwapClass(resultInfo);
 			} catch (Exception e) {
+				String errorMsg = VjdeUtil.getExceptionValue(e);
+	    		log.info(errorMsg);
 			}
 		}
 		

@@ -32,7 +32,7 @@ import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.VjdeUtil;
 
 public class SzjdeServer extends Thread {
-	Logger log = JdeLogger.getLogger("SzjdeServer");
+	private static Logger log = JdeLogger.getLogger("SzjdeServer");
  
    private ServerSocket ss;
    private final static String END_TOKEN="==end==";
@@ -59,7 +59,8 @@ public class SzjdeServer extends Thread {
              String msg = handleInput(inputs);
     		 pw.write(msg);
              pw.flush();
-         }catch (Exception e) {
+
+         }catch (Throwable e) {
     		String errorMsg = VjdeUtil.getExceptionValue(e);
     		log.info(errorMsg);
         	if (pw != null ) {

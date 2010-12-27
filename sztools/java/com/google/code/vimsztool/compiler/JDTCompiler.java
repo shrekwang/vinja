@@ -1,9 +1,7 @@
 
 package com.google.code.vimsztool.compiler;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -17,12 +15,7 @@ import org.eclipse.jdt.internal.compiler.env.INameEnvironment;
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
 
-/**
- * JDT class compiler. This compiler will load source dependencies from the
- * context classloader, reducing dramatically disk access during 
- * the compilation process.
- * 
- */
+
 public class JDTCompiler  {
 	private CompilerContext ctx;
 	  
@@ -31,16 +24,7 @@ public class JDTCompiler  {
 		this.ctx=ctx;
 	}
 	
-	public static void main(String[] args) throws Exception {
-		CompilerContext cc=new CompilerContext("test/classPath.xml");
-		JDTCompiler compiler=new JDTCompiler(cc);
-		compiler.generateClass("test/src/Test.java");
-	}
-	
-    
-    /** 
-     * Compile the servlet from .java file to .class file
-     */
+
     @SuppressWarnings({ "unchecked", "deprecation" })
 	public CompileResultInfo generateClass( final String sourceFile ) {
         

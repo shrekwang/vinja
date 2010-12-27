@@ -59,7 +59,6 @@ public class SzjdeSystemCommand extends SzjdeCommand {
 				String result = runner.communicate(p);
 				cmdResults.put(uuid, result);
 			} catch (Exception err) {
-				err.printStackTrace();
 				cmdResults.put(uuid, VjdeUtil.getExceptionValue(err));
 			}
 			

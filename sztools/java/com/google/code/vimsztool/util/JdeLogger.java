@@ -31,8 +31,14 @@ public class JdeLogger {
 			fileHandler = new FileHandler(logPath);
 			fileHandler.setLevel(Level.INFO);
 			fileHandler.setFormatter(new JdeLogHander());
+			
 		} catch (IOException e) {
 		}
+	}
+	
+	public static void closeHandler() {
+		if (fileHandler ==null) return;
+		fileHandler.close();
 	}
 
 }

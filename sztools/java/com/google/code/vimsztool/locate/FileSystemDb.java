@@ -6,18 +6,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyListener;
 
 import org.apache.commons.io.FilenameUtils;
 
+import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.Preference;
 import com.google.code.vimsztool.util.VjdeUtil;
 
 
 public class FileSystemDb  implements JNotifyListener {
-	
+	private static Logger log = JdeLogger.getLogger("FileSystemDb");
 	private SqliteManager sqliteManager ;
 	private Map<String,WatchedDirInfo> watchedDir= new HashMap<String,WatchedDirInfo>();
 	private static final FileSystemDb instance = new FileSystemDb();
@@ -44,7 +46,8 @@ public class FileSystemDb  implements JNotifyListener {
 			try {
 				file.createNewFile();
 			} catch (Exception e) {
-				e.printStackTrace();
+				String errorMsg = VjdeUtil.getExceptionValue(e);
+	    		log.info(errorMsg);
 			}
 			this.initTable();
 		}
@@ -67,7 +70,8 @@ public class FileSystemDb  implements JNotifyListener {
 		try {
 			JNotify.removeWatch(dirInfo.getWatchId());
 		} catch (Exception e) {
-			e.printStackTrace();
+			String errorMsg = VjdeUtil.getExceptionValue(e);
+    		log.info(errorMsg);
 		}
 		watchedDir.remove(path);
 	}
@@ -83,7 +87,8 @@ public class FileSystemDb  implements JNotifyListener {
 			dirInfo.setWatchId(watchId);
 			watchedDir.put(startDir, dirInfo);
 		} catch (Exception e) {
-			e.printStackTrace();
+			String errorMsg = VjdeUtil.getExceptionValue(e);
+    		log.info(errorMsg);
 		}
 	}
 
