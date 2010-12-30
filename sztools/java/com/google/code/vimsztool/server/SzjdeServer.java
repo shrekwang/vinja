@@ -8,6 +8,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DUMP_CLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_FETCH_RESULT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_DEFCLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFS;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_CONSTRUCTDEFS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
@@ -120,6 +121,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeGetDefClassCommand();
 	   } else if (cmdStr.equals(CMD_GET_METHODDEFS)) {
 		   szjdeCommand = new SzjdeGetMethodDefs();
+	   } else if (cmdStr.equals(CMD_GET_CONSTRUCTDEFS)) {
+		   szjdeCommand = new SzjdeGetConstructorDefs();
 	   }
 	   if (szjdeCommand == null) {
 		   return ("can't find the command '"+cmdStr+"' definition.");

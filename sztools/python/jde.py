@@ -229,6 +229,16 @@ class Talker(object):
         data = Talker.send(params)
         return data
 
+    @staticmethod
+    def getConstructDefs(sourceFile,classnameList,xmlPath):
+        params = dict()
+        params["cmd"]="getConstructDefs"
+        params["sourceFile"] = sourceFile
+        params["classnames"] = ",".join(classnameList)
+        params["classPathXml"] = xmlPath
+        data = Talker.send(params)
+        return data
+
 
     @staticmethod
     def compileFile(xmlPath,sourceFile):
@@ -484,9 +494,21 @@ class EditUtil(object):
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
 
-        dotExpParser = Parser.getJavaDotExpParser()
         tokenEndCol = line[0:col+1].rfind("(")
         if tokenEndCol < 0 : return
+
+        newClassPat = r".*\bnew\s+(?P<name>[A-Z]\w+)$"
+        searchResult = re.search(newClassPat, line[0:tokenEndCol])
+        if searchResult :
+            className = searchResult.group("name")
+            classNameList = Parser.getFullClassNames(className)
+            constructDefs = Talker.getConstructDefs(current_file_name,classNameList,classPathXml)
+            if constructDefs == "" : return
+            VimUtil.writeToJdeConsole(constructDefs)
+            return 
+
+
+        dotExpParser = Parser.getJavaDotExpParser()
         expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
         if not expTokens : return 
         varName = expTokens[0]
