@@ -1167,13 +1167,13 @@ class SzJdeCompletion(object):
                 if not pat.match(mname): continue
                 menu = dict()
                 menu["icase"] = "1"
-                menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
+                #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
                 if mtype == "method" :
                     menu["word"] = mname + "("
-                    menu["menu"] = "%s(%s) : %s " % (mname,param,rtntype)
+                    menu["abbr"] = "%s(%s) : %s " % (mname,param,rtntype)
                 else :
                     menu["word"] = mname
-                    menu["menu"] = rtntype
+                    menu["abbr"] = rtntype
                 result.append(menu)
         return result
 
@@ -1188,13 +1188,13 @@ class SzJdeCompletion(object):
             menu = dict()
             menu["icase"] = "1"
             menu["dup"] = "1"
-            menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
+            #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
             if mtype == "method" :
                 menu["word"] = mname + "("
-                menu["menu"] = "%s(%s) : %s " % (mname,mparams,mreturntype)
+                menu["abbr"] = "%s(%s) : %s " % (mname,mparams,mreturntype)
             else :
                 menu["word"] = mname
-                menu["menu"] = mreturntype
+                menu["abbr"] = mreturntype
             result.append(menu)
         return result
 

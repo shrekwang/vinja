@@ -12,6 +12,8 @@ import java.util.List;
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.CompilerContextManager;
 import com.google.code.vimsztool.compiler.ReflectAbleClassLoader;
+import com.thoughtworks.paranamer.BytecodeReadingParanamer;
+import com.thoughtworks.paranamer.Paranamer;
 
 public class ClassInfo {
 	
@@ -160,21 +162,39 @@ public class ClassInfo {
 	@SuppressWarnings("unchecked")
 	public static String getParameterInfo(Member member) {
 		Class parameters[] ;
+		String[] paramnames;
 		StringBuilder sb=new StringBuilder();
+		Paranamer namer = new BytecodeReadingParanamer();
 		if (member instanceof Method) {
 			Method m = (Method) member;
 			parameters = m.getParameterTypes();
+			paramnames = namer.lookupParameterNames(m, false);
 		} else {
 			Constructor c = (Constructor) member;
 			parameters = c.getParameterTypes();
+			paramnames = namer.lookupParameterNames(c, false);
+		}
+		if (parameters.length > 0) {
+			if (paramnames==null || paramnames.length ==0 ) {
+				paramnames = createDefaultParamNames(parameters.length);
+			}
 		}
 
 		for (int i = 0; i < parameters.length; i++) {
 			if (i > 0) 
 				sb.append(", ");
-			sb.append(typeName(parameters[i]));
+			sb.append(typeName(parameters[i])).append(" ");
+			sb.append(paramnames[i]);
 		}
 		return sb.toString();
+	}
+	
+	public static String[] createDefaultParamNames(int length) {
+		String[] names = new String[length]; 
+		for (int i=0; i<length; i++) {
+			names[i] = "arg"+String.valueOf(i);
+		}
+		return names;
 	}
 	
 	@SuppressWarnings("unchecked")

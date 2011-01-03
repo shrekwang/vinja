@@ -426,6 +426,8 @@ function! Jdext()
   autocmd BufEnter     *.java      nmap <silent><leader>zo  :call LocateMember()<cr>
   autocmd BufEnter     *.java      imap <silent><M-9>       <c-o>:python EditUtil.tipMethodParameter()<cr>
   autocmd BufEnter     *.java      imap <silent><M-0>       <c-o>:python VimUtil.closeJdeConsole()<cr>
+  autocmd BufEnter     *.java      nmap <silent><M-9>       :python EditUtil.tipMethodParameter()<cr>
+  autocmd BufEnter     *.java      nmap <silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
   
 endfunction
 

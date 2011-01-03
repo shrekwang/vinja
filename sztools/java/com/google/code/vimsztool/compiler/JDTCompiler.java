@@ -42,6 +42,8 @@ public class JDTCompiler  {
                      CompilerOptions.GENERATE);
         settings.put(CompilerOptions.OPTION_SourceFileAttribute,
                      CompilerOptions.GENERATE);
+        settings.put(CompilerOptions.OPTION_LocalVariableAttribute, 
+	        		CompilerOptions.GENERATE);
         settings.put(CompilerOptions.OPTION_ReportDeprecation,
                      CompilerOptions.IGNORE);
         if (ctx.getEncoding() != null) {
