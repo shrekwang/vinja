@@ -1173,7 +1173,7 @@ class SzJdeCompletion(object):
                     menu["abbr"] = "%s(%s) : %s " % (mname,param,rtntype)
                 else :
                     menu["word"] = mname
-                    menu["abbr"] = rtntype
+                    menu["abbr"] = "%s : %s " % (mname,rtntype)
                 result.append(menu)
         return result
 
@@ -1194,7 +1194,7 @@ class SzJdeCompletion(object):
                 menu["abbr"] = "%s(%s) : %s " % (mname,mparams,mreturntype)
             else :
                 menu["word"] = mname
-                menu["abbr"] = mreturntype
+                menu["abbr"] = "%s : %s " % (mname,mreturntype)
             result.append(menu)
         return result
 
