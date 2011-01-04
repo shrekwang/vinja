@@ -423,6 +423,18 @@ class EditUtil(object):
             if not re.match("\w",char) :
                 break
             tokenEndCol += 1
+
+        classNamePat = r".*\b(?P<name>[A-Z]\w+)$"
+        searchResult = re.search(classNamePat, line[0:tokenEndCol])
+        if searchResult :
+            className = searchResult.group("name")
+            classNameList = Parser.getFullClassNames(className)
+            for className in classNameList :
+                has_match = EditUtil.searchAndEdit(current_file_name,className, "None")
+                if has_match :
+                    break
+            return 
+
         expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
         if not expTokens :
             return 
@@ -465,7 +477,11 @@ class EditUtil(object):
         defClassName = Talker.getDefClassName(params)
         if defClassName == "" :
             return
+        EditUtil.searchAndEdit(current_file_name, defClassName,memberName)
+        return
 
+    @staticmethod
+    def searchAndEdit(current_file_name, defClassName,memberName):
         abs_path = "abs"
         has_match = False
         rlt_path = defClassName.replace(".", os.path.sep)+".java"
@@ -484,7 +500,7 @@ class EditUtil(object):
                     matched_row = lineNum
             vim.command("edit %s" % abs_path)
             vim.command("normal %sG" % str(matched_row))
-        return
+        return has_match
 
     @staticmethod
     def tipMethodParameter():
