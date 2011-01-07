@@ -373,6 +373,36 @@ def getVisualSynCmd(area=None):
         cmds.append(colorInfo)
     return cmds
 
+def tabulate():
+    startCol,endCol,startLine,endLine=getVisualArea()
+    buffer=getLastBuffer()
+    pat = re.compile("\s+")
+    rows = []
+    for row in buffer[startLine-1:endLine]:
+        fields = pat.split(row)
+        rows.append(fields)
+    result = []
+    maxlens = [0] * len(rows[0])
+    for row in rows :
+        for index,field in enumerate(row):
+            field = str(field).rstrip()
+            if (len(field)>maxlens[index]):
+                maxlens[index] = len(field)
+    headline = ""
+    for item in maxlens:
+        headline = headline + "+" + ("-"*item) + "--"
+    headline = headline+ "+" 
+
+    for rowindex,row in enumerate(rows):
+        line = ""
+        for index,field in enumerate(row):
+            field = str(field).rstrip().replace("\n","")
+            line = line+ "| " + field.ljust(maxlens[index] + 1)
+        if rowindex<2: result.append(headline)
+        result.append(line + "|")
+    result.append(headline)
+    printScriptResult(result)
+
 def initHightLightScheme():
     vim.command("highlight def MarkWord1  ctermbg=Cyan     ctermfg=Black  guibg=#8CCBEA    guifg=Black")
     vim.command("highlight def MarkWord2  ctermbg=Green    ctermfg=Black  guibg=#A4E57E    guifg=Black")

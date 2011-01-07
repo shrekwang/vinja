@@ -459,6 +459,7 @@ nmap <silent><leader>zc  :python startScriptEdit()<cr>
 nmap <silent><leader>zd  :call SearchDict('<C-R><C-W>')<CR>
 vmap <silent><leader>zf  :python simpleFormatSQL()<cr>
 vmap <silent><leader>zm  :python markVisual()<cr>
+vmap <silent><leader>tb  :python tabulate()<cr>
 
 nmap <silent><leader>zs  :python startfile()<cr>
 nmap <silent><leader>zv  <C-Q>
