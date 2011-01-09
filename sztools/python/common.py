@@ -375,7 +375,7 @@ def getVisualSynCmd(area=None):
 
 def tabulate():
     startCol,endCol,startLine,endLine=getVisualArea()
-    buffer=getLastBuffer()
+    buffer=vim.current.buffer
     pat = re.compile("\s+")
     rows = []
     for row in buffer[startLine-1:endLine]:
@@ -401,7 +401,9 @@ def tabulate():
         if rowindex<2: result.append(headline)
         result.append(line + "|")
     result.append(headline)
-    printScriptResult(result)
+    del buffer[startLine-1:endLine]
+    for line in result[::-1] :
+        vim.command("call append(%s,'%s')" %(str(startLine-1),line))
 
 def initHightLightScheme():
     vim.command("highlight def MarkWord1  ctermbg=Cyan     ctermfg=Black  guibg=#8CCBEA    guifg=Black")
