@@ -62,11 +62,16 @@ public class CompilerContext {
 		initClassLoader();
 	}
 	
-	public void createNewClassLoader() {
+	public void refreshClassInfo(List<String> classNames) {
+		
 		if (loader == null) return;
 		URL[] urls = loader.getURLs();
 		loader = new ReflectAbleClassLoader(urls, this.getClass().getClassLoader());
-	}
+		
+		for (String className : classNames ) {
+			packageInfo.addClassNameToCache(className);
+		}	}
+	
 	
 	private void initJdeProperty(String jdeXmlPath) {
 		Map<String,String> prop = parseJdeXmlFile(jdeXmlPath);

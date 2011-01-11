@@ -343,7 +343,7 @@ class EditUtil(object):
         src_locs = ProjectManager.getSrcLocations(cur_file)
         pkg = ""
         for src_loc in src_locs :
-            abs_src = os.path.join(prj_root, src_loc)
+            abs_src = os.path.abspath(os.path.join(prj_root, src_loc))
             if cur_path.startswith(abs_src) :
                 pkg = cur_path[ len(abs_src)+1 : ]
         if pkg != "" :

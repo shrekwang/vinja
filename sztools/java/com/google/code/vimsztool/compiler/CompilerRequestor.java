@@ -64,18 +64,19 @@ public class CompilerRequestor implements ICompilerRequestor {
             if (errorList.isEmpty()) {
             	compileResult.setError(false);
                 ClassFile[] classFiles = result.getClassFiles();
+                List<String> classNames = new ArrayList<String>();
                 for (int i = 0; i < classFiles.length; i++) {
                     ClassFile classFile = classFiles[i];
                     char[][] compoundName = 
                         classFile.getCompoundName();
                     String className = "";
                     String sep = "";
-                    for (int j = 0; 
-                         j < compoundName.length; j++) {
+                    for (int j = 0;  j < compoundName.length; j++) {
                         className += sep;
                         className += new String(compoundName[j]);
                         sep = ".";
                     }
+                    classNames.add(className);
                     byte[] bytes = classFile.getBytes();
                     String outFile = ctx.getOutputDir() + "/" + className.replace('.', '/') + ".class";
                     File parentFile=new File(outFile).getParentFile();
@@ -86,11 +87,9 @@ public class CompilerRequestor implements ICompilerRequestor {
                     bos.close();
                     
                     compileResult.addOutputInfo(className, outFile);
-                    
-                    
                 }
+	            ctx.refreshClassInfo(classNames);
             }
-            ctx.createNewClassLoader(); 
         } catch (IOException exc) {
         	exc.printStackTrace();
         }

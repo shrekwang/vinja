@@ -85,7 +85,7 @@ public class PackageInfo {
 		return result;
 	}
 	
-	private void addClassNameToCache(String className) {
+	public void addClassNameToCache(String className) {
 		//don't cache class under sun or com.sun package
 		if (className == null || className.startsWith("sun") 
 				|| className.startsWith("com.sun")) return ;
