@@ -413,6 +413,7 @@ class ShUtil(object):
         self.locatecmd = LocateCmd(shext_locatedb_path)
         self.yank_buffer = yank_buffer
         self.cd_history = [os.getcwd()]
+        self.pathResolver = PathResolver(self)
 
     def ls(self,cmd_array):
         self.lscmd.ls(cmd_array)
@@ -493,12 +494,7 @@ class ShUtil(object):
         names = []
         currentTabNum = vim.eval("tabpagenr()")
         for arg in args:
-            if arg.startswith("~"):
-                arg = os.path.expanduser(arg)
-            if self.isWildCardStr(arg):
-                file_list = [os.path.join(os.getcwd(),file) for file in glob.glob(arg)]
-            else :
-                file_list = [os.path.join(os.getcwd(),arg)]
+            file_list = self.pathResolver.resolve(arg)
             names.extend(file_list)
         if not options.notab :
             vim.command("tabnew")
@@ -512,45 +508,22 @@ class ShUtil(object):
             vim.command("tabprevious")
 
     def cd(self ,path):
+        abspath = ""
         if path == "-" :
             # cd_history[0] points to current dir
             if len(self.cd_history) > 1 :
                 abspath = self.cd_history[1]
             else :
                 abspath = self.cd_history[0]
-        elif path.startswith("~"):
-            abspath = os.path.expanduser(path)
-        else :
-            abspath = os.path.join(os.getcwd(),path.strip())
 
-        if not os.path.exists(abspath):
-            if "/" in path :
-                tmpPath = path[0:path.find("/")]
-                rtlPath = path[path.find("/")+1:]
-                abspath = os.path.join(self.getbm(tmpPath),rtlPath)
-            else :
-                abspath = self.getbm(path)
-
-        # path not exists and there's no bookmark as same name
-        if abspath == None :
-            filelist = glob.glob(path)
-            #only one match
-            if not filelist :
-                Shext.stdout("directory '%s' not exists." %path)
-                return
-            elif len(filelist) == 1 and os.path.isdir(filelist[0]):
-                abspath = filelist[0]
-            else :
-                Shext.stdout(filelist)
-                return
-        else :
-            # there's a bookmark has the same name, but had been moved or removed.
-            if not os.path.exists(abspath):
-                Shext.stdout("the directory of bookmark '%s' is not exists." %path)
-                return
+        pathList = self.pathResolver.resolve(path)
+        if len(pathList) == 1 and os.path.exists(pathList[0]) :
+            abspath = pathList[0]
+        if not os.path.exists(abspath) :
+            Shext.stdout("directory '%s' not exists." % path)
+            return
 
         vim.command("lcd %s" % abspath.replace(" ",r"\ "))
-        #os.chdir(abspath)
         if abspath in self.cd_history :
             self.cd_history.remove(abspath)
         self.cd_history.insert(0,abspath)
@@ -578,7 +551,7 @@ class ShUtil(object):
         (options, args) = parser.parse_args(args)
         count = 0 
         for arg in args :
-            names = glob.glob(arg)
+            names = self.pathResolver.resolve(arg)
             for name in names :
                 count += 1
                 if (options.recursive) : 
@@ -600,7 +573,7 @@ class ShUtil(object):
         dstfile = open(dst,"w")
         count = 0
         for arg in args[:-1]:
-            names = glob.glob(arg)
+            names = self.pathResolver.resolve(arg)
             for src in names :
                 if os.path.isfile(src) :
                     count +=1
@@ -615,7 +588,7 @@ class ShUtil(object):
         dst = args[-1]
         count = 0
         for arg in args[:-1]:
-            names = glob.glob(arg)
+            names = self.pathResolver.resolve(arg)
             for src in names :
                 count += 1
                 if os.path.isdir(src):
@@ -632,7 +605,7 @@ class ShUtil(object):
             self.yank_buffer = []
         count = 0
         for arg in args :
-            names = glob.glob(arg)
+            names = self.pathResolver.resolve(arg)
             for src in names :
                 count += 1
                 self.yank_buffer.append((mode,os.path.join(pwd,src)))
@@ -662,7 +635,7 @@ class ShUtil(object):
         dst = args[-1]
         count = 0
         for arg in args[:-1]:
-            names = glob.glob(arg)
+            names = self.pathResolver.resolve(arg)
             for src in names :
                 count += 1
                 if os.path.isdir(src):
@@ -714,9 +687,10 @@ class ShUtil(object):
             if name == bm_name :
                 # get rid of "\n"
                 return line[path_start:-1].strip()
-        return None
+        return ""
 
 class ShextArgumentError(Exception):
+
     def __init__(self, msg):
         self.msg = msg
     def __str__(self):
@@ -766,6 +740,7 @@ class Shext(object):
     def __init__(self):
         self.yank_buffer = []
         self.shUtil = ShUtil(screen_width=80,yank_buffer=self.yank_buffer)
+        self.pathResolver = PathResolver(self.shUtil)
         self.special_cmds = ["exit","edit","ledit","bmedit"]
 
     def createOutputBuffer(self):
@@ -839,22 +814,9 @@ class Shext(object):
         else :
             path= ( cmd[-1].strip() == "" and "/" or cmd[-1].strip() )
 
-        if path.startswith("~"):
-            path = os.path.expanduser(path)
-        filelist = glob.glob(path)
-        if not filelist :
-            if "/" in path :
-                tmpPath = path[0:path.find("/")]
-                rtlPath = path[path.find("/")+1:]
-                path = os.path.join(self.shUtil.getbm(tmpPath),rtlPath)
-            else :
-                path = self.shUtil.getbm(path)
-            filelist = glob.glob(path)
-            if not filelist :
-                return
-        elif len(filelist) == 1 and os.path.isdir(filelist[0]):
-            path = filelist[0]
-        self.shUtil.ls([path])
+        pathList = self.pathResolver.resolve(path)
+        if len(pathList) == 1 and os.path.exists(pathList[0]) :
+            self.shUtil.ls([pathList[0]])
 
     def exit(self):
         """
@@ -1070,7 +1032,6 @@ class Shext(object):
             else :
                 buffer.append(line)
 
-
 class OutputNavigator(object):
 
     @staticmethod
@@ -1129,3 +1090,37 @@ class OutputNavigator(object):
         
         listwinnr = str(vim.eval("winnr('#')"))
         vim.command("exec '" + listwinnr + " wincmd w'")
+
+class PathResolver(object):
+
+    def __init__(self,shUtil):
+        self.shUtil = shUtil
+
+    def resolve(self,path):
+        path = path.strip()
+        if path.startswith("~"):
+            abspath = os.path.join(os.path.expanduser("~"),path[1:])
+            path = abspath
+        else :
+            abspath = os.path.join(os.getcwd(),path)
+        if os.path.exists(abspath):
+            return [abspath]
+
+        filelist = glob.glob(path)
+        if len(filelist) > 0 :
+            return filelist 
+
+        if "/" in path :
+            tmpPath = path[0:path.find("/")]
+            rtlPath = path[path.find("/")+1:]
+            abspath = os.path.join(self.shUtil.getbm(tmpPath),rtlPath)
+        else :
+            abspath = self.shUtil.getbm(path)
+        if os.path.exists(abspath):
+            return [abspath]
+
+        filelist = glob.glob(abspath)
+        if len(filelist) > 0 :
+            return filelist 
+
+        return [path]
