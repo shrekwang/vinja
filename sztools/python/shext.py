@@ -493,6 +493,8 @@ class ShUtil(object):
         names = []
         currentTabNum = vim.eval("tabpagenr()")
         for arg in args:
+            if arg.startswith("~"):
+                arg = os.path.expanduser(arg)
             if self.isWildCardStr(arg):
                 file_list = [os.path.join(os.getcwd(),file) for file in glob.glob(arg)]
             else :
@@ -522,7 +524,12 @@ class ShUtil(object):
             abspath = os.path.join(os.getcwd(),path.strip())
 
         if not os.path.exists(abspath):
-            abspath = self.getbm(path)
+            if "/" in path :
+                tmpPath = path[0:path.find("/")]
+                rtlPath = path[path.find("/")+1:]
+                abspath = os.path.join(self.getbm(tmpPath),rtlPath)
+            else :
+                abspath = self.getbm(path)
 
         # path not exists and there's no bookmark as same name
         if abspath == None :
@@ -836,7 +843,15 @@ class Shext(object):
             path = os.path.expanduser(path)
         filelist = glob.glob(path)
         if not filelist :
-            return
+            if "/" in path :
+                tmpPath = path[0:path.find("/")]
+                rtlPath = path[path.find("/")+1:]
+                path = os.path.join(self.shUtil.getbm(tmpPath),rtlPath)
+            else :
+                path = self.shUtil.getbm(path)
+            filelist = glob.glob(path)
+            if not filelist :
+                return
         elif len(filelist) == 1 and os.path.isdir(filelist[0]):
             path = filelist[0]
         self.shUtil.ls([path])
@@ -853,6 +868,9 @@ class Shext(object):
 
     def runSysCmd(self,cmdArray):
         try :
+            cmdPath = os.path.join(os.getcwd(),cmdArray[0])
+            if os.path.isfile(cmdPath) :
+                cmdArray[0] = os.path.abspath(cmdPath)
             if os.name == "posix" :
                 cmdResult = Popen(cmdArray ,stdin=PIPE, stdout=PIPE, stderr=PIPE).communicate()
             else :
