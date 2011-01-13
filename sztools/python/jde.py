@@ -1059,7 +1059,7 @@ class SzJdeCompletion(object):
             index = 0
             for i in range(col-1,-1, -1):
                 char = line[i]
-                if char in " =;,.'()" :
+                if char in " =;,.'()<>[]" :
                     index = i + 1
                     break
             cmd = "let g:SzJdeCompletionIndex = %s" %str(index)
