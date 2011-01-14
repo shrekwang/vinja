@@ -830,9 +830,9 @@ class Shext(object):
 
     def runSysCmd(self,cmdArray):
         try :
-            cmdPath = os.path.join(os.getcwd(),cmdArray[0])
-            if os.path.isfile(cmdPath) :
-                cmdArray[0] = os.path.abspath(cmdPath)
+            file_list = self.pathResolver.resolve(cmdArray[0])
+            if len(file_list) == 1 and  os.path.isfile(file_list[0]) :
+                cmdArray[0] = os.path.abspath(file_list[0])
             if os.name == "posix" :
                 cmdResult = Popen(cmdArray ,stdin=PIPE, stdout=PIPE, stderr=PIPE).communicate()
             else :
