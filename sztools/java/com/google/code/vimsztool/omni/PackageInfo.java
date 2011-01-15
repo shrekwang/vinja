@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -63,10 +64,13 @@ public class PackageInfo {
 	
 	public List<String> findClass(String nameStart) {
 		List<String> result = new ArrayList<String>();
+        String patStr = nameStart.replace("*",".*") + ".*";
+        Pattern pattern = Pattern.compile(patStr);
+	        
 		for (String pkgname : cache.keySet()) {
 			Set<String> classNames = cache.get(pkgname);
 			for (String className : classNames) {
-				if (className.startsWith(nameStart)) {
+				if (pattern.matcher(className).matches()) {
 					result.add(pkgname+"."+className);
 				}
 			}
