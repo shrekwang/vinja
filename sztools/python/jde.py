@@ -9,6 +9,7 @@ from xml.etree.ElementTree import ElementTree
 from subprocess import Popen
 from pyparsing import *
 from string import Template
+import difflib
 
 HOST = 'localhost'
 PORT = 9527
@@ -1131,6 +1132,21 @@ class SzJdeCompletion(object):
         return completeList
 
     @staticmethod
+    def getWordFuzzyCompleteResult(base):
+        vim_buffer = vim.current.buffer
+        bufferText = "\n".join(vim_buffer)
+        pattern = r"\b\w+\b"
+        matches = re.findall(pattern,bufferText)
+        completeList = set()
+        if not matches :
+            return []
+        for item in matches :
+            completeList.add(item)
+        result = difflib.get_close_matches(base, completeList)
+        return result
+
+
+    @staticmethod
     def getMemberCompleteResult(completionType,base):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
@@ -1174,45 +1190,55 @@ class SzJdeCompletion(object):
 
         classNameList = Parser.getFullClassNames(classname)
         params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
-        memberInfos = Talker.getMemberList(params).split("\n")
-        result = SzJdeCompletion.buildCptDictArrary(memberInfos, pat)
+        memberInfoLines = Talker.getMemberList(params).split("\n")
+
+        memberInfos = []
+        for line in memberInfoLines :
+            if line == "" : continue
+            mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
+            memberInfos.append( (mtype,mname,mparams,mreturntype) )
 
         if varName == "this" and len(expTokens) < 2 :
             members = Parser.parseAllMemberInfo(vim_buffer)
-            for mname,mtype,rtntype,param,lineNum in members :
-                if not pat.match(mname): continue
-                menu = dict()
-                menu["icase"] = "1"
-                #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
-                if mtype == "method" :
-                    menu["word"] = mname + "("
-                    menu["abbr"] = "%s(%s) : %s " % (mname,param,rtntype)
-                else :
-                    menu["word"] = mname
-                    menu["abbr"] = "%s : %s " % (mname,rtntype)
-                result.append(menu)
-        return result
+            for mname,mtype,mreturntype,mparams,lineNum in members :
+                memberInfos.append((mtype,mname,mparams, mreturntype))
 
+        result = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
+        
+        return result
 
     @staticmethod
-    def buildCptDictArrary(memberInfos,pat):
+    def buildCptDictArrary(memberInfos,pat,base):
         result = []
         for memberInfo in memberInfos :
-            if memberInfo == "" : continue
-            mtype,mname,mparams,mreturntype,mexceptions = memberInfo.split(":")
+            mtype,mname,mparams,mreturntype = memberInfo
             if not pat.match(mname): continue
-            menu = dict()
-            menu["icase"] = "1"
-            menu["dup"] = "1"
-            #menu["kind"] = SzJdeCompletion.getMemberTypeAbbr(mtype)
-            if mtype == "method" :
-                menu["word"] = mname + "("
-                menu["abbr"] = "%s(%s) : %s " % (mname,mparams,mreturntype)
-            else :
-                menu["word"] = mname
-                menu["abbr"] = "%s : %s " % (mname,mreturntype)
+            menu = SzJdeCompletion.buildCptMenu(mtype,mname,mparams,mreturntype)
             result.append(menu)
+
+        if len(result) == 0 :
+            names = list(set([ mname.lower() for mtype,mname,mparams,mreturntype in memberInfos]))
+            matched_names = difflib.get_close_matches(base,names)
+            for memberInfo in memberInfos :
+                mtype,mname,mparams,mreturntype = memberInfo
+                if mname.lower() in matched_names: 
+                    menu = SzJdeCompletion.buildCptMenu(mtype,mname,mparams,mreturntype)
+                    result.append(menu)
+
         return result
+
+    @staticmethod
+    def buildCptMenu(mtype,mname,mparams,mreturntype):
+        menu = dict()
+        menu["icase"] = "1"
+        menu["dup"] = "1"
+        if mtype == "method" :
+            menu["word"] = mname + "("
+            menu["abbr"] = "%s(%s) : %s " % (mname,mparams,mreturntype)
+        else :
+            menu["word"] = mname
+            menu["abbr"] = "%s : %s " % (mname,mreturntype)
+        return menu
 
     @staticmethod
     def getMemberTypeAbbr(mtype):
@@ -1261,11 +1287,18 @@ class SzJdeCompletion(object):
                 classNameList = ["this"]
                 expTokens = []
                 params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
-                memberInfos = Talker.getMemberList(params).split("\n")
+                memberInfos = []
+                memberInfoLines = Talker.getMemberList(params).split("\n")
                 pat = re.compile("^%s.*" % base.replace("*",".*"), re.IGNORECASE)
-                inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat)
+                for line in memberInfoLines :
+                    if line == "" : continue
+                    mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
+                    memberInfos.append( (mtype,mname,mparams,mreturntype) )
+                inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
                 for item in inheritMembers :
                     result.append(item)
+            if len(result) == 0 :
+                result = SzJdeCompletion.getWordFuzzyCompleteResult(base)
 
         if len(result) > MAX_CPT_COUNT :
             result = result[0:MAX_CPT_COUNT]
