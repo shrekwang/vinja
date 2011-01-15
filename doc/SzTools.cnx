@@ -1,11 +1,11 @@
 *SzTools.txt* plugin 
 
-               By Shrek Wang <shrek.wang@gmail.com>
+            SzTools  help 
 
-Jdext                                     |Jdext|
-Shext                                     |Shext|
-Dbext                                     |Dbext|
-Scratch                                   |Scratch|
+1.Jdext.....................................|Jdext|
+2.Shext.....................................|Shext|
+3.Dbext.....................................|Dbext|
+4.Scratch...................................|Scratch|
 
 ==============================================================================
 Jdext                                                    *Jdext*
@@ -41,7 +41,9 @@ Jdext启动后可用的功能
        <tab>来进行补全.
     b: 方法的补全是忽略大小写的,而且可以用*来匹配任意字符, 比如
        employee.get*id, 可以匹配 employee.getDeptId();
-    c: 对于没有import的类名,也可以直接补全.
+    c: 对于没有匹配到的名称，再继续偿试用模糊匹配来补全， 比如schinfo,可以匹配
+       schoolinfo, sheep 匹配 sleep
+    d: 大写开始的名称进行类名补全(对于没有import的类名,也可以直接补全).
 
 1: 补全完，在括号面输参数时如果忘了参数的类型，在插入模式下按<alt-9>, 可以提示
    方法的参数类型，按<alt-0>, 关闭提示buffer. (构造函数的参数也可以提示)
