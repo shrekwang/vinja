@@ -387,7 +387,7 @@ class EditUtil(object):
                 tmp.append(type_token)
             vartype = "".join(tmp)
             varname = item[1]
-            result = template.replace("$1",varname.title())
+            result = template.replace("$1",varname[0].upper() + varname[1:])
             result = result.replace("$2",vartype)
             result = result.replace("$3",varname)
             sb.append(result)
@@ -1060,7 +1060,7 @@ class SzJdeCompletion(object):
             index = 0
             for i in range(col-1,-1, -1):
                 char = line[i]
-                if char in " =;,.'()<>[]" :
+                if char in " =;,.'()<>[]@\"" :
                     index = i + 1
                     break
             cmd = "let g:SzJdeCompletionIndex = %s" %str(index)
