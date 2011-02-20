@@ -1,6 +1,7 @@
 package com.google.code.vimsztool.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -24,6 +25,20 @@ public class VjdeUtil {
 		File file = new File(FilenameUtils.concat(getUserHome(), ".sztools"	));
 		if (!file.exists()) file.mkdir();
 		return file.getPath();
+	}
+	
+	public static void runVimCmd(String serverName, String[] cmdLine) {
+		try {
+			StringBuffer sb = new StringBuffer();
+			for (String arg : cmdLine ) {
+				sb.append(arg).append(" ");
+			}
+			String vimCmdCall="<esc><esc>:"+sb.toString()+"<cr>";
+			String[] vimRemoteCmdArray = new String[] {"gvim","--servername",serverName,"--remote-send",	vimCmdCall};
+			Runtime.getRuntime().exec(vimRemoteCmdArray);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

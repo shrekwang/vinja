@@ -1405,9 +1405,33 @@ class Jdb(object):
                 classPathXml : %s } 
                 """ % (self.cur_dir, self.project_root, self.class_path_xml)
 
+    def handleSuspend(self,defClassName,lineNum):
+        vim.command("tabn %s" % debugTabNum) # switch to debug tab
+        vim.command("1wincmd w")  # to first window of debug tab
+        abs_path = "abs"
+        has_match = False
+        rlt_path = defClassName.replace(".", os.path.sep)+".java"
+        src_locs = ProjectManager.getSrcLocations(self.class_path_xml)
+        for src_loc in src_locs :
+            abs_path = os.path.join(src_loc, rlt_path)
+            if os.path.exists(abs_path) :
+                has_match = True
+                vim.command("highlight def SuspendLine  ctermbg=Green ctermfg=Black  guibg=#A4E57E guifg=Black")
+                vim.command("sign define SuspendLine linehl=SuspendLine")
+
+                signcmd=Template("sign place ${id} line=${lnum} name=SuspendLine buffer=${nr}")
+                bufnr=str(vim.eval("bufnr('%')"))
+                signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,nr=bufnr)
+                vim.command(signcmd)
+                #syncmd = 'syn match SuspendLine "\%%%sl" ' % lineNum  
+                #vim.command(syncmd)
+                break
+
     @staticmethod
     def runApp():
         global jdb
+        global debugTabNum
+        debugTabNum = vim.eval("tabpagenr()")
         jdb = Jdb()
         vim.command("call SwitchToSzToolView('Jdb')")
         buffer=vim.current.buffer

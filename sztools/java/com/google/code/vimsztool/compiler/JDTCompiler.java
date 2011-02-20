@@ -38,6 +38,8 @@ public class JDTCompiler  {
             DefaultErrorHandlingPolicies.proceedWithAllProblems();
 
         final Map settings = new HashMap();
+        settings.put(CompilerOptions.OPTION_PreserveUnusedLocal, 
+        		CompilerOptions.PRESERVE);
         settings.put(CompilerOptions.OPTION_LineNumberAttribute,
                      CompilerOptions.GENERATE);
         settings.put(CompilerOptions.OPTION_SourceFileAttribute,

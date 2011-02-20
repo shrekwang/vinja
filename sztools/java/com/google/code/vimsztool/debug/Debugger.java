@@ -8,6 +8,7 @@ public class Debugger {
 	
 	private VirtualMachine vm = null;
 	private EventHandler eventHandler = null;
+	private String vimServerName = "";
 	
 	private Debugger() {
 	}
@@ -26,8 +27,8 @@ public class Debugger {
 		eventHandler = new EventHandler(vm);
 		eventHandler.start();
 		
-	    StreamRedirector outRedirector = new StreamRedirector(process.getInputStream(), vimServerName);
-	    StreamRedirector errRedirector = new StreamRedirector(process.getErrorStream(), vimServerName);
+	    StreamRedirector outRedirector = new StreamRedirector(process.getInputStream(), getVimServerName());
+	    StreamRedirector errRedirector = new StreamRedirector(process.getErrorStream(), getVimServerName());
 	    outRedirector.start();
 	    errRedirector.start();
 	    return "success";
@@ -59,6 +60,11 @@ public class Debugger {
 		if (vm!=null )  return true;
 		return false;
 	}
+	public void setVimServerName(String vimServerName) {
+		this.vimServerName = vimServerName;
+	}
+	public String getVimServerName() {
+		return vimServerName;
+	}
 
-	public String vimServerName = "";
 }

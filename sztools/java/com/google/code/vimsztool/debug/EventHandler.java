@@ -1,12 +1,9 @@
 package com.google.code.vimsztool.debug;
 
-import com.sun.jdi.AbsentInformationException;
-import com.sun.jdi.IncompatibleThreadStateException;
-import com.sun.jdi.LocalVariable;
+import com.google.code.vimsztool.util.VjdeUtil;
+import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
-import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
-import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.BreakpointEvent;
 import com.sun.jdi.event.ClassPrepareEvent;
@@ -79,6 +76,15 @@ public class EventHandler extends Thread {
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		threadStack.setCurRefType(refType);
 		threadStack.setCurThreadRef(threadRef);
+		
+		Location loc = breakpointEvent.location();
+		Debugger debugger = Debugger.getInstance();
+		String className = loc.declaringType().name();
+		int lineNum = loc.lineNumber();
+		
+		String[] cmdLine = {"HandleSuspend" ,className, String.valueOf(lineNum)};
+		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
+		
 	}
 
 

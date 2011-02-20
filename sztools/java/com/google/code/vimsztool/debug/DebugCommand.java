@@ -35,7 +35,7 @@ public class DebugCommand  extends SzjdeCommand {
 		
 		if (debugCmd.equals("launch")) {
 			String mainClass = args[1];
-			debugger.vimServerName = serverName;
+			debugger.setVimServerName(serverName);
 			actionResult = debugger.launch(mainClass, classPathXml);
 		} else if (debugCmd.equals("breakpoint_add")) {
 			String fileName = args[1];
