@@ -10,11 +10,13 @@ from subprocess import Popen
 from pyparsing import *
 from string import Template
 import difflib
+from common import output
 
 HOST = 'localhost'
 PORT = 9527
 END_TOKEN = "==end=="
 MAX_CPT_COUNT = 200
+bp_data = {}
 
 class VimUtil(object):
     @staticmethod
@@ -32,20 +34,37 @@ class VimUtil(object):
         return index
 
     @staticmethod
-    def writeToJdeConsole(text):
-        if not text :
-            return
-        vim.command("call SwitchToSzToolView('%s')" % "JdeConsole")
+    def getJdeConsoleBuffer():
+        def _getConsoleBuffer():
+            jde_console_buf = None
+            for buffer in vim.buffers:
+                if buffer.name and buffer.name.find( "SzToolView_JdeConsole") > -1 :
+                    jde_console_buf = buffer
+                    break
+            return jde_console_buf
+        buf = _getConsoleBuffer()
+        if buf == None :
+            vim.command("call SwitchToSzToolView('%s')" % "JdeConsole")
+            listwinnr=str(vim.eval("winnr('#')"))
+            vim.command("exec '%s wincmd w'" % listwinnr)
+            buf = _getConsoleBuffer()
+
+        return buf
+
+
+    @staticmethod
+    def writeToJdeConsole(text, append=False):
+        if not text : return
+        buf = VimUtil.getJdeConsoleBuffer()
+
         if type(text) == type(""):
             lines = text.split("\n")
         else :
             lines = text
-        win_height = len(lines) + 1
-        win_height = 20 if win_height > 20 else win_height
-        vim.command("resize %s" % str(win_height) )
-        output(lines)
-        listwinnr=str(vim.eval("winnr('#')"))
-        vim.command("exec '%s wincmd w'" % listwinnr)
+        #win_height = len(lines) + 1
+        #win_height = 20 if win_height > 20 else win_height
+        #vim.command("resize %s" % str(win_height) )
+        output(lines,buf, append)
 
     @staticmethod
     def closeJdeConsole():
@@ -580,6 +599,43 @@ class EditUtil(object):
         classNameList = Parser.getFullClassNames(classname)
         result = Talker.dumpClass(classPathXml,classNameList)
         VimUtil.writeToJdeConsole(result)
+
+    @staticmethod
+    def toggleBreakpoint():
+        global bp_data
+        vim.command("sign define SzjdeBreakPoint text=BP texthl=LineNr")
+        file_name = vim.current.buffer.name
+        (row,col) = vim.current.window.cursor
+        bp_set = bp_data.get(file_name)
+        signGroup = "SzjdeBreakPoint"
+        if bp_set == None :
+            bp_set = set()
+
+        class_path_xml = ProjectManager.getClassPathXml(file_name)
+        serverName = vim.eval("v:servername")
+
+        if row in bp_set :
+            cmdline = "breakpoint_remove %s %s" % (file_name,row)
+            data = JdbTalker.submit(cmdline,class_path_xml,serverName)
+            if data == "success" :
+                signcmd="sign unplace %s" % row
+                vim.command(signcmd)
+                bp_set.remove(row)
+            else :
+                logging.debug("toggle breakpoint error : msgs "+data)
+        else :
+            cmdline = "breakpoint_add %s %s" % (file_name,row)
+            data = JdbTalker.submit(cmdline,class_path_xml,serverName)
+            if data == "success" :
+                signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
+                bufnr=str(vim.eval("bufnr('%')"))
+                signcmd =signcmd.substitute(id=row,lnum=row,name=signGroup, nr=bufnr)
+                vim.command(signcmd)
+                bp_set.add(row)
+                bp_data[file_name] = bp_set
+            else :
+                logging.debug("toggle breakpoint error : msgs "+ data)
+
 
 class Compiler(object):
 
@@ -1303,4 +1359,111 @@ class SzJdeCompletion(object):
         if len(result) > MAX_CPT_COUNT :
             result = result[0:MAX_CPT_COUNT]
         return str(result)
+
+class JdbTalker(object):
+    @staticmethod
+    def send(params):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST, PORT))
+        sb = []
+        for item in params :
+            sb.append("%s=%s\n" %(item,params[item]))
+        sb.append('%s\n' % END_TOKEN)
+        s.send("".join(sb))
+        total_data=[]
+        while True:
+            data = s.recv(8192)
+            if not data: break
+            total_data.append(data)
+        s.close()
+        return ''.join(total_data)
+
+    @staticmethod
+    def submit(cmdLine,xmlPath,serverName):
+        params = dict()
+        params["cmd"]="debug"
+        params["debugCmdArgs"] = cmdLine
+        params["classPathXml"] = xmlPath
+        params["serverName"] = serverName
+        data = JdbTalker.send(params)
+        return data
+
+class Jdb(object):
+
+    def __init__(self):
+        self.cur_dir = os.getcwd()
+        self.bp_data = {}
+        fake_path = os.path.join(self.cur_dir,"fake")
+        self.project_root = ProjectManager.getProjectRoot(fake_path)
+        self.class_path_xml = ProjectManager.getClassPathXml(fake_path)
+        self.serverName = vim.eval("v:servername")
+
+    def __str__(self):
+
+        return """Jdb : { cur_dir : %s,
+                project_root : %s ,
+                classPathXml : %s } 
+                """ % (self.cur_dir, self.project_root, self.class_path_xml)
+
+    @staticmethod
+    def runApp():
+        global jdb
+        jdb = Jdb()
+        vim.command("call SwitchToSzToolView('Jdb')")
+        buffer=vim.current.buffer
+        output(">",buffer,False)
+        vim.current.window.cursor = (1,1)
+        vim.command("startinsert")
+
+    def stdout(self,msg):
+        buffer=vim.current.buffer
+        output(msg,buffer,True)
+
+    def exit(self):
+        vim.command("bw! SzToolView_Jdb")
+
+    def help(self):
+        help_file = open(os.path.join(getShareHome(),"doc/sztools.help"))
+        content = [line.replace("\n","") for line in help_file.readlines()]
+        help_file.close()
+        self.stdout(content)
+
+    def getCmdLine(self):
+        work_buffer = vim.current.buffer
+        row,col = vim.current.window.cursor
+        return work_buffer[row-1]
+
+    def appendPrompt(self):
+        self.stdout(">")
+        buffer=vim.current.buffer
+        row = len(buffer)
+        col = len(buffer[-1])
+        vim.current.window.cursor = (row, col)
+        vim.command("startinsert")
+
+    def executeCmd(self):
+        
+        #if self.project_root == None or not os.path.exists(self.project_root) :
+        #    return 
+        cmdLine = self.getCmdLine()
+
+        if cmdLine.strip() == "" :
+            self.appendPrompt()
+            return
+
+        cmdLine = cmdLine.replace("\ ","$$").strip()[1:]
+
+        if cmdLine == "wow":
+            self.stdout(self)
+            self.appendPrompt()
+            return 
+
+        data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
+        if data : 
+            self.stdout(data)
+        if cmdLine == "exit" :
+            self.exit()
+            return 
+        self.appendPrompt()
+
 

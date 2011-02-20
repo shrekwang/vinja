@@ -359,6 +359,10 @@ function FetchResult(guid)
   python Runner.fetchResult(vim.eval("a:guid"))
 endfunction
 
+function FetchDebugOutput(line)
+  python VimUtil.writeToJdeConsole(vim.eval("a:line"),True)
+endfunction
+
 function RunAntBuild(...)
   if a:0 > 0
     python Runner.runAntBuild(vim.eval("a:1"))
@@ -374,6 +378,11 @@ endfunction
 function JdeHotSwapDisable()
   python Talker.hotswapEnabled("false")
 endfunction 
+
+function! Jdb()
+  python Jdb.runApp()
+  imap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>
+endfunction
 
 
 function JdeDotCompletion()
@@ -404,17 +413,20 @@ function! Jdext()
   map <C-n> :cn<cr>
   map <C-p> :cp<cr>
 
-  command! -nargs=0   DumpClass    :python EditUtil.dumpClassInfo()
-  command! -nargs=0   AutoImport   :python AutoImport.autoImportVar()
-  command! -nargs=0   Run          :python Runner.runCurrentFile()
-  command! -nargs=0   Overide      :python EditUtil.overideMethod()
-  command! -nargs=0   ProjectInit  :python ProjectManager.projectInit()
-  command! -nargs=0   ProjectClean :python ProjectManager.projectClean()
-  command! -nargs=0   ProjectTree  :python ProjectManager.projectTree()
-  command! -nargs=?   Ant          :call RunAntBuild('<args>')
-  command! -nargs=1   FetchResult  :call FetchResult('<args>')
-  command! -nargs=0   StopHotswap  :call JdeHotSwapDisable()
-  command! -nargs=1   StartHotswap  :call JdeHotSwapEnable('<args>')
+  command! -nargs=0   DumpClass        :python EditUtil.dumpClassInfo()
+  command! -nargs=0   AutoImport       :python AutoImport.autoImportVar()
+  command! -nargs=0   Run              :python Runner.runCurrentFile()
+  command! -nargs=0   Overide          :python EditUtil.overideMethod()
+  command! -nargs=0   ProjectInit      :python ProjectManager.projectInit()
+  command! -nargs=0   ProjectClean     :python ProjectManager.projectClean()
+  command! -nargs=0   ProjectTree      :python ProjectManager.projectTree()
+  command! -nargs=?   Ant              :call RunAntBuild('<args>')
+  command! -nargs=1   FetchResult      :call FetchResult('<args>')
+  command! -nargs=0   StopHotswap      :call JdeHotSwapDisable()
+  command! -nargs=1   StartHotswap     :call JdeHotSwapEnable('<args>')
+  command! -nargs=0   Jdb              :call Jdb()
+  command! -nargs=0   ToggleBreakPoint :python EditUtil.toggleBreakpoint()
+  command! -nargs=1   FetchDebugOutput :call FetchDebugOutput('<args>')
 
   autocmd BufEnter     *.java      nmap <silent><leader>,   :python Runner.runCurrentFile()<cr>
   autocmd BufEnter     *.java      nmap <silent><M-0>       :python VimUtil.closeJdeConsole()<cr>

@@ -2,6 +2,7 @@ package com.google.code.vimsztool.server;
 
 public class SzjdeConstants {
 	
+	public final static String CMD_DEBUG="debug";
 	public final static String CMD_COMPILE="compile";
 	public final static String CMD_COMPLETE="completion";
 	public final static String CMD_LOCATEDB="locatedb";

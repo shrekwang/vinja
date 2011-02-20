@@ -6,15 +6,16 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_COMPLETE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_COPY_RESOURCE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DUMP_CLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_FETCH_RESULT;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_CONSTRUCTDEFS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_DEFCLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFS;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_CONSTRUCTDEFS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_SET_HOTSWAP;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DEBUG;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import com.google.code.vimsztool.debug.DebugCommand;
 import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.VjdeUtil;
 
@@ -123,6 +125,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeGetMethodDefs();
 	   } else if (cmdStr.equals(CMD_GET_CONSTRUCTDEFS)) {
 		   szjdeCommand = new SzjdeGetConstructorDefs();
+	   } else if (cmdStr.equals(CMD_DEBUG)) {
+		   szjdeCommand = new DebugCommand();
 	   }
 	   if (szjdeCommand == null) {
 		   return ("can't find the command '"+cmdStr+"' definition.");
