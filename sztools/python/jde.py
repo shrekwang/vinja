@@ -1431,6 +1431,7 @@ class Jdb(object):
                 #syncmd = 'syn match SuspendLine "\%%%sl" ' % lineNum  
                 #vim.command(syncmd)
                 break
+        vim.command("call SwitchToSzToolView('Jdb')")
 
     def resumeSuspend(self):
         if self.suspendRow != -1 :
@@ -1476,7 +1477,7 @@ class Jdb(object):
         vim.current.window.cursor = (row, col)
         vim.command("startinsert")
 
-    def executeCmd(self):
+    def executeCmd(self, insertMode = True):
         
         #if self.project_root == None or not os.path.exists(self.project_root) :
         #    return 
@@ -1501,6 +1502,7 @@ class Jdb(object):
         if cmdLine == "exit" :
             self.exit()
             return 
-        self.appendPrompt()
+        if insertMode :
+            self.appendPrompt()
 
 

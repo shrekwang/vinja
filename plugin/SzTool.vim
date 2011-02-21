@@ -387,6 +387,7 @@ endfunction
 function! Jdb()
   python Jdb.runApp()
   imap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>
+  nnoremap <buffer><silent><cr>   :python jdb.executeCmd(insertMode=False)<cr>
 endfunction
 
 

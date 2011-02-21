@@ -32,7 +32,7 @@ public class Debugger {
 	    StreamRedirector errRedirector = new StreamRedirector(process.getErrorStream(), getVimServerName());
 	    outRedirector.start();
 	    errRedirector.start();
-	    return "success";
+	    return "";
 	}
 	
 	public String resume() {

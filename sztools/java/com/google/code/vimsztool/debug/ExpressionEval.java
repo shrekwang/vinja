@@ -3,9 +3,11 @@ package com.google.code.vimsztool.debug;
 import java.util.List;
 
 import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.ArrayReference;
 import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.LocalVariable;
+import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
@@ -45,6 +47,14 @@ public class ExpressionEval {
 		} catch (AbsentInformationException e) {
 		}
 		return "eval expression error";
+	}
+	public static String evalRemoteValue(Value value) {
+		if (value instanceof ArrayReference) {
+			
+		} else if (value instanceof ObjectReference) {
+			
+		} 
+		return "";
 	}
 
 }
