@@ -11,6 +11,7 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventIterator;
 import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.event.VMDisconnectEvent;
 import com.sun.jdi.event.VMStartEvent;
 import com.sun.jdi.request.EventRequestManager;
@@ -32,6 +33,8 @@ public class EventHandler extends Thread {
 		eventQueue = vm.eventQueue();
 		while (true) {
 			if (vmExit == true) {
+				Debugger debugger = Debugger.getInstance();
+				debugger.exit();
 				break;
 			}
 			try {
@@ -50,6 +53,8 @@ public class EventHandler extends Thread {
 					handleBreakpointEvent((BreakpointEvent)event);
 				} else if (event instanceof VMDisconnectEvent) {
 					vmExit = true;
+				} else if (event instanceof StepEvent) {
+					handleStepEvent((StepEvent)event);
 				} else {
 					eventSet.resume();
 				}
@@ -87,5 +92,22 @@ public class EventHandler extends Thread {
 		
 	}
 
+	private void handleStepEvent(StepEvent event) {
+		StepEvent stepEvent = (StepEvent) event;
+		ThreadReference threadRef = stepEvent.thread();
+		ReferenceType refType = stepEvent.location().declaringType();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		threadStack.setCurRefType(refType);
+		threadStack.setCurThreadRef(threadRef);
+		
+		Location loc = stepEvent.location();
+		Debugger debugger = Debugger.getInstance();
+		String className = loc.declaringType().name();
+		int lineNum = loc.lineNumber();
+		
+		String[] cmdLine = {"HandleSuspend" ,className, String.valueOf(lineNum)};
+		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
+		
+	}
 
 }

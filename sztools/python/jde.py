@@ -1397,6 +1397,8 @@ class Jdb(object):
         self.project_root = ProjectManager.getProjectRoot(fake_path)
         self.class_path_xml = ProjectManager.getClassPathXml(fake_path)
         self.serverName = vim.eval("v:servername")
+        self.suspendRow = -1
+        self.suspendBufnr = -1
 
     def __str__(self):
 
@@ -1422,10 +1424,17 @@ class Jdb(object):
                 signcmd=Template("sign place ${id} line=${lnum} name=SuspendLine buffer=${nr}")
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,nr=bufnr)
+                self.suspendRow = lineNum
+                self.suspendBufnr = bufnr
                 vim.command(signcmd)
                 #syncmd = 'syn match SuspendLine "\%%%sl" ' % lineNum  
                 #vim.command(syncmd)
                 break
+
+    def resumeSuspend(self):
+        if self.suspendRow != -1 :
+            signcmd="sign unplace $%  buffer=%s" %(self.suspendRow, self.suspendBufnr)
+            vim.command(signcmd)
 
     @staticmethod
     def runApp():
@@ -1481,6 +1490,8 @@ class Jdb(object):
             self.stdout(self)
             self.appendPrompt()
             return 
+        if cmdLine in ["step_in","step_out","step_return","resume"]:
+            self.resumeSuspend()
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
