@@ -13,7 +13,7 @@ public class DebugCommand  extends SzjdeCommand {
 	
 	private static String[] availCmds = { "launch", "exit", "print", 
 		"breakpoints", "stack", "attach","breakpoint_add", "breakpoint_remove",
-		"step_in","step_over","step_return", "resume"};
+		"step_into","step_over","step_return", "resume"};
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -57,6 +57,8 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("print")) {
 			String exp = args[1];
 			actionResult =  ExpressionEval.eval(exp);
+		} else if (debugCmd.equals("resume")) {
+			debugger.resume();
 		} else if (debugCmd.equals("exit")) {
 			debugger.exit();
 		}

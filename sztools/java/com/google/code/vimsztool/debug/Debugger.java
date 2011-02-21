@@ -1,5 +1,6 @@
 package com.google.code.vimsztool.debug;
 
+import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
 
 public class Debugger {
@@ -33,14 +34,12 @@ public class Debugger {
 	    errRedirector.start();
 	    return "success";
 	}
-	//TODO : vim 中写 scroll to source 函数
 	
-	public void stepIn() {
-	}
-	public void stepOver() {
-	}
-	public void stepOut() {
-		
+	public String resume() {
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		ThreadReference threadRef = threadStack.getCurThreadRef();
+		threadRef.resume();
+		return "";
 	}
 	
 	public String eval(String exp) {
@@ -48,8 +47,12 @@ public class Debugger {
 	}
 	
 	public void exit() {
-		vm.dispose();
-		vm = null;
+		try {
+			vm.dispose();
+		} catch (Throwable e) {
+		} finally {
+			vm = null;
+		}
 	}
 	
 	public VirtualMachine getVm() {
