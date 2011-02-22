@@ -12,6 +12,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CPT_TYPE;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_EXP_TOKENS;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -21,6 +22,7 @@ import com.google.code.vimsztool.omni.ClassInfo;
 import com.google.code.vimsztool.omni.JavaExpUtil;
 import com.google.code.vimsztool.omni.MemberInfo;
 import com.google.code.vimsztool.omni.PackageInfo;
+import com.google.code.vimsztool.util.ClassNameComparator;
 import com.google.code.vimsztool.util.ModifierFilter;
 
 
@@ -48,6 +50,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		CompilerContext ctx = getCompilerContext(classPathXml);
 		PackageInfo packageInfo = ctx.getPackageInfo();
 		List<String> classNameList=packageInfo.findClass(nameStart);
+		Collections.sort(classNameList, new ClassNameComparator());
 		StringBuilder sb=new StringBuilder();
 		for (String name : classNameList) {
 			sb.append(name).append("\n");
