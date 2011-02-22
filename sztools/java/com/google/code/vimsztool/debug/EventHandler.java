@@ -71,7 +71,7 @@ public class EventHandler extends Thread {
 		String mainClassName = classPrepareEvent.referenceType().name();
 		BreakpointManager bpm = BreakpointManager.getInstance();
 		bpm.tryCreateBreakpointRequest(mainClassName);
-		eventSet.resume();
+		event.thread().resume();
 	}
 	
 	private void handleBreakpointEvent(BreakpointEvent event) {

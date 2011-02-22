@@ -27,7 +27,7 @@ public class BreakpointManager {
 	public String addBreakpoint(String mainClass, int lineNum) {
 		Breakpoint breakpoint = new Breakpoint(mainClass, lineNum);
 		allBreakpoints.add(breakpoint);
-		tryCreateBreakpointRequest(mainClass, lineNum);
+		tryCreateBreakpointRequest(breakpoint);
 		return "success";
 	}
 
@@ -58,7 +58,7 @@ public class BreakpointManager {
 			ClassPrepareRequest classPrepareRequest = erm.createClassPrepareRequest();
 			classPrepareRequest.addClassFilter(bp.getMainClass()+"*");
 			classPrepareRequest.addCountFilter(1);
-			classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
+			classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 			classPrepareRequest.enable();
 		}
 
@@ -86,13 +86,15 @@ public class BreakpointManager {
 	public void tryCreateBreakpointRequest(String className) {
 		for (Breakpoint bp : allBreakpoints) {
 			if (bp.getMainClass().equals(className)) {
-				tryCreateBreakpointRequest(className,bp.getLineNum());
+				tryCreateBreakpointRequest(bp);
 			}
 		}
 	}
 
-	public void tryCreateBreakpointRequest(String className, int lineNum) {
+	public void tryCreateBreakpointRequest(Breakpoint breakpoint) {
 
+		String className = breakpoint.getMainClass();
+		int lineNum = breakpoint.getLineNum();
 		
 		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
@@ -116,8 +118,11 @@ public class BreakpointManager {
 				}
 				Location loc = lines.get(0);
 				BreakpointRequest request = vm.eventRequestManager().createBreakpointRequest(loc);
+				request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 				request.setEnabled(true);
+				breakpoint.addRequest(request);
 			} catch (AbsentInformationException e) {
+				e.printStackTrace();
 			}
 		}
 
