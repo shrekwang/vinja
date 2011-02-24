@@ -79,14 +79,6 @@ public class Debugger {
 	}
 
 	public void exit() {
-		destoryVm();
-
-	}
-	public void shutdown() {
-		destoryVm();
-	}
-	
-	private void destoryVm() {
 		if (vm == null ) return;
 		try {
 			vm.dispose();
@@ -94,6 +86,15 @@ public class Debugger {
 		} 
 		vm = null;
 	}
+	public void shutdown() {
+		if (vm == null ) return;
+		try {
+			vm.exit(-1);
+		} catch (Throwable e) {
+		} 
+		vm = null;
+	}
+	
 
 	public VirtualMachine getVm() {
 		return vm;

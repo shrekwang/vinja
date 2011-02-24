@@ -1494,7 +1494,7 @@ class Jdb(object):
             self.stdout(self)
             self.appendPrompt()
             return 
-        if cmdLine in ["step_into","step_over","step_return","resume"]:
+        if cmdLine in ["step_into","step_over","step_return","resume","exit","shutdown"]:
             self.resumeSuspend()
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
