@@ -1,7 +1,11 @@
 package com.google.code.vimsztool.debug;
 
+import java.util.List;
+
+import com.sun.jdi.Location;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.request.BreakpointRequest;
 
 public class Debugger {
 
@@ -47,6 +51,21 @@ public class Debugger {
 		startProcess();
 		return "";
 	}
+	
+	public String listBreakpoints() {
+		List<BreakpointRequest> bps = vm.eventRequestManager().breakpointRequests();
+		StringBuilder sb = new StringBuilder();
+		for (BreakpointRequest bp : bps ) {
+			Location loc = bp.location();
+			String className = loc.declaringType().name();
+			sb.append(className).append(" [line: ");
+			sb.append(loc.lineNumber()).append("] - ");
+			sb.append(loc.method()).append("()");
+			sb.append("\n");
+		}
+		
+		return sb.toString();
+	}
 
 	public String resume() {
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
@@ -60,12 +79,20 @@ public class Debugger {
 	}
 
 	public void exit() {
+		destoryVm();
+
+	}
+	public void shutdown() {
+		destoryVm();
+	}
+	
+	private void destoryVm() {
+		if (vm == null ) return;
 		try {
 			vm.dispose();
 		} catch (Throwable e) {
-		} finally {
-			vm = null;
-		}
+		} 
+		vm = null;
 	}
 
 	public VirtualMachine getVm() {

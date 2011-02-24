@@ -1408,8 +1408,11 @@ class Jdb(object):
                 """ % (self.cur_dir, self.project_root, self.class_path_xml)
 
     def handleSuspend(self,defClassName,lineNum):
-        vim.command("tabn %s" % debugTabNum) # switch to debug tab
-        vim.command("1wincmd w")  # to first window of debug tab
+        vim.command("tabn %s" % debugTabNum) 
+        for i in range(1,5):
+            vim.command("%swincmd w" % str(i))    
+            if vim.eval("&buftype") == "" :
+                break
         abs_path = "abs"
         has_match = False
         rlt_path = defClassName.replace(".", os.path.sep)+".java"
@@ -1418,18 +1421,17 @@ class Jdb(object):
             abs_path = os.path.join(src_loc, rlt_path)
             if os.path.exists(abs_path) :
                 has_match = True
+                if abs_path != vim.current.buffer.name :
+                    vim.command("edit %s" % abs_path)
                 vim.command("highlight def SuspendLine  ctermbg=Green ctermfg=Black  guibg=#A4E57E guifg=Black")
                 vim.command("sign define SuspendLine linehl=SuspendLine")
-
                 signcmd=Template("sign place ${id} line=${lnum} name=SuspendLine buffer=${nr}")
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,nr=bufnr)
-                logging.debug("sign cmd is %s " % signcmd)
                 self.suspendRow = lineNum
                 self.suspendBufnr = bufnr
                 vim.command(signcmd)
-                #syncmd = 'syn match SuspendLine "\%%%sl" ' % lineNum  
-                #vim.command(syncmd)
+                vim.command("normal %sG" % str(lineNum))
                 break
         vim.command("call SwitchToSzToolView('Jdb')")
 
@@ -1437,7 +1439,6 @@ class Jdb(object):
         if self.suspendRow != -1 :
             signcmd="sign unplace %s buffer=%s" %(self.suspendRow, self.suspendBufnr)
             vim.command(signcmd)
-            logging.debug("unsign cmd is %s " % signcmd)
 
     @staticmethod
     def runApp():

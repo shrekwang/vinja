@@ -40,8 +40,10 @@ public class BreakpointManager {
 				break;
 			}
 		}
-		tryRemoveBreakpointRequest(breakpoint);
-		allBreakpoints.remove(breakpoint);
+		if (breakpoint != null) {
+			tryRemoveBreakpointRequest(breakpoint);
+			allBreakpoints.remove(breakpoint);
+		}
 		return "success";
 
 	}

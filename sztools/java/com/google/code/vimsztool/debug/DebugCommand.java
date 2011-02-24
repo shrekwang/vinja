@@ -13,12 +13,14 @@ public class DebugCommand  extends SzjdeCommand {
 	
 	private static String[] availCmds = { "launch", "exit", "print", 
 		"breakpoints", "stack", "attach","breakpoint_add", "breakpoint_remove",
-		"step_into","step_over","step_return", "resume"};
+		"step_into","step_over","step_return", "resume", "shutdown"};
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
 		String debugCmdArgs = params.get("debugCmdArgs");
+		
 		String serverName = params.get("serverName");
+		debugger.setVimServerName(serverName);
 		
 		CompilerContextManager ccm = CompilerContextManager.getInstnace();
 		CompilerContext ctx = ccm.getCompilerContext(classPathXml);
@@ -36,7 +38,6 @@ public class DebugCommand  extends SzjdeCommand {
 		
 		if (debugCmd.equals("launch")) {
 			String mainClass = args[1];
-			debugger.setVimServerName(serverName);
 			actionResult = debugger.launch(mainClass, classPathXml);
 		} else if (debugCmd.equals("attach")) {
 			String port = args[1];
@@ -60,8 +61,12 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("print")) {
 			String exp = args[1];
 			actionResult =  ExpressionEval.eval(exp);
+		} else if (debugCmd.equals("breakpoints")) {
+			actionResult = debugger.listBreakpoints();
 		} else if (debugCmd.equals("resume")) {
 			debugger.resume();
+		} else if (debugCmd.equals("shutdown")) {
+			debugger.shutdown();
 		} else if (debugCmd.equals("exit")) {
 			debugger.exit();
 		}

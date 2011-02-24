@@ -165,7 +165,7 @@ public class CompilerContext {
 				}
 			}
 			return prop;
-		}catch(Exception e) {
+		}catch(Throwable e) {
 			String errorMsg = VjdeUtil.getExceptionValue(e);
     		log.info(errorMsg);
 		}
