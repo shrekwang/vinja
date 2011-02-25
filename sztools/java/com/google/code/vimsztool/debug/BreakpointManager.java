@@ -1,6 +1,7 @@
 package com.google.code.vimsztool.debug;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import com.sun.jdi.AbsentInformationException;
@@ -56,7 +57,11 @@ public class BreakpointManager {
 		EventRequestManager erm = vm.eventRequestManager();
 		if (erm == null) return;
 		
+		HashSet<String> names = new HashSet<String>();
+		
 		for (Breakpoint bp : allBreakpoints) {
+			if (names.contains(bp.getMainClass())) continue;
+			names.add(bp.getMainClass());
 			ClassPrepareRequest classPrepareRequest = erm.createClassPrepareRequest();
 			classPrepareRequest.addClassFilter(bp.getMainClass()+"*");
 			classPrepareRequest.addCountFilter(1);

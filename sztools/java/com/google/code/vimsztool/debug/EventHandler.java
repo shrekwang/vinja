@@ -12,6 +12,7 @@ import com.sun.jdi.event.EventIterator;
 import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.StepEvent;
+import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.event.VMDisconnectEvent;
 import com.sun.jdi.event.VMStartEvent;
 import com.sun.jdi.request.EventRequestManager;
@@ -53,6 +54,8 @@ public class EventHandler extends Thread {
 					handleBreakpointEvent((BreakpointEvent)event);
 				} else if (event instanceof VMDisconnectEvent) {
 					vmExit = true;
+				} else if (event instanceof VMDeathEvent) {
+					vmExit = true;
 				} else if (event instanceof StepEvent) {
 					handleStepEvent((StepEvent)event);
 				} else {
@@ -60,6 +63,14 @@ public class EventHandler extends Thread {
 				}
 			}
 		}
+	}
+	
+	public void handleVMDeathEvent(VMDeathEvent event) {
+		//TODO : send msg to vim
+	}
+	
+	public void handleVMDisconnectEvent(VMDisconnectEvent event) {
+		//TODO : send msg to vim
 	}
 	
 	private void handleVMStartEvent(VMStartEvent event) {
