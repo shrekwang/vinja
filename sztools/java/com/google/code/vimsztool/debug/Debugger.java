@@ -49,6 +49,8 @@ public class Debugger {
 		if (vm == null)
 			return "attach to port fails.";
 		startProcess();
+		BreakpointManager bpm = BreakpointManager.getInstance();
+		bpm.tryCreateBreakpointRequest();
 		return "";
 	}
 	

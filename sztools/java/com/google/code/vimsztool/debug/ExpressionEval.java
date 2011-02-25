@@ -47,9 +47,10 @@ public class ExpressionEval {
 				value = stackFrame.getValue(localVariable);
 			} else {
 				List<Field> fields = refType.visibleFields();
+				ObjectReference thisObj = stackFrame.thisObject();
 				for (Field field : fields) {
 					if (field.name().equals(exp)) {
-						value = refType.getValue(field);
+						value = thisObj.getValue(field);
 						break;
 					}
 				}
