@@ -1409,6 +1409,17 @@ class Jdb(object):
                 classPathXml : %s } 
                 """ % (self.cur_dir, self.project_root, self.class_path_xml)
 
+    def handleJdiEvent(self,args):
+        if args[0] == "suspend" :
+            self.handleSuspend(args[1],args[2])
+        elif args[0] == "msg" :
+            vim.command("call SwitchToSzToolView('Jdb')")
+            self.stdout(args[1])
+            buffer=vim.current.buffer
+            row = len(buffer)
+            vim.current.window.cursor = (row, 0)
+
+
     def handleSuspend(self,defClassName,lineNum):
         vim.command("tabn %s" % debugTabNum) 
         for i in range(1,5):

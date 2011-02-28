@@ -53,8 +53,10 @@ public class EventHandler extends Thread {
 				} else if (event instanceof BreakpointEvent) {
 					handleBreakpointEvent((BreakpointEvent)event);
 				} else if (event instanceof VMDisconnectEvent) {
+					handleVMDisconnectEvent((VMDisconnectEvent)event);
 					vmExit = true;
 				} else if (event instanceof VMDeathEvent) {
+					handleVMDeathEvent((VMDeathEvent)event);
 					vmExit = true;
 				} else if (event instanceof StepEvent) {
 					handleStepEvent((StepEvent)event);
@@ -66,11 +68,15 @@ public class EventHandler extends Thread {
 	}
 	
 	public void handleVMDeathEvent(VMDeathEvent event) {
-		//TODO : send msg to vim
+		Debugger debugger = Debugger.getInstance();
+		String[] cmdLine = {"HandleJdiEvent" ,"msg", "process\\ terminated."};
+		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
 	}
 	
 	public void handleVMDisconnectEvent(VMDisconnectEvent event) {
-		//TODO : send msg to vim
+		Debugger debugger = Debugger.getInstance();
+		String[] cmdLine = {"HandleJdiEvent" ,"msg", "process\\ disconnected."};
+		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
 	}
 	
 	private void handleVMStartEvent(VMStartEvent event) {
@@ -98,7 +104,7 @@ public class EventHandler extends Thread {
 		String className = loc.declaringType().name();
 		int lineNum = loc.lineNumber();
 		
-		String[] cmdLine = {"HandleSuspend" ,className, String.valueOf(lineNum)};
+		String[] cmdLine = {"HandleJdiEvent" ,"suspend" , className, String.valueOf(lineNum)};
 		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
 		
 	}
@@ -116,7 +122,7 @@ public class EventHandler extends Thread {
 		String className = loc.declaringType().name();
 		int lineNum = loc.lineNumber();
 		
-		String[] cmdLine = {"HandleSuspend" ,className, String.valueOf(lineNum)};
+		String[] cmdLine = {"HandleJdiEvent" ,"suspend" , className, String.valueOf(lineNum)};
 		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
 		
 	}

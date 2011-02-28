@@ -363,8 +363,8 @@ function FetchDebugOutput(line)
   python VimUtil.writeToJdeConsole(vim.eval("a:line"),True)
 endfunction
 
-function HandleJdiLocateableEvent(...)
-  python jdb.handleSuspend(vim.eval("a:1"),vim.eval("a:2"))
+function HandleJdiEvent(...)
+  python jdb.handleJdiEvent(vim.eval("a:000"))
 endfunction
 
 
@@ -434,7 +434,7 @@ function! Jdext()
   command! -nargs=0   Jdb              :call Jdb()
   command! -nargs=0   ToggleBreakPoint :python EditUtil.toggleBreakpoint()
   command! -nargs=1   FetchDebugOutput :call FetchDebugOutput('<args>')
-  command! -nargs=*   HandleSuspend    :call HandleJdiLocateableEvent(<f-args>)
+  command! -nargs=*   HandleJdiEvent    :call HandleJdiEvent(<f-args>)
 
   autocmd BufEnter     *.java      nmap <silent><leader>,   :python Runner.runCurrentFile()<cr>
   autocmd BufEnter     *.java      nmap <silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
