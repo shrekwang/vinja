@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
 import com.sun.jdi.BooleanType;
@@ -24,48 +23,104 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Type;
 import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 public class ExpressionEval {
 
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
 			"short", "int", "long", "float", "double" };
-
-	public static String eval(String exp) {
+	
+	public static String eval(String expXmlStr) {
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
 		if (threadRef == null) {
 			return "no suspend thread";
 		}
-		ReferenceType refType = threadStack.getCurRefType();
-		StackFrame stackFrame;
+		Expression exp = Expression.parseExpXmlStr(expXmlStr);
 		try {
-			stackFrame = threadRef.frame(0);
-			LocalVariable localVariable;
-			localVariable = stackFrame.visibleVariableByName(exp);
-			Value value = null;
-			if (localVariable != null) {
-				value = stackFrame.getValue(localVariable);
-			} else {
-				List<Field> fields = refType.visibleFields();
-				ObjectReference thisObj = stackFrame.thisObject();
-				for (Field field : fields) {
-					if (field.name().equals(exp)) {
-						value = thisObj.getValue(field);
-						break;
-					}
-				}
-				if (value == null) {
-					return "can't find variable " + exp;
-				}
-			}
+			StackFrame stackFrame =  threadRef.frame(0);
+			ObjectReference thisObj = stackFrame.thisObject();
+			Value value = eval(threadRef,exp,thisObj);
 			return getPrettyPrintStr(value);
 		} catch (IncompatibleThreadStateException e) {
-		} catch (AbsentInformationException e) {
 		}
 		return "eval expression error";
 	}
+	
+	public static Value eval(ThreadReference threadRef , Expression exp, ObjectReference thisObj) {
+		
+		if (exp == null) return null;
+		VirtualMachine vm = threadRef.virtualMachine();
+		String expType = exp.getExpType();
+		String expName = exp.getName();
+		
+		if (expType.equals(Expression.EXP_TYPE_BOOL)) {
+			if (expName.equals("true")) 
+				return vm.mirrorOf(true);
+			else 
+				return vm.mirrorOf(false);
+		} else if (expType.equals(Expression.EXP_TYPE_STR)) {
+			return vm.mirrorOf(expName);
+		} else if (expType.equals(Expression.EXP_TYPE_NULL)) {
+			return null;
+		} else if (expType.equals(Expression.EXP_TYPE_NUM)) {
+			if (expName.indexOf(".") > -1 ) {
+				return vm.mirrorOf(Float.parseFloat(expName));
+			} else {
+				return vm.mirrorOf(Integer.parseInt(expName));
+			}
+		}
+		
+		Value basicExpValue = null;
+		if (! exp.isMethod()) {
+			basicExpValue =findValueInFrame(threadRef, expName);
+		} else {
+			List<Expression> params = exp.getParams();
+			List<Value> arguments = new ArrayList<Value>();
+			if (params.size() !=0) {
+				for (Expression param : params) {
+					Value paramValue = eval(threadRef, param, thisObj);
+					arguments.add(paramValue);
+				}
+			}
+			basicExpValue = invoke((ObjectReference)thisObj,expName,arguments);
+		}
+		
+		List<Expression> members = exp.getMembers();
+		if (members.size() == 0) return basicExpValue;
+		
+		for (Expression member: members	 ) {
+			basicExpValue =eval(threadRef,member,(ObjectReference)basicExpValue);
+		}
+		return basicExpValue;
+	}
+	
+	public static Value findValueInFrame(ThreadReference threadRef , String name) {
+		Value value = null;
+		try {
+			StackFrame stackFrame = threadRef.frame(0);
+			LocalVariable localVariable;
+			localVariable = stackFrame.visibleVariableByName(name);
+			if (localVariable != null) {
+				return  stackFrame.getValue(localVariable);
+			}
+			ObjectReference thisObj = stackFrame.thisObject();
+			ReferenceType refType = thisObj.referenceType();
+			List<Field> fields = refType.visibleFields();
+			for (Field field : fields) {
+				if (field.name().equals(name)) {
+					value = thisObj.getValue(field);
+					break;
+				}
+			}
+		} catch (Throwable e) {
+		}
+		return value;
+	}
+
 
 	public static String getPrettyPrintStr(Value var) {
+		if (var == null) return "null";
 		if (var instanceof ArrayReference) {
 			StringBuilder sb = new StringBuilder("[");
 			ArrayReference arrayObj = (ArrayReference)var;

@@ -102,7 +102,7 @@ public class EventHandler extends Thread {
 		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
 		
 	}
-
+ 
 	private void handleStepEvent(StepEvent event) {
 		StepEvent stepEvent = (StepEvent) event;
 		ThreadReference threadRef = stepEvent.thread();

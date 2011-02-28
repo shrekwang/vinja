@@ -5,12 +5,13 @@ import time
 import re
 import traceback
 import StringIO
-from xml.etree.ElementTree import ElementTree
 from subprocess import Popen
-from pyparsing import *
 from string import Template
 import difflib
 from common import output
+
+from pyparsing import *
+from xml.etree.ElementTree import *
 
 HOST = 'localhost'
 PORT = 9527
@@ -1399,6 +1400,7 @@ class Jdb(object):
         self.serverName = vim.eval("v:servername")
         self.suspendRow = -1
         self.suspendBufnr = -1
+        self.ivp = InspectorVarParser()
 
     def __str__(self):
 
@@ -1494,6 +1496,15 @@ class Jdb(object):
             self.stdout(self)
             self.appendPrompt()
             return 
+
+        if cmdLine.startswith("print") :
+            cmdLine = "eval " + cmdLine[5:]
+
+        if cmdLine.startswith("eval") :
+            arg = cmdLine[4:]
+            ast = self.ivp.generate(arg)
+            cmdLine = "eval " + ast
+
         if cmdLine in ["step_into","step_over","step_return","resume","exit","shutdown"]:
             self.resumeSuspend()
 
@@ -1505,5 +1516,102 @@ class Jdb(object):
             return 
         if insertMode :
             self.appendPrompt()
+
+
+class InspectorVarParser():
+
+    def __init__(self):
+        self.parse = self.getParser()
+
+    @staticmethod
+    def convertNumbers(s,l,toks):
+        n = toks[0]
+        try:
+            return int(n)
+        except ValueError, ve:
+            return float(n)
+
+    def getParser(self):
+        java_exp = Forward()
+        java_num = Combine( Optional('-') + ( '0' | Word('123456789',nums) ) +
+                            Optional( '.' + Word(nums) ) +
+                            Optional( Word('eE',exact=1) + Word(nums+'+-',nums) ) )
+                
+        java_num.setParseAction( InspectorVarParser.convertNumbers )
+
+        TRUE = Keyword("true").setParseAction( replaceWith(True) )
+        FALSE = Keyword("false").setParseAction( replaceWith(False) )
+        NULL = Keyword("null").setParseAction( replaceWith(None) )
+
+        java_str = dblQuotedString.setParseAction( removeQuotes )
+
+        param_atom = TRUE | FALSE | NULL | Group(java_exp) | java_str | java_num  
+
+        func_param = Suppress("(")+Optional(delimitedList(param_atom)) + Suppress(")")
+        atom_exp =  Group(Word(alphas,alphanums+"_").setResultsName("name") + \
+                Optional(Group(func_param).setResultsName("params")))
+        java_exp << atom_exp + Optional(OneOrMore(Suppress(".") + atom_exp)).setResultsName("members")
+        return java_exp
+
+    def buildAstTree(self, exp,parentEle):
+        expType = "expression"
+        
+        if isinstance(exp,basestring) :
+            expType = "string"
+        elif exp == None :
+            expType = "null"
+            exp = "null"
+        elif exp == True :
+            expType = "boolean"
+            exp = "true"
+        elif exp == False :
+            expType = "boolean"
+            exp = "false"
+        elif isinstance(exp,int) or isinstance(exp,float):
+            expType = "number"
+            exp = str(exp)
+
+        if (expType != "expression") :
+            ele = Element("exp",{'name' : exp,'exptype':expType})
+            parentEle.append(ele)
+            return
+
+        ele = Element("exp",{'name' : exp[0].name})
+        if not isinstance(exp[0].params,str):
+            ele.set("method","true")
+
+        if exp[0].params :
+            paramsEle = Element("params")
+            for param in exp[0].params:
+                self.buildAstTree(param,paramsEle)
+            ele.append(paramsEle)
+        if exp.members:
+            membersEle = Element("members")
+            ele.append(membersEle)
+            for item in exp.members:
+                memberExpEle = Element("exp",{'name' : item.name})
+                if not isinstance(item.params,str):
+                    memberExpEle.set("method","true")
+                membersEle.append(memberExpEle)
+                if item.params :
+                    paramsEle = Element("params")
+                    for param in item.params:
+                        self.buildAstTree(param,paramsEle)
+                    memberExpEle.append(paramsEle)
+        parentEle.append(ele)
+
+    def generate(self, exp):
+        stringIO = StringIO.StringIO()
+        root = Element('root')
+        eleTree = ElementTree(root)
+
+        parseResult = self.parse.parseString(exp)
+        self.buildAstTree(parseResult,root)
+
+        eleTree.write(stringIO)
+        msg = stringIO.getvalue()
+        return msg
+
+
 
 

@@ -83,12 +83,12 @@ public class SzjdeServer extends Thread {
 	   Map<String,String> params=new HashMap<String,String>();
 	   String cmdStr = "";
 	   for (String line : inputs) {
-		   String[] tokens = line.split("=");
-		   
-		   String name =tokens[0].trim();
+		   int eqIndex = line.indexOf("=");
+		   if (eqIndex < -1 ) continue;
+		   String name = line.substring(0,eqIndex).trim();
 		   String value = "";
-		   if (tokens.length == 2) {
-			   value = tokens[1].trim();
+		   if (eqIndex < line.length() -1 ) {
+	           value = line.substring(eqIndex + 1).trim();
 		   }
 		   if (name.equals("cmd")) {
 			   cmdStr = value;

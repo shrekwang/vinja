@@ -11,7 +11,7 @@ public class DebugCommand  extends SzjdeCommand {
 	private Debugger debugger = Debugger.getInstance();
 	private BreakpointManager bpMgr = BreakpointManager.getInstance();
 	
-	private static String[] availCmds = { "launch", "exit", "print", 
+	private static String[] availCmds = { "launch", "exit", "print", "eval",
 		"breakpoints", "stack", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown"};
 	
@@ -58,8 +58,8 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = StepManager.step(StepRequest.STEP_OVER);
 		} else if (debugCmd.equals("step_return")) {
 			actionResult = StepManager.step(StepRequest.STEP_OUT);
-		} else if (debugCmd.equals("print")) {
-			String exp = args[1];
+		} else if (debugCmd.equals("eval") || debugCmd.equals("print")) {
+			String exp = debugCmdArgs.substring(debugCmd.length()+1);
 			actionResult =  ExpressionEval.eval(exp);
 		} else if (debugCmd.equals("breakpoints")) {
 			actionResult = debugger.listBreakpoints();
