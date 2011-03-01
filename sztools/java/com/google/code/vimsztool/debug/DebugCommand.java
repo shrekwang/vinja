@@ -11,8 +11,8 @@ public class DebugCommand  extends SzjdeCommand {
 	private Debugger debugger = Debugger.getInstance();
 	private BreakpointManager bpMgr = BreakpointManager.getInstance();
 	
-	private static String[] availCmds = { "launch", "exit", "print", "eval",
-		"breakpoints", "stack", "attach","breakpoint_add", "breakpoint_remove",
+	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
+		"breakpoints","vars","stack", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown"};
 	
 	public String execute() {
@@ -36,7 +36,7 @@ public class DebugCommand  extends SzjdeCommand {
 			return "not a valid command";
 		}
 		
-		if (debugCmd.equals("launch")) {
+		if (debugCmd.equals("run")) {
 			String mainClass = args[1];
 			actionResult = debugger.launch(mainClass, classPathXml);
 		} else if (debugCmd.equals("attach")) {
@@ -61,8 +61,13 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("eval") || debugCmd.equals("print")) {
 			String exp = debugCmdArgs.substring(debugCmd.length()+1);
 			actionResult =  ExpressionEval.eval(exp);
+		} else if (debugCmd.equals("inspect")) {
+			String exp = debugCmdArgs.substring(debugCmd.length()+1);
+			actionResult =  ExpressionEval.inspect(exp);
 		} else if (debugCmd.equals("breakpoints")) {
 			actionResult = debugger.listBreakpoints();
+		} else if (debugCmd.equals("vars")) {
+			actionResult = ExpressionEval.variables();
 		} else if (debugCmd.equals("resume")) {
 			debugger.resume();
 		} else if (debugCmd.equals("shutdown")) {

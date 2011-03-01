@@ -46,8 +46,13 @@ public class ConnectorManager {
 
 		Connector.Argument optionArg = (Connector.Argument) defaultArguments
 				.get("options");
+		
+		String projectRoot = new File(classPathXml).getParent();
+		String user_dir = "-Duser.dir=" + projectRoot + "   ";
+		
 		String cp = "-Djava.class.path=" + getClassPath(classPathXml);
-		optionArg.setValue(cp);
+		optionArg.setValue(user_dir + cp);
+		
 
 		try {
 			VirtualMachine vm = launchingConnector.launch(defaultArguments);

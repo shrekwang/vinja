@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import com.google.code.vimsztool.util.VjdeUtil;
+
 public class StreamRedirector extends Thread {
 
 	private BufferedReader br;
@@ -20,20 +22,11 @@ public class StreamRedirector extends Thread {
 		String line;
 		try {
 			while ((line = br.readLine()) != null) {
-				writeToVim(line);
+				VjdeUtil.runVimCmd(vimServerName, new String[] {"FetchDebugOutput", line});
 			}
 		} catch (Exception e) {
 			throw new Error(e);
 		}
 	}
 
-	private void writeToVim(String line) {
-		try {
-			String vimCmdCall="<esc><esc>:FetchDebugOutput "+line+"<cr>";
-			String[] vimRemoteCmdArray = new String[] {"gvim","--servername",vimServerName,"--remote-send",	vimCmdCall};
-			Runtime.getRuntime().exec(vimRemoteCmdArray);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 }

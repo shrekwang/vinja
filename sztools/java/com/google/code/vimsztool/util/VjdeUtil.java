@@ -31,6 +31,7 @@ public class VjdeUtil {
 		try {
 			StringBuffer sb = new StringBuffer();
 			for (String arg : cmdLine ) {
+				arg = arg.replace("'", "''");
 				sb.append(arg).append(" ");
 			}
 			String vimCmdCall="<esc><esc>:"+sb.toString()+"<cr>";

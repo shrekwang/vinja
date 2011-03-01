@@ -60,6 +60,9 @@ public class Debugger {
 		for (BreakpointRequest bp : bps ) {
 			Location loc = bp.location();
 			String className = loc.declaringType().name();
+			if (className.indexOf(".") > -1 ) {
+				className = className.substring(className.lastIndexOf(".")+1);
+			}
 			sb.append(className).append(" [line: ");
 			sb.append(loc.lineNumber()).append("] - ");
 			sb.append(loc.method()).append("()");

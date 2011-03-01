@@ -28,6 +28,10 @@ public class StepManager {
 		}
 
 		StepRequest request = mgr.createStepRequest(threadRef, StepRequest.STEP_LINE, stepDepth);
+		List<String> excludeFilters = StepFilterConfiger.getDefaultFilter(); 
+		for (String filter : excludeFilters) {
+			request.addClassExclusionFilter(filter);
+		}
 		request.addCountFilter(1);
 		request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 		request.enable();

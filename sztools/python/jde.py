@@ -1516,6 +1516,11 @@ class Jdb(object):
             ast = self.ivp.generate(arg)
             cmdLine = "eval " + ast
 
+        if cmdLine.startswith("inspect") :
+            arg = cmdLine[7:]
+            ast = self.ivp.generate(arg)
+            cmdLine = "inspect " + ast
+
         if cmdLine in ["step_into","step_over","step_return","resume","exit","shutdown"]:
             self.resumeSuspend()
 
