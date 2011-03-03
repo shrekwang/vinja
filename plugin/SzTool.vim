@@ -408,6 +408,7 @@ function! Jdext()
   python startAgent()
   set completeopt=menuone
   autocmd BufEnter     *.java      setlocal omnifunc=SzJdeCompletion
+  autocmd BufEnter     *.java      python EditUtil.initBreakpointSign()
   autocmd BufNewFile   *.java      python EditUtil.createSkeleton()
   autocmd BufEnter     *.java      au CursorHold <buffer> :python Compiler.displayMsg()
   autocmd BufEnter     *.java      au CursorMoved <buffer> :python Compiler.displayMsg()

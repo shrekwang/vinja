@@ -604,7 +604,6 @@ class EditUtil(object):
     @staticmethod
     def toggleBreakpoint():
         global bp_data
-        vim.command("sign define SzjdeBreakPoint text=BP texthl=LineNr")
         file_name = vim.current.buffer.name
         (row,col) = vim.current.window.cursor
         bp_set = bp_data.get(file_name)
@@ -637,6 +636,21 @@ class EditUtil(object):
             else :
                 logging.debug("toggle breakpoint error : msgs "+ data)
 
+    @staticmethod
+    def initBreakpointSign():
+        global bp_data
+        file_name = vim.current.buffer.name
+        bp_set = bp_data.get(file_name)
+        signGroup = "SzjdeBreakPoint"
+        if bp_set == None :
+            return 
+
+        for row in bp_set :
+            signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
+            bufnr=str(vim.eval("bufnr('%')"))
+            signcmd =signcmd.substitute(id=row,lnum=row,name=signGroup, nr=bufnr)
+            vim.command(signcmd)
+    
 
 class Compiler(object):
 
@@ -697,10 +711,6 @@ class Compiler(object):
         errorMsgList = resultText.split("\n")
         hasError = False
         qflist = []
-        vim.command("highlight link SzjdeError SpellBad")
-        vim.command("highlight link SzjdeWarning SpellLocal")
-        vim.command("sign define SzjdeError text=>> texthl=ErrorMsg")
-        vim.command("sign define SzjdeWarning text=>> texthl=TODO")
         vim.command("syntax clear SzjdeError")
         vim.command("syntax clear SzjdeWarning")
         vim.command("sign unplace *")
@@ -722,6 +732,7 @@ class Compiler(object):
                 message = fp.getvalue()
                 logging.debug(message)
         allErrorMsg[current_file_name] = bufErrorMsg
+        EditUtil.initBreakpointSign()
 
         vim.command("call setqflist(%s)" % qflist)
         """
@@ -1445,21 +1456,31 @@ class Jdb(object):
                 has_match = True
                 if abs_path != vim.current.buffer.name :
                     vim.command("edit %s" % abs_path)
-                vim.command("highlight def SuspendLine  ctermbg=Green ctermfg=Black  guibg=#A4E57E guifg=Black")
-                vim.command("sign define SuspendLine linehl=SuspendLine")
-                signcmd=Template("sign place ${id} line=${lnum} name=SuspendLine buffer=${nr}")
+                global bp_data
+                bp_set = bp_data.get(vim.current.buffer.name)
+                if int(lineNum) in bp_set :
+                    signGroup = "SuspendLineBP"
+                else :
+                    signGroup = "SuspendLine"
+                signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
                 bufnr=str(vim.eval("bufnr('%')"))
-                signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,nr=bufnr)
+                signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,name=signGroup,nr=bufnr)
                 self.suspendRow = lineNum
                 self.suspendBufnr = bufnr
+                self.suspendBufName = vim.current.buffer.name
                 vim.command(signcmd)
                 vim.command("normal %sG" % str(lineNum))
                 break
         vim.command("call SwitchToSzToolView('Jdb')")
 
     def resumeSuspend(self):
+        global bp_data
+        bp_set = bp_data.get(self.suspendBufName)
         if self.suspendRow != -1 :
-            signcmd="sign unplace %s buffer=%s" %(self.suspendRow, self.suspendBufnr)
+            if int(self.suspendRow) in bp_set :
+                signcmd="sign place %s name=SzjdeBreakPoint buffer=%s" %(self.suspendRow, self.suspendBufnr)
+            else :
+                signcmd="sign unplace %s buffer=%s" %(self.suspendRow, self.suspendBufnr)
             vim.command(signcmd)
 
     @staticmethod
