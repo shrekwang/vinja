@@ -10,10 +10,11 @@ public class DebugCommand  extends SzjdeCommand {
 	
 	private Debugger debugger = Debugger.getInstance();
 	private BreakpointManager bpMgr = BreakpointManager.getInstance();
+	private ExceptionPointManager ecpm  = ExceptionPointManager.getInstance();
 	
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
 		"breakpoints","vars","stack", "attach","breakpoint_add", "breakpoint_remove",
-		"step_into","step_over","step_return", "resume", "shutdown"};
+		"step_into","step_over","step_return", "resume", "shutdown" ,"catch","ignore","clear"};
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -52,6 +53,11 @@ public class DebugCommand  extends SzjdeCommand {
 			String mainClass = ctx.buildClassName(fileName);
 			int lineNum = Integer.parseInt(args[2]);
 			actionResult = bpMgr.removeBreakpoint(mainClass, lineNum);
+		} else if (debugCmd.equals("clear")) {
+			String fileName = args[1];
+			String mainClass = ctx.buildClassName(fileName);
+			int lineNum = Integer.parseInt(args[2]);
+			actionResult = bpMgr.removeBreakpoint(mainClass, lineNum);
 		} else if (debugCmd.equals("step_into")) {
 			actionResult = StepManager.step(StepRequest.STEP_INTO);
 		} else if (debugCmd.equals("step_over")) {
@@ -66,8 +72,14 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult =  ExpressionEval.inspect(exp);
 		} else if (debugCmd.equals("breakpoints")) {
 			actionResult = debugger.listBreakpoints();
-		} else if (debugCmd.equals("vars")) {
+		} else if (debugCmd.equals("locals")) {
 			actionResult = ExpressionEval.variables();
+		} else if (debugCmd.equals("catch")) {
+			String className = args[1];
+			actionResult = ecpm.addExceptionPoint(className);
+		} else if (debugCmd.equals("ignore")) {
+			String className = args[1];
+			actionResult = ecpm.removeExceptionRequest(className);
 		} else if (debugCmd.equals("resume")) {
 			debugger.resume();
 		} else if (debugCmd.equals("shutdown")) {

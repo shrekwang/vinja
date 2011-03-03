@@ -3,6 +3,7 @@ package com.google.code.vimsztool.debug;
 import java.util.List;
 
 import com.sun.jdi.Location;
+import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.request.BreakpointRequest;
@@ -51,6 +52,10 @@ public class Debugger {
 		startProcess();
 		BreakpointManager bpm = BreakpointManager.getInstance();
 		bpm.tryCreateBreakpointRequest();
+		
+		ExceptionPointManager expm = ExceptionPointManager.getInstance();
+		expm.tryCreateExceptionRequest();
+		
 		return "";
 	}
 	
@@ -78,10 +83,8 @@ public class Debugger {
 		threadRef.resume();
 		return "";
 	}
+	
 
-	public String eval(String exp) {
-		return "";
-	}
 
 	public void exit() {
 		if (vm == null ) return;
@@ -100,15 +103,8 @@ public class Debugger {
 		vm = null;
 	}
 	
-
 	public VirtualMachine getVm() {
 		return vm;
-	}
-
-	public boolean isRunning() {
-		if (vm != null)
-			return true;
-		return false;
 	}
 
 	public void setVimServerName(String vimServerName) {

@@ -11,6 +11,8 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventIterator;
 import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ExceptionEvent;
+import com.sun.jdi.event.LocatableEvent;
 import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.event.VMDisconnectEvent;
@@ -58,6 +60,8 @@ public class EventHandler extends Thread {
 				} else if (event instanceof VMDeathEvent) {
 					handleVMDeathEvent((VMDeathEvent)event);
 					vmExit = true;
+				} else if (event instanceof ExceptionEvent) {
+					handleExceptionEvent((ExceptionEvent)event);
 				} else if (event instanceof StepEvent) {
 					handleStepEvent((StepEvent)event);
 				} else {
@@ -86,45 +90,42 @@ public class EventHandler extends Thread {
 	private void handleClassPrepareEvent(ClassPrepareEvent event) {
 		ClassPrepareEvent classPrepareEvent = (ClassPrepareEvent) event;
 		String mainClassName = classPrepareEvent.referenceType().name();
+		
 		BreakpointManager bpm = BreakpointManager.getInstance();
 		bpm.tryCreateBreakpointRequest(mainClassName);
+		
+		ExceptionPointManager expm = ExceptionPointManager.getInstance();
+		expm.tryCreateExceptionRequest();
+		
 		event.thread().resume();
 	}
 	
+	private void handleExceptionEvent(ExceptionEvent event) {
+		handleSuspendLocatableEvent(event);
+	}
+	
 	private void handleBreakpointEvent(BreakpointEvent event) {
-		BreakpointEvent breakpointEvent = (BreakpointEvent) event;
-		ThreadReference threadRef = breakpointEvent.thread();
-		ReferenceType refType = breakpointEvent.location().declaringType();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		threadStack.setCurRefType(refType);
-		threadStack.setCurThreadRef(threadRef);
-		
-		Location loc = breakpointEvent.location();
-		Debugger debugger = Debugger.getInstance();
-		String className = loc.declaringType().name();
-		int lineNum = loc.lineNumber();
-		
-		String[] cmdLine = {"HandleJdiEvent" ,"suspend" , className, String.valueOf(lineNum)};
-		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
-		
+		handleSuspendLocatableEvent(event);
 	}
  
 	private void handleStepEvent(StepEvent event) {
-		StepEvent stepEvent = (StepEvent) event;
-		ThreadReference threadRef = stepEvent.thread();
-		ReferenceType refType = stepEvent.location().declaringType();
+		handleSuspendLocatableEvent(event);
+	}
+	
+	private void handleSuspendLocatableEvent(LocatableEvent event) {
+		ThreadReference threadRef = event.thread();
+		ReferenceType refType = event.location().declaringType();
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		threadStack.setCurRefType(refType);
 		threadStack.setCurThreadRef(threadRef);
 		
-		Location loc = stepEvent.location();
+		Location loc = event.location();
 		Debugger debugger = Debugger.getInstance();
 		String className = loc.declaringType().name();
 		int lineNum = loc.lineNumber();
 		
 		String[] cmdLine = {"HandleJdiEvent" ,"suspend" , className, String.valueOf(lineNum)};
 		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
-		
 	}
 
 }
