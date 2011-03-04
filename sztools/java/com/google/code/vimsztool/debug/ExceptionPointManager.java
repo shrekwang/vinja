@@ -39,6 +39,8 @@ public class ExceptionPointManager {
 		
 		List<ReferenceType> refTypes = vm.classesByName(className);
 		ExceptionRequest exReq = vm.eventRequestManager().createExceptionRequest(refTypes.get(0), true, true);
+		exReq.setSuspendPolicy(ExceptionRequest.SUSPEND_EVENT_THREAD);
+		exReq.setEnabled(true);
 		requests.put(className, exReq);
 		
 	}

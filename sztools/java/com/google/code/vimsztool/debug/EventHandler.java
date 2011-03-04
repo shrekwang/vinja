@@ -84,18 +84,18 @@ public class EventHandler extends Thread {
 	}
 	
 	private void handleVMStartEvent(VMStartEvent event) {
+		
+		ExceptionPointManager expm = ExceptionPointManager.getInstance();
+		expm.tryCreateExceptionRequest();
+		
 		eventSet.resume();
 	}
 	
 	private void handleClassPrepareEvent(ClassPrepareEvent event) {
 		ClassPrepareEvent classPrepareEvent = (ClassPrepareEvent) event;
 		String mainClassName = classPrepareEvent.referenceType().name();
-		
 		BreakpointManager bpm = BreakpointManager.getInstance();
 		bpm.tryCreateBreakpointRequest(mainClassName);
-		
-		ExceptionPointManager expm = ExceptionPointManager.getInstance();
-		expm.tryCreateExceptionRequest();
 		
 		event.thread().resume();
 	}

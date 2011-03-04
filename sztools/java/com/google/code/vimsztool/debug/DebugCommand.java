@@ -13,8 +13,9 @@ public class DebugCommand  extends SzjdeCommand {
 	private ExceptionPointManager ecpm  = ExceptionPointManager.getInstance();
 	
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
-		"breakpoints","vars","stack", "attach","breakpoint_add", "breakpoint_remove",
-		"step_into","step_over","step_return", "resume", "shutdown" ,"catch","ignore","clear"};
+		"breakpoints","locals","stack", "attach","breakpoint_add", "breakpoint_remove",
+		"step_into","step_over","step_return", "resume", "shutdown" ,"catch",
+		"ignore","clear", "threads"};
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -74,6 +75,11 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = debugger.listBreakpoints();
 		} else if (debugCmd.equals("locals")) {
 			actionResult = ExpressionEval.variables();
+		} else if (debugCmd.equals("threads")) {
+			actionResult = debugger.listThreads();
+		} else if (debugCmd.endsWith("thread")) {
+			String uniqueId = args[1];
+			actionResult = debugger.changeCurrentThread(uniqueId);
 		} else if (debugCmd.equals("catch")) {
 			String className = args[1];
 			actionResult = ecpm.addExceptionPoint(className);
