@@ -15,7 +15,7 @@ public class DebugCommand  extends SzjdeCommand {
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
 		"breakpoints","locals","stack", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch",
-		"ignore","clear", "threads"};
+		"ignore","clear", "threads","thread"};
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);

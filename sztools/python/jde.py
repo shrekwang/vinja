@@ -1420,6 +1420,7 @@ class Jdb(object):
         self.serverName = vim.eval("v:servername")
         self.suspendRow = -1
         self.suspendBufnr = -1
+        self.suspendBufName = ""
         self.ivp = InspectorVarParser()
 
     def __str__(self):
@@ -1458,7 +1459,7 @@ class Jdb(object):
                     vim.command("edit %s" % abs_path)
                 global bp_data
                 bp_set = bp_data.get(vim.current.buffer.name)
-                if int(lineNum) in bp_set :
+                if bp_set != None and int(lineNum) in bp_set :
                     signGroup = "SuspendLineBP"
                 else :
                     signGroup = "SuspendLine"
@@ -1477,7 +1478,7 @@ class Jdb(object):
         global bp_data
         bp_set = bp_data.get(self.suspendBufName)
         if self.suspendRow != -1 :
-            if int(self.suspendRow) in bp_set :
+            if bp_set !=None and int(self.suspendRow) in bp_set :
                 signcmd="sign place %s name=SzjdeBreakPoint buffer=%s" %(self.suspendRow, self.suspendBufnr)
             else :
                 signcmd="sign unplace %s buffer=%s" %(self.suspendRow, self.suspendBufnr)
@@ -1499,14 +1500,14 @@ class Jdb(object):
         buffer=vim.current.buffer
         output(msg,buffer,True)
 
-    def exit(self):
-        vim.command("bw! SzToolView_Jdb")
-
-    def help(self):
-        help_file = open(os.path.join(getShareHome(),"doc/sztools.help"))
+    def printHelp(self):
+        help_file = open(os.path.join(getShareHome(),"doc/jdb.help"))
         content = [line.replace("\n","") for line in help_file.readlines()]
         help_file.close()
         self.stdout(content)
+
+    def exit(self):
+        vim.command("bw! SzToolView_Jdb")
 
     def getCmdLine(self):
         work_buffer = vim.current.buffer
@@ -1553,6 +1554,11 @@ class Jdb(object):
 
         if cmdLine in ["step_into","step_over","step_return","resume","exit","shutdown"]:
             self.resumeSuspend()
+
+        if cmdLine.startswith("help"):
+            self.printHelp()
+            self.appendPrompt()
+            return
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
