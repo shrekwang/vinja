@@ -24,6 +24,19 @@ public class BreakpointManager {
 	public static BreakpointManager getInstance() {
 		return instance;
 	}
+	
+	public List<Breakpoint> getAllBreakpoints() {
+		return allBreakpoints;
+	}
+	
+	public String allBreakpointsInfo() {
+		StringBuilder sb = new StringBuilder();
+		for (Breakpoint bp : allBreakpoints) {
+			sb.append(bp.getMainClass()).append(" ").append(bp.getLineNum());
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
 
 	public String addBreakpoint(String mainClass, int lineNum) {
 		Breakpoint breakpoint = new Breakpoint(mainClass, lineNum);

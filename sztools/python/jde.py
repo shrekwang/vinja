@@ -613,12 +613,13 @@ class EditUtil(object):
 
         class_path_xml = ProjectManager.getClassPathXml(file_name)
         serverName = vim.eval("v:servername")
+        bufnr=str(vim.eval("bufnr('%')"))
 
         if row in bp_set :
             cmdline = "breakpoint_remove %s %s" % (file_name,row)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
             if data == "success" :
-                signcmd="sign unplace %s" % row
+                signcmd="sign unplace %s buffer=%s" %(row, bufnr)
                 vim.command(signcmd)
                 bp_set.remove(row)
             else :
@@ -628,7 +629,6 @@ class EditUtil(object):
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
             if data == "success" :
                 signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
-                bufnr=str(vim.eval("bufnr('%')"))
                 signcmd =signcmd.substitute(id=row,lnum=row,name=signGroup, nr=bufnr)
                 vim.command(signcmd)
                 bp_set.add(row)
@@ -651,6 +651,42 @@ class EditUtil(object):
             signcmd =signcmd.substitute(id=row,lnum=row,name=signGroup, nr=bufnr)
             vim.command(signcmd)
     
+    @staticmethod
+    def syncBreakpointInfo():
+
+        global bp_data
+        for file_name in bp_data:
+            bp_set = bp_data[file_name]
+            for row_num in bp_set :
+                signcmd="sign unplace %s" %(row_num)
+                vim.command(signcmd)
+
+        source_file_path = vim.current.buffer.name
+        serverName = vim.eval("v:servername")
+        class_path_xml = ProjectManager.getClassPathXml(source_file_path)
+        data = JdbTalker.submit("syncbps",class_path_xml,serverName)
+        bp_data = {}
+        if data : 
+            for line in data.split("\n"):
+                if line.strip() == "" or line.find(" ") < 0 :
+                    continue
+                class_name, line_num = line.split(" ")
+                rlt_path = class_name.replace(".", os.path.sep)+".java"
+                src_locs = ProjectManager.getSrcLocations(source_file_path)
+                matched_file = None
+                for src_loc in src_locs :
+                    abs_path = os.path.join(src_loc, rlt_path)
+                    if os.path.exists(abs_path) :
+                        matched_file = abs_path
+                        break
+                if matched_file != None :
+                    bp_set = bp_data.get(matched_file)
+                    if bp_set == None :
+                        bp_set = set()
+                    bp_set.add(int(line_num))
+                    bp_data[matched_file] = bp_set
+            EditUtil.initBreakpointSign()
+
 
 class Compiler(object):
 
@@ -1566,6 +1602,13 @@ class Jdb(object):
         if cmdLine == "exit" :
             self.exit()
             return 
+        if cmdLine.startswith("clear"):
+            for i in range(1,5):
+                vim.command("%swincmd w" % str(i))    
+                if vim.eval("&buftype") == "" :
+                    break
+            EditUtil.syncBreakpointInfo()
+            vim.command("call SwitchToSzToolView('Jdb')")
         if insertMode :
             self.appendPrompt()
 
@@ -1663,7 +1706,4 @@ class InspectorVarParser():
         eleTree.write(stringIO)
         msg = stringIO.getvalue()
         return msg
-
-
-
 

@@ -64,17 +64,16 @@ public class Debugger {
 	}
 	
 	public String listBreakpoints() {
-		List<BreakpointRequest> bps = vm.eventRequestManager().breakpointRequests();
+		BreakpointManager bpm = BreakpointManager.getInstance();
+		List<Breakpoint> bps = bpm.getAllBreakpoints();
 		StringBuilder sb = new StringBuilder();
-		for (BreakpointRequest bp : bps ) {
-			Location loc = bp.location();
-			String className = loc.declaringType().name();
+		for (Breakpoint bp : bps ) {
+			String className = bp.getMainClass();
 			if (className.indexOf(".") > -1 ) {
 				className = className.substring(className.lastIndexOf(".")+1);
 			}
 			sb.append(className).append(" [line: ");
-			sb.append(loc.lineNumber()).append("] - ");
-			sb.append(loc.method()).append("()");
+			sb.append(bp.getLineNum()).append("] - ");
 			sb.append("\n");
 		}
 		
