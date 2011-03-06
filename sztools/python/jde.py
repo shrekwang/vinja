@@ -734,7 +734,7 @@ class Compiler(object):
         vim.command(signcmd)
 
     @staticmethod
-    def compileCurrentFile():
+    def compileCurrentFile(buildProject = False):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
 
@@ -743,6 +743,8 @@ class Compiler(object):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         if not classPathXml :
             return
+        if buildProject :
+            current_file_name = "All"
         resultText = Talker.compileFile(classPathXml,current_file_name)
         errorMsgList = resultText.split("\n")
         hasError = False
@@ -759,8 +761,12 @@ class Compiler(object):
                 errorType,filename,lnum,text,lstart,lend = line.split("::")
                 bufErrorMsg[lnum]=text
                 bufnr=str(vim.eval("bufnr('%')"))
-                Compiler.highlightErrorGroup(lnum,lstart,lend,errorType)
-                qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
+                if buildProject :
+                    qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
+                else :
+                    qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
+                    Compiler.highlightErrorGroup(lnum,lstart,lend,errorType)
+
                 qflist.append(qfitem)
             except Exception , e:
                 fp = StringIO.StringIO()
@@ -1611,7 +1617,6 @@ class Jdb(object):
             vim.command("call SwitchToSzToolView('Jdb')")
         if insertMode :
             self.appendPrompt()
-
 
 class InspectorVarParser():
 

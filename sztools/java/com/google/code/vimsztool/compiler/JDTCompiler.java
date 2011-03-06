@@ -26,13 +26,17 @@ public class JDTCompiler  {
 	
 
     @SuppressWarnings({ "unchecked", "deprecation" })
-	public CompileResultInfo generateClass( final String sourceFile ) {
+	public CompileResultInfo generateClass( final String[] sourceFiles ) {
         
-    	String targetClassName=ctx.buildClassName(sourceFile);
-        String[] fileNames = new String[] {sourceFile};
-        String[] classNames = new String[] {targetClassName};
+        String[] fileNames = sourceFiles;
+        String[] classNames = new String[sourceFiles.length];
         
-        final INameEnvironment env = new NameEnvironment(sourceFile,targetClassName,ctx) ;
+    	for (int i=0; i< sourceFiles.length; i++) {
+	    	String targetClassName=ctx.buildClassName(sourceFiles[i]);
+	        classNames[i] = targetClassName ;
+    	}
+        
+        final INameEnvironment env = new NameEnvironment(sourceFiles,ctx) ;
 
         final IErrorHandlingPolicy policy = 
             DefaultErrorHandlingPolicies.proceedWithAllProblems();

@@ -62,6 +62,34 @@ public class CompilerContext {
 		initClassLoader();
 	}
 	
+	public String[] getAllSourceFiles() {
+		List<String> names = new ArrayList<String>();
+		for (String srcRoot : srcLocations ) {
+            File dir = new File(srcRoot);
+            if (dir.isFile()) continue;
+            appendSrcFileToList(names, dir);
+		}
+		String[] result = new String[names.size()];
+		for (int i=0; i<names.size(); i++) {
+			result[i] = names.get(i);
+		}
+		return result;
+	}
+	
+	private void appendSrcFileToList(List<String> names, File dir) {
+		File[] files = dir.listFiles();
+		for (File file : files) {
+			if (file.isDirectory()) {
+				appendSrcFileToList(names, file);
+			} else {
+				if (!file.getName().endsWith(".java"))
+					continue;
+				names.add(file.getAbsolutePath());
+			}
+		}
+
+	}
+	
 	public void refreshClassInfo(List<String> classNames) {
 		
 		if (loader == null) return;

@@ -4,6 +4,7 @@ package com.google.code.vimsztool.compiler;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
@@ -13,15 +14,16 @@ import org.eclipse.jdt.internal.compiler.env.NameEnvironmentAnswer;
 public class NameEnvironment implements INameEnvironment {
 
 	
-	private String sourceFile;
-	private String targetClassName;
+	private String[] sourceFiles;
+	private HashMap<String,String> targetClassNames= new HashMap<String,String>();
 	private CompilerContext ctx;
 	
-	public NameEnvironment(String sourceFile, 
-			String targetClassName,CompilerContext ctx) {
-		this.sourceFile=sourceFile;
-		this.targetClassName=targetClassName;
+	public NameEnvironment(String sourceFiles[], CompilerContext ctx) {
+		this.sourceFiles=sourceFiles;
 		this.ctx=ctx;
+		for (int i=0; i<sourceFiles.length; i++) {
+			targetClassNames.put(ctx.buildClassName(sourceFiles[i]), sourceFiles[i]);
+		}
 	}
 	
     public NameEnvironmentAnswer findType(char[][] compoundTypeName) {
@@ -52,9 +54,10 @@ public class NameEnvironment implements INameEnvironment {
 
         InputStream is = null;
         try {
-            if (className.equals(targetClassName)) {
+        	String sourceFile = targetClassNames.get(className);
+        	if (sourceFile != null) {
                 ICompilationUnit compilationUnit = 
-                    new CompilationUnit(sourceFile, className,ctx.getEncoding());
+                	new CompilationUnit(sourceFile, className,ctx.getEncoding());
                 return 
                     new NameEnvironmentAnswer(compilationUnit, null);
             }
@@ -97,7 +100,7 @@ public class NameEnvironment implements INameEnvironment {
     }
 
     private boolean isPackage(String result) {
-        if (result.equals(targetClassName)) {
+        if (targetClassNames.get(result) != null) {
             return false;
         }
         String resourceName = result.replace('.', '/') + ".class";

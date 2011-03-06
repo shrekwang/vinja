@@ -420,6 +420,7 @@ function! Jdext()
   map <C-n> :cn<cr>
   map <C-p> :cp<cr>
 
+  command! -nargs=0   BuildProject     :python Compiler.compileCurrentFile(buildProject=True)
   command! -nargs=0   DumpClass        :python EditUtil.dumpClassInfo()
   command! -nargs=0   AutoImport       :python AutoImport.autoImportVar()
   command! -nargs=0   Run              :python Runner.runCurrentFile()

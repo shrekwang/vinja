@@ -19,7 +19,11 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
 		CompilerContext cc=getCompilerContext(classPathXml);
 		JDTCompiler compiler =new JDTCompiler(cc);
-		CompileResultInfo resultInfo =compiler.generateClass(sourceFile);
+		String[] allSrcFiles = new String[] {sourceFile};
+		if (sourceFile.equals("All")) {
+			allSrcFiles = cc.getAllSourceFiles();
+		} 
+		CompileResultInfo resultInfo =compiler.generateClass(allSrcFiles);
 		List<String> problemList = resultInfo.getProblemInfoList();
 		
 		
