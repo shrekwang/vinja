@@ -1275,6 +1275,9 @@ class SzJdeCompletion(object):
 
         dotExpParser = Parser.getJavaDotExpParser()
         expTokens = dotExpParser.searchString(line[0:col])[0]
+        needParenthesis = True
+        if (len(line) > col ) and line[col] == "(" :
+            needParenthesis = False
         varName = expTokens[0]
         superClass = Parser.getSuperClass()
         # expTokens not include base and type
@@ -1322,17 +1325,17 @@ class SzJdeCompletion(object):
             for mname,mtype,mreturntype,mparams,lineNum in members :
                 memberInfos.append((mtype,mname,mparams, mreturntype))
 
-        result = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
+        result = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base,needParenthesis)
         
         return result
 
     @staticmethod
-    def buildCptDictArrary(memberInfos,pat,base):
+    def buildCptDictArrary(memberInfos,pat,base,needParenthesis=True):
         result = []
         for memberInfo in memberInfos :
             mtype,mname,mparams,mreturntype = memberInfo
             if not pat.match(mname): continue
-            menu = SzJdeCompletion.buildCptMenu(mtype,mname,mparams,mreturntype)
+            menu = SzJdeCompletion.buildCptMenu(mtype,mname,mparams,mreturntype,needParenthesis)
             result.append(menu)
 
         if len(result) == 0 :
@@ -1341,18 +1344,21 @@ class SzJdeCompletion(object):
             for memberInfo in memberInfos :
                 mtype,mname,mparams,mreturntype = memberInfo
                 if mname.lower() in matched_names: 
-                    menu = SzJdeCompletion.buildCptMenu(mtype,mname,mparams,mreturntype)
+                    menu = SzJdeCompletion.buildCptMenu(mtype,mname,mparams,mreturntype,needParenthesis)
                     result.append(menu)
 
         return result
 
     @staticmethod
-    def buildCptMenu(mtype,mname,mparams,mreturntype):
+    def buildCptMenu(mtype,mname,mparams,mreturntype,needParenthesis):
         menu = dict()
+        padStr = ""
+        if needParenthesis :
+            padStr = "("
         menu["icase"] = "1"
         menu["dup"] = "1"
         if mtype == "method" :
-            menu["word"] = mname + "("
+            menu["word"] = mname + padStr
             menu["abbr"] = "%s(%s) : %s " % (mname,mparams,mreturntype)
         else :
             menu["word"] = mname
