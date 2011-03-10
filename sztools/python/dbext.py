@@ -26,6 +26,9 @@ class QueryUtil(object):
             sql = """SELECT name FROM sysobjects Where 
                 name like '%%%s%%' and type = 'U' order by name"""
             sql = sql % name
+        elif server_type == "mysql":
+            sql = """ SELECT table_name FROM INFORMATION_SCHEMA.TABLES
+            where table_name like '%%%s%%' """ % name
 
         columns,result = dbext.query(sql)
 
@@ -58,6 +61,11 @@ class QueryUtil(object):
                             join syscolumns on sysobjects.id = syscolumns.id
                             join systypes on syscolumns.xtype = systypes.xtype
                         where sysobjects.name = '""" + name + "'"
+
+        elif server_type == "mysql":
+            sql = """ SELECT COLUMN_NAME, DATA_TYPE,  CHARACTER_MAXIMUM_LENGTH , IS_NULLABLE
+                          FROM INFORMATION_SCHEMA.COLUMNS
+                          WHERE table_name = '""" + name +"'"
 
         columns,result = dbext.query(sql)
         if not columns :
@@ -146,6 +154,8 @@ class Dbext(object):
             sql = "SELECT lower(name) FROM sysobjects where type = 'U' "
         elif server_type == "sqlite":
             sql = "select name from sqlite_master where type = 'table' "
+        elif server_type == "mysql":
+            sql = " SELECT table_name FROM INFORMATION_SCHEMA.TABLES "
 
         conn = self.createConn(db_profile)
         cur = conn.cursor()
