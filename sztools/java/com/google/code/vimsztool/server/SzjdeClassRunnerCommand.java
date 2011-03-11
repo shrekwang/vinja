@@ -25,7 +25,7 @@ public class SzjdeClassRunnerCommand extends SzjdeCommand {
 
 		try {
 			File workingDir = new File(cc.getProjectRoot());
-			Process p = Runtime.getRuntime().exec(cmd.toString(),new String[]{},workingDir);
+			Process p = Runtime.getRuntime().exec(cmd.toString(),null,workingDir);
 			ProcessRunner runner = new ProcessRunner();
 			String result = runner.communicate(p);
 			return result;
