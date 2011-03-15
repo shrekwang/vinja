@@ -10,7 +10,6 @@ import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.request.BreakpointRequest;
 
 public class Debugger {
 
@@ -44,12 +43,16 @@ public class Debugger {
 	}
 
 	public String launch(String mainClass, String classPathXml) {
+		if (vm != null) 
+			return "VirtualMachine is not null";
 		vm = ConnectorManager.launch(mainClass, classPathXml);
 		startProcess();
 		return "";
 	}
 
 	public String attach(String port) {
+		if (vm != null) 
+			return "VirtualMachine is not null";
 		vm = ConnectorManager.attach(port);
 		if (vm == null)
 			return "attach to port fails.";

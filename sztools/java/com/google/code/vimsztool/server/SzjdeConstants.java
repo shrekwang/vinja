@@ -14,7 +14,6 @@ public class SzjdeConstants {
 	public final static String CMD_GET_CONSTRUCTDEFS="getConstructDefs";
 	public final static String CMD_OVERIDE="overide";
 	public final static String CMD_COPY_RESOURCE="copyResource";
-	public final static String CMD_SET_HOTSWAP="setHotswap";
 	public final static String CMD_RUN_SYS="runSys";
 	public final static String CMD_FETCH_RESULT="fetchResult";
 	public final static String CMD_PROJECT_CLEAN="projectClean";

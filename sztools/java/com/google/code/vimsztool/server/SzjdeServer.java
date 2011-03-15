@@ -4,6 +4,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_AUTOIMPORT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_COMPILE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_COMPLETE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_COPY_RESOURCE;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DEBUG;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DUMP_CLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_FETCH_RESULT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_CONSTRUCTDEFS;
@@ -14,8 +15,6 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_SET_HOTSWAP;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DEBUG;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -115,8 +114,6 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeSystemCommand(cmdStr);
 	   } else if (cmdStr.equals(CMD_LOCATEDB)) {
 		   szjdeCommand = new SzjdeLocatedbCommand();
-	   } else if (cmdStr.equals(CMD_SET_HOTSWAP)) {
-		   szjdeCommand = new SzjdeHotswapCommand();
 	   } else if (cmdStr.equals(CMD_PROJECT_CLEAN)) {
 		   szjdeCommand = new SzjdeProjectClean();
 	   } else if (cmdStr.equals(CMD_GET_DEFCLASS)) {

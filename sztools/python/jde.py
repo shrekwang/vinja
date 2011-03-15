@@ -335,16 +335,6 @@ class Talker(object):
         return data
 
     @staticmethod
-    def hotswapEnabled(enabled,port=None):
-        params = dict()
-        params["cmd"]="setHotswap"
-        params["hotSwapEnabled"] = enabled
-        if enabled == "true" and port != None :
-            params["hotSwapPort"] = port
-        data = Talker.send(params)
-        return data
-
-    @staticmethod
     def projectClean(xmlPath):
         params = dict()
         params["cmd"]="projectClean"

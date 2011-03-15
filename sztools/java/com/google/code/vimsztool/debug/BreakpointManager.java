@@ -109,7 +109,18 @@ public class BreakpointManager {
 		}
 	}
 	
+	public void tryResetBreakpointRequest(String className) {
+		for (Breakpoint bp : allBreakpoints) {
+			if (bp.getMainClass().equals(className)) {
+				tryRemoveBreakpointRequest(bp);
+				tryCreateBreakpointRequest(bp);
+			}
+		}
+		
+	}
+	
 	public void tryCreateBreakpointRequest(String className) {
+	
 		for (Breakpoint bp : allBreakpoints) {
 			if (bp.getMainClass().equals(className)) {
 				tryCreateBreakpointRequest(bp);

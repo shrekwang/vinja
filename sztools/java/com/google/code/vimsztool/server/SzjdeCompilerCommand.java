@@ -7,9 +7,10 @@ import java.util.logging.Logger;
 import com.google.code.vimsztool.compiler.CompileResultInfo;
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.JDTCompiler;
+import com.google.code.vimsztool.debug.BreakpointManager;
+import com.google.code.vimsztool.debug.Debugger;
 import com.google.code.vimsztool.util.HotSwapUtil;
 import com.google.code.vimsztool.util.JdeLogger;
-import com.google.code.vimsztool.util.VjdeUtil;
 
 public class SzjdeCompilerCommand extends SzjdeCommand {
 	private static Logger log = JdeLogger.getLogger("SzjdeCompilerCommand");
@@ -26,15 +27,8 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		CompileResultInfo resultInfo =compiler.generateClass(allSrcFiles);
 		List<String> problemList = resultInfo.getProblemInfoList();
 		
-		
-		HotSwapUtil hotSwapUtil = HotSwapUtil.getInstance();
-		if (hotSwapUtil.isEnabled() && ! resultInfo.isError()) {
-			try {
-				hotSwapClass(resultInfo);
-			} catch (Exception e) {
-				String errorMsg = VjdeUtil.getExceptionValue(e);
-	    		log.info(errorMsg);
-			}
+		if (!resultInfo.isError()) {
+			hotSwapClass(resultInfo);
 		}
 		
 		if (problemList.size() == 0 ) return "";
@@ -45,14 +39,16 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		return sb.toString();
 	}
 	
-	private void hotSwapClass(CompileResultInfo resultInfo) throws Exception {
+	private void hotSwapClass(CompileResultInfo resultInfo) {
 		
-		HotSwapUtil hotSwapUtil = HotSwapUtil.getInstance();
+		Debugger debugger = Debugger.getInstance();
+		BreakpointManager bpm = BreakpointManager.getInstance();
 		List<String[]> outputs = resultInfo.getOutputInfo();
 		for (String[] names : outputs) {
 			String className = names[0];
 			String outputPath = names[1];
-			hotSwapUtil.replace(new File(outputPath), className);
+			HotSwapUtil.replace(debugger, new File(outputPath), className);
+			bpm.tryResetBreakpointRequest(className);
 		}
 		
 	}

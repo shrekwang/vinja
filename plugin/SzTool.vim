@@ -376,14 +376,6 @@ function RunAntBuild(...)
   endif
 endfunction 
 
-function JdeHotSwapEnable(port)
-  python Talker.hotswapEnabled("true",vim.eval("a:port"))
-endfunction 
-
-function JdeHotSwapDisable()
-  python Talker.hotswapEnabled("false")
-endfunction 
-
 function! Jdb()
   python Jdb.runApp()
   imap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>
@@ -434,8 +426,6 @@ function! Jdext()
   command! -nargs=0   ProjectTree      :python ProjectManager.projectTree()
   command! -nargs=?   Ant              :call RunAntBuild('<args>')
   command! -nargs=1   FetchResult      :call FetchResult('<args>')
-  command! -nargs=0   StopHotswap      :call JdeHotSwapDisable()
-  command! -nargs=1   StartHotswap     :call JdeHotSwapEnable('<args>')
 
   command! -nargs=0   Jdb              :call Jdb()
   command! -nargs=0   ToggleBreakPoint :python EditUtil.toggleBreakpoint()

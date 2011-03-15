@@ -5,53 +5,26 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.logging.Logger;
 
-import com.sun.jdi.Bootstrap;
+import com.google.code.vimsztool.debug.Debugger;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.VirtualMachineManager;
-import com.sun.jdi.connect.AttachingConnector;
-import com.sun.jdi.connect.Connector;
-import com.sun.jdi.connect.IllegalConnectorArgumentsException;
 
 public class HotSwapUtil {
-
-	private boolean enabled;
-	private VirtualMachine vm;
-	private String transportName = "dt_socket";
-	private String port;
-	private String host;
-	private static HotSwapUtil instance = new HotSwapUtil();
-	
-	private HotSwapUtil() {}
-	public static HotSwapUtil getInstance() {
-		return instance;
-	}
-	
-	private void connect() throws IOException, IllegalConnectorArgumentsException {
-		AttachingConnector connector = findAttachingConnector();
-		Map<String, Connector.Argument> args = connector.defaultArguments();
-		Connector.Argument arg;
-		arg = args.get("port");
-		arg.setValue(getPort());
-	    vm = connector.attach(args);
-
-	}
+	private static Logger log = JdeLogger.getLogger("HotSwapServer");
 
 	@SuppressWarnings("unchecked")
-	public void replace(File classFile, String className) throws Exception {
+	public static void replace(Debugger debugger, File classFile, String className) {
 		
-		if (vm == null) {
-			connect();
-		}
-		if (!vm.canRedefineClasses()) {
-			return;
-		}
+		VirtualMachine vm = debugger.getVm();
+		if (vm == null) return;
+		if (!vm.canRedefineClasses()) return;
 		
 		byte[] classBytes = loadClassFile(classFile);
+		if (classBytes == null ) return;
+		
 		List classes = vm.classesByName(className);
 
 		if (classes == null || classes.size() == 0)
@@ -65,43 +38,17 @@ public class HotSwapUtil {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private AttachingConnector findAttachingConnector() {
-		VirtualMachineManager manager = Bootstrap.virtualMachineManager();
-		Iterator iter = manager.attachingConnectors().iterator();
-		while (iter.hasNext()) {
-			AttachingConnector ac = (AttachingConnector) iter.next();
-			if (ac.transport().name().equals(this.transportName))
-				return ac;
+	private static byte[] loadClassFile(File classFile) {
+		try {
+			DataInputStream in = new DataInputStream(new FileInputStream(classFile));
+			byte[] ret = new byte[(int) classFile.length()];
+			in.readFully(ret);
+			in.close();
+			return ret;
+		} catch (IOException e) {
+			log.info(e.getMessage());
 		}
 		return null;
 	}
-
-	private byte[] loadClassFile(File classFile) throws IOException {
-		DataInputStream in = new DataInputStream(new FileInputStream(classFile));
-
-		byte[] ret = new byte[(int) classFile.length()];
-		in.readFully(ret);
-		in.close();
-
-		return ret;
-	}
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
-	public boolean isEnabled() {
-		return enabled;
-	}
-	public void setPort(String port) {
-		this.port = port;
-	}
-	public String getPort() {
-		return port;
-	}
-	public void setHost(String host) {
-		this.host = host;
-	}
-	public String getHost() {
-		return host;
-	}
+	
 }
