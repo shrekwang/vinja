@@ -403,22 +403,26 @@ function DisplayMsg(msg)
     let &ruler=x | let &showcmd=y
 endfun
 
+function InitJavaSetting() 
+  map <C-n> :cn<cr>
+  map <C-p> :cp<cr>
+  setlocal omnifunc=SzJdeCompletion
+  au CursorHold <buffer> :python Compiler.displayMsg()
+  au CursorMoved <buffer> :python Compiler.displayMsg()
+  python EditUtil.createSkeleton()
+  python EditUtil.initBreakpointSign()
+  if exists("*SuperTabSetDefaultCompletionType")
+    autocmd BufEnter *.java        call SuperTabSetDefaultCompletionType("<c-x><c-o>")
+  endif
+endfunction
+
 function! Jdext()
   call RunSzPyfile("jde.py")
   python startAgent()
   set completeopt=menuone
-  autocmd BufEnter     *.java      setlocal omnifunc=SzJdeCompletion
-  autocmd BufEnter     *.java      python EditUtil.initBreakpointSign()
-  autocmd BufNewFile   *.java      python EditUtil.createSkeleton()
-  autocmd BufEnter     *.java      au CursorHold <buffer> :python Compiler.displayMsg()
-  autocmd BufEnter     *.java      au CursorMoved <buffer> :python Compiler.displayMsg()
-  if exists("*SuperTabSetDefaultCompletionType")
-    autocmd BufEnter *.java        call SuperTabSetDefaultCompletionType("<c-x><c-o>")
-  endif
+  autocmd BufEnter     *.java     call InitJavaSetting()
   autocmd BufWritePost  *.java    python Compiler.compileCurrentFile()
   autocmd BufWritePost  *         python Compiler.copyResource()
-  map <C-n> :cn<cr>
-  map <C-p> :cp<cr>
 
   command! -nargs=0   BuildProject     :python Compiler.compileCurrentFile(buildProject=True)
   command! -nargs=0   DumpClass        :python EditUtil.dumpClassInfo()

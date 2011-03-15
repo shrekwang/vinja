@@ -358,7 +358,18 @@ class EditUtil(object):
     @staticmethod
     def createSkeleton():
         vim_buffer = vim.current.buffer
+        if len(vim_buffer) > 10 :
+            return 
+        buf_content = "\n".join(vim_buffer)
+        if not re.match("^\s*$",buf_content) :
+            return 
+
         cur_file = vim_buffer.name
+        if os.path.exists(cur_file) :
+            file_content ="\n".join(open(cur_file,"r").readlines())
+            if not re.match("^\s*$",file_content) :
+                return
+
         cur_path = os.path.dirname(cur_file)
         prj_root = ProjectManager.getProjectRoot(cur_file)
         src_locs = ProjectManager.getSrcLocations(cur_file)
