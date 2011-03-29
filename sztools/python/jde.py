@@ -515,7 +515,7 @@ class EditUtil(object):
                 break
         if has_match :
             matched_row = 1
-            lines = open(abs_path,"r").readlines()
+            lines =[line.replace("\n","") for line in open(abs_path,"r").readlines()]
             members = Parser.parseAllMemberInfo(lines)
             for name,mtype,rtntype,param,lineNum in members :
                 if name == memberName :
@@ -1696,6 +1696,8 @@ class InspectorVarParser():
             membersEle = Element("members")
             ele.append(membersEle)
             for item in exp.members:
+                if item.name[0].isupper():
+                    item.name = Parser.getFullClassNames(name)[0]
                 memberExpEle = Element("exp",{'name' : item.name})
                 if not isinstance(item.params,str):
                     memberExpEle.set("method","true")
@@ -1719,3 +1721,8 @@ class InspectorVarParser():
         msg = stringIO.getvalue()
         return msg
 
+if __name__ == "__main__" :
+    #ivp = InspectorVarParser()
+    #result = ivp.generate("aa.what('sf') = saf")
+    #print result
+    pass

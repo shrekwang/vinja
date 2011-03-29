@@ -46,7 +46,7 @@ class QuickLocater(object) :
         self.sidescrolloff = vim.eval("&sidescrolloff")
         self.guicursor = vim.eval("&guicursor")
         self.cursor_bg = vim.eval("""synIDattr(synIDtrans(hlID("Cursor")), "bg")""")
-        self.last_bufnr = vim.eval('bufnr("$")')
+        self.last_winnr = vim.eval("winnr()")
         if self.cursor_bg == None :
             self.cursor_bg = "white"
 
@@ -159,7 +159,7 @@ class QuickLocater(object) :
         row,col = vim.current.window.cursor
         line = work_buffer[row-1]
         self.clean()
-        vim.command("exec '%s wincmd w'" % self.last_bufnr)
+        vim.command("exec '%s wincmd w'" % self.last_winnr)
         self.content_manager.open_content(line, mode)
 
     def on_key_pressed(self, key):
