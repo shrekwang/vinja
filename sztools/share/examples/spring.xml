@@ -3,9 +3,7 @@
    "http://www.springframework.org/dtd/spring-beans.dtd">
 
 <beans>
-    <bean id="foo"
-	class="com.springinaction.Foo"/>
-    <bean id="bar"
-	class="com.springinaction.Bar"/>
+    <bean id="foo" class="com.springinaction.Foo"/>
+    <bean id="bar" class="com.springinaction.Bar"/>
 </beans>
 

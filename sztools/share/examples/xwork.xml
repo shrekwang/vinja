@@ -1,22 +1,22 @@
-<!DOCTYPE xwork PUBLIC "-//OpenSymphony Group//XWork 1.0//EN"
-"http://www.opensymphony.com/xwork/xwork-1.0.dtd">
+<!DOCTYPE xwork PUBLIC "-//OpenSymphony Group//XWork 1.0//EN" "http://www.opensymphony.com/xwork/xwork-1.0.dtd">
 <xwork>
-    <include file="webwork-default.xml" /> 
-    <package name="default" extends="webwork-default"> 
-	<action name="login" 
-	    class="net.xiaxin.webwork.action.LoginAction">
+  <include file="webwork-default.xml" /> 
+  <package name="default" extends="webwork-default"> 
+    <action name="login" class="net.xiaxin.webwork.action.LoginAction">
 
-	    <result name="success" type="dispatcher"> 
-		<param name="location">/main.jsp</param>
-	    </result>
-	    <result name="loginfail" type="dispatcher">
-		<param name="location">/index.jsp</param>
-	    </result>
+      <result name="success" type="dispatcher"> 
+        <param name="location">/main.jsp</param>
+      </result>
 
-	    <interceptor-ref name="params" /> 
-	    <interceptor-ref name="model-driven"/> 
+      <result name="loginfail" type="dispatcher">
+        <param name="location">/index.jsp</param>
+      </result>
 
-	</action>
-    </package>
+      <interceptor-ref name="params" /> 
+      <interceptor-ref name="model-driven"/> 
+
+    </action>
+
+  </package>
 </xwork>
 
