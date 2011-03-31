@@ -41,13 +41,33 @@ public class Debugger {
 			errRedirector.start();
 		}
 	}
-
-	public String launch(String mainClass, String classPathXml) {
+	
+	public String launch(String classPathXml, String cmdLine) {
+        String[] bb = cmdLine.split("\\s+");
+        List<String> opts = new ArrayList<String>();
+        List<String> args = new ArrayList<String>();
+        boolean beforeMain = true;
+        String className = null;
+        for (int i=0; i<bb.length; i++) {
+            if (!bb[i].startsWith("-")) {
+                beforeMain = false;
+            }
+            if (beforeMain) {
+                opts.add(bb[i]);
+            } else {
+                if (className ==null ) {
+                    className = bb[i];
+                } else {
+                    args.add(bb[i]);
+                }
+            }
+        }
 		if (vm != null) 
 			return "VirtualMachine is not null";
-		vm = ConnectorManager.launch(mainClass, classPathXml);
+		vm = ConnectorManager.launch(className,classPathXml,opts,args);
 		startProcess();
 		return "";
+		
 	}
 
 	public String attach(String port) {

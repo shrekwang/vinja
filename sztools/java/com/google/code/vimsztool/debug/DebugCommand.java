@@ -39,8 +39,8 @@ public class DebugCommand  extends SzjdeCommand {
 		}
 		
 		if (debugCmd.equals("run")) {
-			String mainClass = args[1];
-			actionResult = debugger.launch(mainClass, classPathXml);
+			String cmdLine = debugCmdArgs.substring(4).trim();
+			actionResult = debugger.launch(classPathXml, cmdLine);
 		} else if (debugCmd.equals("attach")) {
 			String port = args[1];
 			actionResult = debugger.attach(port);

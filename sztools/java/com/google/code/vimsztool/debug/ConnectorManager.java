@@ -31,7 +31,8 @@ public class ConnectorManager {
 		return sb.toString();
 	}
 
-	public static VirtualMachine launch(String mainClass, String classPathXml) {
+	public static VirtualMachine launch(String mainClass, String classPathXml,
+			List<String> opts,List<String> args) {
 		LaunchingConnector launchingConnector = Bootstrap
 				.virtualMachineManager().defaultConnector();
 
@@ -39,7 +40,15 @@ public class ConnectorManager {
 				.defaultArguments();
 
 		Connector.Argument mainArg = defaultArguments.get("main");
-		mainArg.setValue(mainClass);
+		StringBuilder mainSb = new StringBuilder(mainClass);
+		
+		if (args != null & args.size() > 0 ) {
+			mainSb.append(" ");
+			for (String arg : args) {
+				mainSb.append(arg).append(" ");
+			}
+		}
+		mainArg.setValue(mainSb.toString());
 
 		Connector.Argument suspendArg = defaultArguments.get("suspend");
 		suspendArg.setValue("true");
@@ -47,11 +56,19 @@ public class ConnectorManager {
 		Connector.Argument optionArg = (Connector.Argument) defaultArguments
 				.get("options");
 		
+		StringBuilder optionSb = new StringBuilder();
 		String projectRoot = new File(classPathXml).getParent();
-		String user_dir = "-Duser.dir=" + projectRoot + "   ";
+		String user_dir = "-Duser.dir=" + projectRoot ;
 		
 		String cp = "-Djava.class.path=" + getClassPath(classPathXml);
-		optionArg.setValue(user_dir + cp);
+		optionSb.append(user_dir).append(" ");
+		optionSb.append(cp).append(" ");
+		if (opts != null) {
+			for (String opt : opts) {
+				optionSb.append(opt).append(" ");
+			}
+		}
+		optionArg.setValue(optionSb.toString());
 		
 
 		try {
