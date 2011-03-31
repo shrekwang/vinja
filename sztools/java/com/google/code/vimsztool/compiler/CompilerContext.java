@@ -20,6 +20,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.omni.PackageInfo;
 import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.Preference;
@@ -38,6 +39,7 @@ public class CompilerContext {
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	private Preference pref = Preference.getInstance();
 	private PackageInfo packageInfo = new PackageInfo();
+	private ClassMetaInfoManager classMetaInfoManager = new ClassMetaInfoManager();
 	
 	
 	public CompilerContext(String classPathXml) {
@@ -161,6 +163,7 @@ public class CompilerContext {
 		classPathUrls.toArray(urlsA);
 		loader = new ReflectAbleClassLoader(urlsA, this.getClass().getClassLoader());
 		cachePackageInfo(urlsA,outputDir);
+		classMetaInfoManager.cacheAllInfo(outputDir);
 	}
 	
 	private void cachePackageInfo(URL[] urls,String outputDir) {
@@ -336,6 +339,10 @@ public class CompilerContext {
 
 	public PackageInfo getPackageInfo() {
 		return packageInfo;
+	}
+	
+	public ClassMetaInfoManager getClassMetaInfoManager() {
+		return classMetaInfoManager;
 	}
 
 

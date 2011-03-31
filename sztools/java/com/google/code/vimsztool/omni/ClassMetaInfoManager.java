@@ -19,24 +19,6 @@ public class ClassMetaInfoManager  implements ClassVisitor {
 	
 	private Map<String,ClassMetaInfo> metaInfos = new ConcurrentHashMap<String,ClassMetaInfo>();
 	
-	public static void main(String[] args) throws Exception {
-		
-		long start = System.currentTimeMillis();
-		ClassMetaInfoManager app = new ClassMetaInfoManager();
-		app.cacheAllInfo("/project/scds/web/WEB-INF/classes/");
-		ClassMetaInfo info =app.getTypeHierarchy("net.zdsoft.stusys.abnormal.dao.AbnormalApplyDao");
-		System.out.println(info.name);
-		System.out.println(info.superName);
-		for (String sub : info.subNames) {
-			System.out.println(sub);
-		}
-		
-		long end = System.currentTimeMillis();
-		System.out.println("takes " + (end-start));
-		
-		
-	}
-	
 	public void cacheAllInfo(String dir) {
 		loadAllMetaInfo(dir);
 		constructSubNames();
@@ -66,10 +48,48 @@ public class ClassMetaInfoManager  implements ClassVisitor {
 		}
 	}
 	
-	public ClassMetaInfo getTypeHierarchy(String className) {
+	public List<String> getTypeHierarchy(String className) {
 		List<String> result = new ArrayList<String>();
 		ClassMetaInfo metaInfo = metaInfos.get(className);
-		return metaInfo;
+		
+		List<String> superNames = new ArrayList<String>();
+		String superName = metaInfo.superName;
+		while (superName !=null) {
+			superNames.add(0, superName);
+			ClassMetaInfo superInfo = metaInfos.get(superName);
+			if (superInfo == null ) break;
+			superName = superInfo.superName;
+		}
+		String emptySpace = "                                                       ";
+		for (int i=0; i<superNames.size(); i++) {
+			String[] splitNames = splitClassName(superNames.get(i));
+			String pkgName = splitNames[0];
+			String binName = splitNames[1];
+			
+			String displayName =  emptySpace.substring(0,i*4) + binName + " - " + pkgName;
+			result.add(displayName);
+		}
+		
+		String[] splitNames = splitClassName(className);
+		String pkgName = splitNames[0];
+		String binName = splitNames[1];
+		int offsetBase = superNames.size();
+		result.add(emptySpace.substring(0,offsetBase*4) + binName + " - " + pkgName);
+		
+		for (String subName : metaInfo.subNames) {
+			splitNames = splitClassName(subName);
+			pkgName = splitNames[0];
+			binName = splitNames[1];
+			result.add(emptySpace.substring(0,(offsetBase+1)*4) + binName + " - " + pkgName);
+		}
+		
+		return result;
+	}
+	
+	private String[] splitClassName(String className) {
+		int dotPos = className.lastIndexOf(".");
+		if (dotPos < 0 ) return new String[] {"",className};
+		return new String[] {className.substring(0,dotPos) , className.substring(dotPos+1)};
 	}
 	
 	

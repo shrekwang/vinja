@@ -270,6 +270,16 @@ class Talker(object):
         data = Talker.send(params)
         return data
 
+
+    @staticmethod
+    def typeHierarchy(xmlPath,sourceFile):
+        params = dict()
+        params["cmd"]="typeHierarchy"
+        params["classPathXml"] = xmlPath
+        params["sourceFile"] = sourceFile
+        data = Talker.send(params)
+        return data
+
     @staticmethod
     def copyResource(xmlPath,sourceFile):
         params = dict()
@@ -688,6 +698,17 @@ class EditUtil(object):
                     bp_data[matched_file] = bp_set
             EditUtil.initBreakpointSign()
 
+    @staticmethod
+    def getTypeHierarchy():
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        line = vim_buffer[row-1]
+        current_file_name = vim_buffer.name
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+        if not classPathXml :
+            return
+        resultText = Talker.typeHierarchy(classPathXml,current_file_name)
+        return resultText
 
 class Compiler(object):
 
@@ -946,10 +967,28 @@ class Parser(object):
         return end_line
 
     @staticmethod
+    def parseCurrentMethodName():
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        fullDeclLine = vim_buffer[row-1]
+        methodPat = re.compile(r"(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)")
+        if "(" in fullDeclLine :
+            startLine = row
+            while True :
+                if ")" in fullDeclLine :
+                    break
+                fullDeclLine = fullDeclLine +vim_buffer[startLine].replace("\t","  ")
+                startLine = startLine + 1
+        result =  methodPat.search(fullDeclLine)
+        if result == None : return None
+        return result.group("name")
+
+
+    @staticmethod
     def parseAllMemberInfo(lines):
         memberInfo = []
         scopeCount = 0
-        methodPat = re.compile(r"(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*\((?P<param>.*\))")
+        methodPat = re.compile(r"(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)")
         assignPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*=")
         defPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*;")
         for lineNum,line in enumerate(lines) :
@@ -963,7 +1002,7 @@ class Parser(object):
                     while True :
                         if ")" in fullDeclLine :
                             break
-                        fullDeclLine = fullDeclLine +lines[startLine]
+                        fullDeclLine = fullDeclLine +lines[startLine].replace("\t","  ")
                         startLine = startLine + 1
                     pat = methodPat
                     mtype = "method"

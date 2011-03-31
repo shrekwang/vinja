@@ -15,6 +15,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_TYPE_HIIRARCHY;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -124,6 +125,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeGetConstructorDefs();
 	   } else if (cmdStr.equals(CMD_DEBUG)) {
 		   szjdeCommand = new DebugCommand();
+	   } else if (cmdStr.equals(CMD_TYPE_HIIRARCHY)) {
+		   szjdeCommand = new SzjdeTypeHierarchyCommand();
 	   }
 	   if (szjdeCommand == null) {
 		   return ("can't find the command '"+cmdStr+"' definition.");

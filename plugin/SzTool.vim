@@ -336,6 +336,13 @@ function LocateMember()
   python QuickLocater.runApp(membermgr)
 endfunction
 
+function LocateHierarchy()
+  call RunSzPyfile("locate.py")
+  python method = Parser.parseCurrentMethodName()
+  python thmgr = TypeHierarchyContentManager(vim.current.buffer.name,method)
+  python QuickLocater.runApp(thmgr)
+endfunction
+
 function StartMailAgent()
   python startMailAgent()
 endfunction
@@ -439,7 +446,8 @@ function! Jdext()
   autocmd BufEnter     *.java      nmap <silent><leader>gd  :python EditUtil.locateDefinition()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>ai  :python AutoImport.autoImportVar()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>pt  :python ProjectManager.projectTree()<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>zo  :call LocateMember()<cr>
+  autocmd BufEnter     *.java      nmap <silent><leader>go  :call LocateMember()<cr>
+  autocmd BufEnter     *.java      nmap <silent><leader>gt  :call LocateHierarchy()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
   autocmd BufEnter     *.java      imap <silent><M-9>       <c-o>:python EditUtil.tipMethodParameter()<cr>
   autocmd BufEnter     *.java      imap <silent><M-0>       <c-o>:python VimUtil.closeJdeConsole()<cr>

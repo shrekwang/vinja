@@ -1,5 +1,6 @@
 from  shext import LocateCmd
 from jde import Parser
+from jde import EditUtil
 import fnmatch
 import os
 import re
@@ -250,5 +251,34 @@ class JavaMemberContentManager(object):
         name,lineNum = line.split("\t")
         vim.command("normal %sG" % str(lineNum))
         
+class TypeHierarchyContentManager(object):
+
+    def __init__(self,source_file, memberName):
+        work_buffer=vim.current.buffer
+        self.hierarchy = EditUtil.getTypeHierarchy().split("\n")
+        self.source_file = source_file
+        self.memberName = memberName
+        self.show_on_open = True
+
+    def get_init_prompt(self):
+        name = ""
+        return name
+
+    def search_content(self,search_pat):
+        result = []
+        if not search_pat :
+            search_pat = "*"
+
+        for line in self.hierarchy :
+            if fnmatch.fnmatch(line, search_pat) :
+                result.append(line)
+        return result
+
+    def open_content(self,line,mode):
+        line = line.strip()
+        binName = line[0:line.find("-")].strip()
+        pkgName = line[line.find("-")+1:].strip() + "."
+        defClassName = pkgName + binName
+        EditUtil.searchAndEdit(self.source_file, defClassName,self.memberName)
 
 

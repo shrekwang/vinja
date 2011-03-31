@@ -17,6 +17,7 @@ public class SzjdeConstants {
 	public final static String CMD_RUN_SYS="runSys";
 	public final static String CMD_FETCH_RESULT="fetchResult";
 	public final static String CMD_PROJECT_CLEAN="projectClean";
+	public final static String CMD_TYPE_HIIRARCHY="typeHierarchy";
 	
 	public final static String PARAM_CLASSPATHXML="classPathXml";
 	public final static String PARAM_SOURCEFILE="sourceFile";
