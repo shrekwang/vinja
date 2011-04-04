@@ -9,3 +9,4 @@ sign define SzjdeError text=>> texthl=ErrorMsg
 sign define SzjdeWarning text=>> texthl=TODO
 sign define SuspendLine linehl=SuspendLine
 sign define SuspendLineBP text=O texthl=BreakPoint linehl=SuspendLine
+sign define SzjdeFR text=R9 texthl=BreakPoint

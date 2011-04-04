@@ -26,6 +26,8 @@ public class DebugCommand  extends SzjdeCommand {
 		
 		CompilerContextManager ccm = CompilerContextManager.getInstnace();
 		CompilerContext ctx = ccm.getCompilerContext(classPathXml);
+		debugger.setCompilerContext(ctx);
+		
 		if (debugCmdArgs == null || debugCmdArgs.trim().equals("")) {
 			return "";
 		}

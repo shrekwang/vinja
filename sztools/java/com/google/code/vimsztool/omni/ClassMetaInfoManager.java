@@ -50,6 +50,10 @@ public class ClassMetaInfoManager  implements ClassVisitor {
 	
 	public List<String> getTypeHierarchy(String className) {
 		List<String> result = new ArrayList<String>();
+		if (className == null || metaInfos.get(className) == null) {
+			result.add(className);
+			return result;
+		}
 		ClassMetaInfo metaInfo = metaInfos.get(className);
 		
 		List<String> superNames = new ArrayList<String>();

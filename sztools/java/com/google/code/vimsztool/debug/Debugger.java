@@ -3,6 +3,7 @@ package com.google.code.vimsztool.debug;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.util.VjdeUtil;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.Location;
@@ -18,6 +19,7 @@ public class Debugger {
 	private VirtualMachine vm = null;
 	private EventHandler eventHandler = null;
 	private String vimServerName = "";
+	private CompilerContext compilerContext =null;
 
 	private Debugger() {
 	}
@@ -247,6 +249,14 @@ public class Debugger {
 			break;
 		}
 		return name;
+	}
+
+	public void setCompilerContext(CompilerContext compilerContext) {
+		this.compilerContext = compilerContext;
+	}
+
+	public CompilerContext getCompilerContext() {
+		return compilerContext;
 	}
 }
 	 

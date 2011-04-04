@@ -203,6 +203,16 @@ class Talker(object):
         return data
 
     @staticmethod
+    def locateSource(className, xmlPath):
+        params = dict()
+        params["cmd"]="locateSource"
+        params["className"] = className
+        params["classPathXml"] = xmlPath
+        data = Talker.send(params)
+        return data
+
+
+    @staticmethod
     def doLocatedbCommand(args):
         params = dict()
         params["cmd"]="locatedb"
@@ -456,17 +466,20 @@ class EditUtil(object):
                 break
             tokenEndCol += 1
 
+        #if locate the class source
         classNamePat = r".*\b(?P<name>[A-Z]\w+)$"
         searchResult = re.search(classNamePat, line[0:tokenEndCol])
         if searchResult :
             className = searchResult.group("name")
             classNameList = Parser.getFullClassNames(className)
             for className in classNameList :
-                has_match = EditUtil.searchAndEdit(current_file_name,className, "None")
-                if has_match :
+                sourcePath = Talker.locateSource(className, classPathXml)
+                if sourcePath != "None" :
+                    vim.command("edit %s" % sourcePath )
                     break
             return 
 
+        #locate the method of class
         expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
         if not expTokens :
             return 
@@ -506,33 +519,23 @@ class EditUtil(object):
         expTokens = expTokens[:-1]
         tmpName = memberName + "()" if line[tokenEndCol] == "(" else memberName 
         params =(current_file_name,classNameList,classPathXml,expTokens,tmpName)
-        defClassName = Talker.getDefClassName(params)
-        if defClassName == "" :
-            return
-        EditUtil.searchAndEdit(current_file_name, defClassName,memberName)
+
+        for className in classNameList :
+            sourcePath = Talker.locateSource(className, classPathXml)
+            if sourcePath != "None" :
+                vim.command("edit %s" % sourcePath )
+                EditUtil.searchMember(memberName)
         return
 
     @staticmethod
-    def searchAndEdit(current_file_name, defClassName,memberName):
-        abs_path = "abs"
-        has_match = False
-        rlt_path = defClassName.replace(".", os.path.sep)+".java"
-        src_locs = ProjectManager.getSrcLocations(current_file_name)
-        for src_loc in src_locs :
-            abs_path = os.path.join(src_loc, rlt_path)
-            if os.path.exists(abs_path) :
-                has_match = True
-                break
-        if has_match :
-            matched_row = 1
-            lines =[line.replace("\n","") for line in open(abs_path,"r").readlines()]
-            members = Parser.parseAllMemberInfo(lines)
-            for name,mtype,rtntype,param,lineNum in members :
-                if name == memberName :
-                    matched_row = lineNum
-            vim.command("edit %s" % abs_path)
-            vim.command("normal %sG" % str(matched_row))
-        return has_match
+    def searchMember(memberName):
+        vim_buffer = vim.current.buffer
+        matched_row = 1
+        members = Parser.parseAllMemberInfo(vim_buffer)
+        for name,mtype,rtntype,param,lineNum in members :
+            if name == memberName :
+                matched_row = lineNum
+        vim.command("normal %sG" % str(matched_row))
 
     @staticmethod
     def tipMethodParameter():
@@ -1520,7 +1523,7 @@ class Jdb(object):
 
     def handleJdiEvent(self,args):
         if args[0] == "suspend" :
-            self.handleSuspend(args[1],args[2])
+            self.handleSuspend(args[1],args[2],args[3])
         elif args[0] == "msg" :
             vim.command("call SwitchToSzToolView('Jdb')")
             self.stdout(args[1])
@@ -1529,42 +1532,52 @@ class Jdb(object):
             vim.current.window.cursor = (row, 0)
 
 
-    def handleSuspend(self,defClassName,lineNum):
+    def handleSuspend(self,abs_path,lineNum,className):
         vim.command("tabn %s" % debugTabNum) 
         for i in range(1,5):
             vim.command("%swincmd w" % str(i))    
-            if vim.eval("&buftype") == "" :
+            bufname = vim.current.buffer.name
+            if vim.eval("&buftype") == "" or bufname.endswith(".temp_src") :
                 break
-        abs_path = "abs"
-        has_match = False
-        rlt_path = defClassName.replace(".", os.path.sep)+".java"
-        src_locs = ProjectManager.getSrcLocations(self.class_path_xml)
-        for src_loc in src_locs :
-            abs_path = os.path.join(src_loc, rlt_path)
-            if os.path.exists(abs_path) :
-                has_match = True
-                if abs_path != vim.current.buffer.name :
-                    vim.command("edit %s" % abs_path)
-                global bp_data
-                bp_set = bp_data.get(vim.current.buffer.name)
-                if bp_set != None and int(lineNum) in bp_set :
-                    signGroup = "SuspendLineBP"
-                else :
-                    signGroup = "SuspendLine"
-                signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
+        
+        if os.path.exists(abs_path) :
+            if abs_path != vim.current.buffer.name :
+                vim.command("edit %s" % abs_path)
                 bufnr=str(vim.eval("bufnr('%')"))
-                signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,name=signGroup,nr=bufnr)
-                self.suspendRow = lineNum
-                self.suspendBufnr = bufnr
-                self.suspendBufName = vim.current.buffer.name
+                signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
                 vim.command(signcmd)
+            global bp_data
+            bp_set = bp_data.get(vim.current.buffer.name)
+            if bp_set != None and int(lineNum) in bp_set :
+                signGroup = "SuspendLineBP"
+            else :
+                signGroup = "SuspendLine"
+            bufnr=str(vim.eval("bufnr('%')"))
+            signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
+            signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,name=signGroup,nr=bufnr)
+            self.suspendRow = lineNum
+            self.suspendBufnr = bufnr
+            self.suspendBufName = vim.current.buffer.name
+            vim.command(signcmd)
+            winStartRow = int(vim.eval("line('w0')"))
+            winEndRow = int(vim.eval("line('w$')"))
+            lineNum = int(lineNum)
+            if lineNum < winStartRow or lineNum > winEndRow :
                 vim.command("normal %sG" % str(lineNum))
-                break
+                vim.command("normal zt")
+
+        else :
+            vim.command("edit .temp_src")
+            vim.command("setlocal buftype=nowrite")
+            vim.current.buffer.append("the source code can't be found")
+            vim.current.buffer.append("class name is " + className)
+            vim.current.buffer.append("the current line is " + lineNum)
         vim.command("call SwitchToSzToolView('Jdb')")
 
     def resumeSuspend(self):
         global bp_data
         bp_set = bp_data.get(self.suspendBufName)
+        signcmd=""
         if self.suspendRow != -1 :
             if bp_set !=None and int(self.suspendRow) in bp_set :
                 signcmd="sign place %s name=SzjdeBreakPoint buffer=%s" %(self.suspendRow, self.suspendBufnr)

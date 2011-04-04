@@ -1,7 +1,9 @@
 package com.google.code.vimsztool.compiler;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,10 +40,14 @@ public class CompilerContext {
 	private String projectRoot;
 	private ReflectAbleClassLoader loader;
 	private List<String> srcLocations=new ArrayList<String>();
+	private List<String> libSrcLocations = new ArrayList<String>();
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	private Preference pref = Preference.getInstance();
 	private PackageInfo packageInfo = new PackageInfo();
 	private ClassMetaInfoManager classMetaInfoManager = new ClassMetaInfoManager();
+	
+	private String lastSearchedRtlName = "";
+	private String lastSearchResult = "";
 	
 	
 	public CompilerContext(String classPathXml) {
@@ -145,6 +153,9 @@ public class CompilerContext {
 			if (entry.kind.equals("lib")) {
 				File libFile = new File(entryAbsPath);
 				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {}
+				if (entry.sourcepath !=null) {
+					libSrcLocations.add(entry.sourcepath);
+				}
 			} else if (entry.kind.equals("src")) {
 				srcLocations.add(entryAbsPath);
 			} else if (entry.kind.equals("output")) {
@@ -154,6 +165,18 @@ public class CompilerContext {
 				outputDir=entryAbsPath;
 			} else if (entry.kind.equals("con")) {
 				addUserLib(entry.path);
+			} else if (entry.kind.equals("var")) {
+				String entryPath = entry.path;
+				String sourcePath = entry.sourcepath;
+				String varName = entryPath.substring(0, entryPath.indexOf(File.separator));
+				String varValue = VarsConfiger.getVarValue(varName	);
+				entryPath = entryPath.replace(varName, varValue);
+				sourcePath = sourcePath.replace(varName, varValue);
+				File libFile = new File(entryPath);
+				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {}
+				if (entry.sourcepath !=null) {
+					libSrcLocations.add(sourcePath);
+				}
 			}
 		}
 		
@@ -220,6 +243,7 @@ public class CompilerContext {
 					ClassPathEntry entry=new ClassPathEntry();
 					entry.kind=el.getAttribute("kind");
 					entry.path=el.getAttribute("path");
+					entry.sourcepath =el.getAttribute("sourcepath");
 					classPathEntries.add(entry);
 				}
 			}
@@ -297,9 +321,89 @@ public class CompilerContext {
 		
 		public String 	kind;
 		public String  path;
+		public String  sourcepath;
 
 	}
 	
+	public String findSourceFile(String rtlPathName) {
+		
+		if (lastSearchedRtlName.equals(rtlPathName)) {
+			return lastSearchResult;
+		}
+		
+		lastSearchedRtlName = rtlPathName;
+		
+		String tmpPath =FilenameUtils.concat(projectRoot,"tmp.java");
+		
+		for (String srcLoc : srcLocations) {
+			String absPath = FilenameUtils.concat(srcLoc, rtlPathName);
+			File file = new File(absPath) ;
+			if (file.exists()) {
+				lastSearchResult = absPath;
+				return absPath;
+			}
+		}
+		for (String libSrcLoc : libSrcLocations) {
+			if (libSrcLoc.endsWith(".jar") || libSrcLoc.endsWith(".zip")) {
+				if ( hasEntry(libSrcLoc, rtlPathName)) {
+					extractContentToTemp(libSrcLoc,rtlPathName,tmpPath);
+					lastSearchResult = tmpPath;
+					return tmpPath;
+	            }
+			} else {
+				String absPath = FilenameUtils.concat(libSrcLoc, rtlPathName);
+				File file = new File(absPath) ;
+				if (file.exists()) {
+					lastSearchResult = absPath;
+					return absPath;
+				}
+			}
+		}
+		
+		lastSearchResult = "None";
+		return "None";
+	}
+	
+	public static boolean hasEntry(String zipFileName, String rtlPath) {
+		try {
+			ZipFile zipFile = null;
+			zipFile = new ZipFile(zipFileName);
+			ZipEntry zipEntry = zipFile.getEntry(rtlPath);
+			zipFile.close();
+			if (zipEntry == null)
+				return false;
+			return true;
+		} catch (Exception e) {
+		}
+		return false;
+	}
+
+	public static void extractContentToTemp(String zipFileName, String rtlPath,String tmpPath) {
+		ZipFile zipFile = null;
+		try {
+			zipFile = new ZipFile(zipFileName);
+			ZipEntry zipEntry = zipFile.getEntry(rtlPath);
+			File f = new File(tmpPath);
+			f.createNewFile();
+			InputStream in = zipFile.getInputStream(zipEntry);
+			FileOutputStream out = new FileOutputStream(f);
+
+			byte[] by = new byte[1024];
+			int c;
+			while ((c = in.read(by)) != -1) {
+				out.write(by, 0, c);
+			}
+			out.close();
+			in.close();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			if (zipFile != null) {
+				try { zipFile.close(); } catch (Exception e) {}
+			}
+		}
+
+	}
 	
 	/* =================================================================== */
 	/* ====================== boring getter setter ======================= */

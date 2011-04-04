@@ -1,5 +1,6 @@
 package com.google.code.vimsztool.debug;
 
+import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.util.VjdeUtil;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
@@ -123,8 +124,15 @@ public class EventHandler extends Thread {
 		Debugger debugger = Debugger.getInstance();
 		String className = loc.declaringType().name();
 		int lineNum = loc.lineNumber();
+
+		CompilerContext ctx = debugger.getCompilerContext();
+		String abPath = "None";
+		try {
+			abPath = ctx.findSourceFile(loc.sourcePath());
+		} catch (Throwable e) {
+		}
 		
-		String[] cmdLine = {"HandleJdiEvent" ,"suspend" , className, String.valueOf(lineNum)};
+		String[] cmdLine = {"HandleJdiEvent" ,"suspend" , abPath, String.valueOf(lineNum), className };
 		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
 	}
 

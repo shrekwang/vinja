@@ -4,7 +4,4 @@ sun.*
 com.sun.*
 com.opensymphony.*
 net.sf.*
-org.apache.*
 org.hibernate.*
-org.springframework.*
-org.codehaus.*

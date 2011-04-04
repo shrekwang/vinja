@@ -38,7 +38,7 @@ public class StepFilterConfiger {
 
 	private static File getConfigFile() {
 		String sztoolHome = Preference.getInstance().getSztoolHome();
-		String userCfgPath = FilenameUtils.concat(VjdeUtil.getUserHome(), ".stepfilters.txt");
+		String userCfgPath = FilenameUtils.concat(VjdeUtil.getUserHome(), "stepfilters.txt");
 		File tmpFile = new File(userCfgPath);
 		if (tmpFile.exists()) return tmpFile;
 		
