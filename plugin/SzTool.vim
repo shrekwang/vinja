@@ -406,6 +406,7 @@ function InitJavaSetting()
   map <C-n> :cn<cr>
   map <C-p> :cp<cr>
   setlocal omnifunc=SzJdeCompletion
+  set cmdheight=2
   au CursorHold <buffer> :python Compiler.displayMsg()
   au CursorMoved <buffer> :python Compiler.displayMsg()
   python EditUtil.createSkeleton()
@@ -454,6 +455,10 @@ function! Jdext()
   autocmd BufEnter     *.java      nmap <silent><M-9>       :python EditUtil.tipMethodParameter()<cr>
   autocmd BufEnter     *.java      nmap <silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
   
+  autocmd BufEnter    SzToolView_Jdb  nmap <silent><F5>     :python jdb.stepCmd('step_into')<cr>
+  autocmd BufEnter    SzToolView_Jdb  nmap <silent><F6>     :python jdb.stepCmd('step_over')<cr>
+  autocmd BufEnter    SzToolView_Jdb  nmap <silent><F7>     :python jdb.stepCmd('step_return')<cr>
+  autocmd BufEnter    SzToolView_Jdb  nmap <silent><F8>     :python jdb.stepCmd('resume')<cr>
 endfunction
 
 

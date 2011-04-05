@@ -1623,6 +1623,10 @@ class Jdb(object):
         vim.current.window.cursor = (row, col)
         vim.command("startinsert")
 
+    def stepCmd(self, cmd):
+        self.resumeSuspend()
+        data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
+
     def executeCmd(self, insertMode = True):
         
         #if self.project_root == None or not os.path.exists(self.project_root) :

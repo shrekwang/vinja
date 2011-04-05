@@ -31,6 +31,29 @@ public class ExpressionEval {
 
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
 			"short", "int", "long", "float", "double" };
+	
+	public static String fields() {
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		ThreadReference threadRef = threadStack.getCurThreadRef();
+		if (threadRef == null) {
+			return null;
+		}
+		StringBuilder sb = new StringBuilder();
+		try {
+			StackFrame stackFrame = threadRef.frame(0);
+			ObjectReference thisObj = stackFrame.thisObject();
+			Map<Field, Value> values = thisObj.getValues(thisObj.referenceType().visibleFields());
+			for (Field field : values.keySet()) {
+				sb.append(field.name()).append(":");
+				sb.append(getPrettyPrintStr(values.get(field)));
+				sb.append("\n");
+				stackFrame = threadRef.frame(0);
+			}
+		} catch (IncompatibleThreadStateException e) {
+		}
+
+		return sb.toString();
+	}
 
 	public static String variables() {
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();

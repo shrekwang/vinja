@@ -119,6 +119,54 @@ public class Debugger {
 		return result;
 	}
 	
+	private String getIndentStr(int level) {
+		StringBuilder sb = new StringBuilder();
+		for (int i=0; i<level; i++) {
+			sb.append("   ");
+		}
+		return sb.toString();
+	}
+	
+	private void appendStackInfo(StringBuilder sb, ThreadReference ref, int startLevel) {
+		sb.append(getIndentStr(startLevel));
+		sb.append("Thread [" + ref.name() + "] ( ");
+		String status = getThreadStatusName(ref.status());
+		try {
+			if (ref.isSuspended()
+					&& ref.status() == ThreadReference.THREAD_STATUS_RUNNING) {
+				status = "SUSPENDED";
+			}
+			sb.append(status);
+			
+			if (ref.isAtBreakpoint()) {
+				Location loc = ref.frame(0).location();
+				sb.append("(breakpoint at line ");
+				sb.append(loc.lineNumber());
+				sb.append(" in ").append(loc.declaringType().name());
+				sb.append(") ");
+			}
+			sb.append(")").append(" uniqueId : ").append(ref.uniqueID());
+			sb.append("\n");
+			
+			if (ref.isSuspended()) {
+				List<String> stackInfos = getStackFrameInfos(ref);
+				for (String info : stackInfos) {
+					sb.append(getIndentStr(startLevel+1));
+					sb.append(info).append("\n");
+				}
+			}
+		} catch (Throwable e) {
+		}
+	}
+	
+	public String listCurrentStack() {
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		ThreadReference threadRef = threadStack.getCurThreadRef();
+		StringBuilder sb = new StringBuilder();
+		appendStackInfo(sb,threadRef,0);
+		return sb.toString();
+	}
+	
 	public String listThreads() {
 		if (vm == null)
 			return "";
@@ -126,33 +174,7 @@ public class Debugger {
 		StringBuilder sb = new StringBuilder(vm.name());
 		sb.append("\n");
 		for (ThreadReference ref : threads) {
-			try {
-				sb.append("\tThread [" + ref.name() + "] ( ");
-				String status = getThreadStatusName(ref.status());
-				if (ref.isSuspended()
-						&& ref.status() == ThreadReference.THREAD_STATUS_RUNNING) {
-					status = "SUSPENDED";
-				}
-				sb.append(status);
-				
-				if (ref.isAtBreakpoint()) {
-					Location loc = ref.frame(0).location();
-					sb.append("(breakpoint at line ");
-					sb.append(loc.lineNumber());
-					sb.append(" in ").append(loc.declaringType().name());
-					sb.append(") ");
-				}
-				sb.append(")").append(" uniqueId : ").append(ref.uniqueID());
-				sb.append("\n");
-				
-				if (ref.isSuspended()) {
-					List<String> stackInfos = getStackFrameInfos(ref);
-					for (String info : stackInfos) {
-						sb.append("\t\t").append(info).append("\n");
-					}
-				}
-			} catch (Throwable e) {
-			}
+			appendStackInfo(sb,ref,1);
 		}
 		return sb.toString();
 	}
