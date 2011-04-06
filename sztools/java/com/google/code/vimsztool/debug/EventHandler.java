@@ -38,7 +38,7 @@ public class EventHandler extends Thread {
 		while (true) {
 			if (vmExit == true) {
 				Debugger debugger = Debugger.getInstance();
-				debugger.exit();
+				debugger.disconnectOrExit();
 				break;
 			}
 			try {

@@ -1,6 +1,7 @@
 package com.google.code.vimsztool.debug;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,26 @@ public class ExpressionEval {
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
 			"short", "int", "long", "float", "double" };
 	
+	private static int getMaxLength(List<String> names) {
+		int max = 0;
+		if (names == null || names.size() ==0) return 0;
+		for (String name : names ) {
+			int len = name.length();
+			if (len > max) max = len;
+		}
+		return max;
+	}
+	
+	private static String padStr(int maxLen, String origStr) {
+		if (origStr  == null) return "";
+		int len = origStr.length();
+		if (len >= maxLen ) return origStr;
+		for (int i=0; i< (maxLen-len); i++) {
+			origStr = origStr + " ";
+		}
+		return origStr;
+	}
+	
 	public static String fields() {
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
@@ -43,8 +64,13 @@ public class ExpressionEval {
 			StackFrame stackFrame = threadRef.frame(0);
 			ObjectReference thisObj = stackFrame.thisObject();
 			Map<Field, Value> values = thisObj.getValues(thisObj.referenceType().visibleFields());
+			List<String> fieldNames = new ArrayList<String>();
 			for (Field field : values.keySet()) {
-				sb.append(field.name()).append(":");
+				fieldNames.add(field.name());
+			}
+			int maxLen = getMaxLength(fieldNames)+2;
+			for (Field field : values.keySet()) {
+				sb.append(padStr(maxLen,field.name())).append(":");
 				sb.append(getPrettyPrintStr(values.get(field)));
 				sb.append("\n");
 				stackFrame = threadRef.frame(0);
@@ -63,9 +89,14 @@ public class ExpressionEval {
 		}
 		StringBuilder sb = new StringBuilder();
 		try {
+			List<String> varNames = new ArrayList<String>();
+			for (LocalVariable var : threadRef.frame(0).visibleVariables()) {
+				varNames.add(var.name());
+			}
+			int maxLen = getMaxLength(varNames)+2;
 			for (LocalVariable var : threadRef.frame(0).visibleVariables()) {
 				Value value = threadRef.frame(0).getValue(var);
-				sb.append(var.name()).append(":");
+				sb.append(padStr(maxLen,var.name())).append(":");
 				sb.append(getPrettyPrintStr(value));
 				sb.append("\n");
 			}
@@ -84,8 +115,13 @@ public class ExpressionEval {
 			ObjectReference objRef = (ObjectReference) value;
 			Map<Field, Value> values = objRef.getValues(objRef.referenceType()
 					.visibleFields());
+			List<String> fieldNames = new ArrayList<String>();
 			for (Field field : values.keySet()) {
-				sb.append(field.name()).append(":");
+				fieldNames.add(field.name());
+			}
+			int maxLen = getMaxLength(fieldNames)+2;
+			for (Field field : values.keySet()) {
+				sb.append(padStr(maxLen,field.name())).append(":");
 				sb.append(getPrettyPrintStr(values.get(field)));
 				sb.append("\n");
 			}

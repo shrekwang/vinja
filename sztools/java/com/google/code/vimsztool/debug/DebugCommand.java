@@ -15,7 +15,7 @@ public class DebugCommand  extends SzjdeCommand {
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","stacks", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch",
-		"ignore","clear", "threads","thread", "syncbps"};
+		"ignore","clear", "threads","thread", "syncbps","disconnect"};
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -96,9 +96,11 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("shutdown")) {
 			debugger.shutdown();
 		} else if (debugCmd.equals("exit")) {
-			debugger.exit();
+			debugger.disconnectOrExit();
 		} else if (debugCmd.equals("syncbps")) {
 			actionResult = bpMgr.allBreakpointsInfo();
+		} else if (debugCmd.equals("disconnect")) {
+			debugger.disconnectOrExit();
 		}
 		return actionResult;
 	}

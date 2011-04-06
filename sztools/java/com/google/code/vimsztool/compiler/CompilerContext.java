@@ -61,7 +61,10 @@ public class CompilerContext {
 		if (file.isFile()) {
 			this.projectRoot=new File(abpath).getParent();
 			String jdeXmlPath = FilenameUtils.concat(projectRoot, ".jde");
-			initJdeProperty(jdeXmlPath);
+			File jdeXmlFile = new File(jdeXmlPath);
+			if (jdeXmlFile.exists() && jdeXmlFile.canRead()) {
+				initJdeProperty(jdeXmlPath);
+			}
 			initClassPath(classPathXml);
 		} else {
 			this.projectRoot = abpath;

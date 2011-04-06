@@ -215,14 +215,16 @@ public class Debugger {
 	
 
 
-	public void exit() {
+	public void disconnectOrExit() {
 		if (vm == null ) return;
 		try {
 			vm.dispose();
 		} catch (Throwable e) {
 		} 
 		vm = null;
+		clean();
 	}
+	
 	public void shutdown() {
 		if (vm == null ) return;
 		try {
@@ -230,6 +232,13 @@ public class Debugger {
 		} catch (Throwable e) {
 		} 
 		vm = null;
+		clean();
+	}
+	
+	private void clean() {
+		SuspendThreadStack suspendThreadStack = SuspendThreadStack.getInstance();
+		suspendThreadStack.setCurRefType(null);
+		suspendThreadStack.setCurThreadRef(null);
 	}
 	
 	public VirtualMachine getVm() {
