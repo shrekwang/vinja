@@ -538,6 +538,14 @@ class EditUtil(object):
         vim.command("normal %sG" % str(matched_row))
 
     @staticmethod
+    def searchAndEdit(current_file_name, className,memberName):
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+        sourcePath = Talker.locateSource(className, classPathXml)
+        if sourcePath != "None" :
+            vim.command("edit %s" % sourcePath )
+            EditUtil.searchMember(memberName)
+
+    @staticmethod
     def tipMethodParameter():
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer

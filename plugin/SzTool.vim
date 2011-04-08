@@ -495,5 +495,5 @@ nmap <silent><leader>zs  :python startfile()<cr>
 nmap <silent><leader>zv  <C-Q>
 nmap <silent><leader>zw  :w<cr>
 
-nmap <silent><leader>ff  :python openInFirefox()<cr>
+"nmap <silent><leader>ff  :python openInFirefox()<cr>
 nmap <silent><leader>lw  :call LocateFile()<cr>
