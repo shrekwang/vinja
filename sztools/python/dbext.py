@@ -4,10 +4,34 @@ import re
 import sys
 import logging
 
-db_profile = {}
-tableList = []
+conn_pool = {}
 
 class QueryUtil(object):
+
+    @staticmethod
+    def queryDataBases():
+        bufnumber= vim.eval("bufnr('%')")
+        db_profile = dbext.getDbOption()
+        if db_profile == None :  
+            return
+        outBuffer = Dbext.getOutputBuffer()
+        name = getVisualBlock()
+        server_type = db_profile["servertype"]
+        if server_type == "mssql":
+            sql = """ SELECT name 
+                FROM master.dbo.sysdatabases
+                WHERE  DATABASEPROPERTYEX(name, 'Status') = 'ONLINE'
+                and name not in ('master','tempdb','model','msdb') """
+        elif server_type == "mysql":
+            sql = " show databases "
+
+        columns,result = dbext.query(sql)
+
+        if not columns :
+            output(result, outBuffer)
+        else :
+            output(dbext.format(columns, result), outBuffer)
+
 
     @staticmethod
     def queryTables():
@@ -142,10 +166,18 @@ class Dbext(object):
                     append = True
                 output(result,outBuffer,append)
 
-    def cacheTableNames(self):
+    @staticmethod
+    def getTableNames():
 
-        db_profile = self.getDbOption()
-        if db_profile == None :  return
+        global conn_pool
+        global dbext
+        bufnum= vim.eval("bufnr('%')")
+        conn = conn_pool.get(bufnum)
+        if conn == None :
+            return []
+
+        db_profile = dbext.getDbOption()
+        if db_profile == None :  return   
 
         server_type = db_profile["servertype"]
         if server_type == "oracle":
@@ -157,22 +189,20 @@ class Dbext(object):
         elif server_type == "mysql":
             sql = " SELECT table_name FROM INFORMATION_SCHEMA.TABLES "
 
-        conn = self.createConn(db_profile)
         cur = conn.cursor()
         try :
             cur.execute(sql)
         except Exception , reason:
             print reason
             cur.close()
-            conn.close()
             return
 
-        global tableList
+        tableList = []
         for dataRow in cur.fetchall():
             tableList.append(dataRow[0])
         conn.commit()
         cur.close()
-        conn.close()
+        return tableList
 
     def loadConf(self,path):
         confs = []
@@ -233,14 +263,12 @@ class Dbext(object):
             elif item["servertype"] == "oracle" :
                 print " %s : %s %s %s " % (str(index), item["host"].ljust(16),item["sid"].ljust(12),item["user"])
             else :
-                print " %s : %s %s %s" % (str(index), item["host"].ljust(16),item["database"].ljust(12), item["user"])
+                print " %s : %s %s" % (str(index), item["host"].ljust(16),item["user"])
 
         vim.command("let b:profile_index = input('please enter a selection')")
         #clear temp connection parameter
         if self.existsConnParameter() :
             vim.command("unlet b:connection_parameter")
-
-        self.cacheTableNames()
 
         db_profile = self.getDbOption()
         if db_profile == None :  return
@@ -253,7 +281,7 @@ class Dbext(object):
             strValue = (db_profile["host"],db_profile["sid"])
         else :
             strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ Database:'%s'"
-            strValue = (db_profile["host"],db_profile["database"])
+            strValue = (db_profile["host"],db_profile["user"])
 
         vim.command(strTemplate % strValue )
         return
@@ -294,30 +322,35 @@ class Dbext(object):
         elif server_type == "mssql":
             import pyodbc
             conn = pyodbc.connect(driver = '{SQL Server}',server=profile["host"],uid=profile["user"], \
-                pwd = profile["password"],database = profile["database"])
+                pwd = profile["password"] )
         elif server_type == "mysql":
             import MySQLdb
             conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
-                passwd = profile["password"], db = profile["database"])
+                passwd = profile["password"] )
         elif server_type == "sqlite":
             import sqlite3 as sqlite
             conn = sqlite.connect(profile["file"])
         return conn
 
     def query(self, sql):
+
         db_profile = self.getDbOption()
         if db_profile == None :  return (None,"")
-        conn = None
+
+        global conn_pool
+        bufnum= vim.eval("bufnr('%')")
+        conn = conn_pool.get(bufnum)
+        if conn == None :
+            conn = self.createConn(db_profile)
+            conn_pool[bufnum] = conn
+
         cur = None
         try :
-            conn = self.createConn(db_profile)
             cur = conn.cursor()
             cur.execute(sql)
         except Exception, reason:
             if cur : 
                 cur.close()
-            if conn : 
-                conn.close()
             server_type = db_profile["servertype"]
             if server_type == "mssql" :
                 return (None,str(reason[1]))
@@ -334,7 +367,6 @@ class Dbext(object):
 
         conn.commit()
         cur.close()
-        conn.close()
         return columns,result
 
     def format(self,columns,rows):
@@ -450,7 +482,7 @@ class SzDbCompletion(object):
             if parentContext :
                 completeList = SzDbCompletion.getTableList(parentContext)
             else :
-                completeList = tableList
+                completeList = Dbext.getTableNames()
         else  :
             filebufferText = "\n".join([unicode(line) for line in vim.current.buffer])
             outBufferText = "\n".join([unicode(line) for line in Dbext.getOutputBuffer()])

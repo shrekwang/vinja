@@ -162,6 +162,7 @@ function! Dbext()
   map <buffer><silent>,go :python dbext.promptDbOption()<cr>
   map <buffer><silent>,gc :python dbext.promptTempOption()<cr>
   map <buffer><silent>,lt :python QueryUtil.queryTables()<cr>
+  map <buffer><silent>,ld :python QueryUtil.queryDataBases()<cr>
   map <buffer><silent>,dt :python QueryUtil.descTable()<cr>
   map <buffer><silent>,gg :python QueryUtil.generateSQL()<cr>
 endfunction
