@@ -32,15 +32,31 @@ class QueryUtil(object):
         else :
             output(dbext.format(columns, result), outBuffer)
 
-
     @staticmethod
     def queryTables():
+        name = getVisualBlock()
+        columns , result = QueryUtil.queryTablesByName(name)
+        outBuffer = Dbext.getOutputBuffer()
+        if not columns :
+            output(result, outBuffer)
+        else :
+            output(dbext.format(columns, result), outBuffer)
+
+    @staticmethod
+    def getAllTables():
+        name = ""
+        columns , result = QueryUtil.queryTablesByName(name)
+        tableList = []
+        for dataRow in result :
+            tableList.append(dataRow[0].lower())
+        return tableList
+
+    @staticmethod
+    def queryTablesByName(name):
         bufnumber= vim.eval("bufnr('%')")
         db_profile = dbext.getDbOption()
         if db_profile == None :  
             return
-        outBuffer = Dbext.getOutputBuffer()
-        name = getVisualBlock()
         server_type = db_profile["servertype"]
         if server_type == "oracle":
             sql = """ select table_name from user_tables 
@@ -55,11 +71,8 @@ class QueryUtil(object):
             where table_name like '%%%s%%' """ % name
 
         columns,result = dbext.query(sql)
-
-        if not columns :
-            output(result, outBuffer)
-        else :
-            output(dbext.format(columns, result), outBuffer)
+        return columns, result
+        
 
     @staticmethod
     def descTable():
@@ -165,44 +178,6 @@ class Dbext(object):
                 if index!=0 :
                     append = True
                 output(result,outBuffer,append)
-
-    @staticmethod
-    def getTableNames():
-
-        global conn_pool
-        global dbext
-        bufnum= vim.eval("bufnr('%')")
-        conn = conn_pool.get(bufnum)
-        if conn == None :
-            return []
-
-        db_profile = dbext.getDbOption()
-        if db_profile == None :  return   
-
-        server_type = db_profile["servertype"]
-        if server_type == "oracle":
-            sql = "select lower(table_name) from user_tables "
-        elif server_type == "mssql":
-            sql = "SELECT lower(name) FROM sysobjects where type = 'U' "
-        elif server_type == "sqlite":
-            sql = "select name from sqlite_master where type = 'table' "
-        elif server_type == "mysql":
-            sql = " SELECT table_name FROM INFORMATION_SCHEMA.TABLES "
-
-        cur = conn.cursor()
-        try :
-            cur.execute(sql)
-        except Exception , reason:
-            print reason
-            cur.close()
-            return
-
-        tableList = []
-        for dataRow in cur.fetchall():
-            tableList.append(dataRow[0])
-        conn.commit()
-        cur.close()
-        return tableList
 
     def loadConf(self,path):
         confs = []
@@ -482,7 +457,7 @@ class SzDbCompletion(object):
             if parentContext :
                 completeList = SzDbCompletion.getTableList(parentContext)
             else :
-                completeList = Dbext.getTableNames()
+                completeList = QueryUtil.getAllTables()
         else  :
             filebufferText = "\n".join([unicode(line) for line in vim.current.buffer])
             outBufferText = "\n".join([unicode(line) for line in Dbext.getOutputBuffer()])
