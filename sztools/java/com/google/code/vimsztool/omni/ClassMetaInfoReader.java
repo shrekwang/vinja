@@ -16,113 +16,10 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-public class ClassMetaInfoManager  implements ClassVisitor , MethodVisitor {
-	
-	private Map<String,ClassMetaInfo> metaInfos = new ConcurrentHashMap<String,ClassMetaInfo>();
-	
-	public void cacheAllInfo(String dir) {
-		loadAllMetaInfo(dir);
-		constructSubNames();
-	}
-	
-	public void loadAllMetaInfo(String dir) {
-		File file = new File(dir);
-		File[] classes = file.listFiles(); 
-		for (File classFile : classes ) {
-			if (classFile.isDirectory()) {
-				loadAllMetaInfo(classFile.getAbsolutePath());
-			} else {
-				loadSingleMetaInfo(classFile);
-			}
-		}
-	}
-	
-	public void loadSingleMetaInfo(File classFile) {
-		if  (classFile.getName().endsWith(".class") ) {
-			try {
-				FileInputStream fs = new FileInputStream(classFile);
-				ClassReader cr = new ClassReader(fs);
-				cr.accept(this, 0);
-				fs.close();
-			} catch (IOException e) {
-			}
-		}
-	}
-	
-	public List<String> getTypeHierarchy(String className) {
-		List<String> result = new ArrayList<String>();
-		if (className == null || metaInfos.get(className) == null) {
-			result.add(className);
-			return result;
-		}
-		ClassMetaInfo metaInfo = metaInfos.get(className);
-		
-		List<String> superNames = new ArrayList<String>();
-		String superName = metaInfo.superName;
-		while (superName !=null) {
-			superNames.add(0, superName);
-			ClassMetaInfo superInfo = metaInfos.get(superName);
-			if (superInfo == null ) break;
-			superName = superInfo.superName;
-		}
-		String emptySpace = "                                                       ";
-		for (int i=0; i<superNames.size(); i++) {
-			String[] splitNames = splitClassName(superNames.get(i));
-			String pkgName = splitNames[0];
-			String binName = splitNames[1];
-			
-			String displayName =  emptySpace.substring(0,i*4) + binName + " - " + pkgName;
-			result.add(displayName);
-		}
-		
-		String[] splitNames = splitClassName(className);
-		String pkgName = splitNames[0];
-		String binName = splitNames[1];
-		int offsetBase = superNames.size();
-		result.add(emptySpace.substring(0,offsetBase*4) + binName + " - " + pkgName);
-		
-		for (String subName : metaInfo.subNames) {
-			splitNames = splitClassName(subName);
-			pkgName = splitNames[0];
-			binName = splitNames[1];
-			result.add(emptySpace.substring(0,(offsetBase+1)*4) + binName + " - " + pkgName);
-		}
-		
-		return result;
-	}
-	
-	private String[] splitClassName(String className) {
-		int dotPos = className.lastIndexOf(".");
-		if (dotPos < 0 ) return new String[] {"",className};
-		return new String[] {className.substring(0,dotPos) , className.substring(dotPos+1)};
-	}
-	
-	
-	private void constructSubNames() {
+import com.google.code.vimsztool.omni.ClassMetaInfoManager.ClassMetaInfo;
 
-		for (String name : metaInfos.keySet()) {
-			ClassMetaInfo metaInfo = metaInfos.get(name);
-			String superName = metaInfo.superName;
-
-			if (superName != null) {
-				ClassMetaInfo superInfo = metaInfos.get(superName);
-				if (superInfo != null) {
-					superInfo.subNames.add(metaInfo.name);
-				}
-			}
-
-			String[] interfaces = metaInfo.interfaces;
-			if (interfaces != null) {
-				for (int i = 0; i < interfaces.length; i++) {
-					ClassMetaInfo itfInfo = metaInfos.get(interfaces[i]);
-					if (itfInfo != null) {
-						itfInfo.subNames.add(metaInfo.name);
-					}
-				}
-			}
-
-		}
-	}
+public class ClassMetaInfoReader  implements ClassVisitor , MethodVisitor {
+	
 	
 	public void visit(int version, int access, String name, String signature,
 			String superName, String[] interfaces) {
@@ -142,7 +39,7 @@ public class ClassMetaInfoManager  implements ClassVisitor , MethodVisitor {
 			metaInfo.interfaces = interfaces;
 		}
 		
-		metaInfos.put(metaInfo.name, metaInfo);
+		//metaInfos.put(metaInfo.name, metaInfo);
 		
 		
 	}

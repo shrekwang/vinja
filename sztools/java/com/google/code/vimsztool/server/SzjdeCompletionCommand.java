@@ -18,7 +18,7 @@ import java.util.List;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.ReflectAbleClassLoader;
-import com.google.code.vimsztool.omni.ClassInfo;
+import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.JavaExpUtil;
 import com.google.code.vimsztool.omni.MemberInfo;
 import com.google.code.vimsztool.omni.PackageInfo;
@@ -64,7 +64,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		String[] classNameList = params.get("classnames").split(",");
 		String[] tokens = params.get(PARAM_EXP_TOKENS).split(",");
 	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
-		Class aClass = ClassInfo.getExistedClass(classPathXml, classNameList, sourceFile);
+		Class aClass = ClassInfoUtil.getExistedClass(classPathXml, classNameList, sourceFile);
 		if (aClass == null) return "";
 		boolean acceptPrctMember = false;
 		if (completionType.equals(CPT_TYPE_INHERITMEMBER)) {
@@ -86,20 +86,19 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 	
 	@SuppressWarnings("unchecked")
 	public String getAllMember(Class aClass,String completionType,boolean hasDotExp) {
-		ClassInfo classInfo = new ClassInfo();
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
-		LinkedList<Class> classList = ClassInfo.getAllSuperClass(aClass);
+		LinkedList<Class> classList = ClassInfoUtil.getAllSuperClass(aClass);
 	
 		for (Class cls : classList) {
 			List<MemberInfo> tmpInfoList = null;
 			if (completionType.equals(CPT_TYPE_OBJECTMEMBER) || hasDotExp ) {
-				tmpInfoList=classInfo.getMemberInfo(cls,false,false);
+				tmpInfoList=ClassInfoUtil.getMemberInfo(cls,false,false);
 			} else if (completionType.equals(CPT_TYPE_CLASSMEMBER)){
-				tmpInfoList=classInfo.getMemberInfo(cls,true,false);
+				tmpInfoList=ClassInfoUtil.getMemberInfo(cls,true,false);
 			} else if (completionType.equals(CPT_TYPE_CONSTRUCTOR)){
-				tmpInfoList=classInfo.getConstructorInfo(cls);
+				tmpInfoList=ClassInfoUtil.getConstructorInfo(cls);
 			} else if (completionType.equals(CPT_TYPE_INHERITMEMBER)){
-				tmpInfoList=classInfo.getMemberInfo(cls,false,true);
+				tmpInfoList=ClassInfoUtil.getMemberInfo(cls,false,true);
 			}
 			if (tmpInfoList == null) continue;
 			for (MemberInfo tmpMember : tmpInfoList) {

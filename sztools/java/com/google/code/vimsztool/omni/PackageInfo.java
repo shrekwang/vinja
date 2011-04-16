@@ -44,7 +44,7 @@ public class PackageInfo {
 				}
 				if (aClass == null)
 					continue;
-				LinkedList<Class> classList = ClassInfo.getAllSuperClass(aClass);
+				LinkedList<Class> classList = ClassInfoUtil.getAllSuperClass(aClass);
 				boolean isSuperior = false;
 				for (Class tmpClass : classList) {
 					if (tmpClass.getName().equals(className)) {

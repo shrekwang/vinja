@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.google.code.vimsztool.omni.ClassInfo;
+import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.JavaExpUtil;
 import com.google.code.vimsztool.omni.MemberInfo;
 import com.google.code.vimsztool.util.ModifierFilter;
@@ -23,7 +23,7 @@ public class SzjdeGetMethodDefs extends SzjdeCommand {
 		String[] tokens = params.get(PARAM_EXP_TOKENS).split(",");
 		String methodName = params.get(PARAM_MEMBER_NAME);
 	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
-		Class aClass = ClassInfo.getExistedClass(classPathXml, classNameList, sourceFile);
+		Class aClass = ClassInfoUtil.getExistedClass(classPathXml, classNameList, sourceFile);
 		if (aClass == null) return "";
 		ModifierFilter filter = new ModifierFilter(false,true);
 		aClass = JavaExpUtil.parseExpResultType(tokens, aClass,filter);
@@ -34,13 +34,12 @@ public class SzjdeGetMethodDefs extends SzjdeCommand {
 	@SuppressWarnings("unchecked")
 	public String getAllMember(Class aClass,String methodName) {
 		
-		ClassInfo classInfo = new ClassInfo();
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
-		LinkedList<Class> classList = ClassInfo.getAllSuperClass(aClass);
+		LinkedList<Class> classList = ClassInfoUtil.getAllSuperClass(aClass);
 	
 		for (Class cls : classList) {
 			List<MemberInfo> tmpInfoList = null;
-			tmpInfoList=classInfo.getMemberInfo(cls,false,true);
+			tmpInfoList=ClassInfoUtil.getMemberInfo(cls,false,true);
 			if (tmpInfoList == null) continue;
 			for (MemberInfo tmpMember : tmpInfoList) {
 				boolean added = false;

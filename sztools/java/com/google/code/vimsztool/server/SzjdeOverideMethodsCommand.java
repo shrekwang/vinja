@@ -8,7 +8,7 @@ import java.util.Set;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.ReflectAbleClassLoader;
-import com.google.code.vimsztool.omni.ClassInfo;
+import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.MemberInfo;
 
 public class SzjdeOverideMethodsCommand extends SzjdeCommand {
@@ -69,8 +69,7 @@ public class SzjdeOverideMethodsCommand extends SzjdeCommand {
 	}
 	
 	public List<String> addMethods(Class aClass,boolean mandatory) {
-		ClassInfo classInfo = new ClassInfo();
-		List<MemberInfo> memberInfos=classInfo.getMemberInfo(aClass, false,true);
+		List<MemberInfo> memberInfos=ClassInfoUtil.getMemberInfo(aClass, false,true);
 		List<String> methods = new ArrayList<String>();
 		for (MemberInfo info : memberInfos ) {
 			if (info.getMemberType().equals(MemberInfo.TYPE_METHOD)) {

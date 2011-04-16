@@ -4,7 +4,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASSPATHXML
 
 import java.util.ArrayList;
 
-import com.google.code.vimsztool.omni.ClassInfo;
+import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.MemberInfo;
 
 
@@ -16,12 +16,11 @@ public class SzjdeGetConstructorDefs extends SzjdeCommand {
 		String[] classNameList = params.get("classnames").split(",");
 		
 	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
-		Class aClass = ClassInfo.getExistedClass(classPathXml, classNameList, sourceFile);
+		Class aClass = ClassInfoUtil.getExistedClass(classPathXml, classNameList, sourceFile);
 		
 		if (aClass == null) return "";
 		
-		ClassInfo classInfo = new ClassInfo();
-	    ArrayList<MemberInfo> memberInfos =	classInfo.getConstructorInfo(aClass);
+	    ArrayList<MemberInfo> memberInfos =	ClassInfoUtil.getConstructorInfo(aClass);
 		StringBuilder sb=new StringBuilder();
 		for (MemberInfo member : memberInfos) {
 			sb.append(member.getReturnType()).append(" ");

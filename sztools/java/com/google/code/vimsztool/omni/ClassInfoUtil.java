@@ -15,11 +15,13 @@ import com.google.code.vimsztool.compiler.ReflectAbleClassLoader;
 import com.thoughtworks.paranamer.BytecodeReadingParanamer;
 import com.thoughtworks.paranamer.Paranamer;
 
-public class ClassInfo {
+public class ClassInfoUtil {
+	
+	private ClassInfoUtil() {}
 	
 	
 	@SuppressWarnings("unchecked")
-	public String dumpClassInfo(Class aClass) {
+	public static String dumpClassInfo(Class aClass) {
 		if (aClass == null ) return "";
 		
 		List<String> superClassNames = new ArrayList<String>();
@@ -68,7 +70,7 @@ public class ClassInfo {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public ArrayList<MemberInfo> getConstructorInfo(Class aClass) {
+	public static ArrayList<MemberInfo> getConstructorInfo(Class aClass) {
 		ArrayList<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
 		Constructor[] constructors = aClass.getDeclaredConstructors();
 		for (int i = 0; i < constructors.length; i++) {
@@ -85,7 +87,7 @@ public class ClassInfo {
 		return memberInfos;
 	}
 	
-	public boolean isValidateModifier(boolean staticMember,boolean protectedMember,int mod) {
+	public static boolean isValidateModifier(boolean staticMember,boolean protectedMember,int mod) {
 		if (staticMember && ! Modifier.isStatic(mod)) return false;
 		//if (!staticMember && Modifier.isStatic(mod)) return false;
 		if (protectedMember ) {
@@ -97,7 +99,7 @@ public class ClassInfo {
 	}
 
 	@SuppressWarnings("unchecked")
-	public ArrayList<MemberInfo> getMemberInfo(Class aClass,
+	public static ArrayList<MemberInfo> getMemberInfo(Class aClass,
 			boolean staticMember, boolean protectedMember) {
 
 		ArrayList<MemberInfo> memberInfos = new ArrayList<MemberInfo>();

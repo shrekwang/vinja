@@ -5,7 +5,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_DUMP_CLASS;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.ReflectAbleClassLoader;
-import com.google.code.vimsztool.omni.ClassInfo;
+import com.google.code.vimsztool.omni.ClassInfoUtil;
 
 public class SzjdeDumpClassInfoCommand extends SzjdeCommand {
 
@@ -28,8 +28,7 @@ public class SzjdeDumpClassInfoCommand extends SzjdeCommand {
 				} catch (ClassNotFoundException e2) { }
 			}
 			if (aClass==null) continue;
-			ClassInfo classInfo = new ClassInfo();
-			String dumpInfo = classInfo.dumpClassInfo(aClass);
+			String dumpInfo = ClassInfoUtil.dumpClassInfo(aClass);
 			if (dumpInfo.length() > 0) return dumpInfo;
 		}
 

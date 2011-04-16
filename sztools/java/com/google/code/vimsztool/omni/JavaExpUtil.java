@@ -70,13 +70,12 @@ public class JavaExpUtil {
 	@SuppressWarnings("unchecked")
 	public static String getAllMember(Class aClass,String methodName) {
 		
-		ClassInfo classInfo = new ClassInfo();
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
-		LinkedList<Class> classList = ClassInfo.getAllSuperClass(aClass);
+		LinkedList<Class> classList = ClassInfoUtil.getAllSuperClass(aClass);
 	
 		for (Class cls : classList) {
 			List<MemberInfo> tmpInfoList = null;
-			tmpInfoList=classInfo.getMemberInfo(cls,false,true);
+			tmpInfoList=ClassInfoUtil.getMemberInfo(cls,false,true);
 			if (tmpInfoList == null) continue;
 			for (MemberInfo tmpMember : tmpInfoList) {
 				boolean added = false;
