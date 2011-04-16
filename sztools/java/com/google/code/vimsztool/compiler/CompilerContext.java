@@ -24,6 +24,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.google.code.vimsztool.debug.BreakpointManager;
 import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.omni.PackageInfo;
 import com.google.code.vimsztool.util.JdeLogger;
@@ -108,9 +109,15 @@ public class CompilerContext {
 		if (loader == null) return;
 		URL[] urls = loader.getURLs();
 		loader = new ReflectAbleClassLoader(urls, this.getClass().getClassLoader());
+		BreakpointManager bpmgr = BreakpointManager.getInstance();
 		
 		for (String className : classNames ) {
 			packageInfo.addClassNameToCache(className);
+			String classPath = getOutputDir() + "/" + className.replace('.', '/') + ".class";
+			File outFile = new File(classPath);
+			classMetaInfoManager.loadSingleMetaInfo(outFile);
+			classMetaInfoManager.constructSubNames(className);
+			bpmgr.verifyBreakpoint(className);
 		}	}
 	
 	

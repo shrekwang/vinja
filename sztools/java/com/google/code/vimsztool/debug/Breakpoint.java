@@ -11,8 +11,8 @@ public class Breakpoint {
 	private int lineNum;
 	private List<BreakpointRequest> requests = new ArrayList<BreakpointRequest>();
 	
-	public Breakpoint(String fileName, int lineNum) {
-		this.mainClass = fileName;
+	public Breakpoint(String className, int lineNum) {
+		this.mainClass = className;
 		this.lineNum = lineNum;
 	}
 

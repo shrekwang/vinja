@@ -1,51 +1,50 @@
 package com.google.code.vimsztool.omni;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
-import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import com.google.code.vimsztool.omni.ClassMetaInfoManager.ClassMetaInfo;
-
 public class ClassMetaInfoReader  implements ClassVisitor , MethodVisitor {
+	
+	private ClassInfo classInfo ;
+	
+	public ClassMetaInfoReader(ClassInfo classInfo) {
+		this.classInfo = classInfo;
+	}
 	
 	
 	public void visit(int version, int access, String name, String signature,
 			String superName, String[] interfaces) {
 		
-		if (name.indexOf("$") > -1) return;
+		//if (name.indexOf("$") > -1) return;
 		
-		ClassMetaInfo metaInfo = new ClassMetaInfo();
-		metaInfo.name =  name.replace("/", ".");
+		
+		classInfo.setName(name.replace("/", "."));
 		if (superName !=null) {
-			metaInfo.superName = superName.replace("/", ".");
+			classInfo.setSuperName(superName.replace("/", "."));
 		}
 		
 		if (interfaces!=null) {
 			for (int i=0; i<interfaces.length; i++) {
 				interfaces[i] = interfaces[i].replace("/", ".");
 			}
-			metaInfo.interfaces = interfaces;
+			classInfo.setInterfaces(interfaces);
 		}
-		
-		//metaInfos.put(metaInfo.name, metaInfo);
 		
 		
 	}
 
+	
+	@Override
+	public void visitLineNumber(int lineNum, Label arg1) {
+		classInfo.addLineNum(lineNum);
+	}
+	
+    public void visitEnd() {	}
 	public void visitAttribute(Attribute attr) { }
-	public void visitEnd() { }
 	public void visitSource(String source, String debug) { }
 	public void visitOuterClass(String owner, String name, String desc) { }
 	public void visitInnerClass(String name, String outerName, String innerName, int access) { }
@@ -65,13 +64,7 @@ public class ClassMetaInfoReader  implements ClassVisitor , MethodVisitor {
 		return this;
 	}
 
-	class ClassMetaInfo { 
-		public String name;
-		public String superName;
-		public String[] interfaces;
-		public List<String> subNames = new ArrayList<String>();
-		public List<Integer> lineNums = new ArrayList<Integer>();
-	}
+	
 
 	@Override
 	public AnnotationVisitor visitAnnotationDefault() {
@@ -108,8 +101,7 @@ public class ClassMetaInfoReader  implements ClassVisitor , MethodVisitor {
 	@Override
 	public void visitLdcInsn(Object arg0) { }
 
-	@Override
-	public void visitLineNumber(int arg0, Label arg1) { }
+	
 
 	@Override
 	public void visitLocalVariable(String arg0, String arg1, String arg2,

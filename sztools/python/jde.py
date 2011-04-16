@@ -645,7 +645,7 @@ class EditUtil(object):
                 vim.command(signcmd)
                 bp_set.remove(row)
             else :
-                logging.debug("toggle breakpoint error : msgs "+data)
+                print "remove breakpoint error : msgs "+data
         else :
             cmdline = "breakpoint_add %s %s" % (file_name,row)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
@@ -656,7 +656,7 @@ class EditUtil(object):
                 bp_set.add(row)
                 bp_data[file_name] = bp_set
             else :
-                logging.debug("toggle breakpoint error : msgs "+ data)
+                print "can't create breakpoint here"
 
     @staticmethod
     def initBreakpointSign():
@@ -807,17 +807,11 @@ class Compiler(object):
                 message = fp.getvalue()
                 logging.debug(message)
         allErrorMsg[current_file_name] = bufErrorMsg
+        EditUtil.syncBreakpointInfo()
         EditUtil.initBreakpointSign()
 
         vim.command("call setqflist(%s)" % qflist)
-        """
-        if len(errorMsgList) > 0 :
-            vim.command("cw")
-            listwinnr=str(vim.eval("winnr('#')"))
-            vim.command("exec '%s wincmd w'" % listwinnr)
-        if len(qflist) > 0 :
-            vim.command("cfirst")
-        """
+
 
     @staticmethod
     def copyResource():

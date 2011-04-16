@@ -277,8 +277,12 @@ class TypeHierarchyContentManager(object):
     def open_content(self,line,mode):
         line = line.strip()
         binName = line[0:line.find("-")].strip()
-        pkgName = line[line.find("-")+1:].strip() + "."
-        defClassName = pkgName + binName
+        pkgName = line[line.find("-")+1:].strip() 
+        if pkgName == "" :
+            defClassName = binName
+        else :
+            defClassName = pkgName + binName
+
         EditUtil.searchAndEdit(self.source_file, defClassName,self.memberName)
 
 

@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.omni.ClassInfo;
+import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
@@ -37,9 +40,41 @@ public class BreakpointManager {
 		}
 		return sb.toString();
 	}
+	
+	public void verifyBreakpoint(String mainClass) {
+		Debugger debugger = Debugger.getInstance();
+		CompilerContext ctx = debugger.getCompilerContext();
+		if (ctx == null) return ;
+		
+		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
+		ClassInfo metaInfo = cmm.getMetaInfo(mainClass);
+		
+		List<Breakpoint> invalidBreakPoints = new ArrayList<Breakpoint>();
+		
+		for (Breakpoint bp : allBreakpoints) {
+			if (bp.getMainClass().equals(mainClass)) {
+				if (!metaInfo.getLineNums().contains(bp.getLineNum())) {
+					invalidBreakPoints.add(bp);
+				}
+			}
+		}
+		allBreakpoints.removeAll(invalidBreakPoints);
+	
+		
+	}
 
 	public String addBreakpoint(String mainClass, int lineNum) {
+		Debugger debugger = Debugger.getInstance();
+		CompilerContext ctx = debugger.getCompilerContext();
+		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
+		
+		ClassInfo metaInfo = cmm.getMetaInfo(mainClass);
+		if (!metaInfo.getLineNums().contains(lineNum)) {
+			return "failure";
+		}
+		
 		Breakpoint breakpoint = new Breakpoint(mainClass, lineNum);
+		
 		allBreakpoints.add(breakpoint);
 		tryCreateBreakpointRequest(breakpoint);
 		return "success";
