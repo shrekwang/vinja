@@ -1,7 +1,6 @@
 package com.google.code.vimsztool.debug;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -197,10 +196,36 @@ public class ExpressionEval {
 		List<Expression> members = exp.getMembers();
 		if (members.size() == 0)
 			return basicExpValue;
+		if (exp.isStaticMember()) {
+			Expression memberExp = members.get(0);
+			List<Expression> params = memberExp.getParams();
+			List<Value> arguments = new ArrayList<Value>();
+			if (params.size() != 0) {
+				for (Expression param : params) {
+					Value paramValue = eval(threadRef, param, thisObj);
+					arguments.add(paramValue);
+				}
+			}
+			List<ReferenceType> refTypes = vm.classesByName(exp.getName());
+			if (refTypes == null || refTypes.size() == 0) {
+				return null;
+			}
+				
+			basicExpValue = invoke(refTypes.get(0), memberExp.getName(),
+					arguments);
+			if (members.size() > 1) {
+				for (int i = 1; i < members.size(); i++) {
+					Expression member = members.get(i);
+					basicExpValue = eval(threadRef, member,
+							(ObjectReference) basicExpValue);
+				}
+			}
+		} else {
 
-		for (Expression member : members) {
-			basicExpValue = eval(threadRef, member,
-					(ObjectReference) basicExpValue);
+			for (Expression member : members) {
+				basicExpValue = eval(threadRef, member,
+						(ObjectReference) basicExpValue);
+			}
 		}
 		return basicExpValue;
 	}
@@ -251,13 +276,22 @@ public class ExpressionEval {
 			return var.toString();
 		}
 	}
-
-	public static Value invoke(ObjectReference obj, String methodName, List args) {
+	
+	public static Value invoke(Object invoker, String methodName, List args) {
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
 		Value value = null;
 		Method matchedMethod = null;
-		List<Method> methods = obj.referenceType().methodsByName(methodName);
+		List<Method> methods = null;
+		ClassType refType = null;
+		ObjectReference obj  = null;
+		if (invoker instanceof ClassType) {
+			refType = (ClassType)invoker;
+		    methods = refType.methodsByName(methodName);
+		} else {
+		   obj = (ObjectReference)invoker;
+		   methods = obj.referenceType().methodsByName(methodName);
+		}
 		if (methods == null || methods.size() == 0)
 			return null;
 		if (methods.size() == 1) {
@@ -266,8 +300,14 @@ public class ExpressionEval {
 			matchedMethod = findMatchedMethod(methods, args);
 		}
 		try {
-			value = obj.invokeMethod(threadRef, matchedMethod, args,
+		    if (invoker instanceof ClassType) {
+			   ClassType clazz = (ClassType)refType;
+			   value = clazz.invokeMethod(threadRef, matchedMethod, args,
 					ObjectReference.INVOKE_SINGLE_THREADED);
+		    } else {
+		    	value = obj.invokeMethod(threadRef, matchedMethod, args,
+						ObjectReference.INVOKE_SINGLE_THREADED);
+		    }
 		} catch (InvalidTypeException e) {
 			e.printStackTrace();
 		} catch (ClassNotLoadedException e) {
@@ -279,6 +319,7 @@ public class ExpressionEval {
 		}
 		return value;
 	}
+
 
 	private static Method findMatchedMethod(List<Method> methods, List arguments) {
 		for (Method method : methods) {

@@ -24,6 +24,7 @@ public class Expression {
 	private String expType;
 	private String name;
 	private boolean isMethod;
+	private boolean isStaticMember;
 
 	private List<Expression> members = new ArrayList<Expression>();
 	private List<Expression> params = new ArrayList<Expression>();
@@ -65,6 +66,11 @@ public class Expression {
 		String method = el.getAttribute("method");
 		if (method !=null && method.equals("true")) {
 			expObj.setMethod(true);
+		}
+		
+		String clazz = el.getAttribute("clazz");
+		if (clazz !=null && clazz.equals("true")) {
+			expObj.setStaticMember(true);
 		}
 		
 		Element paramsNode = getFirstChild(el, "params");
@@ -149,5 +155,12 @@ public class Expression {
 	public List<Expression> getParams() {
 		return params;
 	}
+	public void setStaticMember(boolean isStaticMember) {
+		this.isStaticMember = isStaticMember;
+	}
+	public boolean isStaticMember() {
+		return isStaticMember;
+	}
+	
 
 }

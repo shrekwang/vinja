@@ -1718,6 +1718,16 @@ class InspectorVarParser():
         java_exp << atom_exp + Optional(OneOrMore(Suppress(".") + atom_exp)).setResultsName("members")
         return java_exp
 
+    def getClassNameFromEditBuf(self, name):
+        for i in range(1,5):
+            vim.command("%swincmd w" % str(i))    
+            if vim.eval("&buftype") == "" :
+                break
+        fullName = Parser.getFullClassNames(name)
+        vim.command("call SwitchToSzToolView('Jdb')")
+        return fullName
+
+
     def buildAstTree(self, exp,parentEle):
         expType = "expression"
         
@@ -1726,10 +1736,10 @@ class InspectorVarParser():
         elif exp == None :
             expType = "null"
             exp = "null"
-        elif exp == True :
+        elif isinstance(exp,bool) and exp == True :
             expType = "boolean"
             exp = "true"
-        elif exp == False :
+        elif isinstance(exp,bool) and exp == False :
             expType = "boolean"
             exp = "false"
         elif isinstance(exp,int) or isinstance(exp,float):
@@ -1745,6 +1755,11 @@ class InspectorVarParser():
         if not isinstance(exp[0].params,str):
             ele.set("method","true")
 
+        if parentEle.tag == "root" and exp[0].name[0].isupper():
+            fullName = self.getClassNameFromEditBuf(exp[0].name)[0]
+            ele.set("name",fullName)
+            ele.set("clazz", "true")
+
         if exp[0].params :
             paramsEle = Element("params")
             for param in exp[0].params:
@@ -1755,7 +1770,7 @@ class InspectorVarParser():
             ele.append(membersEle)
             for item in exp.members:
                 if item.name[0].isupper():
-                    item.name = Parser.getFullClassNames(name)[0]
+                    item.name = self.getClassNameFromEditBuf(name)[0]
                 memberExpEle = Element("exp",{'name' : item.name})
                 if not isinstance(item.params,str):
                     memberExpEle.set("method","true")
