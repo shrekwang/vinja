@@ -222,7 +222,19 @@ class LsCmd(object):
         return infos
 
 class FindCmd(object):
+
     def search_file(self,cmd_array):
+
+        class TypeFilter(object):
+            def __init__(self, typeName) :
+                self.typeName = typeName
+            def accepted(self, filename, filepath ):
+                abPath = os.path.join(filepath, filename)
+                if self.typeName == "dir" and os.path.isdir(abPath) :
+                    return True
+                if self.typeName == "file" and os.path.isfile(abPath):
+                    return True
+                return False
 
         class NameFilter(object):
             def __init__(self, filter ):
@@ -265,6 +277,7 @@ class FindCmd(object):
         parser = ShextOptionParser( usage="usage: find [paths] [options]")
         parser.add_option("-n","--name",action="store", dest="name")
         parser.add_option("-t","--text",action="store", dest="text")
+        parser.add_option("-c","--type",action="store", dest="type")
         parser.add_option("-s","--size",action="store", dest="size")
         parser.add_option("-p","--path",action="store", dest="path")
 
@@ -287,6 +300,8 @@ class FindCmd(object):
             filters.append(SizeFilter(options.size))
         if options.text :
             filters.append(ContentFilter(options.text))
+        if options.type :
+            filters.append(TypeFilter(options.type))
 
         for search_path in search_paths :
             self._search_file(search_path, filters)
@@ -317,9 +332,8 @@ class FindCmd(object):
 
         for filename in file_list:
             abspath = os.path.join(search_path, filename)
-            if os.path.isfile(abspath) :
-                self._match_one_file(filename, search_path, filters)
-            else :
+            self._match_one_file(filename, search_path, filters)
+            if os.path.isdir(abspath) :
                 if not filename.startswith("."):
                     self._search_file(abspath, filters)
 
