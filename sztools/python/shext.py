@@ -4,6 +4,8 @@ from subprocess import Popen, PIPE
 from optparse import OptionParser 
 import sqlite3 as sqlite
 from jde import Talker
+from datetime import timedelta, datetime ,date
+
 
 
 class ShextOptionParser(OptionParser):
@@ -237,9 +239,13 @@ class FindCmd(object):
                 return False
 
         class NameFilter(object):
-            def __init__(self, filter ):
+            def __init__(self, filter, includeDot ):
                 self.filter = filter
+                self.includeDot = includeDot
+
             def accepted(self, filename, filepath) :
+                if filename.startswith(".") and not self.includeDot :
+                    return False
                 if fnmatch.fnmatch(filename, self.filter) :
                     return True
                 return False
@@ -263,7 +269,10 @@ class FindCmd(object):
             def __init__(self, content):
                 self.content = content
             def accepted(self, filename, filepath):
-                file_object = open(os.path.join(filepath, filename))
+                abPath = os.path.join(filepath, filename)
+                if os.path.isdir(abPath) or not os.path.exists(abPath) :
+                    return False
+                file_object = open(abPath,"r")
                 try:
                     all_the_text = file_object.read()
                 finally:
@@ -271,6 +280,41 @@ class FindCmd(object):
                 if all_the_text.find(self.content) > -1 :
                     return True
                 return False
+
+        class MtimeFilter(object):
+
+            def __init__(self, timeDesc):
+
+                if timeDesc.startswith("-") :
+                    self.operator = "GT"
+                    timeDesc = timeDesc[1:]
+                elif timeDesc.startswith("+") :
+                    self.operator = "LT"
+                    timeDesc = timeDesc[1:]
+                else :
+                    self.operator = "EQ"
+                delta = int(timeDesc[0:-1])
+                deltaUnit = timeDesc[-1]
+                now = datetime.now()
+                self.cmpDate = None
+                if deltaUnit == "m" :
+                    self.cmpDate = now - timedelta(minutes=delta)
+                elif deltaUnit == "h":
+                    self.cmpDate = now - timedelta(hours=delta)
+                elif deltaUnit == "d":
+                    self.cmpDate = now - timedelta(days=delta)
+
+            def accepted(self, filename, filepath):
+                abPath = os.path.join(filepath, filename)
+                mtime = datetime.fromtimestamp(os.path.getmtime(abPath))
+                if self.operator == "GT" and mtime > self.cmpDate :
+                    return True
+                elif self.operator =="LT" and mtime < self.cmpDate :
+                    return True
+                else :
+                    endOfCmpDay = self.cmpDate + timedelta(days=1)
+                    if (mtime > self.cmpDate and mtime < endOfCmpDay ) :
+                        return True
 
         Shext.stdout("")
 
@@ -280,6 +324,8 @@ class FindCmd(object):
         parser.add_option("-c","--type",action="store", dest="type")
         parser.add_option("-s","--size",action="store", dest="size")
         parser.add_option("-p","--path",action="store", dest="path")
+        parser.add_option("-m","--mtime",nargs=1,action="store", dest="mtime")
+        parser.add_option("-a","--include-dot",action = "store_true", dest="includeDot", default=False)
 
         (options, args) = parser.parse_args(cmd_array)
         if parser.noAction : return 
@@ -290,9 +336,9 @@ class FindCmd(object):
         
         filters = []
         if options.name :
-            filters.append(NameFilter(options.name))
+            filters.append(NameFilter(options.name,options.includeDot))
         else :
-            filters.append(NameFilter("*"))
+            filters.append(NameFilter("*",options.includeDot))
 
         if options.path:
             filters.append(PathFilter(options.path))
@@ -302,6 +348,8 @@ class FindCmd(object):
             filters.append(ContentFilter(options.text))
         if options.type :
             filters.append(TypeFilter(options.type))
+        if options.mtime :
+            filters.append(MtimeFilter(options.mtime))
 
         for search_path in search_paths :
             self._search_file(search_path, filters)
