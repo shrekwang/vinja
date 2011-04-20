@@ -85,6 +85,19 @@ function! SwitchToSzToolView(viewname)
   endif    
 endfunction    
 
+function! SwitchToSzToolViewVertical(viewname)    
+  let s:cur_buf = bufnr("%")    
+  let s:szdb_result_buf=bufnr("SzToolView_" . a:viewname)    
+  if bufwinnr(s:szdb_result_buf) > 0    
+    exec bufwinnr(s:szdb_result_buf) . "wincmd w"    
+    "%d    
+  else    
+    exec 'silent! belowright vsplit SzToolView_' . a:viewname    
+    exec "e SzToolView_" . a:viewname    
+    call SetSzToolBuf()
+  endif    
+endfunction    
+
 function! SplitLeftPanel(splitSize,name) 
     let splitLocation="topleft "
     let splitMode="vertical "

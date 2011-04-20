@@ -35,17 +35,17 @@ class VimUtil(object):
         return index
 
     @staticmethod
-    def getJdeConsoleBuffer():
+    def getJdeConsoleBuffer(name, createNew = True):
         def _getConsoleBuffer():
             jde_console_buf = None
             for buffer in vim.buffers:
-                if buffer.name and buffer.name.find( "SzToolView_JdeConsole") > -1 :
+                if buffer.name and buffer.name.find( "SzToolView_%s" % name) > -1 :
                     jde_console_buf = buffer
                     break
             return jde_console_buf
         buf = _getConsoleBuffer()
-        if buf == None :
-            vim.command("call SwitchToSzToolView('%s')" % "JdeConsole")
+        if buf == None and createNew :
+            vim.command("call SwitchToSzToolView('%s')" % name )
             listwinnr=str(vim.eval("winnr('#')"))
             vim.command("exec '%s wincmd w'" % listwinnr)
             buf = _getConsoleBuffer()
@@ -56,7 +56,7 @@ class VimUtil(object):
     @staticmethod
     def writeToJdeConsole(text, append=False):
         if not text : return
-        buf = VimUtil.getJdeConsoleBuffer()
+        buf = VimUtil.getJdeConsoleBuffer("JdeConsole")
 
         if type(text) == type(""):
             lines = text.split("\n")
@@ -1527,7 +1527,11 @@ class Jdb(object):
         if args[0] == "suspend" :
             self.handleSuspend(args[1],args[2],args[3])
         elif args[0] == "msg" :
-            vim.command("call SwitchToSzToolView('Jdb')")
+            buffer = VimUtil.getJdeConsoleBuffer("JdbStdOut", createNew = False )
+            if (buffer == None ) :
+                print args[1]
+                return
+            vim.command("call SwitchToSzToolView('JdbStdOut')")
             self.stdout(args[1])
             buffer=vim.current.buffer
             row = len(buffer)
@@ -1594,13 +1598,20 @@ class Jdb(object):
         debugTabNum = vim.eval("tabpagenr()")
         jdb = Jdb()
         vim.command("call SwitchToSzToolView('Jdb')")
+        vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
+        #switch back
+        vim.command("call SwitchToSzToolView('Jdb')")
         buffer=vim.current.buffer
         output(">",buffer,False)
         vim.current.window.cursor = (1,1)
         vim.command("startinsert")
 
     def stdout(self,msg):
-        buffer=vim.current.buffer
+        buffer = VimUtil.getJdeConsoleBuffer("JdbStdOut")
+        output(msg,buffer,False)
+
+    def editBufOut(self,msg):
+        buffer = VimUtil.getJdeConsoleBuffer("Jdb")
         output(msg,buffer,True)
 
     def printHelp(self):
@@ -1611,6 +1622,7 @@ class Jdb(object):
 
     def exit(self):
         vim.command("bw! SzToolView_Jdb")
+        vim.command("bw! SzToolView_JdbStdOut")
 
     def getCmdLine(self):
         work_buffer = vim.current.buffer
@@ -1618,7 +1630,7 @@ class Jdb(object):
         return work_buffer[row-1]
 
     def appendPrompt(self):
-        self.stdout(">")
+        self.editBufOut(">")
         buffer=vim.current.buffer
         row = len(buffer)
         col = len(buffer[-1])
