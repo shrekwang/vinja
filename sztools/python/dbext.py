@@ -3,6 +3,7 @@ import os.path
 import re
 import sys
 import logging
+import difflib
 
 conn_pool = {}
 
@@ -476,13 +477,14 @@ class SzDbCompletion(object):
 
     @staticmethod
     def filterList(srcList,exp):
-        exp = exp.upper()
         if exp.find("*") > -1 :
-            pat = re.compile("^%s$" % exp.replace("*",".*"))
+            pat = re.compile("^%s$" % exp.upper().replace("*",".*"))
         else:
-            pat = re.compile(".*%s.*" %exp)
+            pat = re.compile(".*%s.*" % exp.upper() )
 
         result = [str(item) for item in srcList if pat.match(item.upper())]
+        if result == [] :
+            result = difflib.get_close_matches(exp, srcList)
         return result
 
     @staticmethod
