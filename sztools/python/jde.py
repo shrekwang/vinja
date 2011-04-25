@@ -1725,7 +1725,7 @@ class InspectorVarParser():
         param_atom = TRUE | FALSE | NULL | Group(java_exp) | java_str | java_num  
 
         func_param = Suppress("(")+Optional(delimitedList(param_atom)) + Suppress(")")
-        atom_exp =  Group(Word(alphas,alphanums+"_").setResultsName("name") + \
+        atom_exp =  Group(Word(alphas+"_",alphanums+"_").setResultsName("name") + \
                 Optional(Group(func_param).setResultsName("params")))
         java_exp << atom_exp + Optional(OneOrMore(Suppress(".") + atom_exp)).setResultsName("members")
         return java_exp
