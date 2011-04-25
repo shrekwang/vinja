@@ -40,7 +40,7 @@ public class VarsConfiger {
 
 	private static File getConfigFile() {
 		String sztoolHome = Preference.getInstance().getSztoolHome();
-		String userCfgPath = FilenameUtils.concat(VjdeUtil.getUserHome(), "vars.txt");
+		String userCfgPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(), "vars.txt");
 		File tmpFile = new File(userCfgPath);
 		if (tmpFile.exists()) return tmpFile;
 		

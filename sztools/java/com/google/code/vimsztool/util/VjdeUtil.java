@@ -17,12 +17,10 @@ public class VjdeUtil {
 		return sw.getBuffer().toString();
 	}
 	
-	public static String getUserHome() {
-		return System.getProperty("user.home");
-	}
 
 	public static String getToolDataHome() {
-		File file = new File(FilenameUtils.concat(getUserHome(), ".sztools"	));
+		String userHome = System.getProperty("user.home");
+		File file = new File(FilenameUtils.concat(userHome, ".sztools"	));
 		if (!file.exists()) file.mkdir();
 		return file.getPath();
 	}

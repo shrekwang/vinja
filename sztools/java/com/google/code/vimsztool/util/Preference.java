@@ -35,7 +35,7 @@ public class Preference {
 		this.sztoolHome = sztoolHome;
 		String defaultCfgPath = FilenameUtils.concat(sztoolHome, "share/conf/sztools.cfg");
 		loadPrefFromFile(defaultCfgPath);
-		String userCfgPath = FilenameUtils.concat(VjdeUtil.getUserHome(), ".sztools.cfg");
+		String userCfgPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(), ".sztools.cfg");
 		loadPrefFromFile(userCfgPath);
 	}
 	

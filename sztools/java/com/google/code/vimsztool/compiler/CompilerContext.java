@@ -178,7 +178,7 @@ public class CompilerContext {
 			} else if (entry.kind.equals("var")) {
 				String entryPath = entry.path;
 				String sourcePath = entry.sourcepath;
-				String varName = entryPath.substring(0, entryPath.indexOf(File.separator));
+				String varName = entryPath.substring(0, entryPath.indexOf("/"));
 				String varValue = VarsConfiger.getVarValue(varName	);
 				entryPath = entryPath.replace(varName, varValue);
 				sourcePath = sourcePath.replace(varName, varValue);
