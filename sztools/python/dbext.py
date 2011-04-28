@@ -502,12 +502,15 @@ class SzDbCompletion(object):
                 conditions.append("( table_name = '%s' and owner = '%s' )" % ( tableName.upper(),schema.upper()) )
             conditionStr = " or ".join(conditions)
             sql = "select lower(column_name) from all_tab_columns where %s " % conditionStr 
-
         elif server_type == "mssql":
             tableCon = "','".join(tableList)
             tableCon = "'%s'" % tableCon
             sql = """select syscolumns.name column_name from sysobjects
                 join syscolumns on sysobjects.id = syscolumns.id where sysobjects.name in (%s) """ % tableCon
+        elif server_type == "mysql":
+            tableCon = "','".join(tableList)
+            tableCon = "'%s'" % tableCon
+            sql = " SELECT lower(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name in (%s) " % tableCon
 
         tmpcolumns,result = dbext.query(sql)
         columns = []
@@ -524,6 +527,8 @@ class SzDbCompletion(object):
             sql = "select lower(table_name) from all_tables where owner = '%s'" % schema.upper()
         elif server_type == "mssql":
             sql = "SELECT lower(name) FROM sysobjects where type = 'U' "
+        elif server_type == "mysql":
+            sql = "select lower(table_name) from information_schema.tables"
 
         tmpcolumns,result = dbext.query(sql)
         tables = []
