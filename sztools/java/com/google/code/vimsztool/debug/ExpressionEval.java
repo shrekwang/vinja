@@ -143,7 +143,7 @@ public class ExpressionEval {
 		try {
 			StackFrame stackFrame = threadRef.frame(0);
 			ObjectReference thisObj = stackFrame.thisObject();
-			Value value = eval(threadRef, exp, thisObj);
+			Value value = eval(threadRef, exp, thisObj,false);
 
 			return value;
 		} catch (IncompatibleThreadStateException e) {
@@ -152,7 +152,7 @@ public class ExpressionEval {
 	}
 
 	public static Value eval(ThreadReference threadRef, Expression exp,
-			ObjectReference thisObj) {
+			ObjectReference thisObj,boolean hasParents) {
 
 		if (exp == null)
 			return null;
@@ -179,13 +179,13 @@ public class ExpressionEval {
 
 		Value basicExpValue = null;
 		if (!exp.isMethod()) {
-			basicExpValue = findValueInFrame(threadRef, expName);
+			basicExpValue = findValueInFrame(threadRef, expName,thisObj,hasParents);
 		} else {
 			List<Expression> params = exp.getParams();
 			List<Value> arguments = new ArrayList<Value>();
 			if (params.size() != 0) {
 				for (Expression param : params) {
-					Value paramValue = eval(threadRef, param, thisObj);
+					Value paramValue = eval(threadRef, param, thisObj,false);
 					arguments.add(paramValue);
 				}
 			}
@@ -202,7 +202,7 @@ public class ExpressionEval {
 			List<Value> arguments = new ArrayList<Value>();
 			if (params.size() != 0) {
 				for (Expression param : params) {
-					Value paramValue = eval(threadRef, param, thisObj);
+					Value paramValue = eval(threadRef, param, thisObj,false);
 					arguments.add(paramValue);
 				}
 			}
@@ -217,35 +217,39 @@ public class ExpressionEval {
 				for (int i = 1; i < members.size(); i++) {
 					Expression member = members.get(i);
 					basicExpValue = eval(threadRef, member,
-							(ObjectReference) basicExpValue);
+							(ObjectReference) basicExpValue,true);
 				}
 			}
 		} else {
 
 			for (Expression member : members) {
 				basicExpValue = eval(threadRef, member,
-						(ObjectReference) basicExpValue);
+						(ObjectReference) basicExpValue,true);
 			}
 		}
 		return basicExpValue;
 	}
 
-	public static Value findValueInFrame(ThreadReference threadRef, String name) {
+	public static Value findValueInFrame(ThreadReference threadRef, String name,
+			ObjectReference thisObj,boolean hasParents) {
 		Value value = null;
 		try {
-			StackFrame stackFrame = threadRef.frame(0);
-			LocalVariable localVariable;
-			localVariable = stackFrame.visibleVariableByName(name);
-			if (localVariable != null) {
-				return stackFrame.getValue(localVariable);
-			}
-			ObjectReference thisObj = stackFrame.thisObject();
-			ReferenceType refType = thisObj.referenceType();
-			List<Field> fields = refType.visibleFields();
-			for (Field field : fields) {
-				if (field.name().equals(name)) {
-					value = thisObj.getValue(field);
-					break;
+			if (! hasParents) {
+				StackFrame stackFrame = threadRef.frame(0);
+				LocalVariable localVariable;
+				localVariable = stackFrame.visibleVariableByName(name);
+				if (localVariable != null) {
+					return stackFrame.getValue(localVariable);
+				}
+			} else {
+				// ObjectReference thisObj = stackFrame.thisObject();
+				ReferenceType refType = thisObj.referenceType();
+				List<Field> fields = refType.fields();
+				for (Field field : fields) {
+					if (field.name().equals(name)) {
+						value = thisObj.getValue(field);
+						break;
+					}
 				}
 			}
 		} catch (Throwable e) {

@@ -1551,7 +1551,13 @@ class Jdb(object):
 
 
     def handleSuspend(self,abs_path,lineNum,className):
-        vim.command("tabn %s" % debugTabNum) 
+        tab_count = int(vim.eval("tabpagenr('$')"))
+        for i in range(1,tab_count):
+            jdbvar = vim.eval('gettabvar('+str(i)+',"jdb_tab")')
+            if jdbvar == "1" :
+                vim.command("tabn %s" % str(i)) 
+                break
+
         for i in range(1,5):
             vim.command("%swincmd w" % str(i))    
             bufname = vim.current.buffer.name
@@ -1606,8 +1612,10 @@ class Jdb(object):
     @staticmethod
     def runApp():
         global jdb
-        global debugTabNum
-        debugTabNum = vim.eval("tabpagenr()")
+        #global debugTabNum
+        #debugTabNum = vim.eval("tabpagenr()")
+        vim.command("let t:jdb_tab='1'")
+
         jdb = Jdb()
         vim.command("call SwitchToSzToolView('Jdb')")
         vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
