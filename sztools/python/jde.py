@@ -476,6 +476,10 @@ class EditUtil(object):
                 sourcePath = Talker.locateSource(className, classPathXml)
                 if sourcePath != "None" :
                     vim.command("edit %s" % sourcePath )
+                    vim.command("set filetype=java")
+                    if sourcePath.endswith(".class") :
+                        vim.command("setlocal buftype=nofile")
+                        vim.command("setlocal noswapfile")
                     break
             return 
 
@@ -524,6 +528,10 @@ class EditUtil(object):
             sourcePath = Talker.locateSource(className, classPathXml)
             if sourcePath != "None" :
                 vim.command("edit %s" % sourcePath )
+                vim.command("set filetype=java")
+                if sourcePath.endswith(".class") :
+                    vim.command("setlocal buftype=nofile")
+                    vim.command("setlocal noswapfile")
                 EditUtil.searchMember(memberName)
         return
 
@@ -543,6 +551,10 @@ class EditUtil(object):
         sourcePath = Talker.locateSource(className, classPathXml)
         if sourcePath != "None" :
             vim.command("edit %s" % sourcePath )
+            vim.command("set filetype=java")
+            if sourcePath.endswith(".class") :
+                vim.command("setlocal buftype=nofile")
+                vim.command("setlocal noswapfile")
             EditUtil.searchMember(memberName)
 
     @staticmethod
@@ -1782,7 +1794,7 @@ class InspectorVarParser():
             ele.append(membersEle)
             for item in exp.members:
                 if item.name[0].isupper():
-                    item.name = self.getClassNameFromEditBuf(name)[0]
+                    item.name = self.getClassNameFromEditBuf(item.name)[0]
                 memberExpEle = Element("exp",{'name' : item.name})
                 if not isinstance(item.params,str):
                     memberExpEle.set("method","true")

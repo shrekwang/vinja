@@ -157,6 +157,14 @@ public class CompilerContext {
 	
 	private void initClassPath(String classPathXml) {
 		List<ClassPathEntry> classPathEntries=parseClassPathXmlFile(classPathXml);
+		
+		 String jdkSrc = FilenameUtils.concat(System.getenv("JAVA_HOME") , "src.zip");
+		 if (jdkSrc != null ) {
+			 File jdkSrcFile = new File(jdkSrc);
+			 if (jdkSrcFile.exists()) {
+				 libSrcLocations.add(jdkSrc);
+			 }
+		 }
 
 		for (ClassPathEntry entry : classPathEntries) {
 			String entryAbsPath = FilenameUtils.concat(projectRoot, entry.path);
@@ -337,13 +345,22 @@ public class CompilerContext {
 	
 	public String findSourceFile(String rtlPathName) {
 		
+		rtlPathName = rtlPathName.replace("\\", "/");
 		if (lastSearchedRtlName.equals(rtlPathName)) {
 			return lastSearchResult;
 		}
 		
 		lastSearchedRtlName = rtlPathName;
 		
-		String tmpPath =FilenameUtils.concat(projectRoot,"tmp.java");
+		String className = FilenameUtils.getBaseName(rtlPathName);
+		String tmpDirPath =FilenameUtils.concat(projectRoot,".tmp");
+		File tmpDirFile = new File(tmpDirPath);
+		if (!tmpDirFile.exists()) {
+			boolean suc = tmpDirFile.mkdirs();
+			if (!suc) return "None";
+		}
+		
+		String tmpPath =FilenameUtils.concat(tmpDirPath,className+".class");
 		
 		for (String srcLoc : srcLocations) {
 			String absPath = FilenameUtils.concat(srcLoc, rtlPathName);
