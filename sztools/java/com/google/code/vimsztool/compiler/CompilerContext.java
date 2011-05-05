@@ -370,6 +370,9 @@ public class CompilerContext {
 				return absPath;
 			}
 		}
+		if (rtlPathName.indexOf("/") < 0) {
+			rtlPathName = "java/lang/"+rtlPathName;
+		}
 		for (String libSrcLoc : libSrcLocations) {
 			if (libSrcLoc.endsWith(".jar") || libSrcLoc.endsWith(".zip")) {
 				if ( hasEntry(libSrcLoc, rtlPathName)) {
