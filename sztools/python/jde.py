@@ -645,12 +645,14 @@ class EditUtil(object):
         if bp_set == None :
             bp_set = set()
 
+        mainClassName = Parser.getMainClass()
+
         class_path_xml = ProjectManager.getClassPathXml(file_name)
         serverName = vim.eval("v:servername")
         bufnr=str(vim.eval("bufnr('%')"))
 
         if row in bp_set :
-            cmdline = "breakpoint_remove %s %s" % (file_name,row)
+            cmdline = "breakpoint_remove %s %s" % (mainClassName,row)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
             if data == "success" :
                 signcmd="sign unplace %s buffer=%s" %(row, bufnr)
@@ -659,7 +661,7 @@ class EditUtil(object):
             else :
                 print "remove breakpoint error : msgs "+data
         else :
-            cmdline = "breakpoint_add %s %s" % (file_name,row)
+            cmdline = "breakpoint_add %s %s" % (mainClassName,row)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
             if data == "success" :
                 signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
@@ -1205,6 +1207,15 @@ class Parser(object):
         return  Parser.searchPattern(pkgPat,"package")
 
     @staticmethod
+    def getMainClass():
+        pkgName = Parser.getPackage()
+        clsPat = re.compile(r"\s*public\s+(\w+\s+)?class\s(?P<className>\w+)\b")
+        className = Parser.searchPattern(clsPat,"className")
+        if pkgName :
+            className = pkgName + "." + className
+        return className
+
+    @staticmethod
     def getInterfaces():
         impPat = re.compile("\s+implements\s+(?P<interface>[\w, ]+)")
         result = Parser.searchPattern(impPat , "interface")
@@ -1561,7 +1572,9 @@ class Jdb(object):
         for i in range(1,5):
             vim.command("%swincmd w" % str(i))    
             bufname = vim.current.buffer.name
-            if vim.eval("&buftype") == "" or bufname.endswith(".temp_src") :
+            if vim.eval("&buftype") == "" \
+                    or bufname.endswith(".temp_src") \
+                    or bufname.endswith(".class") :
                 break
         
         if os.path.exists(abs_path) :

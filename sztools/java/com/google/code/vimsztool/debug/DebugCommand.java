@@ -47,13 +47,13 @@ public class DebugCommand  extends SzjdeCommand {
 			String port = args[1];
 			actionResult = debugger.attach(port);
 		} else if (debugCmd.equals("breakpoint_add")) {
-			String fileName = args[1];
+			String mainClass = args[1];
 			int lineNum = Integer.parseInt(args[2]);
-			String mainClass = ctx.buildClassName(fileName);
+			//String mainClass = ctx.buildClassName(fileName);	
 			actionResult = bpMgr.addBreakpoint(mainClass, lineNum);
 		} else if (debugCmd.equals("breakpoint_remove")) {
-			String fileName = args[1];
-			String mainClass = ctx.buildClassName(fileName);
+			String mainClass = args[1];
+			//String mainClass = ctx.buildClassName(fileName);
 			int lineNum = Integer.parseInt(args[2]);
 			actionResult = bpMgr.removeBreakpoint(mainClass, lineNum);
 		} else if (debugCmd.equals("clear")) {

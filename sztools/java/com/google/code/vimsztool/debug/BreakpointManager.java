@@ -69,7 +69,7 @@ public class BreakpointManager {
 		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
 		
 		ClassInfo metaInfo = cmm.getMetaInfo(mainClass);
-		if (!metaInfo.getLineNums().contains(lineNum)) {
+		if (metaInfo !=null && !metaInfo.getLineNums().contains(lineNum)) {
 			return "failure";
 		}
 		
