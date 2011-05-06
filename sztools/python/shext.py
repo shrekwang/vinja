@@ -1117,7 +1117,7 @@ class OutputNavigator(object):
         work_buffer = vim.current.buffer
         row,col = vim.current.window.cursor
         line = work_buffer[row-1]
-        pat=re.compile(".*\s+(?P<var>\$\[(?P<row>\d+)\])$")
+        pat=re.compile(".*\s+(?P<var>\$(?P<row>\d+))$")
         match =pat.match(line)
         if match :
             shext_ngt_index = int(match.group("row")) -1
