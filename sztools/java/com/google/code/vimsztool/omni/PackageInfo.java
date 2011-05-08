@@ -113,6 +113,13 @@ public class PackageInfo {
 	@SuppressWarnings("unchecked")
 	public void cacheClassNameInDist(String outputDir) {
 		File dir = new File(outputDir) ;
+		if (!dir.exists()) {
+			boolean suc = dir.mkdirs();
+			if (!suc) return;
+		}
+		if (!dir.isDirectory()) {
+			return;
+		}
 		Iterator it=FileUtils.iterateFiles(dir, new String[] {"class"}	,true);
 		while (it.hasNext()) {
 			File file = (File)it.next();
