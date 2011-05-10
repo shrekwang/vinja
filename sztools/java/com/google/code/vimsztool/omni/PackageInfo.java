@@ -71,7 +71,11 @@ public class PackageInfo {
 			Set<String> classNames = cache.get(pkgname);
 			for (String className : classNames) {
 				if (pattern.matcher(className).matches()) {
-					result.add(pkgname+"."+className);
+					if (pkgname.equals("")) {
+						result.add(className);
+					} else {
+						result.add(pkgname+"."+className);
+					}
 				}
 			}
 		}
@@ -94,7 +98,18 @@ public class PackageInfo {
 		//if (className == null || className.startsWith("sun") || className.startsWith("com.sun")) return ;
 		if (className == null) return;
 		String[] tokens = className.split("\\.");
-		if (tokens == null || tokens.length < 2 ) return;
+		if (tokens == null ) return;
+		if (tokens.length < 2) {
+			
+			Set<String> names=cache.get("");
+			if (names == null) {
+				names=new HashSet<String>();
+				cache.put("", names);
+			}
+			names.add(tokens[0]);
+			return;
+		}
+		
 		int count = 0;
 		String key= tokens[0];
 		while ( true ) {
