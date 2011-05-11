@@ -1,67 +1,29 @@
 <project name="project" basedir="." default="build">
 
-    <property file="build.properties" />
+  <property name="src" value="src" />
+  <property name="lib" value="lib" />
+  <property name="dist" value="dst" />
 
-    <path id="buildClassPath">
-	<fileset dir="${lib}">
-	    <include name="**/*.jar" />
-	</fileset>
-	<fileset dir="${j2ee.lib}">
-	    <include name="**/*.jar" />
-	</fileset>
-    </path>
+  <path id="buildClassPath">
+    <fileset dir="${lib}">
+      <include name="**/*.jar" />
+    </fileset>
+  </path>
 
-    <target name="initdir">
-	<mkdir dir="${src}" />
-	<mkdir dir="${dist}" />
-	<mkdir dir="${lib}" />
-    </target>
+  <target name="build" >
+    <javac classpathref="buildClassPath" srcdir="${src}" destdir="${dist}" />
+    <copy todir="${dist}">
+      <fileset dir="${src}">
+        <exclude name="**/*.swp" />
+        <exclude name="**/*.java" />
+      </fileset>
+    </copy>
+  </target>
 
-    <target name="addhibernate">
-	<copy todir="${lib}" >
-	    <fileset dir="${hibernate.lib}">
-		<include name="**/*.jar" />
-	    </fileset>
-	</copy>
-    </target>
+  <target name="clean" >
+    <delete>
+      <fileset dir="${dist}" />
+    </delete>
+  </target>
 
-    <target name="addstruts">
-	<copy todir="${lib}" >
-	    <fileset dir="${struts.lib}" >
-		<include name="**/*.jar" />
-	    </fileset>
-	</copy>
-	<copy todir="${webroot}/WEB-INF/" >
-	    <fileset dir="${struts.lib}" >
-		<include name="**/*.tld" />
-		<include name="**/*.xml" />
-	    </fileset>
-	</copy>
-    </target>
-
-    <target name="build" >
-	<javac classpathref="buildClassPath" srcdir="${src}" destdir="${dist}" />
-	<copy todir="${dist}">
-	    <fileset dir="${src}">
-		<exclude name="**/*.swp" />
-		<exclude name="**/*.java" />
-	    </fileset>
-	</copy>
-    </target>
-  
-    <!-- webapp build target
-    <target name="war" depends="build" >
-	<zip destfile="${project.name}.war" basedir="${webroot}" />
-    </target>
-    <target name="deploy" depends="war" >
-	<copy file="${project.name}.war" todir="${deploy.dir}" />
-    </target>
-    -->
-
-    <target name="clean" >
-	<delete>
-	    <fileset dir="${dist}" />
-	</delete>
-    </target>
- 
 </project>
