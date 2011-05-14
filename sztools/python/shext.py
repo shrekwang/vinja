@@ -601,6 +601,12 @@ class ShUtil(object):
             os.utime(abspath, None)
         self.ls(["*"])
 
+    def relpath(self, path):
+        if path.startswith(os.getcwd()) :
+            return os.path.relpath(path)
+        else :
+            return path
+
     def mkdir(self,args):
         for arg in args :
             abspath = os.path.join(os.getcwd(),arg)
@@ -608,18 +614,12 @@ class ShUtil(object):
         Shext.stdout("dir %s had been created ." % (";".join(args)))
 
     def rm(self,args):
-        parser = ShextOptionParser()
-        parser.add_option("-r",action = "store_true", dest="recursive")
-        (options, args) = parser.parse_args(args)
         count = 0 
         for arg in args :
             names = self.pathResolver.resolve(arg)
             for name in names :
                 count += 1
-                if (options.recursive) : 
-                    shutil.rmtree(name)
-                else :
-                    os.remove(name)
+                fileOrDirRm(name)
         Shext.stdout("%s items had been removed ." %str(count) )
 
     def rmdir(self,args):
@@ -648,17 +648,14 @@ class ShUtil(object):
 
     def cp(self,args):
         dst = args[-1]
-        count = 0
+        records = []
         for arg in args[:-1]:
             names = self.pathResolver.resolve(arg)
             for src in names :
-                count += 1
-                if os.path.isdir(src):
-                    tmp_dst = os.path.exists(dst) and os.path.join(dst,os.path.basename(src)) or dst
-                    shutil.copytree(src, tmp_dst)
-                else:
-                    shutil.copy2(src, dst)
-        Shext.stdout("%s items had been copied." % str(count))
+                records.append("cp %s to %s" % (self.relpath(src), self.relpath(dst)))
+                fileOrDirCp(src,dst)
+        records.append("%s items had been copied." % str(len(records)))
+        Shext.stdout(records)
 
     def yank(self,args,clearBuffer = True,mode="yank"):
         """mode can be one of ('yank','cut') """
@@ -679,33 +676,26 @@ class ShUtil(object):
 
     def paste(self):
         dst = "."
-        count = 0
+        records = []
         for mode,src in self.yank_buffer :
-            count += 1
-            if mode == "yank" :
-                if os.path.isdir(src):
-                    if os.path.exists(dst):
-                        dst = os.path.join(dst,os.path.basename(src))
-                    shutil.copytree(src, dst)
-                else:
-                    shutil.copy2(src, dst)
+            if mode == "yank" : 
+                fileOrDirCp(src,dst) 
             else :
-                shutil.move(src,dst)
-        Shext.stdout("%s items had been pasted." % str(count))
+                fileOrDirMv(src,dst)
+            records.append("%s pasted." % ( self.relpath(src)))
+        records.append("%s items had been pasted." % str(len(records)))
+        Shext.stdout(records)
 
     def mv(self,args):
         dst = args[-1]
-        count = 0
+        records = []
         for arg in args[:-1]:
             names = self.pathResolver.resolve(arg)
             for src in names :
-                count += 1
-                if os.path.isdir(src):
-                    tmp_dst = os.path.exists(dst) and os.path.join(dst,os.path.basename(src)) or dst
-                    shutil.move(src, tmp_dst)
-                else:
-                    shutil.move(src, dst)
-        Shext.stdout("%s items had been moved." % str(count))
+                records.append("mv %s to %s" % (self.relpath(src), self.relpath(dst)))
+                fileOrDirMv(src,dst)
+        records.append("%s items had been moved." % str(len(records)))
+        Shext.stdout(records)
         
 
     def bmadd(self, bm=False):
