@@ -157,6 +157,7 @@ public class PackageInfo {
 	             JarEntry entry = entries.nextElement();
 	             String entryName = entry.getName();
 	             if (entryName.indexOf("$") > -1) continue;
+	             if (!entryName.endsWith(".class")) continue;
 	             String className = entryName.replace('/', '.').replace('\\', '.').replace(".class", "");
 	             addClassNameToCache(className);
 	         }

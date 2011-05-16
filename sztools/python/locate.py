@@ -281,7 +281,7 @@ class TypeHierarchyContentManager(object):
         if pkgName == "" :
             defClassName = binName
         else :
-            defClassName = pkgName + binName
+            defClassName = pkgName +"."+ binName
 
         EditUtil.searchAndEdit(self.source_file, defClassName,self.memberName)
 
