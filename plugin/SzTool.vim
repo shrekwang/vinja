@@ -458,7 +458,8 @@ function! Jdext()
   autocmd BufEnter     *.java      nmap <silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
   autocmd BufEnter     *.java      vmap <silent><leader>gs  :python EditUtil.generateGseter()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>gd  :python EditUtil.locateDefinition()<cr>
+  autocmd BufEnter     *.java      nmap <silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
+  autocmd BufEnter     *.java      nmap <silent><leader>gi  :python EditUtil.locateDefinition("impl")<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>ai  :python AutoImport.autoImportVar()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>pt  :python ProjectManager.projectTree()<cr>
   autocmd BufEnter     *.java      nmap <silent><leader>go  :call LocateMember()<cr>

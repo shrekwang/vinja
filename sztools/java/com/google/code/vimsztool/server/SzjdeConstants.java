@@ -38,6 +38,7 @@ public class SzjdeConstants {
 	public final static String PARAM_PWD="pwd";
 	public final static String PARAM_HOTSWAP_ENABLED="hotSwapEnabled";
 	public final static String PARAM_HOTSWAP_PORT="hotSwapPort";
+	public final static String PARAM_SOURCE_TYPE="sourceType";
 	
 	public final static String CPT_TYPE_PACKAGE="package";
 	public final static String CPT_TYPE_CLASS="class";

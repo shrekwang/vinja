@@ -203,11 +203,13 @@ class Talker(object):
         return data
 
     @staticmethod
-    def locateSource(className, xmlPath):
+    def locateSource(className, xmlPath, sourceType="declare"):
+        "sourceType in { 'declare', 'impl] }"
         params = dict()
         params["cmd"]="locateSource"
         params["className"] = className
         params["classPathXml"] = xmlPath
+        params["sourceType"] = sourceType
         data = Talker.send(params)
         return data
 
@@ -452,7 +454,7 @@ class EditUtil(object):
         VimUtil.writeToJdeConsole(resultText)
 
     @staticmethod
-    def locateDefinition():
+    def locateDefinition(sourceType):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]
@@ -473,7 +475,7 @@ class EditUtil(object):
             className = searchResult.group("name")
             classNameList = Parser.getFullClassNames(className)
             for className in classNameList :
-                sourcePath = Talker.locateSource(className, classPathXml)
+                sourcePath = Talker.locateSource(className, classPathXml,sourceType)
                 if sourcePath != "None" :
                     vim.command("edit %s" % sourcePath )
                     vim.command("set filetype=java")
@@ -525,7 +527,7 @@ class EditUtil(object):
         params =(current_file_name,classNameList,classPathXml,expTokens,tmpName)
 
         for className in classNameList :
-            sourcePath = Talker.locateSource(className, classPathXml)
+            sourcePath = Talker.locateSource(className, classPathXml,sourceType)
             if sourcePath != "None" :
                 vim.command("edit %s" % sourcePath )
                 vim.command("set filetype=java")
