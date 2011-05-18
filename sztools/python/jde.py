@@ -8,7 +8,7 @@ import StringIO
 from subprocess import Popen
 from string import Template
 import difflib
-from common import output
+from common import output,getShareHome,getVisualArea
 
 from pyparsing import *
 from xml.etree.ElementTree import *
