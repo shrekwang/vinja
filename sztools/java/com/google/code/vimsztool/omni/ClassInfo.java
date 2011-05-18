@@ -1,13 +1,15 @@
 package com.google.code.vimsztool.omni;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ClassInfo {
 	private String name;
 	private String superName;
 	private String[] interfaces;
-	private List<String> subNames = new ArrayList<String>();
+	private Set<String> subNames = new HashSet<String>();
 	private List<Integer> lineNums = new ArrayList<Integer>();
 	
 	
@@ -29,7 +31,7 @@ public class ClassInfo {
 	public void setInterfaces(String[] interfaces) {
 		this.interfaces = interfaces;
 	}
-	public List<String> getSubNames() {
+	public Set<String> getSubNames() {
 		return subNames;
 	}
 	public void addSubName(String subName) {

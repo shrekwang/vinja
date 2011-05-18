@@ -116,9 +116,9 @@ public class CompilerContext {
 			String classPath = getOutputDir() + "/" + className.replace('.', '/') + ".class";
 			File outFile = new File(classPath);
 			classMetaInfoManager.loadSingleMetaInfo(outFile);
-			classMetaInfoManager.constructSubNames(className);
 			bpmgr.verifyBreakpoint(className);
-		}	}
+		}
+		classMetaInfoManager.constructAllSubNames();	}
 	
 	
 	private void initJdeProperty(String jdeXmlPath) {

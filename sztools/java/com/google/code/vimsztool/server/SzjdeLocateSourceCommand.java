@@ -1,6 +1,6 @@
 package com.google.code.vimsztool.server;
 
-import java.util.List;
+import java.util.Set;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.omni.ClassInfo;
@@ -18,9 +18,9 @@ public class SzjdeLocateSourceCommand extends SzjdeCommand {
 			ClassMetaInfoManager cmm = cc.getClassMetaInfoManager();
 			ClassInfo classInfo = cmm.getMetaInfo(className);
 			if (classInfo != null) {
-				List<String> subNames = classInfo.getSubNames();
+				Set<String> subNames = classInfo.getSubNames();
 				if (subNames.size() == 1) {
-					className = subNames.get(0);
+					className = subNames.toArray(new String[]{})[0];
 				}
 			}
 		}
