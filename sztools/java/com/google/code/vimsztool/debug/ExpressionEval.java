@@ -234,25 +234,26 @@ public class ExpressionEval {
 			ObjectReference thisObj,boolean hasParents) {
 		Value value = null;
 		try {
-			if (! hasParents) {
+			if (!hasParents) {
 				StackFrame stackFrame = threadRef.frame(0);
 				LocalVariable localVariable;
 				localVariable = stackFrame.visibleVariableByName(name);
 				if (localVariable != null) {
 					return stackFrame.getValue(localVariable);
 				}
-			} else {
-				// ObjectReference thisObj = stackFrame.thisObject();
-				ReferenceType refType = thisObj.referenceType();
-				List<Field> fields = refType.fields();
-				for (Field field : fields) {
-					if (field.name().equals(name)) {
-						value = thisObj.getValue(field);
-						break;
-					}
+			}
+
+			ReferenceType refType = thisObj.referenceType();
+			List<Field> fields = refType.fields();
+			for (Field field : fields) {
+				if (field.name().equals(name)) {
+					value = thisObj.getValue(field);
+					break;
 				}
 			}
+
 		} catch (Throwable e) {
+			
 		}
 		return value;
 	}
