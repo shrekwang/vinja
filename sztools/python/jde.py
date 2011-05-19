@@ -102,7 +102,8 @@ class ProjectManager(object):
         src_locs = []
         for entry in  entries :
             if entry.get("kind") == "src" :
-                src_locs.append(os.path.join(project_root,entry.get("path")))
+                abpath = os.path.normpath(os.path.join(project_root,entry.get("path")))
+                src_locs.append(abpath)
         return src_locs
 
     @staticmethod
@@ -386,8 +387,7 @@ class EditUtil(object):
         prj_root = ProjectManager.getProjectRoot(cur_file)
         src_locs = ProjectManager.getSrcLocations(cur_file)
         pkg = ""
-        for src_loc in src_locs :
-            abs_src = os.path.abspath(os.path.join(prj_root, src_loc))
+        for abs_src in src_locs :
             if cur_path.startswith(abs_src) :
                 pkg = cur_path[ len(abs_src)+1 : ]
         if pkg != "" :
@@ -713,7 +713,7 @@ class EditUtil(object):
                 src_locs = ProjectManager.getSrcLocations(source_file_path)
                 matched_file = None
                 for src_loc in src_locs :
-                    abs_path = os.path.join(src_loc, rlt_path)
+                    abs_path = os.path.normpath(os.path.join(src_loc, rlt_path))
                     if os.path.exists(abs_path) :
                         matched_file = abs_path
                         break
@@ -811,6 +811,7 @@ class Compiler(object):
                 bufErrorMsg[lnum]=text
                 bufnr=str(vim.eval("bufnr('%')"))
                 if buildProject :
+                    filename = os.path.normpath(filename)
                     qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
                 else :
                     qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
@@ -1631,7 +1632,8 @@ class Jdb(object):
         #debugTabNum = vim.eval("tabpagenr()")
         vim.command("let t:jdb_tab='1'")
 
-        jdb = Jdb()
+        if "jdb" not in globals() :
+            jdb = Jdb()
         vim.command("call SwitchToSzToolView('Jdb')")
         vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
         #switch back
@@ -1713,6 +1715,10 @@ class Jdb(object):
             self.printHelp()
             self.appendPrompt()
             return
+
+        if cmdLine.startswith("hide"):
+            self.exit()
+            return 
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
