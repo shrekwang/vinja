@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import net.contentobjects.jnotify.JNotify;
@@ -24,6 +27,7 @@ public class FileSystemDb  implements JNotifyListener {
 	private Map<String,WatchedDirInfo> watchedDir= new HashMap<String,WatchedDirInfo>();
 	private static final FileSystemDb instance = new FileSystemDb();
   	private Preference pref =  Preference.getInstance();
+  	private RecordBatchUpdater batchUpdater = null;
 	
   	private void initTable() {
          String sql1 = " create table fsdb_dirs  ( integer primary key, alias varchar(60), "
@@ -35,11 +39,12 @@ public class FileSystemDb  implements JNotifyListener {
     }
   	 
 	private FileSystemDb() {
-		String dbPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(),"locate.db");
+		String dbPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(),
+				"locate.db");
 		File file = new File(dbPath);
 		sqliteManager = new SqliteManager(dbPath);
 		if (!file.exists()) {
-			File parent=file.getParentFile();
+			File parent = file.getParentFile();
 			if (!parent.exists()) {
 				parent.mkdirs();
 			}
@@ -47,10 +52,16 @@ public class FileSystemDb  implements JNotifyListener {
 				file.createNewFile();
 			} catch (Exception e) {
 				String errorMsg = VjdeUtil.getExceptionValue(e);
-	    		log.info(errorMsg);
+				log.info(errorMsg);
 			}
 			this.initTable();
 		}
+		ScheduledExecutorService scheduler = Executors
+				.newSingleThreadScheduledExecutor();
+
+		batchUpdater = new RecordBatchUpdater(sqliteManager);
+		//update index per 2 seconds.
+		scheduler.scheduleAtFixedRate(batchUpdater, 0, 2, TimeUnit.SECONDS);
 	}
 	
 	public static FileSystemDb getInstance() {
@@ -212,10 +223,8 @@ public class FileSystemDb  implements JNotifyListener {
     	WatchedDirInfo watchedDirInfo=watchedDir.get(startDir);
     	
     	if (! PatternUtil.isExclude(watchedDirInfo.getExcludes(), new File(absPath))) {
-	    	String sql = "insert into fsdb_files (name,start_dir,rtl_path) values(?,?,?)";
-	    	List<String[]> values = new ArrayList<String[]>();
-	    	values.add(new String[] {name,startDir,rtlPath});
-	    	sqliteManager.batchUpdate(sql, values);
+	      	System.out.println(rtlPath);
+	    	batchUpdater.addCreatedRecords(new String[] {name,startDir,rtlPath});
     	}
     	
     }
@@ -226,11 +235,8 @@ public class FileSystemDb  implements JNotifyListener {
     	if  (indexedData == null ) return ;
     	String startDir = indexedData[0];
     	String rtlPath = indexedData[1];
+    	batchUpdater.addDeletedRecords(new String[] {startDir,rtlPath});
     	
-    	String sql = "delete from fsdb_files where start_dir = ? and rtl_path = ? ";
-    	List<String[]> values = new ArrayList<String[]>();
-    	values.add(new String[] {startDir,rtlPath});
-    	sqliteManager.batchUpdate(sql, values);
     }
     
     public void fileRenamed(int wd, String rootPath, String oldName, String newName) {
