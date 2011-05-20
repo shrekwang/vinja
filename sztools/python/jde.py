@@ -783,6 +783,13 @@ class Compiler(object):
         vim.command(signcmd)
 
     @staticmethod
+    def relpath(path):
+        if path.startswith(os.getcwd()) :
+            return os.path.relpath(path)
+        else :
+            return path
+
+    @staticmethod
     def compileCurrentFile(buildProject = False):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
@@ -794,6 +801,7 @@ class Compiler(object):
             return
         if buildProject :
             current_file_name = "All"
+            print "build project can take a while, please wait....."
         resultText = Talker.compileFile(classPathXml,current_file_name)
         errorMsgList = resultText.split("\n")
         hasError = False
@@ -811,7 +819,7 @@ class Compiler(object):
                 bufErrorMsg[lnum]=text
                 bufnr=str(vim.eval("bufnr('%')"))
                 if buildProject :
-                    filename = os.path.normpath(filename)
+                    filename = Compiler.relpath(os.path.normpath(filename))
                     qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
                 else :
                     qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
