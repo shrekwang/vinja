@@ -1548,7 +1548,20 @@ class Jdb(object):
         self.suspendRow = -1
         self.suspendBufnr = -1
         self.suspendBufName = ""
+        self.display = True
         self.ivp = InspectorVarParser()
+
+    def show(self):
+        self.display = True
+        vim.command("call SwitchToSzToolView('Jdb')")
+        vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
+        vim.command("call SwitchToSzToolView('Jdb')")
+        buffer=vim.current.buffer
+        output(">",buffer,False)
+        vim.current.window.cursor = (1,1)
+        vim.command("startinsert")
+        vim.command("imap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>")
+        vim.command("nnoremap <buffer><silent><cr>   :python jdb.executeCmd(insertMode=False)<cr>")
 
     def __str__(self):
 
@@ -1576,7 +1589,7 @@ class Jdb(object):
         tab_count = int(vim.eval("tabpagenr('$')"))
         for i in range(1,tab_count):
             jdbvar = vim.eval('gettabvar('+str(i)+',"jdb_tab")')
-            if jdbvar == "1" :
+            if jdbvar == "true" :
                 vim.command("tabn %s" % str(i)) 
                 break
 
@@ -1620,7 +1633,10 @@ class Jdb(object):
             vim.current.buffer.append("the source code can't be found")
             vim.current.buffer.append("class name is " + className)
             vim.current.buffer.append("the current line is " + lineNum)
-        vim.command("call SwitchToSzToolView('Jdb')")
+        if (self.display == False ) :
+            self.show()
+        else :
+            vim.command("call SwitchToSzToolView('Jdb')")
 
     def resumeSuspend(self):
         global bp_data
@@ -1636,20 +1652,12 @@ class Jdb(object):
     @staticmethod
     def runApp():
         global jdb
-        #global debugTabNum
         #debugTabNum = vim.eval("tabpagenr()")
-        vim.command("let t:jdb_tab='1'")
+        vim.command("let t:jdb_tab='true'")
 
         if "jdb" not in globals() :
             jdb = Jdb()
-        vim.command("call SwitchToSzToolView('Jdb')")
-        vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
-        #switch back
-        vim.command("call SwitchToSzToolView('Jdb')")
-        buffer=vim.current.buffer
-        output(">",buffer,False)
-        vim.current.window.cursor = (1,1)
-        vim.command("startinsert")
+        jdb.show()
 
     def stdout(self,msg):
         buffer = VimUtil.getJdeConsoleBuffer("JdbStdOut")
@@ -1665,7 +1673,8 @@ class Jdb(object):
         help_file.close()
         self.stdout(content)
 
-    def exit(self):
+    def closeBuffer(self):
+        self.display = False
         vim.command("bw! SzToolView_Jdb")
         vim.command("bw! SzToolView_JdbStdOut")
 
@@ -1725,14 +1734,14 @@ class Jdb(object):
             return
 
         if cmdLine.startswith("hide"):
-            self.exit()
+            self.closeBuffer()
             return 
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
             self.stdout(data)
         if cmdLine == "exit" :
-            self.exit()
+            self.closeBuffer()
             return 
         if cmdLine.startswith("clear"):
             for i in range(1,5):
