@@ -24,8 +24,9 @@ public class RecordBatchUpdater implements Runnable {
 	}
 	
 	private synchronized void updateDb() {
-		sqliteManager.batchUpdate(insertSql	, createdRecords);
-		sqliteManager.batchUpdate(deleteSql, deletedRecords);
+		if (createdRecords.size() > 0) sqliteManager.batchUpdate(insertSql	, createdRecords);
+		if (deletedRecords.size() > 0) sqliteManager.batchUpdate(deleteSql, deletedRecords);
+		
 		createdRecords.clear();
 		deletedRecords.clear();
 		

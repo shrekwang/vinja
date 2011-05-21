@@ -60,8 +60,8 @@ public class FileSystemDb  implements JNotifyListener {
 				.newSingleThreadScheduledExecutor();
 
 		batchUpdater = new RecordBatchUpdater(sqliteManager);
-		//update index per 2 seconds.
-		scheduler.scheduleAtFixedRate(batchUpdater, 0, 2, TimeUnit.SECONDS);
+		//update index per  second.
+		scheduler.scheduleAtFixedRate(batchUpdater, 0, 1, TimeUnit.SECONDS);
 	}
 	
 	public static FileSystemDb getInstance() {
