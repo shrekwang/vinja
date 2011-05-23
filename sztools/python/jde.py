@@ -1652,8 +1652,14 @@ class Jdb(object):
     @staticmethod
     def runApp():
         global jdb
-        #debugTabNum = vim.eval("tabpagenr()")
-        vim.command("let t:jdb_tab='true'")
+        tab_count = int(vim.eval("tabpagenr('$')"))
+        cur_tab = int(vim.eval("tabpagenr()"))
+        for i in range(1,tab_count):
+            if i == cur_tab :
+                jdbvar = vim.eval('settabvar('+str(i)+',"jdb_tab","true")')
+            else :
+                jdbvar = vim.eval('settabvar('+str(i)+',"jdb_tab","false")')
+        
 
         if "jdb" not in globals() :
             jdb = Jdb()
