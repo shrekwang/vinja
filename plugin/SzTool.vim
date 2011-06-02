@@ -422,7 +422,6 @@ function InitJavaSetting()
   au CursorHold <buffer> :python Compiler.displayMsg()
   au CursorMoved <buffer> :python Compiler.displayMsg()
   python EditUtil.createSkeleton()
-  python EditUtil.initBreakpointSign()
   if exists("*SuperTabSetDefaultCompletionType")
     autocmd BufEnter *.java        call SuperTabSetDefaultCompletionType("<c-x><c-o>")
   endif
@@ -433,6 +432,7 @@ function! Jdext()
   python startAgent()
   set completeopt=menuone
   autocmd BufEnter     *.java     call InitJavaSetting()
+  autocmd BufWinEnter   *.java    python EditUtil.initBreakpointSign()
   autocmd BufWritePost  *.java    python Compiler.compileCurrentFile()
   autocmd BufWritePost  *         python Compiler.copyResource()
 
@@ -452,26 +452,26 @@ function! Jdext()
   command! -nargs=1   FetchDebugOutput :call FetchDebugOutput('<args>')
   command! -nargs=*   HandleJdiEvent    :call HandleJdiEvent(<f-args>)
 
-  autocmd BufEnter     *.java      nmap <silent><leader>,   :python Runner.runCurrentFile()<cr>
-  autocmd BufEnter     *.java      nmap <silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
-  autocmd BufEnter     *.java      vmap <silent><leader>gs  :python EditUtil.generateGseter()<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>gi  :python EditUtil.locateDefinition("impl")<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>ai  :python AutoImport.autoImportVar()<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>pt  :python ProjectManager.projectTree()<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>go  :call LocateMember()<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>gt  :call LocateHierarchy()<cr>
-  autocmd BufEnter     *.java      nmap <silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
-  autocmd BufEnter     *.java      imap <silent><M-9>       <c-o>:python EditUtil.tipMethodParameter()<cr>
-  autocmd BufEnter     *.java      imap <silent><M-0>       <c-o>:python VimUtil.closeJdeConsole()<cr>
-  autocmd BufEnter     *.java      nmap <silent><M-9>       :python EditUtil.tipMethodParameter()<cr>
-  autocmd BufEnter     *.java      nmap <silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>,   :python Runner.runCurrentFile()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
+  autocmd BufEnter  *.java    vmap <buffer><silent><leader>gs  :python EditUtil.generateGseter()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gi  :python EditUtil.locateDefinition("impl")<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>ai  :python AutoImport.autoImportVar()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>pt  :python ProjectManager.projectTree()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>go  :call LocateMember()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gt  :call LocateHierarchy()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:python EditUtil.tipMethodParameter()<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:python VimUtil.closeJdeConsole()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-9>       :python EditUtil.tipMethodParameter()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
   
-  autocmd BufEnter    SzToolView_Jdb  nmap <silent><F5>     :python jdb.stepCmd('step_into')<cr>
-  autocmd BufEnter    SzToolView_Jdb  nmap <silent><F6>     :python jdb.stepCmd('step_over')<cr>
-  autocmd BufEnter    SzToolView_Jdb  nmap <silent><F7>     :python jdb.stepCmd('step_return')<cr>
-  autocmd BufEnter    SzToolView_Jdb  nmap <silent><F8>     :python jdb.stepCmd('resume')<cr>
+  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F5>     :python jdb.stepCmd('step_into')<cr>
+  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F6>     :python jdb.stepCmd('step_over')<cr>
+  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F7>     :python jdb.stepCmd('step_return')<cr>
+  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F8>     :python jdb.stepCmd('resume')<cr>
 endfunction
 
 

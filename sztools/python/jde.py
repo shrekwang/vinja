@@ -529,35 +529,36 @@ class EditUtil(object):
         for className in classNameList :
             sourcePath = Talker.locateSource(className, classPathXml,sourceType)
             if sourcePath != "None" :
-                vim.command("edit %s" % sourcePath )
+                matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
+                vim.command("edit +%s %s" % (matchedLine, sourcePath ))
                 vim.command("set filetype=java")
                 if sourcePath.endswith(".class") :
                     vim.command("setlocal buftype=nofile")
                     vim.command("setlocal noswapfile")
-                EditUtil.searchMember(memberName)
         return
 
     @staticmethod
-    def searchMember(memberName):
-        vim_buffer = vim.current.buffer
+    def searchMemeberLineNum(memberName,sourcePath):
+        lines = open(sourcePath).readlines()
         matched_row = 1
-        members = Parser.parseAllMemberInfo(vim_buffer)
+        members = Parser.parseAllMemberInfo(lines)
         for name,mtype,rtntype,param,lineNum in members :
             if name == memberName :
                 matched_row = lineNum
-        vim.command("normal %sG" % str(matched_row))
+        return str(matched_row)
 
     @staticmethod
     def searchAndEdit(current_file_name, className,memberName):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         sourcePath = Talker.locateSource(className, classPathXml)
         if sourcePath != "None" :
-            vim.command("edit %s" % sourcePath )
+            matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
+            vim.command("edit +%s %s" % (matchedLine, sourcePath ))
             vim.command("set filetype=java")
             if sourcePath.endswith(".class") :
                 vim.command("setlocal buftype=nofile")
                 vim.command("setlocal noswapfile")
-            EditUtil.searchMember(memberName)
+        return
 
     @staticmethod
     def tipMethodParameter():
@@ -1022,6 +1023,7 @@ class Parser(object):
         assignPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*=")
         defPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*;")
         for lineNum,line in enumerate(lines) :
+            line = line.strip()
             if scopeCount == 1 :
                 fullDeclLine = line
                 if "=" in line :
@@ -1603,23 +1605,28 @@ class Jdb(object):
         
         if os.path.exists(abs_path) :
             if abs_path != vim.current.buffer.name :
+                logging.debug("abs_path != buffername")
                 vim.command("edit %s" % abs_path)
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
                 vim.command(signcmd)
             global bp_data
             bp_set = bp_data.get(vim.current.buffer.name)
+            bufnr=str(vim.eval("bufnr('%')"))
             if bp_set != None and int(lineNum) in bp_set :
                 signGroup = "SuspendLineBP"
+                signcmd=Template("sign place ${id} name=${name} buffer=${nr}")
+                signcmd =signcmd.substitute(id=lineNum,name=signGroup,nr=bufnr)
             else :
                 signGroup = "SuspendLine"
-            bufnr=str(vim.eval("bufnr('%')"))
-            signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
-            signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,name=signGroup,nr=bufnr)
+                signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
+                signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,name=signGroup,nr=bufnr)
+
+            vim.command(signcmd)
             self.suspendRow = lineNum
             self.suspendBufnr = bufnr
             self.suspendBufName = vim.current.buffer.name
-            vim.command(signcmd)
+           
             winStartRow = int(vim.eval("line('w0')"))
             winEndRow = int(vim.eval("line('w$')"))
             lineNum = int(lineNum)
