@@ -7,9 +7,8 @@ from StringIO import StringIO
 from distutils import dir_util
 from distutils import file_util
 
-class CommonGlobal(object):
-    HOST = 'localhost'
-    PORT = 9527
+HOST = 'localhost'
+PORT = 9527
 
 def fileOrDirCp(src,dst):
     if os.path.isdir(src):
@@ -75,7 +74,7 @@ def agentHasStarted() :
     agentStarted = True
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try :
-        s.connect((CommonGlobal.HOST, CommonGlobal.PORT))
+        s.connect((HOST, PORT))
         s.close()
     except Exception , e :
         agentStarted = False

@@ -8,16 +8,16 @@ import StringIO
 from subprocess import Popen
 from string import Template
 import difflib
-import logging
-from common import output,getShareHome,getVisualArea,CommonGlobal
+from common import output,getShareHome,getVisualArea
 
 from pyparsing import *
 from xml.etree.ElementTree import *
 
-class JdeGlobal(object):
-    END_TOKEN = "==end=="
-    MAX_CPT_COUNT = 200
-    bp_data = {}
+HOST = 'localhost'
+PORT = 9527
+END_TOKEN = "==end=="
+MAX_CPT_COUNT = 200
+bp_data = {}
 
 class VimUtil(object):
     @staticmethod
@@ -169,11 +169,11 @@ class Talker(object):
     @staticmethod
     def send(params):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((CommonGlobal.HOST, CommonGlobal.PORT))
+        s.connect((HOST, PORT))
         sb = []
         for item in params :
             sb.append("%s=%s\n" %(item,params[item]))
-        sb.append('%s\n' % JdeGlobal.END_TOKEN)
+        sb.append('%s\n' % END_TOKEN)
         s.send("".join(sb))
         total_data=[]
         while True:
@@ -640,9 +640,10 @@ class EditUtil(object):
 
     @staticmethod
     def toggleBreakpoint():
+        global bp_data
         file_name = vim.current.buffer.name
         (row,col) = vim.current.window.cursor
-        bp_set = JdeGlobal.bp_data.get(file_name)
+        bp_set = bp_data.get(file_name)
         signGroup = "SzjdeBreakPoint"
         if bp_set == None :
             bp_set = set()
@@ -670,14 +671,15 @@ class EditUtil(object):
                 signcmd =signcmd.substitute(id=row,lnum=row,name=signGroup, nr=bufnr)
                 vim.command(signcmd)
                 bp_set.add(row)
-                JdeGlobal.bp_data[file_name] = bp_set
+                bp_data[file_name] = bp_set
             else :
                 print "can't create breakpoint here"
 
     @staticmethod
     def initBreakpointSign():
+        global bp_data
         file_name = vim.current.buffer.name
-        bp_set = JdeGlobal.bp_data.get(file_name)
+        bp_set = bp_data.get(file_name)
         signGroup = "SzjdeBreakPoint"
         if bp_set == None :
             return 
@@ -691,8 +693,9 @@ class EditUtil(object):
     @staticmethod
     def syncBreakpointInfo():
 
-        for file_name in JdeGlobal.bp_data:
-            bp_set = JdeGlobal.bp_data[file_name]
+        global bp_data
+        for file_name in bp_data:
+            bp_set = bp_data[file_name]
             for row_num in bp_set :
                 signcmd="sign unplace %s" %(row_num)
                 vim.command(signcmd)
@@ -701,6 +704,7 @@ class EditUtil(object):
         serverName = vim.eval("v:servername")
         class_path_xml = ProjectManager.getClassPathXml(source_file_path)
         data = JdbTalker.submit("syncbps",class_path_xml,serverName)
+        bp_data = {}
         if data : 
             for line in data.split("\n"):
                 if line.strip() == "" or line.find(" ") < 0 :
@@ -715,11 +719,11 @@ class EditUtil(object):
                         matched_file = abs_path
                         break
                 if matched_file != None :
-                    bp_set = JdeGlobal.bp_data.get(matched_file)
+                    bp_set = bp_data.get(matched_file)
                     if bp_set == None :
                         bp_set = set()
                     bp_set.add(int(line_num))
-                    JdeGlobal.bp_data[matched_file] = bp_set
+                    bp_data[matched_file] = bp_set
             EditUtil.initBreakpointSign()
 
     @staticmethod
@@ -1502,19 +1506,19 @@ class SzJdeCompletion(object):
             if len(result) == 0 :
                 result = SzJdeCompletion.getWordFuzzyCompleteResult(base)
 
-        if len(result) > JdeGlobal.MAX_CPT_COUNT :
-            result = result[0:JdeGlobal.MAX_CPT_COUNT]
+        if len(result) > MAX_CPT_COUNT :
+            result = result[0:MAX_CPT_COUNT]
         return str(result)
 
 class JdbTalker(object):
     @staticmethod
     def send(params):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((CommonGlobal.HOST, CommonGlobal.PORT))
+        s.connect((HOST, PORT))
         sb = []
         for item in params :
             sb.append("%s=%s\n" %(item,params[item]))
-        sb.append('%s\n' % JdeGlobal.END_TOKEN)
+        sb.append('%s\n' % END_TOKEN)
         s.send("".join(sb))
         total_data=[]
         while True:
@@ -1538,6 +1542,7 @@ class Jdb(object):
 
     def __init__(self):
         self.cur_dir = os.getcwd()
+        self.bp_data = {}
         fake_path = os.path.join(self.cur_dir,"fake")
         self.project_root = ProjectManager.getProjectRoot(fake_path)
         self.class_path_xml = ProjectManager.getClassPathXml(fake_path)
@@ -1605,7 +1610,8 @@ class Jdb(object):
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
                 vim.command(signcmd)
-            bp_set = JdeGlobal.bp_data.get(vim.current.buffer.name)
+            global bp_data
+            bp_set = bp_data.get(vim.current.buffer.name)
             bufnr=str(vim.eval("bufnr('%')"))
             if bp_set != None and int(lineNum) in bp_set :
                 signGroup = "SuspendLineBP"
@@ -1640,7 +1646,8 @@ class Jdb(object):
             vim.command("call SwitchToSzToolView('Jdb')")
 
     def resumeSuspend(self):
-        bp_set = JdeGlobal.bp_data.get(self.suspendBufName)
+        global bp_data
+        bp_set = bp_data.get(self.suspendBufName)
         signcmd=""
         if self.suspendRow != -1 :
             if bp_set !=None and int(self.suspendRow) in bp_set :
