@@ -1,10 +1,14 @@
 from  shext import LocateCmd
-from jde import Parser
-from jde import EditUtil
 import fnmatch
 import os
 import re
 import vim
+
+if "EditUtil" not in globals() :
+    from jde import EditUtil
+
+if "Parser" not in globals() :
+    from jde import Parser
 
 class Prompt(object) :
     def __init__(self, init_prompt_value):
