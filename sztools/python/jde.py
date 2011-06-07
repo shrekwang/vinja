@@ -1644,6 +1644,7 @@ class Jdb(object):
             self.show()
         else :
             vim.command("call SwitchToSzToolView('Jdb')")
+        vim.command("call foreground()")
 
     def resumeSuspend(self):
         global bp_data
