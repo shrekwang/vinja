@@ -37,7 +37,9 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 					srcFileList.add(sourcePath);
 				}
 			}
-			srcFileList.add(sourceFile);
+			if (!srcFileList.contains(sourceFile)) {
+				srcFileList.add(sourceFile);
+			}
 			allSrcFiles = srcFileList.toArray(new String[]{});
 		}
 		
