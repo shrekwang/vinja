@@ -691,19 +691,19 @@ class EditUtil(object):
 
     @staticmethod
     def initCompilerErrorSign():
-        vim.command("syntax clear SzjdeError")
-        vim.command("syntax clear SzjdeWarning")
-        vim.command("sign unplace *")
+        #vim.command("syntax clear SzjdeError")
+        #vim.command("syntax clear SzjdeWarning")
+        #vim.command("sign unplace *")
         file_name = vim.current.buffer.name
-        allErrorMsg = globals().get("allErrorMsg")
-        if allErrorMsg == None :
+        allCompileMsg = globals().get("allCompileMsg")
+        if allCompileMsg == None :
             return 
-        bufErrorMsg = allErrorMsg.get(file_name)
-        if bufErrorMsg == None : 
+        bufCompileMsg = allCompileMsg.get(file_name)
+        if bufCompileMsg == None : 
             return
         (row,col) = vim.current.window.cursor
-        for lnum in bufErrorMsg :
-            text,lstart,lend,errorType = bufErrorMsg.get(lnum)
+        for lnum in bufCompileMsg :
+            text,lstart,lend,errorType = bufCompileMsg.get(lnum)
             Compiler.highlightErrorGroup(lnum,lstart,lend,errorType)
 
     @staticmethod
@@ -758,22 +758,22 @@ class Compiler(object):
 
     @staticmethod
     def displayMsg():
-        allErrorMsg = globals().get("allErrorMsg")
-        if allErrorMsg == None :
+        allCompileMsg = globals().get("allCompileMsg")
+        if allCompileMsg == None :
             return 
         vim_buffer = vim.current.buffer
-        bufErrorMsg = allErrorMsg.get(vim_buffer.name)
-        if bufErrorMsg == None : 
+        bufCompileMsg = allCompileMsg.get(vim_buffer.name)
+        if bufCompileMsg == None : 
             return
         (row,col) = vim.current.window.cursor
-        if bufErrorMsg.get(str(row)) != None :
-            errorText,lstart,lend,errorType = bufErrorMsg.get(str(row))
+        if bufCompileMsg.get(str(row)) != None :
+            errorText,lstart,lend,errorType = bufCompileMsg.get(str(row))
             vim.command("call DisplayMsg('%s')" % errorText)
         else :
             vim.command("call DisplayMsg('%s')" % "")
 
     @staticmethod
-    def highlightErrorGroup(errorRow,start,end,errorType):
+    def highlightErrorGroup(errorRow,start,end,errorType, bufnr = None):
         if errorType == "W" :
             group = "SzjdeWarning"
         else :
@@ -794,11 +794,29 @@ class Compiler(object):
         if rowEnd < 0 :
             rowEnd = rowStart + len(unicode(vim_buffer[errorRow]))  
         signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
-        bufnr=str(vim.eval("bufnr('%')"))
+        if bufnr == None :
+            bufnr=str(vim.eval("bufnr('%')"))
         signcmd =signcmd.substitute(id=errorRow,lnum=errorRow,name=group, nr=bufnr)
         syncmd = """syn match %s "\%%%sl\%%>%sc.\%%<%sc" """ %(group, errorRow, rowStart, rowEnd)
         vim.command(syncmd)
         vim.command(signcmd)
+
+    @staticmethod
+    def hightlightAllError():
+        allCompileMsg = globals().get("allCompileMsg")
+        if allCompileMsg == None :
+            return 
+        for file_name in allCompileMsg :
+            bufnr = vim.eval("bufnr('%s')" % file_name)
+            if bufnr == "-1" :
+                continue
+            bufCompileMsg = allCompileMsg.get(file_name)
+            if bufCompileMsg == None : 
+                continue
+            for lnum in bufCompileMsg :
+                text,lstart,lend,errorType = bufCompileMsg.get(lnum)
+                Compiler.highlightErrorGroup(lnum,lstart,lend,errorType,bufnr)
+
 
     @staticmethod
     def relpath(path):
@@ -827,26 +845,27 @@ class Compiler(object):
         vim.command("syntax clear SzjdeError")
         vim.command("syntax clear SzjdeWarning")
         vim.command("sign unplace *")
-        global allErrorMsg 
-        allErrorMsg = {}
+        global allCompileMsg 
+        allCompileMsg = {}
         for line in errorMsgList:
             if line.strip() == "" : continue
             try :
                 errorType,filename,lnum,text,lstart,lend = line.split("::")
+                if errorType == "E" :
+                    hasError = True
                 bufnr=str(vim.eval("bufnr('%')"))
                 absname = os.path.normpath(filename)
                 filename = Compiler.relpath(absname)
-                bufErrorMsg = allErrorMsg.get(absname)
-                if bufErrorMsg == None :
-                    bufErrorMsg = {} 
+                bufCompileMsg = allCompileMsg.get(absname)
+                if bufCompileMsg == None :
+                    bufCompileMsg = {} 
                 if filename != Compiler.relpath(current_file_name) :
                     qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
                 else :
                     qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
                     Compiler.highlightErrorGroup(lnum,lstart,lend,errorType)
-                bufErrorMsg[lnum]=(text,lstart,lend,errorType)
-                allErrorMsg[absname] = bufErrorMsg
-
+                bufCompileMsg[lnum]=(text,lstart,lend,errorType)
+                allCompileMsg[absname] = bufCompileMsg
                 qflist.append(qfitem)
             except Exception , e:
                 fp = StringIO.StringIO()
@@ -855,8 +874,10 @@ class Compiler(object):
                 logging.debug(message)
         EditUtil.syncBreakpointInfo()
         EditUtil.initBreakpointSign()
+        Compiler.hightlightAllError()
 
         vim.command("call setqflist(%s)" % qflist)
+        vim.command("cw")
 
 
     @staticmethod
