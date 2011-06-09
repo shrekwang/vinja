@@ -204,7 +204,7 @@ public class CompilerContext {
 		classPathUrls.toArray(urlsA);
 		loader = new ReflectAbleClassLoader(urlsA, this.getClass().getClassLoader());
 		cachePackageInfo(urlsA,outputDir);
-		classMetaInfoManager.cacheAllInfo(outputDir);
+		classMetaInfoManager.cacheAllInfo(outputDir,this);
 	}
 	
 	private void cachePackageInfo(URL[] urls,String outputDir) {
@@ -341,6 +341,18 @@ public class CompilerContext {
 		public String  path;
 		public String  sourcepath;
 
+	}
+	
+	public String findSourceFileInSrcPath(String rtlPathName) {
+		rtlPathName = rtlPathName.replace("\\", "/");
+		for (String srcLoc : srcLocations) {
+			String absPath = FilenameUtils.concat(srcLoc, rtlPathName);
+			File file = new File(absPath) ;
+			if (file.exists()) {
+				return absPath;
+			}
+		}
+		return null;
 	}
 	
 	public String findSourceFile(String rtlPathName) {

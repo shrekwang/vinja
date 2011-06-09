@@ -6,16 +6,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.objectweb.asm.ClassReader;
+
+import com.google.code.vimsztool.compiler.CompilerContext;
 
 public class ClassMetaInfoManager  {
 	
 	private Map<String,ClassInfo> metaInfos = new ConcurrentHashMap<String,ClassInfo>();
 	
+	private CompilerContext ctx;
 	
-	public void cacheAllInfo(String dir) {
+	
+	public void cacheAllInfo(String dir,CompilerContext ctx) {
+		this.ctx = ctx;
 		loadAllMetaInfo(dir);
 		constructAllSubNames();
 	}
@@ -38,7 +44,7 @@ public class ClassMetaInfoManager  {
 				FileInputStream fs = new FileInputStream(classFile);
 				ClassReader cr = new ClassReader(fs);
 				ClassInfo classInfo = new ClassInfo();
-				ClassMetaInfoReader classInfoReader = new ClassMetaInfoReader(classInfo);
+				ClassMetaInfoReader classInfoReader = new ClassMetaInfoReader(classInfo,ctx);
 				cr.accept(classInfoReader, 0);
 				fs.close();
 				if (metaInfos.get(classInfo.getName()) != null) {
@@ -57,6 +63,17 @@ public class ClassMetaInfoManager  {
 	public ClassInfo getMetaInfo(String className) {
 		ClassInfo metaInfo = metaInfos.get(className);
 		return metaInfo;
+	}
+	
+	public List<String> getDependentClasses(String className) {
+		List<String> names = new ArrayList<String>();
+		for (ClassInfo metaInfo : metaInfos.values() ) {
+			Set<String> dependentClasses = metaInfo.getDependents();
+			if (dependentClasses.contains(className)) {
+				names.add(metaInfo.getName());
+			}
+		}
+		return names;
 	}
 	
 	public List<String> getTypeHierarchy(String className) {

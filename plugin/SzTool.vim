@@ -433,6 +433,7 @@ function! Jdext()
   set completeopt=menuone
   autocmd BufEnter     *.java     call InitJavaSetting()
   autocmd BufWinEnter   *.java    python EditUtil.initBreakpointSign()
+  autocmd BufReadPost   *.java    python EditUtil.initCompilerErrorSign()
   autocmd BufWritePost  *.java    python Compiler.compileCurrentFile()
   autocmd BufWritePost  *         python Compiler.copyResource()
 

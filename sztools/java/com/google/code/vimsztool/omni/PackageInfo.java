@@ -27,6 +27,12 @@ public class PackageInfo {
 	private Map<String,Set<String>> cache = new HashMap<String,Set<String>>();
 	private Map<String, String> cachedPath = new HashMap<String,String>();
 	
+	private Set<String> dstClassNames = new HashSet<String>();
+	
+	
+	public boolean isClassInDst(String className) {
+		return dstClassNames.contains(className);
+	}
 	
 	@SuppressWarnings("unchecked")
 	public List<Class> findSubClass(CompilerContext ctx, String searchClassName) {
@@ -142,6 +148,7 @@ public class PackageInfo {
 		    if (relativeName.indexOf("$") > -1) continue;
 			String className = relativeName.replace('/', '.').replace('\\', '.').replace(".class", "");
 		    addClassNameToCache(className);
+		    dstClassNames.add(className);
 		}
 	}
 	

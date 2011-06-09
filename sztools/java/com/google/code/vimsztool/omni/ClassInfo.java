@@ -6,12 +6,13 @@ import java.util.List;
 import java.util.Set;
 
 public class ClassInfo {
+	
 	private String name;
 	private String superName;
 	private String[] interfaces;
 	private Set<String> subNames = new HashSet<String>();
 	private List<Integer> lineNums = new ArrayList<Integer>();
-	
+	private Set<String> dependents = new HashSet<String>();
 	
 	public String getName() {
 		return name;
@@ -38,12 +39,22 @@ public class ClassInfo {
 		this.subNames.add(subName);
 		
 	}
+	public void addDependent(String className) {
+		this.dependents.add(className);
+	}
 	public List<Integer> getLineNums() {
 		return lineNums;
 	}
 	public void addLineNum(int lineNum) {
 		this.lineNums.add(lineNum);
 	}
+	public void setDependents(Set<String> dependents) {
+		this.dependents = dependents;
+	}
+	public Set<String> getDependents() {
+		return dependents;
+	}
+	
 	
 	
 }

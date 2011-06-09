@@ -682,14 +682,30 @@ class EditUtil(object):
         bp_set = bp_data.get(file_name)
         signGroup = "SzjdeBreakPoint"
         if bp_set == None :
-            return 
-
+            return
         for row in bp_set :
             signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
             bufnr=str(vim.eval("bufnr('%')"))
             signcmd =signcmd.substitute(id=row,lnum=row,name=signGroup, nr=bufnr)
             vim.command(signcmd)
-    
+
+    @staticmethod
+    def initCompilerErrorSign():
+        vim.command("syntax clear SzjdeError")
+        vim.command("syntax clear SzjdeWarning")
+        vim.command("sign unplace *")
+        file_name = vim.current.buffer.name
+        allErrorMsg = globals().get("allErrorMsg")
+        if allErrorMsg == None :
+            return 
+        bufErrorMsg = allErrorMsg.get(file_name)
+        if bufErrorMsg == None : 
+            return
+        (row,col) = vim.current.window.cursor
+        for lnum in bufErrorMsg :
+            text,lstart,lend,errorType = bufErrorMsg.get(lnum)
+            Compiler.highlightErrorGroup(lnum,lstart,lend,errorType)
+
     @staticmethod
     def syncBreakpointInfo():
 
@@ -750,10 +766,11 @@ class Compiler(object):
         if bufErrorMsg == None : 
             return
         (row,col) = vim.current.window.cursor
-        errorText = bufErrorMsg.get(str(row))
-        if errorText == None :
-            return
-        vim.command("call DisplayMsg('%s')" % errorText)
+        if bufErrorMsg.get(str(row)) != None :
+            errorText,lstart,lend,errorType = bufErrorMsg.get(str(row))
+            vim.command("call DisplayMsg('%s')" % errorText)
+        else :
+            vim.command("call DisplayMsg('%s')" % "")
 
     @staticmethod
     def highlightErrorGroup(errorRow,start,end,errorType):
@@ -812,19 +829,23 @@ class Compiler(object):
         vim.command("sign unplace *")
         global allErrorMsg 
         allErrorMsg = {}
-        bufErrorMsg = {} 
         for line in errorMsgList:
             if line.strip() == "" : continue
             try :
                 errorType,filename,lnum,text,lstart,lend = line.split("::")
-                bufErrorMsg[lnum]=text
                 bufnr=str(vim.eval("bufnr('%')"))
-                if buildProject :
-                    filename = Compiler.relpath(os.path.normpath(filename))
+                absname = os.path.normpath(filename)
+                filename = Compiler.relpath(absname)
+                bufErrorMsg = allErrorMsg.get(absname)
+                if bufErrorMsg == None :
+                    bufErrorMsg = {} 
+                if filename != Compiler.relpath(current_file_name) :
                     qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
                 else :
                     qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
                     Compiler.highlightErrorGroup(lnum,lstart,lend,errorType)
+                bufErrorMsg[lnum]=(text,lstart,lend,errorType)
+                allErrorMsg[absname] = bufErrorMsg
 
                 qflist.append(qfitem)
             except Exception , e:
@@ -832,7 +853,6 @@ class Compiler(object):
                 traceback.print_exc(file=fp)
                 message = fp.getvalue()
                 logging.debug(message)
-        allErrorMsg[current_file_name] = bufErrorMsg
         EditUtil.syncBreakpointInfo()
         EditUtil.initBreakpointSign()
 

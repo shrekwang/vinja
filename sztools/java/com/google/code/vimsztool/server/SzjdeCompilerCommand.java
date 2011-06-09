@@ -1,6 +1,7 @@
 package com.google.code.vimsztool.server;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -9,6 +10,7 @@ import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.JDTCompiler;
 import com.google.code.vimsztool.debug.BreakpointManager;
 import com.google.code.vimsztool.debug.Debugger;
+import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.util.HotSwapUtil;
 import com.google.code.vimsztool.util.JdeLogger;
 
@@ -20,10 +22,25 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
 		CompilerContext cc=getCompilerContext(classPathXml);
 		JDTCompiler compiler =new JDTCompiler(cc);
-		String[] allSrcFiles = new String[] {sourceFile};
+		String[] allSrcFiles = new String[] {};
 		if (sourceFile.equals("All")) {
 			allSrcFiles = cc.getAllSourceFiles();
-		} 
+		} else {
+			ClassMetaInfoManager metaInfoManager = cc.getClassMetaInfoManager();
+			String targetClassName=cc.buildClassName(sourceFile);
+			List<String> dependentClasses = metaInfoManager.getDependentClasses(targetClassName);
+			List<String> srcFileList = new ArrayList<String>();
+			for (String depClass : dependentClasses ) {
+				String rtlPathName = depClass.replace(".", "/") + ".java";
+				String sourcePath = cc.findSourceFileInSrcPath(rtlPathName);
+				if (sourcePath != null ) {
+					srcFileList.add(sourcePath);
+				}
+			}
+			srcFileList.add(sourceFile);
+			allSrcFiles = srcFileList.toArray(new String[]{});
+		}
+		
 		CompileResultInfo resultInfo =compiler.generateClass(allSrcFiles);
 		List<String> problemList = resultInfo.getProblemInfoList();
 		
