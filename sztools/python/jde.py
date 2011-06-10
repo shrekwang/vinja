@@ -877,7 +877,10 @@ class Compiler(object):
         Compiler.hightlightAllError()
 
         vim.command("call setqflist(%s)" % qflist)
-        vim.command("cw")
+        if hasError :
+            vim.command("cwindow")
+        else :
+            vim.command("cclose")
 
 
     @staticmethod
