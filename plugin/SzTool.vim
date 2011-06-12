@@ -64,6 +64,13 @@ function! GetVisualBlock() range
     return vis_cmd
 endfunction 
 
+function! GetBufList()
+  redir => bufoutput
+  silent buffers!
+  redir END
+  return bufoutput
+endfunction
+
 function SetSzToolBuf()
     exec "setlocal nowrap"    
     exec "setlocal buftype=nofile" 
@@ -242,6 +249,19 @@ function! Notext()
   map <silent><buffer> o     :python notext.listCurrentTagItems()<cr>
   command! -nargs=0 ExitNote   :python notext.exit()
   python Notext.runApp()
+endfunction
+
+function! Tagext()
+  call RunSzPyfile("tagext.py")
+  python TagExt.runApp()
+  python tagext.edit_tag()
+endfunction
+
+function! TagList()
+  print "shit"
+  call RunSzPyfile("tagext.py")
+  python TagExt.runApp()
+  python tagext.list_buf()
 endfunction
 
 
@@ -495,6 +515,8 @@ command! -nargs=0 Shext       :call Shext()
 command! -nargs=0 Jdext       :call Jdext()
 command! -nargs=0 Dbext       :call Dbext()
 command! -nargs=0 Notext      :call Notext()
+command! -nargs=0 Tagext      :call Tagext()
+command! -nargs=0 TagList      :call TagList()
 command! -nargs=0 SaveNote            :python Notext.saveBufContent()
 command! -nargs=0 MakeNoteTemplate    :python Notext.makeTemplate()
 
