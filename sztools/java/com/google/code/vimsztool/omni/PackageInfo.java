@@ -157,8 +157,9 @@ public class PackageInfo {
 		if (! file.exists()) return;
 		String hadCached=cachedPath.get(path);
 		if (hadCached !=null && hadCached.equals("true")) return;
+		 JarFile jarFile = null;
 		try {
-			 JarFile jarFile = new JarFile(path);         
+			 jarFile = new JarFile(path);         
 	         Enumeration<JarEntry> entries = jarFile.entries();
 	         while(entries.hasMoreElements()) {
 	             JarEntry entry = entries.nextElement();
@@ -168,7 +169,10 @@ public class PackageInfo {
 	             String className = entryName.replace('/', '.').replace('\\', '.').replace(".class", "");
 	             addClassNameToCache(className);
 	         }
+	         jarFile.close();
 		} catch (IOException e ) {
+		} finally {
+			if (jarFile !=null ) try {jarFile.close();} catch (Exception e) {};
 		}
 		cachedPath.put(path, "true");
 		return ;
