@@ -71,10 +71,22 @@ public class ClassMetaInfoManager  {
 			Set<String> dependentClasses = metaInfo.getDependents();
 			if (dependentClasses.contains(className)) {
 				names.add(metaInfo.getName());
+				names.addAll(getAllSubName(metaInfo.getName()));
 			}
 		}
 		return names;
 	}
+	
+	public List<String> getAllSubName(String className) {
+		List<String> result = new ArrayList<String>();
+		ClassInfo metaInfo = metaInfos.get(className);
+		for (String subName : metaInfo.getSubNames()) {
+			result.add(subName);
+			result.addAll(getAllSubName(subName));
+		}
+		return result;
+	}
+	
 	
 	public List<String> getTypeHierarchy(String className) {
 		List<String> result = new ArrayList<String>();
@@ -108,14 +120,21 @@ public class ClassMetaInfoManager  {
 		int offsetBase = superNames.size();
 		result.add(emptySpace.substring(0,offsetBase*4) + binName + " - " + pkgName);
 		
-		for (String subName : metaInfo.getSubNames()) {
-			splitNames = splitClassName(subName);
-			pkgName = splitNames[0];
-			binName = splitNames[1];
-			result.add(emptySpace.substring(0,(offsetBase+1)*4) + binName + " - " + pkgName);
-		}
+		buildSubTypeHierarchy(metaInfo, result,offsetBase);
 		
 		return result;
+	}
+	
+	private void buildSubTypeHierarchy(ClassInfo metaInfo,List<String> result,int offsetBase) {
+		String emptySpace = "                                                       ";
+		for (String subName : metaInfo.getSubNames()) {
+			String[] splitNames = splitClassName(subName);
+			String pkgName = splitNames[0];
+			String binName = splitNames[1];
+			result.add(emptySpace.substring(0,(offsetBase+1)*4) + binName + " - " + pkgName);
+			ClassInfo subMetaInfo = metaInfos.get(subName);
+			buildSubTypeHierarchy(subMetaInfo,result,offsetBase+1);
+		}
 	}
 	
 	private String[] splitClassName(String className) {
