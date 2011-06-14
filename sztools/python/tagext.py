@@ -1,5 +1,6 @@
 import sqlite3 as sqlite
 import vim,sys,os
+from time import time
 
 class TagExt(object):
 
@@ -19,8 +20,8 @@ class TagExt(object):
         vim.command("set bufhidden=delete")
         vim.command("autocmd BufLeave <buffer>  python tagext.save_tag()")
         tag, comment = self.load_tag()
-        #tag_pool = self.load_tag_pool()
-        present = self.get_tag_present(tag,comment)
+        tag_pool = self.load_tag_pool()
+        present = self.get_tag_present(tag,comment,tag_pool)
         output(present)
 
     def save_tag(self):
@@ -32,26 +33,43 @@ class TagExt(object):
             line = line.strip()
             line=line.decode(codepage)
             if line[0:4]=="tag:" :
-                tag=line[4:]
+                tag=line[4:].strip()
             elif  line.startswith("="):
                 continue
             elif line.startswith("comment:"):
-                comment=line[8:]
-        sql1 = "delete from tagext where file_path = ?"
-        sql2 = "insert into tagext(file_path,tag,comment) values(?,?,?)"
-        self.tag_db.update(sql1,(self.file_path,))
+                comment=line[8:].strip()
+                currentLabel = "comment"
+            elif line.startswith("all tags:"):
+                alltags = line[9:].strip()
+                currentLabel = "alltags"
+            else :
+                if currentLabel == "alltags" :
+                    alltags = alltags + " " + line
+                elif currentLabel == "comment" :
+                    comment = comment + "\n" + line
+
+        sql_arr = [ "delete from tagext where file_path = ?" ]
+        params_arr = [(self.file_path,)]
+
         if tag != None and tag.strip() !="":
-            self.tag_db.update(sql2,(self.file_path,tag,comment))
+            sql_arr.append("insert into tagext(file_path,tag,comment) values(?,?,?)")
+            params_arr.append((self.file_path,tag,comment))
             self.all_buf_tag_info[self.file_path] = (tag,comment)
         else :
             self.all_buf_tag_info[self.file_path] = ("","")
+
+        if alltags == None :
+            alltags == ""
+        sql_arr.append("update tagpool set all_tags=?")
+        params_arr.append((alltags,))
+        self.tag_db.batchUpdate(sql_arr, params_arr)
 
     def load_tag(self):
         buf_tag_info = self.all_buf_tag_info.get(self.file_path)
         if buf_tag_info == None :
             sql = "select tag,comment from tagext where file_path = ? "
             rows = self.tag_db.query(sql,(self.file_path,))
-            if len(rows) > 0 :
+            if rows :
                 tag,comment = rows[0]
             else :
                 tag,comment = "",""
@@ -61,10 +79,35 @@ class TagExt(object):
         return tag,comment
 
     def load_tag_pool(self):
-        return "aa bb cc dd ee"
+        all_tags = set()
+        sql = "select tag from tagext"
+        rows = self.tag_db.query(sql)
+        self.build_all_tags(all_tags,rows)
+                
+        sql = "select all_tags from tagpool"
+        rows = self.tag_db.query(sql)
+        self.build_all_tags(all_tags,rows)
 
-    def get_tag_present(self,tag=None, comment=None):
-        return "tag:%s\ncomment:%s" % (tag,comment)
+        return all_tags
+
+    def build_all_tags(self,all_tags, rows):
+        if not rows : 
+            return 
+        for row in rows :
+            items = [item for item in row[0].split(" ") if item !=""]
+            for item in items :
+                all_tags.add(item)
+
+    def get_tag_present(self,tag, comment, all_tags):
+        lines = []
+        line = ""
+        for item in all_tags :
+            line = line + item + " "
+            if len(line) > 70 :
+                lines.append(line)
+                line = ""
+        lines.append(line)
+        return "tag: %s\nall tags: %s\ncomment: %s" % (tag,"\n".join(lines),comment)
 
     def open_buf(self):
         row,col = vim.current.window.cursor
@@ -101,6 +144,7 @@ class TagExt(object):
                 buf_info = buf_infos.get(file_path) 
                 if buf_info != None :
                     buf_info.tags = tag_arr
+                    buf_info.comment = comment
                 for item in tag_arr: 
                     all_tag.add(item)
             lines = []
@@ -110,6 +154,10 @@ class TagExt(object):
                     if buf_info.hasTag(tag):
                         lines.append("    " + str(buf_info))
                 lines.append("")
+            lines.append("no tag bufs:")
+            for buf_info in buf_infos.values() :
+                if not buf_info.tags :
+                    lines.append("    " + str(buf_info))
             output(lines)
         else :
             output(buffers)
@@ -121,19 +169,24 @@ class BufTagInfo(object):
         self.file_path = file_path
         self.bufnr =bufnr
         self.attr = attr
-        self.lineNum = lineNum
+        self.lineNum = lineNum.replace(" ","")
         self.tags = []
-
-    def setTags(self,values):
-        self.tags = values
+        self.comment = ""
 
     def hasTag(self, name):
         if name in self.tags :
             return True
         return False
 
+    def relpath(self, path):
+        if path.startswith(os.getcwd()) :
+            return os.path.relpath(path)
+        else :
+            return path
+
     def __str__(self):
-        return "%s %s %s %s " % (self.bufnr, self.attr, self.file_path, self.lineNum)
+        rtl_path = self.relpath(self.file_path)
+        return "%s %s %s %s (%s)" % (self.bufnr, self.attr, rtl_path, self.lineNum,self.comment)
          
 class TagDb(object):
 
@@ -142,14 +195,18 @@ class TagDb(object):
             data_file_name = "tagext.dat"
         self.data_file_path = os.path.join(getDataHome(), data_file_name)
         if not os.path.exists(self.data_file_path) :
-            initTableSql="create table tagext (id integer primary key ,  \
-              file_path varchar(200),tag varchar(200),comment varchar(2000))"
             path=os.path.dirname(self.data_file_path)
             if not os.path.exists(path):
               os.makedirs(path)
             conn=self.getConn()
             cur=conn.cursor()
+            initTableSql="create table tagext (id integer primary key ,  \
+              file_path varchar(200),tag varchar(200),comment varchar(2000))"
             cur.execute(initTableSql)
+            initTableSql="create table tagpool (all_tags varchar(2000))"
+            cur.execute(initTableSql)
+            initDataSql="insert into tagpool values('')"
+            cur.execute(initDataSql)
             conn.commit()
             conn.close()
 
@@ -161,6 +218,15 @@ class TagDb(object):
         conn=self.getConn()
         cur=conn.cursor()
         cur.execute(updateSql,parameters)
+        conn.commit()
+        conn.close()
+
+    def batchUpdate(self, sql_arr, parameter_arr):
+        conn=self.getConn()
+        cur=conn.cursor()
+        sql_len = len(sql_arr)
+        for i in range(0,sql_len):
+            cur.execute(sql_arr[i],parameter_arr[i])
         conn.commit()
         conn.close()
 
