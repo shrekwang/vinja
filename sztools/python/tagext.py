@@ -26,6 +26,8 @@ class TagExt(object):
     def save_tag(self):
         codepage=sys.getdefaultencoding()
         cur_buf = vim.current.buffer
+        tag = None
+        comment = None
         for line in cur_buf:
             line = line.strip()
             line=line.decode(codepage)
@@ -38,9 +40,11 @@ class TagExt(object):
         sql1 = "delete from tagext where file_path = ?"
         sql2 = "insert into tagext(file_path,tag,comment) values(?,?,?)"
         self.tag_db.update(sql1,(self.file_path,))
-        print self.file_path, tag, comment
-        self.tag_db.update(sql2,(self.file_path,tag,comment))
-        self.all_buf_tag_info[self.file_path] = (tag,comment)
+        if tag != None and tag.strip() !="":
+            self.tag_db.update(sql2,(self.file_path,tag,comment))
+            self.all_buf_tag_info[self.file_path] = (tag,comment)
+        else :
+            self.all_buf_tag_info[self.file_path] = ("","")
 
     def load_tag(self):
         buf_tag_info = self.all_buf_tag_info.get(self.file_path)
@@ -62,25 +66,74 @@ class TagExt(object):
     def get_tag_present(self,tag=None, comment=None):
         return "tag:%s\ncomment:%s" % (tag,comment)
 
+    def open_buf(self):
+        row,col = vim.current.window.cursor
+        line = vim.current.buffer[row-1]
+        pat = re.compile("^\s+(?P<bufnr>\d+)\s+.*")
+        result = pat.search(line)
+        if result :
+            bufnr = result.group("bufnr")
+            vim.command("bw!")
+            vim.command("buffer %s" % bufnr) 
+
     def list_buf(self):
         buffers = vim.eval("GetBufList()")
         vim.command("call SwitchToSzToolView('taglist')")    
         vim.command("set bufhidden=delete")
-        all_listing_tags = []
-        info = []
+        vim.command("setlocal cursorline")
+        vim.command("nnoremap <buffer><silent><cr>   :python tagext.open_buf()<cr>")
+        buf_infos = {}
         for buf in buffers.split("\n") :
             if buf.strip() == "" :
                 continue
-            attr, file_name, lineNum = buf.split('"')
-            info.append(file_name)
-        sql = "select tag,comment,file_path from tagext \
-                where file_path in ('%s') " % ("','".join(info))
+            bufnr_attr, file_name, lineNum = buf.split('"')
+            file_path = os.path.join(os.getcwd(),file_name)
+            bufnr, attr =[item for item in  bufnr_attr.split(" ") if item !=""]
+            buf_info = BufTagInfo(bufnr, file_path, attr, lineNum)
+            buf_infos[file_path] = buf_info
+        path_params = "','".join([file_path for file_path in buf_infos])
+        sql = "select tag,comment,file_path from tagext where file_path in ('%s') " % path_params
         rows = self.tag_db.query(sql)
         if (len(rows) > 0) :
+            all_tag = set()
             for tag,comment, file_path in rows :
-                tag_arr = tag.split(" ")
+                tag_arr = [item.strip() for item in tag.split(" ") if item.strip() !=""]
+                buf_info = buf_infos.get(file_path) 
+                if buf_info != None :
+                    buf_info.tags = tag_arr
+                for item in tag_arr: 
+                    all_tag.add(item)
+            lines = []
+            for tag in all_tag :
+                lines.append(tag)
+                for buf_info in buf_infos.values() :
+                    if buf_info.hasTag(tag):
+                        lines.append("    " + str(buf_info))
+                lines.append("")
+            output(lines)
         else :
             output(buffers)
+        vim.command("setlocal nomodifiable")
+
+class BufTagInfo(object):
+
+    def __init__(self, bufnr, file_path, attr = "", lineNum=""):
+        self.file_path = file_path
+        self.bufnr =bufnr
+        self.attr = attr
+        self.lineNum = lineNum
+        self.tags = []
+
+    def setTags(self,values):
+        self.tags = values
+
+    def hasTag(self, name):
+        if name in self.tags :
+            return True
+        return False
+
+    def __str__(self):
+        return "%s %s %s %s " % (self.bufnr, self.attr, self.file_path, self.lineNum)
          
 class TagDb(object):
 

@@ -66,7 +66,7 @@ endfunction
 
 function! GetBufList()
   redir => bufoutput
-  silent buffers!
+  silent buffers
   redir END
   return bufoutput
 endfunction
@@ -531,5 +531,6 @@ nmap <silent><leader>zs  :python startfile()<cr>
 nmap <silent><leader>zv  <C-Q>
 nmap <silent><leader>zw  :w<cr>
 
-"nmap <silent><leader>ff  :python openInFirefox()<cr>
+nmap <silent><leader>zt  :call Tagext()<cr>
+nmap <silent><leader>zl  :call TagList()<cr>
 nmap <silent><leader>lw  :call LocateFile()<cr>
