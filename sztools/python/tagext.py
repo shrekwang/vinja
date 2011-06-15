@@ -126,12 +126,15 @@ class TagExt(object):
         vim.command("setlocal cursorline")
         vim.command("nnoremap <buffer><silent><cr>   :python tagext.open_buf()<cr>")
         buf_infos = {}
+        pat = re.compile("^\s*(?P<bufnr>\d+)")
         for buf in buffers.split("\n") :
             if buf.strip() == "" :
                 continue
             bufnr_attr, file_name, lineNum = buf.split('"')
             file_path = os.path.join(os.getcwd(),file_name)
-            bufnr, attr =[item for item in  bufnr_attr.split(" ") if item !=""]
+            search_result = pat.search(bufnr_attr)
+            bufnr = search_result.group("bufnr")
+            attr = bufnr_attr[search_result.end():]
             buf_info = BufTagInfo(bufnr, file_path, attr, lineNum)
             buf_infos[file_path] = buf_info
         path_params = "','".join([file_path for file_path in buf_infos])
@@ -186,7 +189,10 @@ class BufTagInfo(object):
 
     def __str__(self):
         rtl_path = self.relpath(self.file_path)
-        return "%s %s %s %s (%s)" % (self.bufnr, self.attr, rtl_path, self.lineNum,self.comment)
+        if self.comment  :
+            return "%s %s %s  (%s)" % (self.bufnr, self.attr, rtl_path, self.comment)
+        else :
+            return "%s %s %s " % (self.bufnr, self.attr, rtl_path )
          
 class TagDb(object):
 

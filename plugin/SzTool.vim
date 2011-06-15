@@ -258,7 +258,6 @@ function! Tagext()
 endfunction
 
 function! TagList()
-  print "shit"
   call RunSzPyfile("tagext.py")
   python TagExt.runApp()
   python tagext.list_buf()
