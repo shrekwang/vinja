@@ -3,6 +3,7 @@ package com.google.code.vimsztool.server;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import com.google.code.vimsztool.compiler.CompileResultInfo;
@@ -28,7 +29,7 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		} else {
 			ClassMetaInfoManager metaInfoManager = cc.getClassMetaInfoManager();
 			String targetClassName=cc.buildClassName(sourceFile);
-			List<String> dependentClasses = metaInfoManager.getDependentClasses(targetClassName);
+			Set<String> dependentClasses = metaInfoManager.getDependentClasses(targetClassName);
 			List<String> srcFileList = new ArrayList<String>();
 			for (String depClass : dependentClasses ) {
 				String rtlPathName = depClass.replace(".", "/") + ".java";

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,8 +66,8 @@ public class ClassMetaInfoManager  {
 		return metaInfo;
 	}
 	
-	public List<String> getDependentClasses(String className) {
-		List<String> names = new ArrayList<String>();
+	public Set<String> getDependentClasses(String className) {
+		Set<String> names = new HashSet<String>();
 		for (ClassInfo metaInfo : metaInfos.values() ) {
 			Set<String> dependentClasses = metaInfo.getDependents();
 			if (dependentClasses.contains(className)) {
@@ -77,8 +78,8 @@ public class ClassMetaInfoManager  {
 		return names;
 	}
 	
-	public List<String> getAllSubName(String className) {
-		List<String> result = new ArrayList<String>();
+	public Set<String> getAllSubName(String className) {
+		Set<String> result = new HashSet<String>();
 		ClassInfo metaInfo = metaInfos.get(className);
 		for (String subName : metaInfo.getSubNames()) {
 			result.add(subName);

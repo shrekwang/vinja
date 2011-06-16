@@ -4,6 +4,11 @@ call NERDTreeAddKeyMap({
        \ 'quickhelpText': 'yank current node to buffer' })
 
 call NERDTreeAddKeyMap({
+       \ 'key': 'ya',
+       \ 'callback': 'NERDTreeYankPath',
+       \ 'quickhelpText': 'yank current node path to default register' })
+
+call NERDTreeAddKeyMap({
        \ 'key': 'dd',
        \ 'callback': 'NERDTreeCutNode',
        \ 'quickhelpText': 'cut current node to buffer' })
@@ -29,6 +34,14 @@ endfunction
 
 function! NERDTreeCutNode()
   call NodeToBuf("cut")
+endfunction
+
+function! NERDTreeYankPath()
+    let curNode = g:NERDTreeFileNode.GetSelected()
+    if curNode != {}
+        echomsg 'node: ' . curNode.path.str() . " path yanked to @0. "
+        let @" = curNode.path.str()
+    endif
 endfunction
 
 function! NERDTreeRmNode()
