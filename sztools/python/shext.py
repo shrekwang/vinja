@@ -1,4 +1,4 @@
-import os,os.path,fnmatch,shutil
+import os,os.path,fnmatch,shutil,shlex
 import glob,time,vim,re, sys, logging
 from subprocess import Popen, PIPE
 from optparse import OptionParser 
@@ -816,8 +816,9 @@ class Shext(object):
         return True
 
     def parseCmd(self,cmdLine):
-        cmdLine = cmdLine.replace("\ ","$$").strip()
-        cmdArray = [ item.replace("$$"," ") for item in re.split(r"\s+",cmdLine)]
+        #cmdLine = cmdLine.replace("\ ","$$").strip()
+        #cmdArray = [ item.replace("$$"," ") for item in re.split(r"\s+",cmdLine)]
+        cmdArray = shlex.split(cmdLine)
         result = []
         for item in cmdArray :
             #replace the $[1] $[1:2] like variables
@@ -886,9 +887,21 @@ class Shext(object):
             if len(file_list) == 1 and  os.path.isfile(file_list[0]) :
                 cmdArray[0] = os.path.abspath(file_list[0])
             if os.name == "posix" :
-                cmdResult = Popen(cmdArray ,stdin=PIPE, stdout=PIPE, stderr=PIPE).communicate()
+                p = Popen(cmdArray ,stdin=PIPE, stdout=PIPE, stderr=PIPE)
             else :
-                cmdResult = Popen(cmdArray ,stdin=PIPE, stdout=PIPE, stderr=PIPE,shell=True).communicate()
+                p = Popen(cmdArray ,stdin=PIPE, stdout=PIPE, stderr=PIPE,shell=True)
+
+            wait_time = 0
+            while p.poll() == None :
+                time.sleep(0.1)
+                wait_time += 1
+                if wait_time >= 1 * 60 * 10 :
+                    break
+            if p.poll() is None:
+              p.kill()
+              raise OSError("time out")
+            cmdResult = p.communicate()
+
         except (OSError,ValueError) , msg:
             Shext.stdout(msg)
         else :
