@@ -145,7 +145,6 @@ public class PackageInfo {
 		while (it.hasNext()) {
 			File file = (File)it.next();
 			String relativeName = file.getAbsolutePath().substring(outputDir.length()+1);
-		    if (relativeName.indexOf("$") > -1) continue;
 			String className = relativeName.replace('/', '.').replace('\\', '.').replace(".class", "");
 		    addClassNameToCache(className);
 		    dstClassNames.add(className);

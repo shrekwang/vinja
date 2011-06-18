@@ -13,6 +13,7 @@ public class ClassInfo {
 	private Set<String> subNames = new HashSet<String>();
 	private List<Integer> lineNums = new ArrayList<Integer>();
 	private Set<String> dependents = new HashSet<String>();
+	private Set<String> innerClasses = new HashSet<String>();
 	
 	public String getName() {
 		return name;
@@ -42,6 +43,14 @@ public class ClassInfo {
 	public void addDependent(String className) {
 		this.dependents.add(className);
 	}
+	public void addInnerClass(String className) {
+		this.innerClasses.add(className);
+	}
+	
+	public Set<String> getInnerClasses() {
+		return this.innerClasses;
+	}
+	
 	public List<Integer> getLineNums() {
 		return lineNums;
 	}

@@ -8,6 +8,7 @@ import com.sun.jdi.request.BreakpointRequest;
 public class Breakpoint {
 	
 	private String mainClass;
+	private String innerClass;
 	private int lineNum;
 	private List<BreakpointRequest> requests = new ArrayList<BreakpointRequest>();
 	
@@ -15,9 +16,19 @@ public class Breakpoint {
 		this.mainClass = className;
 		this.lineNum = lineNum;
 	}
+	
+	public Breakpoint(String mainClass, String innerClass, int lineNum) {
+		this.mainClass = mainClass;
+		this.innerClass = innerClass;
+		this.lineNum = lineNum;
+	}
 
 	public String getMainClass() {
 		return mainClass;
+	}
+	
+	public String getInnerClass() {
+		return this.innerClass;
 	}
 
 	public int getLineNum() {

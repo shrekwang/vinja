@@ -259,7 +259,12 @@ public class ClassInfoUtil {
 			} catch (ClassNotFoundException e) {
 				try {
 					aClass = classLoader.loadClass("java.lang."+className);
-				} catch (ClassNotFoundException e2) { }
+				} catch (ClassNotFoundException e2) {
+					try {
+						String mainClass = ctx.buildClassName(sourceFile);
+						aClass = classLoader.loadClass(mainClass+"$"+className);
+					} catch (ClassNotFoundException e3) { }
+				}
 			}
 			if (aClass != null) break;
 		}

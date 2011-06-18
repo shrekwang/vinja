@@ -46,21 +46,29 @@ public class BreakpointManager {
 		CompilerContext ctx = debugger.getCompilerContext();
 		if (ctx == null) return ;
 		
-		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
-		ClassInfo metaInfo = cmm.getMetaInfo(mainClass);
+		ClassMetaInfoManager cmm =ctx.getClassMetaInfoManager();
 		
 		List<Breakpoint> invalidBreakPoints = new ArrayList<Breakpoint>();
 		
 		for (Breakpoint bp : allBreakpoints) {
 			if (bp.getMainClass().equals(mainClass)) {
-				if (!metaInfo.getLineNums().contains(bp.getLineNum())) {
+				if (!classContainsLineNum(cmm, mainClass, bp.getLineNum())) {
 					invalidBreakPoints.add(bp);
 				}
 			}
 		}
 		allBreakpoints.removeAll(invalidBreakPoints);
-	
 		
+	}
+	
+	public boolean classContainsLineNum(ClassMetaInfoManager cmm, String className, int lineNum) {
+		ClassInfo metaInfo = cmm.getMetaInfo(className);
+		if (metaInfo.getLineNums().contains(lineNum)) return true;
+		for (String innerClassName : metaInfo.getInnerClasses()) {
+			ClassInfo innerClass = cmm.getMetaInfo(innerClassName);
+			if (innerClass !=null && innerClass.getLineNums().contains(lineNum)) return true;
+		}
+		return false;
 	}
 
 	public String addBreakpoint(String mainClass, int lineNum) {
@@ -69,12 +77,21 @@ public class BreakpointManager {
 		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
 		
 		ClassInfo metaInfo = cmm.getMetaInfo(mainClass);
-		if (metaInfo !=null && !metaInfo.getLineNums().contains(lineNum)) {
-			return "failure";
+		if (metaInfo == null) return "failure";
+		Breakpoint breakpoint = null;
+		if (!metaInfo.getLineNums().contains(lineNum)) {
+			for (String innerclassName : metaInfo.getInnerClasses()	) {
+				ClassInfo innerClassInfo = cmm.getMetaInfo(innerclassName);
+				if (innerClassInfo !=null && innerClassInfo.getLineNums().contains(lineNum)) {
+					breakpoint = new Breakpoint(mainClass, innerclassName, lineNum);
+					break;
+				}
+			}
+		} else {
+			breakpoint = new Breakpoint(mainClass, lineNum);
 		}
 		
-		Breakpoint breakpoint = new Breakpoint(mainClass, lineNum);
-		
+		if (breakpoint == null) return "failure";
 		allBreakpoints.add(breakpoint);
 		tryCreateBreakpointRequest(breakpoint);
 		return "success";
@@ -108,10 +125,14 @@ public class BreakpointManager {
 		HashSet<String> names = new HashSet<String>();
 		
 		for (Breakpoint bp : allBreakpoints) {
-			if (names.contains(bp.getMainClass())) continue;
-			names.add(bp.getMainClass());
+			String className = bp.getMainClass();
+			if (bp.getInnerClass() !=null) {
+				className = bp.getInnerClass();
+			}
+			if (names.contains(className)) continue;
+			names.add(className);
 			ClassPrepareRequest classPrepareRequest = erm.createClassPrepareRequest();
-			classPrepareRequest.addClassFilter(bp.getMainClass()+"*");
+			classPrepareRequest.addClassFilter(className);
 			classPrepareRequest.addCountFilter(1);
 			classPrepareRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 			classPrepareRequest.enable();
@@ -157,15 +178,21 @@ public class BreakpointManager {
 	public void tryCreateBreakpointRequest(String className) {
 	
 		for (Breakpoint bp : allBreakpoints) {
-			if (bp.getMainClass().equals(className)) {
+			if (bp.getMainClass().equals(className)
+					|| (bp.getInnerClass()!=null && bp.getInnerClass().equals(className))) {
 				tryCreateBreakpointRequest(bp);
 			}
+			
 		}
 	}
 
 	public void tryCreateBreakpointRequest(Breakpoint breakpoint) {
 
 		String className = breakpoint.getMainClass();
+		if (breakpoint.getInnerClass() !=null) {
+			className = breakpoint.getInnerClass();
+		}
+		
 		int lineNum = breakpoint.getLineNum();
 		
 		Debugger debugger = Debugger.getInstance();

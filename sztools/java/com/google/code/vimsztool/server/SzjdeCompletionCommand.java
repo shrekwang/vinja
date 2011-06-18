@@ -53,6 +53,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		Collections.sort(classNameList, new ClassNameComparator());
 		StringBuilder sb=new StringBuilder();
 		for (String name : classNameList) {
+			if (name.indexOf("$") > -1 ) continue;
 			sb.append(name).append("\n");
 		}
 		return sb.toString();

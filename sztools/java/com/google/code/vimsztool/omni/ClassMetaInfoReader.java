@@ -95,6 +95,7 @@ public class ClassMetaInfoReader implements AnnotationVisitor, SignatureVisitor,
 
 	public void visitInnerClass(final String name, final String outerName, final String innerName,
 			final int access) {
+		this.classInfo.addInnerClass(name);
 	}
 
 	public void visitOuterClass(final String owner, final String name, final String desc) {
@@ -254,6 +255,7 @@ public class ClassMetaInfoReader implements AnnotationVisitor, SignatureVisitor,
 	public void visitInnerClassType(final String name) {
 		signatureClassName = signatureClassName + "$" + name;
 		addInternalName(signatureClassName);
+		System.out.println(signatureClassName);
 	}
 
 	public void visitTypeArgument() {
