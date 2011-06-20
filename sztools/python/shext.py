@@ -818,6 +818,7 @@ class Shext(object):
     def parseCmd(self,cmdLine):
         #cmdLine = cmdLine.replace("\ ","$$").strip()
         #cmdArray = [ item.replace("$$"," ") for item in re.split(r"\s+",cmdLine)]
+        cmdLine = cmdLine.replace("\\","/").strip()
         cmdArray = shlex.split(cmdLine)
         result = []
         for item in cmdArray :
