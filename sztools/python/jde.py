@@ -1595,17 +1595,30 @@ class Jdb(object):
         self.suspendBufnr = -1
         self.suspendBufName = ""
         self.display = True
+        self.cmd_buf_list = []
+        self.out_buf_list = []
         self.ivp = InspectorVarParser()
 
     def show(self):
         self.display = True
         vim.command("call SwitchToSzToolView('Jdb')")
         vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
+        if self.out_buf_list :
+            output(self.out_buf_list)
         vim.command("call SwitchToSzToolView('Jdb')")
         buffer=vim.current.buffer
-        output(">",buffer,False)
-        vim.current.window.cursor = (1,1)
-        vim.command("startinsert")
+
+        if self.cmd_buf_list :
+            output(self.cmd_buf_list)
+            cur_row = len(self.cmd_buf_list)
+            cur_col = len(self.cmd_buf_list[-1])
+        else :
+            output(">",buffer,False)
+            cur_row =1 
+            cur_col =1
+        
+        vim.current.window.cursor = (cur_row,cur_col)
+        #vim.command("startinsert")
         vim.command("imap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>")
         vim.command("nnoremap <buffer><silent><cr>   :python jdb.executeCmd(insertMode=False)<cr>")
 
@@ -1792,6 +1805,12 @@ class Jdb(object):
             return
 
         if cmdLine.startswith("hide"):
+            vim.command("call SwitchToSzToolView('Jdb')")
+            lines = [line.strip() for line in vim.current.buffer]
+            self.cmd_buf_list = lines
+            vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
+            lines = [line.strip() for line in vim.current.buffer]
+            self.out_buf_list = lines
             self.closeBuffer()
             return 
 
