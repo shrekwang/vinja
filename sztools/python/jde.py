@@ -1366,8 +1366,9 @@ class SzJdeCompletion(object):
 
         pattern = r"\b%s\w*\b" % base.replace("*","\w*")
         matches = re.findall(pattern,bufferText)
-        if not matches :
-            matches = re.findall(pattern,bufferText,re.IGNORECASE)
+        # dont' find matches in wrong case
+        #if not matches :
+        #    matches = re.findall(pattern,bufferText,re.IGNORECASE)
         completeList = []
         if matches :
             for item in matches :
@@ -1386,9 +1387,46 @@ class SzJdeCompletion(object):
             return []
         for item in matches :
             completeList.add(item)
-        result = difflib.get_close_matches(base, completeList)
+        result = SzJdeCompletion.getCloseMatches(base,completeList)
         return result
 
+    @staticmethod
+    def getCloseMatches(base,completeList):
+        result = [] 
+        for item in completeList :
+            if SzJdeCompletion.simpleMatch(item,base):
+                result.append(item)
+        if result :
+            return result
+        return difflib.get_close_matches(base, completeList)
+
+    @staticmethod
+    def simpleMatch(value,pat):
+        pat_len=len(pat)
+        value_len = len(value)
+        if value_len < pat_len :
+            return False
+        # first char must same
+        if value[0] != pat[0] :
+            return False
+
+        value_index = 0
+        noMatch = False
+        for i in range(0,pat_len):
+            while value[value_index] != pat[i] :
+                if value_index >= value_len - 1  :
+                    noMatch = True
+                    break
+                value_index += 1
+            value_index += 1
+            if value_index >= value_len - 1  :
+                noMatch = True
+                break
+            if noMatch :
+                break
+        if noMatch :
+            return False
+        return True
 
     @staticmethod
     def getMemberCompleteResult(completionType,base):
@@ -1465,7 +1503,7 @@ class SzJdeCompletion(object):
 
         if len(result) == 0 :
             names = list(set([ mname.lower() for mtype,mname,mparams,mreturntype in memberInfos]))
-            matched_names = difflib.get_close_matches(base,names)
+            matched_names = SzJdeCompletion.getCloseMatches(base,names)
             for memberInfo in memberInfos :
                 mtype,mname,mparams,mreturntype = memberInfo
                 if mname.lower() in matched_names: 
