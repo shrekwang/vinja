@@ -1413,19 +1413,17 @@ class SzJdeCompletion(object):
         value_index = 0
         noMatch = False
         for i in range(0,pat_len):
-            while value[value_index] != pat[i] :
-                if value_index >= value_len - 1  :
-                    noMatch = True
-                    break
+            if value[value_index] == pat[i] :
                 value_index += 1
-            value_index += 1
-            if value_index >= value_len - 1  :
-                noMatch = True
-                break
+            else :
+                while value[value_index] != pat[i] :
+                    if value_index >= value_len - 1  :
+                        noMatch = True
+                        break
+                    value_index += 1
             if noMatch :
-                break
-        if noMatch :
-            return False
+                return False
+
         return True
 
     @staticmethod
@@ -1982,5 +1980,4 @@ class InspectorVarParser():
 if __name__ == "__main__" :
     #ivp = InspectorVarParser()
     #result = ivp.generate("aa.what('sf') = saf")
-    #print result
     pass
