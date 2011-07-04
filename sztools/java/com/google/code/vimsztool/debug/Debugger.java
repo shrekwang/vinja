@@ -337,7 +337,18 @@ public class Debugger {
 			+port+",server=y,suspend=y");
 		cmd.append(" -cp " + getClassPath(classPathXml));
 		cmd.append(" ");
-		cmd.append(mainClass);
+		if (opts !=null && opts.size() > 0) {
+			for (String opt : opts ) {
+				cmd.append(opt).append(" ");
+			}
+		}
+		cmd.append(mainClass).append(" ");
+		
+		if (args!=null && args.size() > 0) {
+			for (String arg : args ) {
+				cmd.append(arg).append(" ");
+			}
+		}
 		
 		String projectRoot = new File(classPathXml).getParent();
 
