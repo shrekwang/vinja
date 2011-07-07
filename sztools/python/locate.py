@@ -289,4 +289,26 @@ class TypeHierarchyContentManager(object):
 
         EditUtil.searchAndEdit(self.source_file, defClassName,self.memberName)
 
+class JavaClassNameContentManager(object):
 
+    def __init__(self):
+        self.current_file_name = vim.current.buffer.name
+        if not self.current_file_name :
+            cur_dir = os.getcwd()
+            self.current_file_name = os.path.join(cur_dir,"fake")
+        self.classPathXml = ProjectManager.getClassPathXml(self.current_file_name)
+        self.show_on_open = False
+
+    def get_init_prompt(self):
+        return ""
+
+    def search_content(self,search_pat):
+        search_pat = search_pat[:-1]
+        if not search_pat :
+            return []
+        classNameList = Talker.getClassList(search_pat,self.classPathXml).split("\n")
+        return classNameList
+
+    def open_content(self,line,mode):
+        className = line.strip()
+        EditUtil.searchAndEdit(self.current_file_name, className,"")

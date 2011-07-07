@@ -39,5 +39,30 @@ public class VjdeUtil {
 			e.printStackTrace();
 		}
 	}
+	
+	public static boolean simpleMatch(String value, String pat) {
+        int patLen = pat.length();
+        int valueLen = value.length();
+        if (valueLen < patLen ) return false;
+        if (value.charAt(0) != pat.charAt(0)) return false;
+
+        int valueIndex = 0;
+        boolean noMatch = false;
+        for (int i=0; i<patLen; i++) {
+            if ( value.charAt(valueIndex) == pat.charAt(i)) {
+                valueIndex++;
+            } else {
+                while (value.charAt(valueIndex) != pat.charAt(i)) {
+                    if ( valueIndex >= valueLen - 1 ) {
+                        noMatch = true;
+                        break;
+                    }
+                    valueIndex++;
+                }
+            }
+            if (noMatch) return false;
+        }
+        return true;
+    }
 
 }

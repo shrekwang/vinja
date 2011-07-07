@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.util.VjdeUtil;
 
 
 public class PackageInfo {
@@ -69,25 +70,50 @@ public class PackageInfo {
 	}
 	
 	public List<String> findClass(String nameStart) {
+		System.out.println("nameStart is " + nameStart);
+		
 		List<String> result = new ArrayList<String>();
         String patStr = nameStart.replace("*",".*") + ".*";
         Pattern pattern = Pattern.compile(patStr);
 	        
 		for (String pkgname : cache.keySet()) {
 			Set<String> classNames = cache.get(pkgname);
-			for (String className : classNames) {
-				if (pattern.matcher(className).matches()) {
-					if (pkgname.equals("")) {
-						result.add(className);
-					} else {
-						result.add(pkgname+"."+className);
-					}
+			result.addAll(getMatchedClassName(classNames, nameStart, pattern, pkgname));
+		}
+		return result;
+	}
+	
+	public List<String> findClassByQualifiedName(String name) {
+		String[] splits = splitClassName(name);
+		String pkgName = splits[0];
+		String className = splits[1];
+        String patStr = className.replace("*",".*") + ".*";
+        Pattern pattern = Pattern.compile(patStr);
+		Set<String> classNames = cache.get(pkgName);
+		return getMatchedClassName(classNames, className, pattern, pkgName);
+	}
+	
+	public List<String> getMatchedClassName(Set<String> set, String plainPat,
+			Pattern pattern,String pkgName) {
+		List<String> result = new ArrayList<String>();
+		for (String className : set) {
+			if ( pattern.matcher(className).matches()) {
+				if (pkgName.equals("")) {
+					result.add(className);
+				} else {
+					result.add(pkgName +"."+className);
 				}
 			}
 		}
 		return result;
 	}
+	
     
+	private String[] splitClassName(String className) {
+		int dotPos = className.lastIndexOf(".");
+		if (dotPos < 0 ) return new String[] {"",className};
+		return new String[] {className.substring(0,dotPos) , className.substring(dotPos+1)};
+	}
 	
 	public List<String> findPackage(String className) {
 		List<String> result = new ArrayList<String>();

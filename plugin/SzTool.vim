@@ -369,6 +369,12 @@ function LocateMember()
   python QuickLocater.runApp(membermgr)
 endfunction
 
+function LocateClass()
+  call RunSzPyfile("locate.py")
+  python classnamemgr = JavaClassNameContentManager()
+  python QuickLocater.runApp(classnamemgr)
+endfunction
+
 function LocateHierarchy()
   call RunSzPyfile("locate.py")
   python method = Parser.parseCurrentMethodName()
@@ -482,6 +488,7 @@ function! Jdext()
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>pt  :python ProjectManager.projectTree()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>go  :call LocateMember()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gt  :call LocateHierarchy()<cr>
+  autocmd BufEnter  *         nmap <buffer><silent><leader>gc  :call LocateClass()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:python EditUtil.tipMethodParameter()<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:python VimUtil.closeJdeConsole()<cr>

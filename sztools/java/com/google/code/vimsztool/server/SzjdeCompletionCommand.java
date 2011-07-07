@@ -49,7 +49,12 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		if (classPathXml ==null || nameStart == null) return "";
 		CompilerContext ctx = getCompilerContext(classPathXml);
 		PackageInfo packageInfo = ctx.getPackageInfo();
-		List<String> classNameList=packageInfo.findClass(nameStart);
+		List<String> classNameList = null;
+		if (nameStart.indexOf(".") > -1) {
+			classNameList=packageInfo.findClassByQualifiedName(nameStart);
+		} else {
+			classNameList=packageInfo.findClass(nameStart);
+		}
 		Collections.sort(classNameList, new ClassNameComparator());
 		StringBuilder sb=new StringBuilder();
 		for (String name : classNameList) {
@@ -60,7 +65,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 	}
 	
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	public String completeMember(String classPathXml, String completionType) {
 		String[] classNameList = params.get("classnames").split(",");
 		String[] tokens = params.get(PARAM_EXP_TOKENS).split(",");
@@ -85,7 +90,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 	
 	
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	public String getAllMember(Class aClass,String completionType,boolean hasDotExp) {
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
 		LinkedList<Class> classList = ClassInfoUtil.getAllSuperClass(aClass);
