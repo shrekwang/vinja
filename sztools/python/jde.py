@@ -1637,6 +1637,7 @@ class Jdb(object):
 
     def show(self):
         self.display = True
+        self.defaultClassName = Parser.getMainClass()
         vim.command("call SwitchToSzToolView('Jdb')")
         vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
         if self.out_buf_list :
@@ -1832,6 +1833,9 @@ class Jdb(object):
             arg = cmdLine[7:]
             ast = self.ivp.generate(arg)
             cmdLine = "inspect " + ast
+
+        if cmdLine == "run" and self.defaultClassName :
+            cmdLine = "run " + self.defaultClassName
 
         if cmdLine in ["step_into","step_over","step_return","resume","exit","shutdown"]:
             self.resumeSuspend()
