@@ -548,12 +548,20 @@ class EditUtil(object):
         return str(matched_row)
 
     @staticmethod
-    def searchAndEdit(current_file_name, className,memberName):
+    def searchAndEdit(current_file_name, className,memberName, mode="local"):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         sourcePath = Talker.locateSource(className, classPathXml)
+
+        if mode == "local" :
+            editCmd="edit"
+        elif mode == "buffer" :
+            editCmd="split"
+        elif mode == "tab" :
+            editCmd="tabedit"
+
         if sourcePath != "None" :
             matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
-            vim.command("edit +%s %s" % (matchedLine, sourcePath ))
+            vim.command(editCmd + " +%s %s" % (matchedLine, sourcePath ))
             vim.command("set filetype=java")
             if sourcePath.endswith(".class") :
                 vim.command("setlocal buftype=nofile")

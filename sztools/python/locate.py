@@ -287,7 +287,7 @@ class TypeHierarchyContentManager(object):
         else :
             defClassName = pkgName +"."+ binName
 
-        EditUtil.searchAndEdit(self.source_file, defClassName,self.memberName)
+        EditUtil.searchAndEdit(self.source_file, defClassName,self.memberName,mode)
 
 class JavaClassNameContentManager(object):
 
@@ -300,7 +300,21 @@ class JavaClassNameContentManager(object):
         self.show_on_open = False
 
     def get_init_prompt(self):
-        return ""
+        buffer = vim.current.buffer
+        pat = re.compile("[\w\.]")
+        row, col = vim.current.window.cursor
+        row_len = len(buffer[row-1])
+        start_index = 0 
+        end_index = row_len
+        for i in range(col,-1,-1):
+            if not pat.match(buffer[row-1][i]) :
+                start_index = i
+                break
+        for j in range(col,row_len):
+            if not  pat.match(buffer[row-1][j]) :
+                end_index = j
+                break
+        return buffer[row-1][start_index+1:end_index]
 
     def search_content(self,search_pat):
         search_pat = search_pat[:-1]
@@ -311,4 +325,4 @@ class JavaClassNameContentManager(object):
 
     def open_content(self,line,mode):
         className = line.strip()
-        EditUtil.searchAndEdit(self.current_file_name, className,"")
+        EditUtil.searchAndEdit(self.current_file_name, className,"",mode)
