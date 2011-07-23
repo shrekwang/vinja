@@ -344,6 +344,21 @@ function Javadoc()
   python Javadoc.runApp()
 endfunction
 
+function Ztree(...) 
+  call RunSzPyfile("tree.py")
+  if a:0 > 0
+    python ZipTree.runApp(vim.eval("a:1"))
+  else
+    python ZipTree.runApp()
+  endif
+  map <silent><buffer> <cr>  :python ziptree.open_node()<cr>
+  map <silent><buffer> o     :python ziptree.open_node()<cr>
+endfunction
+
+function JarRead(path)
+  python output_zip_entry(vim.eval('a:path'))
+endfunction
+
 function PlayDict(word)
   python playWordSound(vim.eval("a:word"))
 endfunction
@@ -502,6 +517,7 @@ function! Jdext()
 endfunction
 
 
+command! -nargs=? Ztree         :call Ztree('<args>')
 command! -nargs=1 Example       :call WatchExample('<args>')
 command! -nargs=1 Dict          :call SearchDict('<args>')
 command! -nargs=0 Recite        :call Recite()
@@ -516,6 +532,7 @@ command! -nargs=0 SzMineSweeper  :call SzMineSweeper()
 
 command! -nargs=1 Transform    :call Transform('<args>')
 
+command! -nargs=1 JarRead     :call JarRead('<args>')
 command! -nargs=0 StartAgent  :python startAgent()
 command! -nargs=0 Shext       :call Shext()
 command! -nargs=0 Jdext       :call Jdext()

@@ -378,6 +378,8 @@ class EditUtil(object):
             return 
 
         cur_file = vim_buffer.name
+        if cur_file.startswith("jar:"):
+            return
         if os.path.exists(cur_file) :
             file_content ="\n".join(open(cur_file,"r").readlines())
             if not re.match("^\s*$",file_content) :
@@ -477,11 +479,10 @@ class EditUtil(object):
             for className in classNameList :
                 sourcePath = Talker.locateSource(className, classPathXml,sourceType)
                 if sourcePath != "None" :
-                    vim.command("edit %s" % sourcePath )
-                    vim.command("set filetype=java")
-                    if sourcePath.endswith(".class") :
-                        vim.command("setlocal buftype=nofile")
-                        vim.command("setlocal noswapfile")
+                    if sourcePath.startswith("jar:") :
+                        vim.command("call JarRead('%s')" % sourcePath)
+                    else :
+                        vim.command("edit %s" % sourcePath )
                     break
             return 
 
@@ -530,16 +531,19 @@ class EditUtil(object):
             sourcePath = Talker.locateSource(className, classPathXml,sourceType)
             if sourcePath != "None" :
                 matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
-                vim.command("edit +%s %s" % (matchedLine, sourcePath ))
-                vim.command("set filetype=java")
-                if sourcePath.endswith(".class") :
-                    vim.command("setlocal buftype=nofile")
-                    vim.command("setlocal noswapfile")
+                if sourcePath.startswith("jar:") :
+                    vim.command("call JarRead('%s')" % sourcePath)
+                else :
+                    vim.command("edit +%s %s" % (matchedLine, sourcePath ))
+                
         return
 
     @staticmethod
     def searchMemeberLineNum(memberName,sourcePath):
-        lines = open(sourcePath).readlines()
+        if sourcePath.startswith("jar:") :
+            lines = read_zip_entry(sourcePath)
+        else :
+            lines = open(sourcePath).readlines()
         matched_row = 1
         members = Parser.parseAllMemberInfo(lines)
         for name,mtype,rtntype,param,lineNum in members :
@@ -555,17 +559,17 @@ class EditUtil(object):
         if mode == "local" :
             editCmd="edit"
         elif mode == "buffer" :
-            editCmd="split"
+            vim.command("split")
         elif mode == "tab" :
-            editCmd="tabedit"
+            vim.command("tabnew")
 
         if sourcePath != "None" :
             matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
-            vim.command(editCmd + " +%s %s" % (matchedLine, sourcePath ))
-            vim.command("set filetype=java")
-            if sourcePath.endswith(".class") :
-                vim.command("setlocal buftype=nofile")
-                vim.command("setlocal noswapfile")
+            if sourcePath.startswith("jar:") :
+                vim.command("call JarRead('%s')" % sourcePath)
+            else :
+                vim.command("edit +%s %s" % (matchedLine, sourcePath ))
+            
         return
 
     @staticmethod

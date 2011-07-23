@@ -6,9 +6,25 @@ import socket
 from StringIO import StringIO
 from distutils import dir_util
 from distutils import file_util
+import zipfile
 
 HOST = 'localhost'
 PORT = 9527
+
+def output_zip_entry(path):
+    #remove scheme part "jar:"
+    vim.command("edit %s " % path)
+    vim.command("setlocal buftype=nofile") 
+    content = read_zip_entry(path)
+    output(content)
+
+def read_zip_entry(path):
+    path = path[path.find(":")+1 : ]
+    zip_file_path, inner_path = path.split("!")
+    zipFile = zipfile.ZipFile(zip_file_path)  
+    content = zipFile.read(inner_path)
+    zipFile.close()
+    return content
 
 def fileOrDirCp(src,dst):
     if os.path.isdir(src):
@@ -102,7 +118,6 @@ def startAgent():
     cmdArray.append("--sztool-home")
     cmdArray.append(sztool_home)
 
-    logging.debug("cmd array is %s "  % str(cmdArray))
 
     if os.name == "posix" :
         Popen(" ".join(cmdArray),shell = True)
