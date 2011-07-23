@@ -491,6 +491,7 @@ class ShUtil(object):
         parser = ShextOptionParser(usage="usage: lgrep [options] [search-pattern] [filename]")
         parser.add_option("-n","--alias",action="store", dest="alias" , help ="search in designated index entry" )
         parser.add_option("-p","--path", action="store", dest="path" , help = "the path need to match with")
+        parser.add_option("-o","--open", action="store_true", dest="open" ,help="open search results in new tab ")
         (options, args) = parser.parse_args(cmd_array)
         if parser.noAction : 
             return 
@@ -500,8 +501,29 @@ class ShUtil(object):
             return
 
         result = self.locatecmd.grep(args[0],args[1],options.alias, options.path)
-        Shext.stdout([" : ".join(item) for item in result])
+        if len(result) == 0 :
+            return 
 
+        if options.open :
+            qflist = []
+            first_file_name = result[0][0]
+            for filename,lineNum,lineText in result :
+                qfitem = dict(filename=str(self.relpath(filename)),lnum=lineNum,text=lineText.strip())
+                qflist.append(qfitem)
+            vim.command("tabnew")
+            vim.command("edit %s" %(first_file_name))
+            vim.command("call setqflist(%s)" % qflist)
+        else :
+            outputText = []
+            tmp_file_name = result[0][0]
+            outputText.append(tmp_file_name)
+            for filename,lineNum,lineText in result :
+                if filename != tmp_file_name :
+                    tmp_file_name = filename
+                    outputText.append("")
+                    outputText.append(tmp_file_name)
+                outputText.append("   "+lineNum+":" + "  " + lineText.strip())
+            Shext.stdout(outputText)
 
     def ledit(self,fname,nocmdBuffer = False):
         result = self.locatecmd.locateFile(fname)
