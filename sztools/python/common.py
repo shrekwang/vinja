@@ -11,12 +11,20 @@ import zipfile
 HOST = 'localhost'
 PORT = 9527
 
-def output_zip_entry(path):
-    #remove scheme part "jar:"
+def output_zip_entry(args):
+    row = 0
+    if isinstance(args,str) :
+        path = args
+    else :
+        path = args[0]
+        if len(args) > 1 :
+            row = int(args[1])
     vim.command("edit %s " % path)
     vim.command("setlocal buftype=nofile") 
     content = read_zip_entry(path)
     output(content)
+    vim.current.window.cursor = (row+1,1)
+
 
 def read_zip_entry(path):
     path = path[path.find(":")+1 : ]

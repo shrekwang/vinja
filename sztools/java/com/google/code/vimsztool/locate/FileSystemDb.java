@@ -223,7 +223,6 @@ public class FileSystemDb  implements JNotifyListener {
     	WatchedDirInfo watchedDirInfo=watchedDir.get(startDir);
     	
     	if (! PatternUtil.isExclude(watchedDirInfo.getExcludes(), new File(absPath))) {
-	      	System.out.println(rtlPath);
 	    	batchUpdater.addCreatedRecords(new String[] {name,startDir,rtlPath});
     	}
     	

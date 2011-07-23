@@ -255,7 +255,6 @@ public class ClassMetaInfoReader implements AnnotationVisitor, SignatureVisitor,
 	public void visitInnerClassType(final String name) {
 		signatureClassName = signatureClassName + "$" + name;
 		addInternalName(signatureClassName);
-		System.out.println(signatureClassName);
 	}
 
 	public void visitTypeArgument() {

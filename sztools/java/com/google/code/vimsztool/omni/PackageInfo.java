@@ -70,7 +70,6 @@ public class PackageInfo {
 	}
 	
 	public List<String> findClass(String nameStart) {
-		System.out.println("nameStart is " + nameStart);
 		
 		List<String> result = new ArrayList<String>();
         String patStr = nameStart.replace("*",".*") + ".*";

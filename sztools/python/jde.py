@@ -532,7 +532,7 @@ class EditUtil(object):
             if sourcePath != "None" :
                 matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
                 if sourcePath.startswith("jar:") :
-                    vim.command("call JarRead('%s')" % sourcePath)
+                    vim.command("call JarRead('%s','%s')" % (sourcePath,str(matchedLine)))
                 else :
                     vim.command("edit +%s %s" % (matchedLine, sourcePath ))
                 
@@ -566,7 +566,7 @@ class EditUtil(object):
         if sourcePath != "None" :
             matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
             if sourcePath.startswith("jar:") :
-                vim.command("call JarRead('%s')" % sourcePath)
+                vim.command("call JarRead('%s','%s')" % (sourcePath,str(matchedLine)))
             else :
                 vim.command("edit +%s %s" % (matchedLine, sourcePath ))
             
@@ -1708,13 +1708,15 @@ class Jdb(object):
                 continue
             if vim.eval("&buftype") == "" \
                     or bufname.endswith(".temp_src") \
-                    or bufname.endswith(".class") :
+                    or bufname.endswith(".java") :
                 break
         
-        if os.path.exists(abs_path) :
+        if os.path.exists(abs_path) or abs_path.startswith("jar:") :
             if abs_path != vim.current.buffer.name :
-                logging.debug("abs_path != buffername")
-                vim.command("edit %s" % abs_path)
+                if abs_path.startswith("jar:"):
+                    vim.command("call JarRead('%s')" % abs_path)
+                else :
+                    vim.command("edit %s" % abs_path)
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
                 vim.command(signcmd)
