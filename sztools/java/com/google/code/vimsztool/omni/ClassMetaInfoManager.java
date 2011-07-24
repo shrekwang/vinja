@@ -39,30 +39,52 @@ public class ClassMetaInfoManager  {
 		}
 	}
 	
+	
 	public void loadSingleMetaInfo(File classFile) {
 		if  (classFile.getName().endsWith(".class") ) {
+			FileInputStream fs =null;
 			try {
-				FileInputStream fs = new FileInputStream(classFile);
+				fs = new FileInputStream(classFile);
 				ClassReader cr = new ClassReader(fs);
-				ClassInfo classInfo = new ClassInfo();
-				ClassMetaInfoReader classInfoReader = new ClassMetaInfoReader(classInfo,ctx);
-				cr.accept(classInfoReader, 0);
-				fs.close();
-				if (metaInfos.get(classInfo.getName()) != null) {
-					ClassInfo oldInfo = metaInfos.get(classInfo.getName());
-					ClassInfo superInfo = metaInfos.get(oldInfo.getSuperName());
-					if (superInfo != null) {
-					   superInfo.getSubNames().remove(classInfo.getName());
-					}
-				}
-				metaInfos.put(classInfo.getName(), classInfo);
+				loadSingleMetaInfo(cr);
 			} catch (IOException e) {
+			} finally {
+				if (fs!=null) { 
+					try {fs.close();} catch (Exception e) {} 
+				}
 			}
 		}
 	}
 	
+	public void loadSingleMetaInfo(String className) {
+		try {
+			ClassReader cr = new ClassReader(className);
+			loadSingleMetaInfo(cr);
+		} catch (IOException e) {
+		}
+	}
+	
+	private void loadSingleMetaInfo(ClassReader cr) {
+		ClassInfo classInfo = new ClassInfo();
+		ClassMetaInfoReader classInfoReader = new ClassMetaInfoReader(
+				classInfo, ctx);
+		cr.accept(classInfoReader, 0);
+		if (metaInfos.get(classInfo.getName()) != null) {
+			ClassInfo oldInfo = metaInfos.get(classInfo.getName());
+			ClassInfo superInfo = metaInfos.get(oldInfo.getSuperName());
+			if (superInfo != null) {
+				superInfo.getSubNames().remove(classInfo.getName());
+			}
+		}
+		metaInfos.put(classInfo.getName(), classInfo);
+	}
+	
 	public ClassInfo getMetaInfo(String className) {
 		ClassInfo metaInfo = metaInfos.get(className);
+		if (metaInfo ==null) {
+			loadSingleMetaInfo(className);
+			metaInfo = metaInfos.get(className);
+		}
 		return metaInfo;
 	}
 	

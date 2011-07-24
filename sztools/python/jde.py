@@ -481,6 +481,7 @@ class EditUtil(object):
                 if sourcePath != "None" :
                     if sourcePath.startswith("jar:") :
                         vim.command("call JarRead('%s')" % sourcePath)
+                        EditUtil.initBreakpointSign()
                     else :
                         vim.command("edit %s" % sourcePath )
                     break
@@ -533,6 +534,7 @@ class EditUtil(object):
                 matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
                 if sourcePath.startswith("jar:") :
                     vim.command("call JarRead('%s','%s')" % (sourcePath,str(matchedLine)))
+                    EditUtil.initBreakpointSign()
                 else :
                     vim.command("edit +%s %s" % (matchedLine, sourcePath ))
                 
@@ -567,6 +569,7 @@ class EditUtil(object):
             matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
             if sourcePath.startswith("jar:") :
                 vim.command("call JarRead('%s','%s')" % (sourcePath,str(matchedLine)))
+                EditUtil.initBreakpointSign()
             else :
                 vim.command("edit +%s %s" % (matchedLine, sourcePath ))
             
@@ -1724,6 +1727,7 @@ class Jdb(object):
             if abs_path != vim.current.buffer.name :
                 if abs_path.startswith("jar:"):
                     vim.command("call JarRead('%s')" % abs_path)
+                    EditUtil.initBreakpointSign()
                 else :
                     vim.command("edit %s" % abs_path)
                 bufnr=str(vim.eval("bufnr('%')"))
@@ -1733,13 +1737,15 @@ class Jdb(object):
             bp_set = bp_data.get(vim.current.buffer.name)
             bufnr=str(vim.eval("bufnr('%')"))
             if bp_set != None and int(lineNum) in bp_set :
+                unplacecmd = "sign unplace %s buffer=%s" % (lineNum,bufnr)
+                vim.command(unplacecmd)
+                vim.command(unplacecmd)
                 signGroup = "SuspendLineBP"
-                signcmd=Template("sign place ${id} name=${name} buffer=${nr}")
-                signcmd =signcmd.substitute(id=lineNum,name=signGroup,nr=bufnr)
             else :
                 signGroup = "SuspendLine"
-                signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
-                signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,name=signGroup,nr=bufnr)
+
+            signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
+            signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,name=signGroup,nr=bufnr)
 
             vim.command(signcmd)
             self.suspendRow = lineNum
