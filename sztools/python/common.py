@@ -12,7 +12,7 @@ HOST = 'localhost'
 PORT = 9527
 
 def output_zip_entry(args):
-    row = 0
+    row = 1 
     if isinstance(args,str) :
         path = args
     else :
@@ -23,14 +23,14 @@ def output_zip_entry(args):
     vim.command("setlocal buftype=nofile") 
     content = read_zip_entry(path)
     output(content)
-    vim.current.window.cursor = (row+1,1)
+    vim.current.window.cursor = (row,1)
 
 
 def read_zip_entry(path):
     path = path[path.find(":")+1 : ]
     zip_file_path, inner_path = path.split("!")
     zipFile = zipfile.ZipFile(zip_file_path)  
-    content = zipFile.read(inner_path)
+    content = [line.replace("\n","") for line in zipFile.open(inner_path).readlines()]
     zipFile.close()
     return content
 

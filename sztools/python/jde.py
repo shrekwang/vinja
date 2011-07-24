@@ -1078,8 +1078,17 @@ class Parser(object):
         methodPat = re.compile(r"(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)")
         assignPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*=")
         defPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*;")
+        commentLine = False
         for lineNum,line in enumerate(lines) :
             line = line.strip()
+            if (line.startswith("/*") and not line.endswith("*/") ) :
+                commentLine = True
+                continue
+            if line.endswith("*/"):
+                commentLine = False
+                continue
+            if commentLine == True or line.startswith("//"):
+                continue
             if scopeCount == 1 :
                 fullDeclLine = line
                 if "=" in line :
