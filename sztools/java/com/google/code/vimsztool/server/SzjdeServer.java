@@ -9,14 +9,15 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DUMP_CLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_FETCH_RESULT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_CONSTRUCTDEFS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_DEFCLASS;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFCLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATE_SOURCE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_TYPE_HIIRARCHY;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATE_SOURCE;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -122,6 +123,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeGetDefClassCommand();
 	   } else if (cmdStr.equals(CMD_GET_METHODDEFS)) {
 		   szjdeCommand = new SzjdeGetMethodDefs();
+	   } else if (cmdStr.equals(CMD_GET_METHODDEFCLASS)) {
+		   szjdeCommand = new SzjdeGetMethodDefClass();
 	   } else if (cmdStr.equals(CMD_GET_CONSTRUCTDEFS)) {
 		   szjdeCommand = new SzjdeGetConstructorDefs();
 	   } else if (cmdStr.equals(CMD_DEBUG)) {

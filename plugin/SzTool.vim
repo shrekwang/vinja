@@ -355,10 +355,6 @@ function Ztree(...)
   map <silent><buffer> o     :python ziptree.open_node()<cr>
 endfunction
 
-function JarRead(...)
-  python output_zip_entry(vim.eval('a:000'))
-endfunction
-
 function PlayDict(word)
   python playWordSound(vim.eval("a:word"))
 endfunction
@@ -532,7 +528,6 @@ command! -nargs=0 SzMineSweeper  :call SzMineSweeper()
 
 command! -nargs=1 Transform    :call Transform('<args>')
 
-command! -nargs=* JarRead     :call JarRead(<f-args>)
 command! -nargs=0 StartAgent  :python startAgent()
 command! -nargs=0 Shext       :call Shext()
 command! -nargs=0 Jdext       :call Jdext()
@@ -557,3 +552,6 @@ nmap <silent><leader>zw  :w<cr>
 nmap <silent><leader>zt  :call Tagext()<cr>
 nmap <silent><leader>zl  :call TagList()<cr>
 nmap <silent><leader>lw  :call LocateFile()<cr>
+
+
+au BufReadCmd  jar://*	python read_zip_cmd()

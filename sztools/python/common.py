@@ -11,28 +11,27 @@ import zipfile
 HOST = 'localhost'
 PORT = 9527
 
-def output_zip_entry(args):
-    row = 1 
-    if isinstance(args,str) :
-        path = args
-    else :
-        path = args[0]
-        if len(args) > 1 :
-            row = int(args[1])
-    vim.command("edit %s " % path)
-    vim.command("setlocal buftype=nofile") 
+def read_zip_cmd():
+    path = vim.current.buffer.name
+    inner_path = path.split("!")[1]
+    vim.command("silent doau BufReadPre " + inner_path)
     content = read_zip_entry(path)
     output(content)
-    vim.current.window.cursor = (row,1)
-
+    vim.command("silent doau BufReadPost " + inner_path)
+    vim.command("silent doau BufWinEnter " + inner_path)
 
 def read_zip_entry(path):
-    path = path[path.find(":")+1 : ]
-    zip_file_path, inner_path = path.split("!")
+    zip_file_path, inner_path = split_zip_scheme(path)
     zipFile = zipfile.ZipFile(zip_file_path)  
     content = [line.replace("\n","") for line in zipFile.open(inner_path).readlines()]
     zipFile.close()
     return content
+
+def split_zip_scheme(path):
+    path = path.replace("\\","/")
+    path = path[path.find("://")+3 : ]
+    zip_file_path, inner_path = path.split("!")
+    return zip_file_path, inner_path
 
 def fileOrDirCp(src,dst):
     if os.path.isdir(src):

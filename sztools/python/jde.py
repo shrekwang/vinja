@@ -18,6 +18,7 @@ PORT = 9527
 END_TOKEN = "==end=="
 MAX_CPT_COUNT = 200
 bp_data = {}
+lastProjectRoot = None
 
 class VimUtil(object):
     @staticmethod
@@ -74,6 +75,7 @@ class VimUtil(object):
 class ProjectManager(object):
     @staticmethod
     def getProjectRoot(filePath):
+        global lastProjectRoot
         projectRoot = None
         parent = filePath
         if not filePath :
@@ -88,6 +90,10 @@ class ProjectManager(object):
             if os.path.exists(prj_names[0]) and os.path.exists(prj_names[1]):
                 projectRoot = parent
                 break
+        if projectRoot != None :
+            lastProjectRoot = projectRoot
+        else :
+            projectRoot = lastProjectRoot
         return projectRoot
 
     @staticmethod
@@ -260,6 +266,20 @@ class Talker(object):
         params["classPathXml"] = xmlPath
         params["expTokens"] = ",".join(expTokens)
         params["memberName"] = memberName
+        data = Talker.send(params)
+        return data
+
+    @staticmethod
+    def getMethodDefClass(args):
+        params = dict()
+        sourceFile ,classnameList,xmlPath,expTokens,memberName,sourceType= args
+        params["cmd"]="getMethodDefClass"
+        params["sourceFile"] = sourceFile
+        params["classnames"] = ",".join(classnameList)
+        params["classPathXml"] = xmlPath
+        params["expTokens"] = ",".join(expTokens)
+        params["memberName"] = memberName
+        params["sourceType"] = sourceType
         data = Talker.send(params)
         return data
 
@@ -479,11 +499,7 @@ class EditUtil(object):
             for className in classNameList :
                 sourcePath = Talker.locateSource(className, classPathXml,sourceType)
                 if sourcePath != "None" :
-                    if sourcePath.startswith("jar:") :
-                        vim.command("call JarRead('%s')" % sourcePath)
-                        EditUtil.initBreakpointSign()
-                    else :
-                        vim.command("edit %s" % sourcePath )
+                    vim.command("edit %s" % sourcePath )
                     break
             return 
 
@@ -526,17 +542,19 @@ class EditUtil(object):
         classNameList = Parser.getFullClassNames(classname)
         expTokens = expTokens[:-1]
         tmpName = memberName + "()" if line[tokenEndCol] == "(" else memberName 
-        params =(current_file_name,classNameList,classPathXml,expTokens,tmpName)
+        params =(current_file_name,classNameList,classPathXml,expTokens,tmpName,sourceType)
+        sourcePath = Talker.getMethodDefClass(params)
+        if sourcePath != "None" :
+            matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
+            vim.command("edit +%s %s" % (matchedLine, sourcePath ))
 
+        """
         for className in classNameList :
             sourcePath = Talker.locateSource(className, classPathXml,sourceType)
             if sourcePath != "None" :
                 matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
-                if sourcePath.startswith("jar:") :
-                    vim.command("call JarRead('%s','%s')" % (sourcePath,str(matchedLine)))
-                    EditUtil.initBreakpointSign()
-                else :
-                    vim.command("edit +%s %s" % (matchedLine, sourcePath ))
+                vim.command("edit +%s %s" % (matchedLine, sourcePath ))
+        """
                 
         return
 
@@ -567,11 +585,7 @@ class EditUtil(object):
 
         if sourcePath != "None" :
             matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
-            if sourcePath.startswith("jar:") :
-                vim.command("call JarRead('%s','%s')" % (sourcePath,str(matchedLine)))
-                EditUtil.initBreakpointSign()
-            else :
-                vim.command("edit +%s %s" % (matchedLine, sourcePath ))
+            vim.command("edit +%s %s" % (matchedLine, sourcePath ))
             
         return
 
@@ -1725,11 +1739,7 @@ class Jdb(object):
         
         if os.path.exists(abs_path) or abs_path.startswith("jar:") :
             if abs_path != vim.current.buffer.name :
-                if abs_path.startswith("jar:"):
-                    vim.command("call JarRead('%s')" % abs_path)
-                    EditUtil.initBreakpointSign()
-                else :
-                    vim.command("edit %s" % abs_path)
+                vim.command("edit %s" % abs_path)
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
                 vim.command(signcmd)

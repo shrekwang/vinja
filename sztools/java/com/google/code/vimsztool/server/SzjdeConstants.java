@@ -11,6 +11,7 @@ public class SzjdeConstants {
 	public final static String CMD_DUMP_CLASS="dumpClass";
 	public final static String CMD_GET_DEFCLASS="getDefClassName";
 	public final static String CMD_GET_METHODDEFS="getMethodDefs";
+	public final static String CMD_GET_METHODDEFCLASS="getMethodDefClass";
 	public final static String CMD_GET_CONSTRUCTDEFS="getConstructDefs";
 	public final static String CMD_OVERIDE="overide";
 	public final static String CMD_COPY_RESOURCE="copyResource";

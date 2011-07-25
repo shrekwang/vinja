@@ -214,8 +214,8 @@ class ZipTree(object):
             vim.current.window.cursor = (row,col)
         else :
             vim.command("exec 'wincmd w'")
-            schmeme_path = "jar:"+self.zip_file_path+"!"+path
-            output_zip_entry(schmeme_path)
+            schmeme_path = "jar://"+self.zip_file_path+"!"+path
+            vim.command("edit %s" % schmeme_path)
 
     @staticmethod
     def runApp(zip_file_path=None):
@@ -224,8 +224,7 @@ class ZipTree(object):
         if not zip_file_path :
             path = vim.current.buffer.name
             if path and path.startswith("jar:") :
-                path = path[path.find(":")+1 : ]
-                zip_file_path, inner_path = path.split("!")
+                zip_file_path, inner_path = split_zip_scheme(path)
 
         if not os.path.exists(zip_file_path):
             print "zip file path not exists."

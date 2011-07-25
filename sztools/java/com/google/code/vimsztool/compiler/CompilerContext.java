@@ -389,7 +389,7 @@ public class CompilerContext {
 			if (libSrcLoc.endsWith(".jar") || libSrcLoc.endsWith(".zip")) {
 				if ( hasEntry(libSrcLoc, rtlPathName)) {
 					//extractContentToTemp(libSrcLoc,rtlPathName,tmpPath);
-					tmpPath = "jar:" + libSrcLoc + "!" +rtlPathName;
+					tmpPath = "jar://" + libSrcLoc + "!" +rtlPathName;
 					lastSearchResult = tmpPath;
 					return tmpPath;
 	            }
