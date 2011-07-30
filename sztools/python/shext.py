@@ -3,7 +3,6 @@ import glob,time,vim,re, sys, logging
 from subprocess import Popen, PIPE
 from optparse import OptionParser 
 import sqlite3 as sqlite
-from jde import Talker
 from datetime import timedelta, datetime ,date
 
 
@@ -906,30 +905,18 @@ class Shext(object):
 
     def runSysCmd(self,cmdArray):
         try :
+            serverName = vim.eval("v:servername")
+            workDir = os.getcwd()
             file_list = self.pathResolver.resolve(cmdArray[0])
             if len(file_list) == 1 and  os.path.isfile(file_list[0]) :
                 cmdArray[0] = os.path.abspath(file_list[0])
+            runInShell = "true"
             if os.name == "posix" :
-                p = Popen(cmdArray ,stdin=PIPE, stdout=PIPE, stderr=PIPE)
-            else :
-                p = Popen(cmdArray ,stdin=PIPE, stdout=PIPE, stderr=PIPE,shell=True)
-
-            wait_time = 0
-            while p.poll() == None :
-                time.sleep(0.1)
-                wait_time += 1
-                if wait_time >= 1 * 60 * 10 :
-                    break
-            if p.poll() is None:
-              p.kill()
-              raise OSError("time out")
-            cmdResult = p.communicate()
-
+                runInShell = "false"
+            Shext.stdout("")
+            BasicTalker.runSys(serverName," ".join(cmdArray),runInShell,"shext",workDir)
         except (OSError,ValueError) , msg:
             Shext.stdout(msg)
-        else :
-            Shext.stdout(cmdResult[0].replace("\r\n","\n"))
-            Shext.stdout(cmdResult[1].replace("\r\n","\n"),True)
 
     def runInBackground(self,cmdline):
         try :
@@ -947,7 +934,7 @@ class Shext(object):
         if not agentHasStarted():
             shext.stdout("the sztool agent is not started. run :StartAgent to start.")
             return
-        result = Talker.doLocatedbCommand(args)
+        result = BasicTalker.doLocatedbCommand(args)
         Shext.stdout(result)
 
     def ls(self):

@@ -10,6 +10,7 @@ import zipfile
 
 HOST = 'localhost'
 PORT = 9527
+END_TOKEN = "==end=="
 
 def read_zip_cmd():
     path = vim.current.buffer.name
@@ -162,7 +163,10 @@ def output(content,buffer=None,append=False):
     else :
         lines=content
 
-    for index,line in enumerate(str(lines).split("\n")):  
+    if lines.endswith("\n") :
+        lines = lines[:-1]
+    rowList = str(lines).split("\n")
+    for index,line in enumerate(rowList):  
         if index == 0 and not append :
             buffer[0]=line
         else :
@@ -521,5 +525,130 @@ def initSztool():
     #append app path to sys.path
     import sys
     sys.path.append(getAppHome())
+
+def fetchCallBack(args):
+    guid,bufname = args
+    resultText = BasicTalker.fetchResult(guid)
+    lines = resultText.split("\n")
+    VimUtil.writeToSzToolBuffer(bufname,lines,append=True)
+
+
+class BasicTalker(object):
+
+    @staticmethod
+    def send(params):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST, PORT))
+        sb = []
+        for item in params :
+            sb.append("%s=%s\n" %(item,params[item]))
+        sb.append('%s\n' % END_TOKEN)
+        s.send("".join(sb))
+        total_data=[]
+        while True:
+            data = s.recv(8192)
+            if not data: break
+            total_data.append(data)
+        s.close()
+        return ''.join(total_data)
+
+    @staticmethod
+    def runSys(vimServer,cmdName,runInShell,bufname,workDir):
+        params = dict()
+        params["cmd"]="runSys"
+        params["vimServer"] = vimServer
+        params["cmdName"] = cmdName
+        params["runInShell"] = runInShell
+        params["bufname"] = bufname
+        params["workDir"] = workDir
+        data = BasicTalker.send(params)
+        return data
+
+    @staticmethod
+    def fetchResult(guid):
+        params = dict()
+        params["cmd"]="fetchResult"
+        params["jobId"] = guid
+        data = BasicTalker.send(params)
+        return data
+
+    @staticmethod
+    def doLocatedbCommand(args):
+        params = dict()
+        params["cmd"]="locatedb"
+        params["args"] = ";".join(args)
+        params["pwd"] = os.getcwd()
+        data = BasicTalker.send(params)
+        return data
+
+class VimUtil(object):
+
+    @staticmethod
+    def inputOption(options):
+        vim.command("redraw")
+        for index,line in enumerate(options) :
+            print " %s : %s " % (str(index), line)
+        vim.command("let b:vjde_option_index = input('please enter a selection')")
+        exists = vim.eval("exists('b:vjde_option_index')")
+        if exists  ==  "1" :
+            index = vim.eval("b:vjde_option_index")
+            vim.command("unlet b:vjde_option_index")
+        else :
+            index = None
+        return index
+
+    @staticmethod
+    def getSzToolBuffer(name, createNew = True):
+        def _getConsoleBuffer():
+            jde_console_buf = None
+            for buffer in vim.buffers:
+                if buffer.name and buffer.name.find( "SzToolView_%s" % name) > -1 :
+                    jde_console_buf = buffer
+                    break
+            return jde_console_buf
+        buf = _getConsoleBuffer()
+        if buf == None and createNew :
+            vim.command("call SwitchToSzToolView('%s')" % name )
+            listwinnr=str(vim.eval("winnr('#')"))
+            vim.command("exec '%s wincmd w'" % listwinnr)
+            buf = _getConsoleBuffer()
+
+        return buf
+
+    @staticmethod
+    def writeToSzToolBuffer(name, text, append=False):
+        if not text : return
+        buf = VimUtil.getSzToolBuffer(name)
+
+        if type(text) == type(""):
+            lines = text.split("\n")
+        else :
+            lines = text
+        output(lines,buf, append)
+        if append :
+            endrow = len(buf)
+            callback = lambda : VimUtil.scrollTo(endrow)
+            VimUtil.doCommandInSzToolBuffer(name,callback)
+
+    @staticmethod
+    def closeSzToolBuffer(name):
+        closeOutputBuffer(name)
+
+    @staticmethod
+    def scrollTo(lineNum):
+        winStartRow = int(vim.eval("line('w0')"))
+        winEndRow = int(vim.eval("line('w$')"))
+        lineNum = int(lineNum)
+        if lineNum < winStartRow or lineNum > winEndRow :
+            vim.command("normal %sG" % str(lineNum))
+            vim.command("normal z-")
+
+    @staticmethod
+    def doCommandInSzToolBuffer(bufName, callback):
+        vim.command("call SwitchToSzToolView('%s')" % bufName )
+        callback()
+        listwinnr = str(vim.eval("winnr('#')"))
+        vim.command("exec '"+listwinnr+" wincmd w'")
+
 
 initSztool()

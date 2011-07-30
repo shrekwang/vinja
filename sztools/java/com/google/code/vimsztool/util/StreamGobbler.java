@@ -2,7 +2,7 @@
  
  * @author wangsn
  * @since 1.0
- * @version $Id: StreamGobbler.java, v 1.0 2010-12-6 ÏÂÎç07:09:13 wangsn Exp $
+ * @version $Id: StreamGobbler.java, v 1.0 2010-12-6 ï¿½ï¿½ï¿½ï¿½07:09:13 wangsn Exp $
  */
 package com.google.code.vimsztool.util;
 
@@ -24,7 +24,9 @@ public class StreamGobbler extends Thread {
             String line;
             try {
                 while ((line = br.readLine()) != null) {
-                	buffer.append(line).append("\n");
+                	synchronized(buffer) {
+	                	buffer.append(line).append("\n");
+                	}
                 }
             } catch (Exception e) {throw new Error(e);}
         }

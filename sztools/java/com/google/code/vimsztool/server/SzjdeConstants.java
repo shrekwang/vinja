@@ -33,6 +33,8 @@ public class SzjdeConstants {
 	public final static String PARAM_SUPER_CLASS="superClass";
 	public final static String PARAM_CMD_NAME="cmdName";
 	public final static String PARAM_RUN_IN_SHELL="runInShell";
+	public final static String PARAM_BUF_NAME="bufname";
+	public final static String PARAM_WORK_DIR="workDir";
 	public final static String PARAM_VIM_SERVER="vimServer";
 	public final static String PARAM_JOB_ID="jobId";
 	public final static String PARAM_ARGS="args";

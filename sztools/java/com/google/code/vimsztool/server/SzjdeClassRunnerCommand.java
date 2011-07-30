@@ -3,10 +3,10 @@ package com.google.code.vimsztool.server;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
+import java.util.UUID;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
-import com.google.code.vimsztool.util.ProcessRunner;
-import com.google.code.vimsztool.util.VjdeUtil;
+import com.google.code.vimsztool.util.SystemJob;
 
 public class SzjdeClassRunnerCommand extends SzjdeCommand {
 
@@ -22,16 +22,13 @@ public class SzjdeClassRunnerCommand extends SzjdeCommand {
 
 		cmd.append(" ");
 		cmd.append(cc.buildClassName(sourceFile));
-
-		try {
-			File workingDir = new File(cc.getProjectRoot());
-			Process p = Runtime.getRuntime().exec(cmd.toString(),null,workingDir);
-			ProcessRunner runner = new ProcessRunner();
-			String result = runner.communicate(p);
-			return result;
-		} catch (Exception err) {
-			return VjdeUtil.getExceptionValue(err);
-		}
+		String uuid=UUID.randomUUID().toString();
+		String vimServerName = params.get(SzjdeConstants.PARAM_VIM_SERVER);
+		String bufname = params.get(SzjdeConstants.PARAM_BUF_NAME);
+		SystemJob job = new SystemJob(cmd.toString(),vimServerName,"false",uuid,bufname,cc.getProjectRoot());
+		job.start();
+		return "";
+		
 	}
 
 }

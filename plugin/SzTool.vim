@@ -412,12 +412,12 @@ function! SzJdeCompletion(findstart, base)
     return g:SzJdeCompletionResult
 endfunction
 
-function FetchResult(guid)
-  python Runner.fetchResult(vim.eval("a:guid"))
+function FetchResult(...)
+  python fetchCallBack(vim.eval("a:000"))
 endfunction
 
 function FetchDebugOutput(line)
-  python VimUtil.writeToJdeConsole(vim.eval("a:line"),True)
+  python VimUtil.writeToSzToolBuffer("JdeConsole",vim.eval("a:line"),True)
 endfunction
 
 function HandleJdiEvent(...)
@@ -482,7 +482,6 @@ function! Jdext()
   command! -nargs=0   ProjectClean     :python ProjectManager.projectClean()
   command! -nargs=0   ProjectTree      :python ProjectManager.projectTree()
   command! -nargs=?   Ant              :call RunAntBuild('<args>')
-  command! -nargs=1   FetchResult      :call FetchResult('<args>')
 
   command! -nargs=0   Jdb              :call Jdb()
   command! -nargs=0   ToggleBreakPoint :python EditUtil.toggleBreakpoint()
@@ -490,7 +489,7 @@ function! Jdext()
   command! -nargs=*   HandleJdiEvent    :call HandleJdiEvent(<f-args>)
 
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>,   :python Runner.runCurrentFile()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeSzToolBuffer("JdeConsole")<cr>
   autocmd BufEnter  *.java    vmap <buffer><silent><leader>gs  :python EditUtil.generateGseter()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
@@ -502,9 +501,9 @@ function! Jdext()
   autocmd BufEnter  *         nmap <buffer><silent><leader>gc  :call LocateClass()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:python EditUtil.tipMethodParameter()<cr>
-  autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:python VimUtil.closeJdeConsole()<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:python VimUtil.closeSzToolBuffer("JdeConsole")<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><M-9>       :python EditUtil.tipMethodParameter()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeJdeConsole()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeSzToolBuffer("JdeConsole")<cr>
   
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F5>     :python jdb.stepCmd('step_into')<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F6>     :python jdb.stepCmd('step_over')<cr>
@@ -537,6 +536,7 @@ command! -nargs=0 Tagext      :call Tagext()
 command! -nargs=0 TagList      :call TagList()
 command! -nargs=0 SaveNote            :python Notext.saveBufContent()
 command! -nargs=0 MakeNoteTemplate    :python Notext.makeTemplate()
+command! -nargs=+ FetchResult      :call FetchResult(<f-args>)
 
 "sztools mapping
 nmap <silent><leader>zc  :python startScriptEdit()<cr>

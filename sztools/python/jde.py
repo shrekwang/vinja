@@ -8,7 +8,7 @@ import StringIO
 from subprocess import Popen
 from string import Template
 import difflib
-from common import output,getShareHome,getVisualArea
+from common import output,getShareHome,getVisualArea,VimUtil,BasicTalker
 
 from pyparsing import *
 from xml.etree.ElementTree import *
@@ -19,58 +19,6 @@ END_TOKEN = "==end=="
 MAX_CPT_COUNT = 200
 bp_data = {}
 lastProjectRoot = None
-
-class VimUtil(object):
-    @staticmethod
-    def inputOption(options):
-        vim.command("redraw")
-        for index,line in enumerate(options) :
-            print " %s : %s " % (str(index), line)
-        vim.command("let b:vjde_option_index = input('please enter a selection')")
-        exists = vim.eval("exists('b:vjde_option_index')")
-        if exists  ==  "1" :
-            index = vim.eval("b:vjde_option_index")
-            vim.command("unlet b:vjde_option_index")
-        else :
-            index = None
-        return index
-
-    @staticmethod
-    def getJdeConsoleBuffer(name, createNew = True):
-        def _getConsoleBuffer():
-            jde_console_buf = None
-            for buffer in vim.buffers:
-                if buffer.name and buffer.name.find( "SzToolView_%s" % name) > -1 :
-                    jde_console_buf = buffer
-                    break
-            return jde_console_buf
-        buf = _getConsoleBuffer()
-        if buf == None and createNew :
-            vim.command("call SwitchToSzToolView('%s')" % name )
-            listwinnr=str(vim.eval("winnr('#')"))
-            vim.command("exec '%s wincmd w'" % listwinnr)
-            buf = _getConsoleBuffer()
-
-        return buf
-
-
-    @staticmethod
-    def writeToJdeConsole(text, append=False):
-        if not text : return
-        buf = VimUtil.getJdeConsoleBuffer("JdeConsole")
-
-        if type(text) == type(""):
-            lines = text.split("\n")
-        else :
-            lines = text
-        #win_height = len(lines) + 1
-        #win_height = 20 if win_height > 20 else win_height
-        #vim.command("resize %s" % str(win_height) )
-        output(lines,buf, append)
-
-    @staticmethod
-    def closeJdeConsole():
-        closeOutputBuffer("JdeConsole")
 
 class ProjectManager(object):
     @staticmethod
@@ -171,24 +119,8 @@ class ProjectManager(object):
         vim.command("exec '%s wincmd w'" % edit_buffer)
         vim.command("NERDTreeFind")
 
-class Talker(object):
-    @staticmethod
-    def send(params):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((HOST, PORT))
-        sb = []
-        for item in params :
-            sb.append("%s=%s\n" %(item,params[item]))
-        sb.append('%s\n' % END_TOKEN)
-        s.send("".join(sb))
-        total_data=[]
-        while True:
-            data = s.recv(8192)
-            if not data: break
-            total_data.append(data)
-        s.close()
-        return ''.join(total_data)
-
+class Talker(BasicTalker):
+    
     @staticmethod
     def getPackageList(pkgname,xmlPath):
         params = dict()
@@ -217,16 +149,6 @@ class Talker(object):
         params["className"] = className
         params["classPathXml"] = xmlPath
         params["sourceType"] = sourceType
-        data = Talker.send(params)
-        return data
-
-
-    @staticmethod
-    def doLocatedbCommand(args):
-        params = dict()
-        params["cmd"]="locatedb"
-        params["args"] = ";".join(args)
-        params["pwd"] = os.getcwd()
         data = Talker.send(params)
         return data
 
@@ -323,11 +245,13 @@ class Talker(object):
         return data
 
     @staticmethod
-    def runFile(xmlPath,sourceFile):
+    def runFile(xmlPath,sourceFile,vimServer,bufname):
         params = dict()
         params["cmd"]="run"
         params["classPathXml"] = xmlPath
         params["sourceFile"] = sourceFile
+        params["vimServer"] = vimServer
+        params["bufname"] = bufname
         data = Talker.send(params)
         return data
 
@@ -359,13 +283,6 @@ class Talker(object):
         data = Talker.send(params)
         return data
 
-    @staticmethod
-    def fetchResult(guid):
-        params = dict()
-        params["cmd"]="fetchResult"
-        params["jobId"] = guid
-        data = Talker.send(params)
-        return data
 
     @staticmethod
     def runAntBuild(vimServer,cmdName,runInShell):
@@ -376,6 +293,7 @@ class Talker(object):
         params["runInShell"] = runInShell
         data = Talker.send(params)
         return data
+
 
     @staticmethod
     def projectClean(xmlPath):
@@ -473,7 +391,7 @@ class EditUtil(object):
         if not classPathXml : return
         allFullClassNames = Parser.getAllSuperClassFullNames()
         resultText = Talker.overideMethod(classPathXml,allFullClassNames)
-        VimUtil.writeToJdeConsole(resultText)
+        VimUtil.writeToSzToolBuffer("JdeConsole",resultText)
 
     @staticmethod
     def locateDefinition(sourceType):
@@ -607,7 +525,7 @@ class EditUtil(object):
             classNameList = Parser.getFullClassNames(className)
             constructDefs = Talker.getConstructDefs(current_file_name,classNameList,classPathXml)
             if constructDefs == "" : return
-            VimUtil.writeToJdeConsole(constructDefs)
+            VimUtil.writeToSzToolBuffer("JdeConsole",constructDefs)
             return 
 
 
@@ -651,7 +569,7 @@ class EditUtil(object):
         methodDefs = Talker.getMethodDefs(params)
         if methodDefs == "" :
             return
-        VimUtil.writeToJdeConsole(methodDefs)
+        VimUtil.writeToSzToolBuffer("JdeConsole",methodDefs)
         
         return
 
@@ -665,7 +583,7 @@ class EditUtil(object):
         if not classPathXml : return
         classNameList = Parser.getFullClassNames(classname)
         result = Talker.dumpClass(classPathXml,classNameList)
-        VimUtil.writeToJdeConsole(result)
+        VimUtil.writeToSzToolBuffer("JdeConsole",result)
 
     @staticmethod
     def toggleBreakpoint():
@@ -921,7 +839,7 @@ class Compiler(object):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         if not classPathXml : return
         resultText = Talker.copyResource(classPathXml,current_file_name)
-        VimUtil.writeToJdeConsole(resultText)
+        VimUtil.writeToSzToolBuffer("JdeConsole",resultText)
 
 class Runner(object):
 
@@ -933,8 +851,9 @@ class Runner(object):
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         if not classPathXml : return
-        resultText = Talker.runFile(classPathXml,current_file_name)
-        VimUtil.writeToJdeConsole(resultText)
+        serverName = vim.eval("v:servername")
+        resultText = Talker.runFile(classPathXml,current_file_name,serverName,"JdeConsole")
+        VimUtil.writeToSzToolBuffer("JdeConsole",resultText)
 
     @staticmethod
     def runAntBuild(target=None):
@@ -953,9 +872,9 @@ class Runner(object):
 
     @staticmethod
     def fetchResult(guid):
-        resultText = Talker.fetchResult(guid)
+        resultText = BasicTalker.fetchResult(guid)
         lines = resultText.split("\n")
-        VimUtil.writeToJdeConsole(lines)
+        VimUtil.writeToSzToolBuffer("JdeConsole",lines)
 
 class AutoImport(object):
 
@@ -1708,7 +1627,7 @@ class Jdb(object):
         if args[0] == "suspend" :
             self.handleSuspend(args[1],args[2],args[3])
         elif args[0] == "msg" :
-            buffer = VimUtil.getJdeConsoleBuffer("JdbStdOut", createNew = False )
+            buffer = VimUtil.getSzToolBuffer("JdbStdOut", createNew = False )
             if (buffer == None ) :
                 print args[1]
                 return
@@ -1808,11 +1727,11 @@ class Jdb(object):
         jdb.show()
 
     def stdout(self,msg):
-        buffer = VimUtil.getJdeConsoleBuffer("JdbStdOut")
+        buffer = VimUtil.getSzToolBuffer("JdbStdOut")
         output(msg,buffer,False)
 
     def editBufOut(self,msg):
-        buffer = VimUtil.getJdeConsoleBuffer("Jdb")
+        buffer = VimUtil.getSzToolBuffer("Jdb")
         output(msg,buffer,True)
 
     def printHelp(self):
