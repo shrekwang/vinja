@@ -729,7 +729,7 @@ class ShUtil(object):
 
     def bmlist(self, bm=False):
         bmfile = self.shext_bm_path 
-        lines = [line.replace("\n","") for line in open(bmfile).readlines()]
+        lines = [line.rstrip() for line in open(bmfile).readlines()]
         Shext.stdout(lines)
 
     def bmedit(self, bm=False):

@@ -28,6 +28,7 @@ public class SzjdeConstants {
 	public final static String PARAM_VAR_NAMES="varNames";
 	public final static String PARAM_EXP_TOKENS="expTokens";
 	public final static String PARAM_CLASS_NAME="className";
+	public final static String PARAM_IGNORE_CASE="ignoreCase";
 	public final static String PARAM_MEMBER_NAME="memberName";
 	public final static String PARAM_PKG_NAME="pkgName";
 	public final static String PARAM_SUPER_CLASS="superClass";

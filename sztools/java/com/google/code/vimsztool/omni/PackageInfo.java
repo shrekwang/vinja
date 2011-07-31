@@ -69,11 +69,21 @@ public class PackageInfo {
 		
 	}
 	
-	public List<String> findClass(String nameStart) {
+	private Pattern getPattern(String name,boolean ignoreCase) {
+        String patStr = name.replace("*",".*") + ".*";
+        Pattern pattern = null;
+        if (ignoreCase) {
+	        pattern = Pattern.compile(patStr, Pattern.CASE_INSENSITIVE);
+        } else {
+	        pattern = Pattern.compile(patStr);
+        }
+        return pattern;
+	}
+	
+	public List<String> findClass(String nameStart,boolean ignoreCase) {
 		
 		List<String> result = new ArrayList<String>();
-        String patStr = nameStart.replace("*",".*") + ".*";
-        Pattern pattern = Pattern.compile(patStr);
+        Pattern pattern = getPattern(nameStart,ignoreCase);
 	        
 		for (String pkgname : cache.keySet()) {
 			Set<String> classNames = cache.get(pkgname);
@@ -82,12 +92,11 @@ public class PackageInfo {
 		return result;
 	}
 	
-	public List<String> findClassByQualifiedName(String name) {
+	public List<String> findClassByQualifiedName(String name,boolean ignoreCase) {
 		String[] splits = splitClassName(name);
 		String pkgName = splits[0];
 		String className = splits[1];
-        String patStr = className.replace("*",".*") + ".*";
-        Pattern pattern = Pattern.compile(patStr);
+		Pattern pattern = getPattern(className, ignoreCase);
 		Set<String> classNames = cache.get(pkgName);
 		return getMatchedClassName(classNames, className, pattern, pkgName);
 	}

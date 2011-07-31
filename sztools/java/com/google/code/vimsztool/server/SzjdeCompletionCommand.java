@@ -10,6 +10,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASSPATHXML
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASS_NAME;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CPT_TYPE;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_EXP_TOKENS;
+import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_IGNORE_CASE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,19 +42,27 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 			return completeMember(classPathXml, completionType);
 		} else if (completionType.equals(CPT_TYPE_CLASS)){
 			String nameStart = params.get(PARAM_CLASS_NAME);
-			return completeClass(classPathXml,nameStart);
+			String ignoreCaseParam = params.get(PARAM_IGNORE_CASE);
+			boolean ignoreCase = false;
+			if (ignoreCaseParam != null && ignoreCaseParam.equals("true")) {
+				ignoreCase = true;
+			}
+			return completeClass(classPathXml,nameStart,ignoreCase);
 		}
 		return "";
 	}
-	public String completeClass(String classPathXml, String nameStart) {
+	public String completeClass(String classPathXml, String nameStart,boolean ignoreCase) {
 		if (classPathXml ==null || nameStart == null) return "";
 		CompilerContext ctx = getCompilerContext(classPathXml);
 		PackageInfo packageInfo = ctx.getPackageInfo();
 		List<String> classNameList = null;
+		if (nameStart.length() < 2) {
+			return "";
+		}
 		if (nameStart.indexOf(".") > -1) {
-			classNameList=packageInfo.findClassByQualifiedName(nameStart);
+			classNameList=packageInfo.findClassByQualifiedName(nameStart,ignoreCase);
 		} else {
-			classNameList=packageInfo.findClass(nameStart);
+			classNameList=packageInfo.findClass(nameStart,ignoreCase);
 		}
 		Collections.sort(classNameList, new ClassNameComparator());
 		StringBuilder sb=new StringBuilder();

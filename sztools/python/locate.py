@@ -306,6 +306,8 @@ class JavaClassNameContentManager(object):
         row_len = len(buffer[row-1])
         start_index = 0 
         end_index = row_len
+        if buffer[row-1].strip() == "" :
+            return ""
         for i in range(col,-1,-1):
             if not pat.match(buffer[row-1][i]) :
                 start_index = i
@@ -320,7 +322,7 @@ class JavaClassNameContentManager(object):
         search_pat = search_pat[:-1]
         if not search_pat :
             return []
-        classNameList = Talker.getClassList(search_pat,self.classPathXml).split("\n")
+        classNameList = Talker.getClassList(search_pat,self.classPathXml,ignoreCase="true").split("\n")
         return classNameList
 
     def open_content(self,line,mode):

@@ -132,12 +132,13 @@ class Talker(BasicTalker):
         return data
 
     @staticmethod
-    def getClassList(classNameStart,xmlPath):
+    def getClassList(classNameStart,xmlPath,ignoreCase="false"):
         params = dict()
         params["cmd"]="completion"
         params["completionType"] = "class"
         params["className"] = classNameStart
         params["classPathXml"] = xmlPath
+        params["ignoreCase"] = ignoreCase
         data = Talker.send(params)
         return data
 
@@ -1736,7 +1737,7 @@ class Jdb(object):
 
     def printHelp(self):
         help_file = open(os.path.join(getShareHome(),"doc/jdb.help"))
-        content = [line.replace("\n","") for line in help_file.readlines()]
+        content = [line.rstrip() for line in help_file.readlines()]
         help_file.close()
         self.stdout(content)
 

@@ -24,7 +24,7 @@ def read_zip_cmd():
 def read_zip_entry(path):
     zip_file_path, inner_path = split_zip_scheme(path)
     zipFile = zipfile.ZipFile(zip_file_path)  
-    content = [line.replace("\n","") for line in zipFile.open(inner_path).readlines()]
+    content = [line.rstrip() for line in zipFile.open(inner_path).readlines()]
     zipFile.close()
     return content
 
