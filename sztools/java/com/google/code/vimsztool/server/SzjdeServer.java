@@ -15,6 +15,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATE_SOURCE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_QUIT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_TYPE_HIIRARCHY;
@@ -32,7 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.eclipse.swt.widgets.Display;
+
 import com.google.code.vimsztool.debug.DebugCommand;
+import com.google.code.vimsztool.ui.JdtUI;
 import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.VjdeUtil;
 
@@ -133,6 +137,12 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeTypeHierarchyCommand();
 	   } else if (cmdStr.equals(CMD_LOCATE_SOURCE)) {
 		   szjdeCommand = new SzjdeLocateSourceCommand();
+	   } else if (cmdStr.equals(CMD_QUIT)) {
+		   Display.getDefault().syncExec(new Runnable() {
+				public void run() {
+				   JdtUI.instance.exit();
+				}
+			});
 	   }
 	   if (szjdeCommand == null) {
 		   return ("can't find the command '"+cmdStr+"' definition.");

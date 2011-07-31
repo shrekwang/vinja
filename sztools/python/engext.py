@@ -13,10 +13,10 @@ class ClassicReader(object):
         classicReader.updateIndexView()
 
     def __init__(self):
-        self.content_cache_path = os.path.join(getDataHome(), "classicBook")
+        self.content_cache_path = os.path.join(SzToolsConfig.getDataHome(), "classicBook")
         if not os.path.exists(self.content_cache_path) :
             os.makedirs(self.content_cache_path)
-        self.db_path = os.path.join(getDataHome(), "classic_reader.dat")
+        self.db_path = os.path.join(SzToolsConfig.getDataHome(), "classic_reader.dat")
         self.url_dict={}
         self.current_book_url=None
         self.select_areas=[]
@@ -123,7 +123,7 @@ class ClassicReader(object):
         url = self.url_dict.get(row)
         self.current_book_url = url
         match=re.search("\d+",url)
-        self.content_cache_path = os.path.join(getDataHome(), "classicBook")
+        self.content_cache_path = os.path.join(SzToolsConfig.getDataHome(), "classicBook")
         book_int_index= match.group()
         book_file=os.path.join(self.content_cache_path,str(book_int_index)+".txt")
         if os.path.exists(book_file) :
@@ -141,7 +141,7 @@ class ClassicReader(object):
         vim.command("exec 'setlocal noswapfile'")
 
         vim.command("syntax clear")
-        initHightLightScheme()
+        MiscUtil.initHightLightScheme()
         self.initBookMarks(url)
         vim.command("vmap <silent><buffer><leader>za :python classicReader.markBook()<cr>")
         #vim.command("map  <silent><buffer><leader>zb :python classicReader.unMark()<cr>")
@@ -157,15 +157,15 @@ class ClassicReader(object):
             self.select_areas = sel_area.split(";")
             for area_str in self.select_areas :
                 area=[int(item) for item in area_str.split(",")]
-                visualSynCmds=getVisualSynCmd(area)
+                visualSynCmds=MiscUtil.getVisualSynCmd(area)
                 for vimCmd in visualSynCmds:
                     vim.command(vimCmd)
         else :
             self.select_areas = []
 
     def markBook(self):
-        area=getVisualArea()
-        visualSynCmds=getVisualSynCmd(area)
+        area=MiscUtil.getVisualArea()
+        visualSynCmds=MiscUtil.getVisualSynCmd(area)
         for vimCmd in visualSynCmds:
             vim.command(vimCmd)
         area_str=",".join([str(item) for item in area])
@@ -195,7 +195,7 @@ class ClassicReader(object):
         vim.command("syntax clear")
         for area_str in self.select_areas :
             area=[int(item) for item in area_str.split(",")]
-            visualSynCmds=getVisualSynCmd(area)
+            visualSynCmds=MiscUtil.getVisualSynCmd(area)
             for vimCmd in visualSynCmds:
                 vim.command(vimCmd)
 
@@ -207,8 +207,8 @@ class Recite(object):
     @staticmethod
     def runApp():
         global recite
-        recite_work_dir=os.path.join(getDataHome(), "recite")
-        recite_words_file=os.path.join(getDataHome(),"recite/tofel.txt")
+        recite_work_dir=os.path.join(SzToolsConfig.getDataHome(), "recite")
+        recite_words_file=os.path.join(SzToolsConfig.getDataHome(),"recite/tofel.txt")
         recite=Recite(recite_work_dir,recite_words_file)
         recite.listWords(20)
 

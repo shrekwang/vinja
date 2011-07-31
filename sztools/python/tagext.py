@@ -199,7 +199,7 @@ class TagDb(object):
     def __init__(self, data_file_name = None):
         if data_file_name == None :
             data_file_name = "tagext.dat"
-        self.data_file_path = os.path.join(getDataHome(), data_file_name)
+        self.data_file_path = os.path.join(SzToolsConfig.getDataHome(), data_file_name)
         if not os.path.exists(self.data_file_path) :
             path=os.path.dirname(self.data_file_path)
             if not os.path.exists(path):

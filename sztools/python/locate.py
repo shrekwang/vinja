@@ -190,7 +190,7 @@ class QuickLocater(object) :
 
 class FileContentManager(object):
     def __init__(self):
-        shext_locatedb_path = os.path.join(getDataHome(), "locate.db")
+        shext_locatedb_path = os.path.join(SzToolsConfig.getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
         self.show_on_open = False
 

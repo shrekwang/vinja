@@ -27,6 +27,7 @@ import com.google.code.vimsztool.util.VjdeUtil;
 public class JdtUI {
 	
 	private static Logger log = JdeLogger.getLogger("JdtUI");
+	public static JdtUI instance = null;
 	private Shell shell;
 	private Tray systemTray;
 	private Image img;
@@ -44,8 +45,8 @@ public class JdtUI {
 				sztoolHome = args[i++];
 			}
 		}
-		JdtUI ui = new JdtUI(sztoolHome);
-		ui.run();
+		instance = new JdtUI(sztoolHome);
+		instance.run();
 	}
 	public JdtUI(String sztoolHome) {
 		pref.init(sztoolHome);
@@ -67,7 +68,7 @@ public class JdtUI {
 		}
 	}
 
-	private void exit() {
+	public void exit() {
 		img.dispose();
 		systemTray.dispose();
 		shell.dispose();

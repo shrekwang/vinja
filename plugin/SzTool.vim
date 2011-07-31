@@ -313,7 +313,7 @@ function! SzMineSweeper()
 endfunction
 
 function CustomSub(exp,method)
-  python transform(vim.eval("a:exp"), vim.eval("a:method"))
+  python MiscUtil.transform(vim.eval("a:exp"), vim.eval("a:method"))
 	return g:sztransform_result
 endfunction
 
@@ -323,8 +323,8 @@ endfunction
 
 function SearchDict(word)
   call RunSzPyfile("pystardict.py")
-  python searchDict(vim.eval("a:word"))
-  python playWordSound(vim.eval("a:word"))
+  python DictUtil.searchDict(vim.eval("a:word"))
+  python DictUtil.playWordSound(vim.eval("a:word"))
 endfunction
 
 
@@ -365,7 +365,7 @@ function Ledit(name)
 endfunction
 
 function WatchExample(name)
-  python watchExample(vim.eval("a:name"))
+  python MiscUtil.watchExample(vim.eval("a:name"))
 endfunction
 
 function LocateFile()
@@ -465,7 +465,7 @@ endfunction
 
 function! Jdext()
   call RunSzPyfile("jde.py")
-  python startAgent()
+  python SztoolAgent.startAgent()
   set completeopt=menuone
   autocmd BufEnter     *.java     call InitJavaSetting()
   autocmd BufWinEnter   *.java    python EditUtil.initBreakpointSign()
@@ -527,7 +527,8 @@ command! -nargs=0 SzMineSweeper  :call SzMineSweeper()
 
 command! -nargs=1 Transform    :call Transform('<args>')
 
-command! -nargs=0 StartAgent  :python startAgent()
+command! -nargs=0 StartAgent  :python SztoolAgent.startAgent()
+command! -nargs=0 StopAgent   :python SztoolAgent.stopAgent()
 command! -nargs=0 Shext       :call Shext()
 command! -nargs=0 Jdext       :call Jdext()
 command! -nargs=0 Dbext       :call Dbext()
@@ -539,13 +540,13 @@ command! -nargs=0 MakeNoteTemplate    :python Notext.makeTemplate()
 command! -nargs=+ FetchResult      :call FetchResult(<f-args>)
 
 "sztools mapping
-nmap <silent><leader>zc  :python startScriptEdit()<cr>
+nmap <silent><leader>zc  :python ScratchUtil.startScriptEdit()<cr>
 nmap <silent><leader>zd  :call SearchDict('<C-R><C-W>')<CR>
-vmap <silent><leader>zf  :python simpleFormatSQL()<cr>
-vmap <silent><leader>zm  :python markVisual()<cr>
-vmap <silent><leader>te  :python tabulate()<cr>
+vmap <silent><leader>zf  :python MiscUtil.simpleFormatSQL()<cr>
+vmap <silent><leader>zm  :python MiscUtil.markVisual()<cr>
+vmap <silent><leader>te  :python MiscUtil.tabulate()<cr>
 
-nmap <silent><leader>zs  :python startfile()<cr>
+nmap <silent><leader>zs  :python MiscUtil.startfile()<cr>
 nmap <silent><leader>zv  <C-Q>
 nmap <silent><leader>zw  :w<cr>
 
@@ -554,4 +555,4 @@ nmap <silent><leader>zl  :call TagList()<cr>
 nmap <silent><leader>lw  :call LocateFile()<cr>
 
 
-au BufReadCmd  jar://*	python read_zip_cmd()
+au BufReadCmd  jar://*	python ZipUtil.read_zip_cmd()

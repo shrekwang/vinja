@@ -1,4 +1,5 @@
 import zipfile, os  
+from common import ZipUtil
 
 class TreeNode(object):
 
@@ -224,7 +225,7 @@ class ZipTree(object):
         if not zip_file_path :
             path = vim.current.buffer.name
             if path and path.startswith("jar:") :
-                zip_file_path, inner_path = split_zip_scheme(path)
+                zip_file_path, inner_path = ZipUtil.split_zip_scheme(path)
 
         if not os.path.exists(zip_file_path):
             print "zip file path not exists."

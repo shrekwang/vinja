@@ -48,7 +48,7 @@ class SqliteDbManager(object):
 
 class PageCache(object):
     def __init__(self):
-        self.jdoc_db_path=os.path.join(getDataHome(), "jdoc.dat")
+        self.jdoc_db_path=os.path.join(SzToolsConfig.getDataHome(), "jdoc.dat")
         self.dbm = SqliteDbManager(self.jdoc_db_path )
         if not os.path.exists(self.jdoc_db_path):
             self.initDb()
@@ -255,7 +255,7 @@ class Javadoc(object):
         return result
 
     def cacheClassList(self):
-        docListFile=os.path.join(getShareHome(),"conf/javadoc.cfg")
+        docListFile=os.path.join(SzToolsConfig.getShareHome(),"conf/javadoc.cfg")
         urls = open(docListFile).readlines()
 
         for url in urls :

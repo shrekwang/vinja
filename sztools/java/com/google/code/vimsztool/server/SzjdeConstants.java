@@ -20,6 +20,7 @@ public class SzjdeConstants {
 	public final static String CMD_PROJECT_CLEAN="projectClean";
 	public final static String CMD_TYPE_HIIRARCHY="typeHierarchy";
 	public final static String CMD_LOCATE_SOURCE="locateSource";
+	public final static String CMD_QUIT="quit";
 	
 	public final static String PARAM_CLASSPATHXML="classPathXml";
 	public final static String PARAM_SOURCEFILE="sourceFile";

@@ -4,14 +4,14 @@ import vim,sys,os
 
 class NoteDb(object):
     def getConn(self):
-        conn=sqlite.connect(os.path.join(getDataHome(), "note.dat"))
+        conn=sqlite.connect(os.path.join(SzToolsConfig.getDataHome(), "note.dat"))
         return conn
 
     def initDb(self):
         createNoteTableSql="create table sznote (id integer primary key ,  \
           create_date varchar(10),status char(1),title varchar(200), content varchar(5000))"
         createTagTableSql="create table tag(tag_name varchar(30), note_id integer)"
-        note_db_path = os.path.join(getDataHome(), "note.dat")
+        note_db_path = os.path.join(SzToolsConfig.getDataHome(), "note.dat")
         path=os.path.dirname(note_db_path)
         if not os.path.exists(path):
           os.makedirs(path)
@@ -64,10 +64,10 @@ class Notext(object) :
         else:
             notext.updateItem(noteItem)
 
-        tagListBuf = getOutputBuffer("tag_list")
+        tagListBuf = VimUtil.getOutputBuffer("tag_list")
         if tagListBuf != None :
             notext.updateTagListView()
-        noteListBuf = getOutputBuffer("note_list")
+        noteListBuf = VimUtil.getOutputBuffer("note_list")
         if noteListBuf != None :
             notext.updateNoteListView()
 
@@ -189,7 +189,7 @@ class Notext(object) :
     def updateTagListView(self):
         vim.command("call SwitchToSzToolView('tag_list')" )
         (row, col) = vim.current.window.cursor
-        note_db_path=os.path.join(getDataHome(), "note.dat")
+        note_db_path=os.path.join(SzToolsConfig.getDataHome(), "note.dat")
         if not os.path.exists(note_db_path):
             initDb()
         selectSql="select  tag_name ,count(*) from tag group by tag_name"

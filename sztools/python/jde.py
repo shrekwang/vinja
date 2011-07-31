@@ -8,7 +8,7 @@ import StringIO
 from subprocess import Popen
 from string import Template
 import difflib
-from common import output,getShareHome,getVisualArea,VimUtil,BasicTalker
+from common import output,SzToolsConfig,MiscUtil,VimUtil,BasicTalker,ZipUtil
 
 from pyparsing import *
 from xml.etree.ElementTree import *
@@ -81,7 +81,7 @@ class ProjectManager(object):
     def projectInit():
         pwd = os.getcwd()
         projectName =  os.path.basename(os.getcwd())
-        examples_dir = os.path.join(getShareHome(),"examples")
+        examples_dir = os.path.join(SzToolsConfig.getShareHome(),"examples")
         projectInitXml = os.path.join(examples_dir,"project.xml")
         classpathInitXml = os.path.join(examples_dir,"classpath.xml")
         jdeInitXml = os.path.join(examples_dir,"jde.xml")
@@ -347,7 +347,7 @@ class EditUtil(object):
         jdef_parser = Parser.getJavaVarDefParser(None,False)
         statement = OneOrMore(Group(jdef_parser))
         statement.ignore( javaStyleComment )
-        startCol,endCol,startLine,endLine=getVisualArea()
+        startCol,endCol,startLine,endLine=MiscUtil.getVisualArea()
         vim_buffer = vim.current.buffer
         selectedText = "\n".join(vim_buffer[startLine-1:endLine])
         results = statement.parseString(selectedText)
@@ -480,7 +480,7 @@ class EditUtil(object):
     @staticmethod
     def searchMemeberLineNum(memberName,sourcePath):
         if sourcePath.startswith("jar:") :
-            lines = read_zip_entry(sourcePath)
+            lines = ZipUtil.read_zip_entry(sourcePath)
         else :
             lines = open(sourcePath).readlines()
         matched_row = 1
@@ -1736,7 +1736,7 @@ class Jdb(object):
         output(msg,buffer,True)
 
     def printHelp(self):
-        help_file = open(os.path.join(getShareHome(),"doc/jdb.help"))
+        help_file = open(os.path.join(SzToolsConfig.getShareHome(),"doc/jdb.help"))
         content = [line.rstrip() for line in help_file.readlines()]
         help_file.close()
         self.stdout(content)

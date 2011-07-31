@@ -6,7 +6,6 @@ import sqlite3 as sqlite
 from datetime import timedelta, datetime ,date
 
 
-
 class ShextOptionParser(OptionParser):
     noAction = False
 
@@ -69,9 +68,9 @@ class LsCmd(object):
 
         col_max_widths = []
         for i in range(cols):
-            max = strWidth(allValue[0][i])
+            max = MiscUtil.displayWidth(allValue[0][i])
             for j in range(rows):
-                if strWidth(allValue[j][i]) > max : max = strWidth(allValue[j][i])
+                if MiscUtil.displayWidth(allValue[j][i]) > max : max = MiscUtil.displayWidth(allValue[j][i])
             col_max_widths.append(max+self.col_pad)
 
         return allValue,col_max_widths
@@ -133,7 +132,7 @@ class LsCmd(object):
 
         nnlist = []
         for item in allValue:
-            nnlist.append("".join([col+((col_max_widths[index]-strWidth(col))*" ") for index,col in enumerate(item)]))
+            nnlist.append("".join([col+((col_max_widths[index] - MiscUtil.displayWidth(col))*" ") for index,col in enumerate(item)]))
         return nnlist
 
     def lsd(self):
@@ -467,10 +466,10 @@ class ShUtil(object):
     def __init__(self,screen_width,yank_buffer):
         self.lscmd = LsCmd(screen_width)
         self.findcmd = FindCmd()
-        self.shext_bm_path = os.path.join(getDataHome(), "shext-bm.txt")
+        self.shext_bm_path = os.path.join(SzToolsConfig.getDataHome(), "shext-bm.txt")
         if not os.path.exists(self.shext_bm_path) :
             open(self.shext_bm_path, 'w').close()
-        shext_locatedb_path = os.path.join(getDataHome(), "locate.db")
+        shext_locatedb_path = os.path.join(SzToolsConfig.getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
         self.yank_buffer = yank_buffer
         self.cd_history = [os.getcwd()]
@@ -640,7 +639,7 @@ class ShUtil(object):
             names = self.pathResolver.resolve(arg)
             for name in names :
                 count += 1
-                fileOrDirRm(name)
+                FileUtil.fileOrDirRm(name)
         Shext.stdout("%s items had been removed ." %str(count) )
 
     def rmdir(self,args):
@@ -674,7 +673,7 @@ class ShUtil(object):
             names = self.pathResolver.resolve(arg)
             for src in names :
                 records.append("cp %s to %s" % (self.relpath(src), self.relpath(dst)))
-                fileOrDirCp(src,dst)
+                FileUtil.fileOrDirCp(src,dst)
         records.append("%s items had been copied." % str(len(records)))
         Shext.stdout(records)
 
@@ -700,9 +699,9 @@ class ShUtil(object):
         records = []
         for mode,src in self.yank_buffer :
             if mode == "yank" : 
-                fileOrDirCp(src,dst) 
+                FileUtil.fileOrDirCp(src,dst) 
             else :
-                fileOrDirMv(src,dst)
+                FileUtil.fileOrDirMv(src,dst)
             records.append("%s pasted." % ( self.relpath(src)))
         records.append("%s items had been pasted." % str(len(records)))
         Shext.stdout(records)
@@ -714,7 +713,7 @@ class ShUtil(object):
             names = self.pathResolver.resolve(arg)
             for src in names :
                 records.append("mv %s to %s" % (self.relpath(src), self.relpath(dst)))
-                fileOrDirMv(src,dst)
+                FileUtil.fileOrDirMv(src,dst)
         records.append("%s items had been moved." % str(len(records)))
         Shext.stdout(records)
         
@@ -774,9 +773,10 @@ class Shext(object):
 
     @staticmethod
     def runApp():
+        SztoolAgent.startAgent()
         global shext
         shext = Shext()
-        shext.createOutputBuffer()
+        VimUtil.createOutputBuffer("shext")
         shext.ls()
 
     @staticmethod
@@ -787,12 +787,8 @@ class Shext(object):
 
     @staticmethod
     def getOutputBuffer():
-        shext_buffer = None
-        for buffer in vim.buffers:
-            if buffer.name and buffer.name.find( "SzToolView_shext") > -1 :
-                shext_buffer = buffer
-                break
-        return shext_buffer
+        buf = VimUtil.getOutputBuffer("shext")
+        return buf
 
     @staticmethod
     def stdout(msg, append = False):
@@ -815,12 +811,6 @@ class Shext(object):
         self.shUtil = ShUtil(screen_width=80,yank_buffer=self.yank_buffer)
         self.pathResolver = PathResolver(self.shUtil)
         self.special_cmds = ["exit","edit","ledit","bmedit"]
-
-    def createOutputBuffer(self):
-        vim.command("call SwitchToSzToolView('shext')" )
-        vim.command("setlocal number")
-        listwinnr = str(vim.eval("winnr('#')"))
-        vim.command("exec '"+listwinnr+" wincmd w'")
 
     def enoughArguments(self,tokens):
         cmdName = tokens[0]
@@ -925,7 +915,7 @@ class Shext(object):
             Shext.stdout(msg)
 
     def help(self):
-        help_file = open(os.path.join(getShareHome(),"doc/sztools.help"))
+        help_file = open(os.path.join(SzToolsConfig.getShareHome(),"doc/sztools.help"))
         content = [line.replace("\n","") for line in help_file.readlines()]
         help_file.close()
         Shext.stdout(content)

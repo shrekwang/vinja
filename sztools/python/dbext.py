@@ -16,7 +16,7 @@ class QueryUtil(object):
         if db_profile == None :  
             return
         outBuffer = Dbext.getOutputBuffer()
-        name = getVisualBlock()
+        name = MiscUtil.getVisualBlock()
         server_type = db_profile["servertype"]
         if server_type == "mssql":
             sql = """ SELECT name 
@@ -35,7 +35,7 @@ class QueryUtil(object):
 
     @staticmethod
     def queryTables():
-        name = getVisualBlock()
+        name = MiscUtil.getVisualBlock()
         columns , result = QueryUtil.queryTablesByName(name)
         outBuffer = Dbext.getOutputBuffer()
         if not columns :
@@ -83,7 +83,7 @@ class QueryUtil(object):
             return
 
         outBuffer = Dbext.getOutputBuffer()
-        name = getVisualBlock()
+        name = MiscUtil.getVisualBlock()
         server_type = db_profile["servertype"]
         if server_type == "oracle":
             schema = db_profile["user"]
@@ -117,7 +117,7 @@ class QueryUtil(object):
         db_profile = dbext.getDbOption()
         if db_profile == None :  
             return
-        name = getVisualBlock()
+        name = MiscUtil.getVisualBlock()
         outBuffer = Dbext.getOutputBuffer()
         server_type = db_profile["servertype"]
         if server_type == "oracle":
@@ -151,7 +151,7 @@ class Dbext(object):
         bufnum= vim.eval("bufnr('%')")
         bufname = "SzToolView_dbext%s" %(bufnum)
         dbext_output_buffer = None
-        Dbext.createOutputBuffer(bufnum)
+        Dbext.createDbOutputBuffer(bufnum)
         for buffer in vim.buffers:
             if buffer.name and buffer.name.find(bufname) > -1 :
                 dbext_output_buffer = buffer
@@ -159,7 +159,7 @@ class Dbext(object):
         return dbext_output_buffer
 
     @staticmethod
-    def createOutputBuffer(bufnum):
+    def createDbOutputBuffer(bufnum):
         vim.command("call SwitchToSzToolView('dbext%s')" %(bufnum) )
         vim.command("noremap <buffer> a 21zh")
         vim.command("noremap <buffer> f 21zl")
@@ -168,7 +168,7 @@ class Dbext(object):
         vim.command("exec '" + listwinnr + " wincmd w'")
 
     def queryVisualSQL(self):
-        sql = getVisualBlock()
+        sql = MiscUtil.getVisualBlock()
         outBuffer = Dbext.getOutputBuffer()
         append = False
         for index,item in enumerate(sql.split(";")):
@@ -230,7 +230,7 @@ class Dbext(object):
         return db_profile
 
     def promptDbOption(self):
-        dbconfs = self.loadConf(os.path.join(getDataHome(), "db.conf"))
+        dbconfs = self.loadConf(os.path.join(SzToolsConfig.getDataHome(), "db.conf"))
         if dbconfs == None :
             return
         for index,item in enumerate(dbconfs):
@@ -267,7 +267,7 @@ class Dbext(object):
         if self.existsConnParameter():
             db_profile = self.getTempProfile()
             return db_profile
-        dbconfs = self.loadConf(os.path.join(getDataHome(),"db.conf"))
+        dbconfs = self.loadConf(os.path.join(SzToolsConfig.getDataHome(),"db.conf"))
         if dbconfs == None : return
         if (len(dbconfs)==1) :
             db_profile = dbconfs[0]
