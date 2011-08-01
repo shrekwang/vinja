@@ -108,7 +108,9 @@ public class ExpressionEval {
 	}
 
 	public static String inspect(String expXmlStr) {
-		Value value = getJdiValue(expXmlStr);
+		List<Expression> exps = Expression.parseExpXmlStr(expXmlStr);
+		if (exps ==null || exps.size() == 0) return "";
+		Value value = getJdiValue(exps.get(0));
 		StringBuilder sb = new StringBuilder();
 		if (value instanceof ObjectReference) {
 			ObjectReference objRef = (ObjectReference) value;
@@ -129,17 +131,27 @@ public class ExpressionEval {
 	}
 
 	public static String eval(String expXmlStr) {
-		Value value = getJdiValue(expXmlStr);
-		return getPrettyPrintStr(value);
+		List<Expression> exps = Expression.parseExpXmlStr(expXmlStr);
+		if (exps ==null || exps.size() == 0) return "";
+		StringBuilder sb = new StringBuilder();
+		int count = 0;
+		for (Expression exp :exps) {
+			count ++;
+			Value value = getJdiValue(exp);
+			sb.append(getPrettyPrintStr(value)).append("\n");
+			if (count < exps.size()) {
+				sb.append("----------------------\n");
+			}
+		}
+		return sb.toString();
 	}
 
-	public static Value getJdiValue(String expXmlStr) {
+	public static Value getJdiValue(Expression exp) {
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
 		if (threadRef == null) {
 			return null;
 		}
-		Expression exp = Expression.parseExpXmlStr(expXmlStr);
 		try {
 			StackFrame stackFrame = threadRef.frame(0);
 			ObjectReference thisObj = stackFrame.thisObject();
@@ -191,6 +203,13 @@ public class ExpressionEval {
 			}
 			basicExpValue = invoke((ObjectReference) thisObj, expName,
 					arguments);
+		}
+			
+		if (exp.isArrayExp()) {
+			if (basicExpValue instanceof ArrayReference) {
+				ArrayReference array = (ArrayReference)basicExpValue;
+				basicExpValue = array.getValue(exp.getArrayIdx());
+			}
 		}
 
 		List<Expression> members = exp.getMembers();

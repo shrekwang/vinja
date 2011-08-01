@@ -73,12 +73,14 @@ public class SystemJob extends Thread {
 	
 			exec = Executors.newScheduledThreadPool(1);
 	        exec.scheduleAtFixedRate(new BufferChecker(), 1, 100, TimeUnit.MILLISECONDS);
+	        /*
 	        exec.schedule(new Runnable() {
 	            public void run() { 
 					process.destroy();
 	            	exec.shutdown();
             	}
 	        }, timeOut, TimeUnit.SECONDS);
+	        */
 		
 	        process.waitFor();
 		    exec.shutdown();

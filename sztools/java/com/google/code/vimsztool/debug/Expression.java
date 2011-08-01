@@ -25,6 +25,10 @@ public class Expression {
 	private String name;
 	private boolean isMethod;
 	private boolean isStaticMember;
+	
+	private boolean isArrayExp;
+	private int arrayIdx;
+	
 
 	private List<Expression> members = new ArrayList<Expression>();
 	private List<Expression> params = new ArrayList<Expression>();
@@ -36,21 +40,24 @@ public class Expression {
 		getParams().add(param);
 	}
 
-	public static Expression parseExpXmlStr(String xml) {
+	public static List<Expression> parseExpXmlStr(String xml) {
 		if (xml==null || xml.equals("")) return null;
+		List<Expression> result = new ArrayList<Expression>();
 		try {
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db = dbf.newDocumentBuilder();
 			InputStream is = new ByteArrayInputStream(xml.getBytes());
 			Document dom = db.parse(is);
 			Element docEle = dom.getDocumentElement();
-			Element expEle = getFirstChild(docEle, "exp");
-			Expression exp = parseExp(expEle);
-			return exp;
+			List<Element> expEles = getChildren(docEle, "exp");
+			for (Element expEle: expEles) {
+				Expression exp = parseExp(expEle);
+				result.add(exp);
+			}
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
-		return null;
+		return result;
 	}
 	
 	private static Expression parseExp(Element el) {
@@ -81,6 +88,13 @@ public class Expression {
 				Expression param = parseExp(paramNode);
 				expObj.addParam(param);
 			}
+		}
+		
+		Element arrayidxNode = getFirstChild(el, "arrayidx");
+		if (arrayidxNode != null ) {
+			int arrayIdx = Integer.parseInt(arrayidxNode.getAttribute("value"));
+			expObj.setArrayExp(true);
+			expObj.setArrayIdx(arrayIdx);
 		}
 		
 		Element membersNode = (Element)getFirstChild(el,"members");
@@ -160,6 +174,18 @@ public class Expression {
 	}
 	public boolean isStaticMember() {
 		return isStaticMember;
+	}
+	public boolean isArrayExp() {
+		return isArrayExp;
+	}
+	public void setArrayExp(boolean isArrayExp) {
+		this.isArrayExp = isArrayExp;
+	}
+	public int getArrayIdx() {
+		return arrayIdx;
+	}
+	public void setArrayIdx(int arrayIdx) {
+		this.arrayIdx = arrayIdx;
 	}
 	
 

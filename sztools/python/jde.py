@@ -1860,10 +1860,14 @@ class InspectorVarParser():
         param_atom = TRUE | FALSE | NULL | Group(java_exp) | java_str | java_num  
 
         func_param = Suppress("(")+Optional(delimitedList(param_atom)) + Suppress(")")
-        atom_exp =  Group(Word(alphas+"_",alphanums+"_").setResultsName("name") + \
-                Optional(Group(func_param).setResultsName("params")))
+        array_index_exp = Suppress("[")+java_num.setResultsName("arrayidx") + Suppress("]")
+
+        post_exp = Optional(Group(func_param).setResultsName("params")) + Optional(array_index_exp)
+
+        atom_exp =  Group(Word(alphas+"_",alphanums+"_").setResultsName("name") + post_exp)
         java_exp << atom_exp + Optional(OneOrMore(Suppress(".") + atom_exp)).setResultsName("members")
-        return java_exp
+
+        return delimitedList(Group(java_exp))
 
     def getClassNameFromEditBuf(self, name):
         for i in range(1,5):
@@ -1912,6 +1916,10 @@ class InspectorVarParser():
             for param in exp[0].params:
                 self.buildAstTree(param,paramsEle)
             ele.append(paramsEle)
+        if isinstance(exp[0].arrayidx, int) :
+            paramsEle = Element("arrayidx", {"value": str(exp[0].arrayidx)})
+            ele.append(paramsEle)
+
         if exp.members:
             membersEle = Element("members")
             ele.append(membersEle)
@@ -1933,15 +1941,14 @@ class InspectorVarParser():
         stringIO = StringIO.StringIO()
         root = Element('root')
         eleTree = ElementTree(root)
-
         parseResult = self.parse.parseString(exp)
-        self.buildAstTree(parseResult,root)
-
+        for item in  parseResult :
+            self.buildAstTree(item,root)
         eleTree.write(stringIO)
         msg = stringIO.getvalue()
         return msg
 
 if __name__ == "__main__" :
     #ivp = InspectorVarParser()
-    #result = ivp.generate("aa.what('sf') = saf")
+    #result = ivp.generate('aa[0],bb,cc.shit("what").let("dd")')
     pass
