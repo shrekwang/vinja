@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SystemJob extends Thread {
 
@@ -21,8 +22,6 @@ public class SystemJob extends Thread {
 	private ScheduledExecutorService exec = null;
 	private StringBuffer buffer = new StringBuffer();
 	private Process process ;
-	private boolean finished = false; 
-	private boolean outputClosed = false;
 	
 	public static SystemJob getJob(String uuid) {
 		return jobs.get(uuid);
@@ -42,13 +41,8 @@ public class SystemJob extends Thread {
 	}
 	
 	public synchronized String fetchResult() {
-		if (outputClosed) return "";
 		String result =this.buffer.toString();
 		this.buffer.delete(0, buffer.length());
-		if (finished) {
-			result = result + "\n" + "(" + cmd + "  finished.)";
-			outputClosed = true;
-		}
 		return result;
 	}
 
@@ -87,8 +81,10 @@ public class SystemJob extends Thread {
 		} catch (Exception err) {
 			buffer.append(err.getMessage());
 		} finally {
+			if (exec !=null ) { exec.shutdown(); }
+			buffer.append("\n");
+			buffer.append( "(" + cmd + "  finished.)");
 		    new BufferChecker().run();
-		    finished = true;
 		}
 		
 	}
