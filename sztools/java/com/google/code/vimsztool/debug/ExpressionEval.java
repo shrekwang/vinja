@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.google.code.vimsztool.exception.ExpressionEvalException;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
@@ -42,6 +43,40 @@ public class ExpressionEval {
 		return max;
 	}
 	
+	public static String executeEvalCmd(String debugCmd,String debugCmdArgs) {
+		String actionResult = null;
+		try {
+			if (debugCmd.equals("eval") || debugCmd.equals("print")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult =  eval(exp);
+			} else if (debugCmd.equals("inspect")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult =  inspect(exp);
+			} else if (debugCmd.equals("locals")) {
+				actionResult = variables();
+			} else if (debugCmd.equals("fields")) {
+				actionResult = fields();
+			}
+			return actionResult;
+		} catch (ExpressionEvalException e) {
+			return e.getMessage();
+		}
+	}
+	
+	private static ThreadReference checkAndGetCurrentThread() {
+		Debugger debugger = Debugger.getInstance();
+		if (debugger.getVm() == null ) {
+			throw new ExpressionEvalException("no virtual machine connected.");
+		}
+		
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		ThreadReference threadRef = threadStack.getCurThreadRef();
+		if (threadRef == null ) {
+			throw new ExpressionEvalException("no suspend thread.");
+		}
+		return threadRef;
+	}
+	
 	private static String padStr(int maxLen, String origStr) {
 		if (origStr  == null) return "";
 		int len = origStr.length();
@@ -53,11 +88,7 @@ public class ExpressionEval {
 	}
 	
 	public static String fields() {
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		ThreadReference threadRef = threadStack.getCurThreadRef();
-		if (threadRef == null) {
-			return null;
-		}
+		ThreadReference threadRef = checkAndGetCurrentThread();
 		StringBuilder sb = new StringBuilder();
 		try {
 			StackFrame stackFrame = threadRef.frame(0);
@@ -81,11 +112,7 @@ public class ExpressionEval {
 	}
 
 	public static String variables() {
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		ThreadReference threadRef = threadStack.getCurThreadRef();
-		if (threadRef == null) {
-			return "";
-		}
+		ThreadReference threadRef = checkAndGetCurrentThread();
 		StringBuilder sb = new StringBuilder();
 		try {
 			List<String> varNames = new ArrayList<String>();
@@ -147,20 +174,15 @@ public class ExpressionEval {
 	}
 
 	public static Value getJdiValue(Expression exp) {
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		ThreadReference threadRef = threadStack.getCurThreadRef();
-		if (threadRef == null) {
-			return null;
-		}
+		ThreadReference threadRef = checkAndGetCurrentThread();
 		try {
 			StackFrame stackFrame = threadRef.frame(0);
 			ObjectReference thisObj = stackFrame.thisObject();
 			Value value = eval(threadRef, exp, thisObj,false);
-
 			return value;
 		} catch (IncompatibleThreadStateException e) {
+			throw new ExpressionEvalException("eval expression error, caused by : " + e.getMessage());
 		}
-		return null;
 	}
 
 	public static Value eval(ThreadReference threadRef, Expression exp,
@@ -201,8 +223,7 @@ public class ExpressionEval {
 					arguments.add(paramValue);
 				}
 			}
-			basicExpValue = invoke((ObjectReference) thisObj, expName,
-					arguments);
+			basicExpValue = invoke((ObjectReference) thisObj, expName, arguments);
 		}
 			
 		if (exp.isArrayExp()) {
@@ -227,16 +248,14 @@ public class ExpressionEval {
 			}
 			List<ReferenceType> refTypes = vm.classesByName(exp.getName());
 			if (refTypes == null || refTypes.size() == 0) {
-				return null;
+				throw new ExpressionEvalException("eval expression error, type '" + exp.getName() + "' can't be found ");
 			}
 				
-			basicExpValue = invoke(refTypes.get(0), memberExp.getName(),
-					arguments);
+			basicExpValue = invoke(refTypes.get(0), memberExp.getName(), arguments);
 			if (members.size() > 1) {
 				for (int i = 1; i < members.size(); i++) {
 					Expression member = members.get(i);
-					basicExpValue = eval(threadRef, member,
-							(ObjectReference) basicExpValue,true);
+					basicExpValue = eval(threadRef, member, (ObjectReference) basicExpValue,true);
 				}
 			}
 		} else {
@@ -250,7 +269,8 @@ public class ExpressionEval {
 	}
 
 	public static Value findValueInFrame(ThreadReference threadRef, String name,
-			ObjectReference thisObj,boolean hasParents) {
+			ObjectReference thisObj, boolean hasParents)  {
+		
 		Value value = null;
 		try {
 			if (!hasParents) {
@@ -261,13 +281,20 @@ public class ExpressionEval {
 					return stackFrame.getValue(localVariable);
 				}
 			}
-
+			if (thisObj == null ) {
+				throw new ExpressionEvalException("eval expression error, local variable '" + name +"' can't be found."); 
+			}
+			
 			ReferenceType refType = thisObj.referenceType();
 			Field field = refType.fieldByName(name);
+			if (field == null ) {
+				throw new ExpressionEvalException("eval expression error, field '" + name +"' can't be found."); 
+			}
 			value = thisObj.getValue(field);
-			
-		} catch (Throwable e) {
-			
+		} catch (IncompatibleThreadStateException e) {
+			throw new ExpressionEvalException("eval expression error, caused by:" + e.getMessage());
+		} catch (AbsentInformationException e) {
+			throw new ExpressionEvalException("eval expression error, caused by:" + e.getMessage());
 		}
 		return value;
 	}
@@ -311,8 +338,9 @@ public class ExpressionEval {
 		   obj = (ObjectReference)invoker;
 		   methods = obj.referenceType().methodsByName(methodName);
 		}
-		if (methods == null || methods.size() == 0)
-			return null;
+		if (methods == null || methods.size() == 0) {
+			throw new ExpressionEvalException("eval expression error, method '" + methodName + "' can't be found");
+		}
 		if (methods.size() == 1) {
 			matchedMethod = methods.get(0);
 		} else {
@@ -329,12 +357,16 @@ public class ExpressionEval {
 		    }
 		} catch (InvalidTypeException e) {
 			e.printStackTrace();
+			throw new ExpressionEvalException("eval expression error, caused by :" + e.getMessage());
 		} catch (ClassNotLoadedException e) {
 			e.printStackTrace();
+			throw new ExpressionEvalException("eval expression error, caused by :" + e.getMessage());
 		} catch (IncompatibleThreadStateException e) {
 			e.printStackTrace();
+			throw new ExpressionEvalException("eval expression error, caused by :" + e.getMessage());
 		} catch (InvocationException e) {
 			e.printStackTrace();
+			throw new ExpressionEvalException("eval expression error, caused by :" + e.getMessage());
 		}
 		return value;
 	}

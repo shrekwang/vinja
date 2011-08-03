@@ -185,7 +185,7 @@ public class Debugger {
 	
 	public String listThreads() {
 		if (vm == null)
-			return "";
+			return "no virtual machine connected.";
 		List<ThreadReference> threads = vm.allThreads();
 		StringBuilder sb = new StringBuilder(vm.name());
 		sb.append("\n");

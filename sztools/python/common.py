@@ -550,6 +550,8 @@ class BasicTalker(object):
             sb.append("%s=%s\n" %(item,params[item]))
         sb.append('%s\n' % END_TOKEN)
         s.send("".join(sb))
+        if params.get("cmd") == "quit" :
+            return 
         total_data=[]
         while True:
             data = s.recv(8192)

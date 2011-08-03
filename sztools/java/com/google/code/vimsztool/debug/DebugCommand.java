@@ -66,18 +66,12 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = StepManager.step(StepRequest.STEP_OVER);
 		} else if (debugCmd.equals("step_return")) {
 			actionResult = StepManager.step(StepRequest.STEP_OUT);
-		} else if (debugCmd.equals("eval") || debugCmd.equals("print")) {
-			String exp = debugCmdArgs.substring(debugCmd.length()+1);
-			actionResult =  ExpressionEval.eval(exp);
-		} else if (debugCmd.equals("inspect")) {
-			String exp = debugCmdArgs.substring(debugCmd.length()+1);
-			actionResult =  ExpressionEval.inspect(exp);
+		} else if (debugCmd.equals("eval") || debugCmd.equals("print")
+				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
+				|| debugCmd.equals("fields") ) {
+			actionResult =  ExpressionEval.executeEvalCmd(debugCmd, debugCmdArgs);
 		} else if (debugCmd.equals("breakpoints")) {
 			actionResult = debugger.listBreakpoints();
-		} else if (debugCmd.equals("locals")) {
-			actionResult = ExpressionEval.variables();
-		} else if (debugCmd.equals("fields")) {
-			actionResult = ExpressionEval.fields();
 		} else if (debugCmd.equals("stacks")) {
 			actionResult = debugger.listCurrentStack();
 		} else if (debugCmd.equals("threads")) {
