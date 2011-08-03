@@ -263,14 +263,9 @@ public class ExpressionEval {
 			}
 
 			ReferenceType refType = thisObj.referenceType();
-			List<Field> fields = refType.fields();
-			for (Field field : fields) {
-				if (field.name().equals(name)) {
-					value = thisObj.getValue(field);
-					break;
-				}
-			}
-
+			Field field = refType.fieldByName(name);
+			value = thisObj.getValue(field);
+			
 		} catch (Throwable e) {
 			
 		}
