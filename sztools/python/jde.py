@@ -589,6 +589,7 @@ class EditUtil(object):
     @staticmethod
     def toggleBreakpoint():
         global bp_data
+        global jdb
         file_name = vim.current.buffer.name
         (row,col) = vim.current.window.cursor
         bp_set = bp_data.get(file_name)
@@ -609,6 +610,10 @@ class EditUtil(object):
                 signcmd="sign unplace %s buffer=%s" %(row, bufnr)
                 vim.command(signcmd)
                 bp_set.remove(row)
+                #if jdb is started, and suspend on current row, than place a SuspendLine sign
+                if "jdb" in globals() and jdb != None and int(jdb.suspendRow) == row:
+                    signcmd="sign place %s line=%s name=SuspendLine buffer=%s" % (row,row,bufnr)
+                    vim.command(signcmd)
             else :
                 print "remove breakpoint error : msgs "+data
         else :
@@ -1710,6 +1715,7 @@ class Jdb(object):
                 signcmd="sign place %s name=SzjdeBreakPoint buffer=%s" %(self.suspendRow, self.suspendBufnr)
             else :
                 signcmd="sign unplace %s buffer=%s" %(self.suspendRow, self.suspendBufnr)
+            self.suspendRow = -1
             vim.command(signcmd)
 
     @staticmethod

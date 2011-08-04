@@ -921,9 +921,6 @@ class Shext(object):
         Shext.stdout(content)
 
     def locatedb(self,args):
-        if not agentHasStarted():
-            shext.stdout("the sztool agent is not started. run :StartAgent to start.")
-            return
         result = BasicTalker.doLocatedbCommand(args)
         Shext.stdout(result)
 
