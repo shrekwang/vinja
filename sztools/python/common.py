@@ -640,7 +640,7 @@ class VimUtil(object):
         else :
             lines = text
         output(lines,buf, append)
-        if append :
+        if append and VimUtil.isSzToolBufferVisible(name):
             endrow = len(buf)
             callback = lambda : VimUtil.scrollTo(endrow)
             VimUtil.doCommandInSzToolBuffer(name,callback)
@@ -660,6 +660,14 @@ class VimUtil(object):
         if lineNum < winStartRow or lineNum > winEndRow :
             vim.command("normal %sG" % str(lineNum))
             vim.command("normal z-")
+
+    @staticmethod
+    def isSzToolBufferVisible(name):
+        bufnr = vim.eval("bufnr('SzToolView_%s')" % name)    
+        visibleBufList = vim.eval("tabpagebuflist()")
+        if bufnr in visibleBufList :
+            return True
+        return False
 
     @staticmethod
     def doCommandInSzToolBuffer(bufName, callback):
