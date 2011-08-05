@@ -88,7 +88,7 @@ class QuickLocater(object) :
 
     def create_explorer_buffer(self) :
         self.save_env()
-        vim.command("silent! botright 1split explorer_buffer")
+        vim.command("silent! keepalt botright 1split explorer_buffer")
         vim.command("setlocal bufhidden=delete")
         vim.command("setlocal buftype=nofile")
         vim.command("setlocal noswapfile")
