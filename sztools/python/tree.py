@@ -1,25 +1,35 @@
 import zipfile, os  
-from common import ZipUtil
+from common import ZipUtil,FileUtil 
+from xml.etree.ElementTree import *
+from jde import ProjectManager
 
 class TreeNode(object):
 
-    def __init__(self, name, isDirectory, isOpen = False):
+    def __init__(self, name, realpath, isDirectory, isOpen = False, isLoaded = False):
         self.name=name
+        self.realpath = realpath
         self.isDirectory = isDirectory
         self.isOpen = isOpen
-        self.children = []
+        self.isLoaded = isLoaded
+        self._children = []
+        self.parent = None
 
-    def getChild(self,name):
-        for node in self.children :
+    def get_child(self,name):
+        for node in self._children :
             if node.name == name :
                 return node
         return None
 
-    def getChildren(self) :
-        return self.children
+    def get_children(self) :
+        return self._children
 
-    def addChild(self,child):
-        self.children.append(child)
+    def add_child(self,child):
+        self._children.append(child)
+        child.parent = self
+
+    def remove_child(self, child):
+        self._children.remove(child)
+        return
 
     def renderToString(self,depth, drawText, vertMap, isLastChild):
         treeParts = ''
@@ -51,7 +61,7 @@ class TreeNode(object):
                 treeParts = treeParts + self.name + "\n"
 
         if self.isDirectory and self.isOpen :
-            childNodes = self.getChildren()
+            childNodes = self.get_children()
             if len(childNodes) > 0 :
                 lastIndex = len(childNodes) -1 
                 if lastIndex > 0 :
@@ -64,61 +74,385 @@ class TreeNode(object):
                 treeParts = treeParts + childNodes[lastIndex].renderToString(depth+1, 1, tmpMap, 1)
         return treeParts
 
-class ZipTree(object):
+    def add_sub_node(self, name):
+        print "unsupported operation."
+        return False
 
-    def __init__(self,zip_file_path):
+    def dispose(self):
+        print "unsupported operation."
+        return False
 
-        self.prefix_pat = re.compile(r"[^ \-+~`|]")
-        self.tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
+    def refresh(self):
+        "there's nothing to do here"
+        return
+
+    def paste(self, file_names):
+        print "unsupported operation."
+        return False
+
+class NormalDirNode(TreeNode):
+
+    def refresh(self):
+        self._children = []
+        files, dirs = [], []
+        for file_name in os.listdir(self.realpath) :
+            abpath = os.path.join(self.realpath, file_name)
+            if os.path.isdir(abpath) :
+                dirs.append((file_name, abpath))
+            else :
+                files.append((file_name, abpath))
+        dirs.sort()
+        files.sort()
+        for dir_name, abpath in dirs :
+            node = NormalDirNode(dir_name, abpath, isDirectory=True, isOpen=False)
+            self.add_child(node)
+        for file_name, abpath in files :
+            node = NormalFileNode(file_name, abpath, isDirectory=False, isOpen=False)
+            self.add_child(node)
+        self.isLoaded = True
+
+    def get_child(self,name):
+        if not self.isLoaded : 
+            self.refresh()
+ 
+        for node in self._children :
+            if node.name == name :
+                return node
+        return None
+
+    def get_children(self):
+        if not self.isLoaded : 
+            self.refresh()
+        return self._children
+
+    def add_sub_node(self, name):
+        abspath = os.path.join(self.realpath, name)
+        if name.endswith("/") :
+            os.makedirs(abspath)
+            node = NormalDirNode(name[:-1], abspath[:-1], isDirectory=True, isOpen=False)
+            self.add_child(node)
+        else :
+            open(abspath, 'a').close()
+            os.utime(abspath, None)
+            node = NormalFileNode(name, abspath, isDirectory=False, isOpen=False)
+            self.add_child(node)
+        self.isOpen = True
+        return True
+
+    def dispose(self):
+        FileUtil.fileOrDirRm(self.realpath)
+        self.parent.remove_child(self)
+        return True
+
+    def paste(self, nodes , remove_orignal = False ):
+        for node in nodes :
+            file_abpath = node.realpath
+            basename = os.path.basename(file_abpath)
+            new_abspath = os.path.join(self.realpath, basename)
+            if remove_orignal :
+                FileUtil.fileOrDirMv(file_abpath,self.realpath)
+                node.parent.remove_child(node)
+            else :
+                FileUtil.fileOrDirCp(file_abpath,self.realpath)
+
+            if os.path.isdir(file_abpath): 
+                node = NormalDirNode(basename, new_abspath, isDirectory=True, isOpen=False)
+                self.add_child(node)
+            else :
+                node = NormalFileNode(basename, new_abspath, isDirectory=False, isOpen=False)
+                self.add_child(node)
+        return True
+
+class NormalFileNode(TreeNode):
+
+    def open_node(self):
+        vim.command("exec 'wincmd w'")
+        vim.command("edit %s" % self.realpath)
+
+    def dispose(self):
+        FileUtil.fileOrDirRm(self.realpath)
+        self.parent.remove_child(self)
+        return True
+
+    def add_sub_node(self, name):
+        print "selected item is not a dir, can't add node"
+        return False
+
+class ZipFileItemNode(TreeNode):
+
+    def set_zip_file(self,zip_file_path) :
         self.zip_file_path = zip_file_path
-        self.root = self.build_zip_tree()
 
-    def add_tree_entry(self,root, line):
-        sections = line.split("/")
-        parentNode = root
+    def open_node(self):
+        vim.command("exec 'wincmd w'")
+        schmeme_path = "jar://"+self.zip_file_path+"!"+ self.realpath
+        vim.command("edit %s" % schmeme_path)
+
+class ZipRootNode(TreeNode):
+
+    def __init__(self, name, realpath, isDirectory, isOpen = False, isLoaded = False):
+        TreeNode.__init__(self,name,realpath, isDirectory,isOpen, isLoaded)
+        zipFile = zipfile.ZipFile(self.realpath)  
+        self.isDirectory = True
+        self.isOpen = False
+        for name in zipFile.namelist() :
+            self.add_tree_entry(name)
+        zipFile.close()
+
+    def add_tree_entry(self,line):
+        sections = line.strip().split("/")
+        parentNode = self
 
         for index, item in enumerate(sections):
             if item == "" :
                 continue
-            sameChild = parentNode.getChild(item)
+            sameChild = parentNode.get_child(item)
             if sameChild == None :
                 isDirectory = True
                 if index == len(sections)-1 and not line.endswith("/"):
                     isDirectory = False
-                node = TreeNode(item, isDirectory,isOpen=False)
-                parentNode.addChild(node)
+                if isDirectory :
+                    node = TreeNode(item,line,isDirectory,isOpen=False)
+                else :
+                    node = ZipFileItemNode(item,line,isDirectory,isOpen=False)
+                    node.set_zip_file(self.realpath)
+                parentNode.add_child(node)
                 parentNode = node
             else :
                 parentNode = sameChild
 
-    def build_zip_tree(self):
-        zipFile = zipfile.ZipFile(self.zip_file_path)  
-        root = TreeNode(self.zip_file_path,isDirectory=True, isOpen=True)
-        root.isDirectory = True
-        root.isOpen = True
-        for name in zipFile.namelist() :
-            self.add_tree_entry(root,name)
-        zipFile.close()
-        return root
+class ProjectTree(object):
+
+    def __init__(self, root_dir):
+        self.yank_buffer = []
+        self.remove_orignal = False 
+        self.render_root = None
+        self.prefix_pat = re.compile(r"[^ \-+~`|]")
+        self.tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
+        varConfig = os.path.expanduser("~/.sztools/vars.txt")
+        self.var_dict = {}
+        if not os.path.exists(varConfig) :
+            varConfig = os.path.join(SzToolsConfig.getShareHome() , "conf/vars.txt")
+        if os.path.exists(varConfig):
+            for line in open(varConfig).readlines() :
+                if line.strip() != "" and not line.startswith("#") :
+                    key,value = line.split("=")
+                    key,value = key.strip() , value.strip()
+                    self.var_dict[key] = value
+
+        self.root_dir = root_dir
+        classpathXml = os.path.join(root_dir, ".classpath")
+        tree = ElementTree()
+        tree.parse(classpathXml)
+        entries = tree.findall("classpathentry")
+        self.lib_srcs = []
+        for entry in  entries :
+            kind = entry.get("kind")
+            sourcepath = entry.get("sourcepath")
+            if kind == "var" and sourcepath :
+                    var_key = sourcepath[0: sourcepath.find("/")]
+                    abpath = sourcepath.replace(var_key, self.var_dict.get(var_key))
+                    self.lib_srcs.append(abpath)
+            elif kind == "lib" and sourcepath :
+                abpath = os.path.normpath(os.path.join(root_dir,sourcepath))
+                self.lib_srcs.append(abpath)
+        self._build_tree()
+
+    def _build_tree(self):
+        self.root = TreeNode("project",self.root_dir, True, True,True)
+        self._build_file_nodes()
+        self._build_virtual_noes()
+
+    def _get_render_root(self):
+        if self.render_root == None :
+            return self.root
+        return self.render_root
+
+    def _build_virtual_noes(self):
+
+        lib_src_node = TreeNode("Referenced Libraries","v", True,False,True)
+        self.root.add_child(lib_src_node)
+
+        for lib_src in self.lib_srcs :
+            basename = os.path.basename(lib_src)
+            node = ZipRootNode(basename,lib_src, False,False)
+            lib_src_node.add_child(node)
+
+    def _build_file_nodes(self):
+        files, dirs = [], []
+        for file_name in os.listdir(self.root_dir) :
+            abpath = os.path.join(self.root_dir,file_name)
+            if os.path.isdir(abpath) :
+                dirs.append((file_name, abpath))
+            else :
+                files.append((file_name, abpath))
+
+        dirs.sort()
+        files.sort()
+        for dir_name, abpath in dirs :
+            node = NormalDirNode(dir_name, abpath, isDirectory=True, isOpen=False)
+            self.root.add_child(node)
+        for file_name, abpath in files :
+            node = NormalFileNode(file_name, abpath, isDirectory=False, isOpen=False)
+            self.root.add_child(node)
+
+    def _get_node_from_path(self, path):
+            sections = path.split("/")
+            if sections[-1] == "" :
+                sections = sections[:-1]
+            node = self._get_render_root()
+            for section in sections :
+                node = node.get_child(section)
+            return node
+
+    def open_selected_node(self):
+        node = self.get_selected_node()
+        (row,col) = vim.current.window.cursor
+        if node.isDirectory :
+            if node.isOpen :
+                node.isOpen = False
+            else :
+                node.isOpen = True
+            self.render_tree()
+            vim.current.window.cursor = (row,col)
+        else :
+            node.open_node()
+
+    def close_parent_node(self):
+        node = self.get_selected_node()
+        node.parent.isOpen = False
+        self.render_tree()
+        self.select_node(node.parent)
+
+    def yank_node_path(self):
+        node = self.get_selected_node()
+        vim.command('let @" = "%s" ' % node.realpath)
+        print "node path yanked"
+
+    def get_selected_node(self):
+        (row,col) = vim.current.window.cursor
+        path = self._get_path()
+        if path.startswith("/") :
+            path = path[1:]
+        node = self._get_node_from_path(path)
+        return node
+
+    def select_node(self, node):
+        node_list =[node.name]
+        while True :
+            node = node.parent
+            if node == None :
+                break
+            node_list.insert(0,node.name)
+        tree_path = "/".join(node_list[1:])
+        (row,col) = projectTree.get_path_cursor(tree_path)
+        vim.current.window.cursor = (row,col)
+
+    def add_node(self):
+        node = self.get_selected_node()
+        prompt = "enter file name to be created, dirs endswith / \n" + node.realpath +"/"
+        added_file = VimUtil.getInput(prompt)
+        if not added_file :
+            print "add node aborted."
+            return
+        suc = node.add_sub_node(added_file)
+        node_name = added_file
+        if added_file.endswith("/") :
+            node_name = added_file[:-1]
+        if suc :
+            self.render_tree()
+            self.select_node(node.get_child(node_name))
+
+    def delete_node(self):
+        node = self.get_selected_node()
+        prompt = "Are you sure you with to delete the node \n" + node.realpath +" (yN):"
+        answer = VimUtil.getInput(prompt)
+        if not answer or answer != "y" :
+            print "delete node abort."
+            return
+        parent = node.parent
+        suc = node.dispose()
+        if suc :
+            self.render_tree()
+            self.select_node(parent)
+
+    def yank_selected_node(self, remove_orignal = False):
+        node = self.get_selected_node()
+        self.yank_buffer = [node]
+        self.remove_orignal = remove_orignal
+        print "selected node has been yanked"
+
+    def paste(self):
+        node = self.get_selected_node()
+        suc = node.paste(self.yank_buffer, self.remove_orignal)
+        if suc :
+            node.isOpen = True
+            self.render_tree()
+            last_sub_node = node.get_child(self.yank_buffer[-1].name)
+            if last_sub_node != None :
+                self.select_node(last_sub_node)
+            else :
+                self.select_node(node)
+
+    def change_root(self):
+        node = self.get_selected_node()
+        if node.isDirectory :
+            self.render_root = node
+            self.render_tree()
+
+    def change_back(self):
+        node = self.get_selected_node()
+        self.render_root = None
+        self.render_tree()
+        self.select_node(node)
+
+    def refresh_selected_node(self):
+        node = self.get_selected_node()
+        node.refresh()
+        self.render_tree()
+        self.select_node(node)
+
+    def render_tree(self):
+        vim.command("setlocal modifiable")
+        output(self.renderToString())
+        vim.command("setlocal nomodifiable")
+            
+    def _get_path(self):
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        line = vim_buffer[row-1]
+        indent = self._get_indent_level(line)
+        curFile = self._strip_markup_from_line(line, False)
+        lnum = row - 1
+        dir = ""
+        while lnum > 0 :
+            lnum = lnum - 1
+            curLine = vim_buffer[lnum]
+            curLineStripped = self._strip_markup_from_line(curLine, True)
+            if lnum == 0 :
+                break
+            lpindent = self._get_indent_level(curLine)
+            if lpindent < indent :
+                indent = indent - 1
+                dir =  curLineStripped + dir
+        if not dir.endswith("/") :
+            curFile = dir + "/" + curFile
+        else :
+            curFile = dir + curFile
+        return curFile
 
     def renderToString(self):
-        result = self.root.renderToString(0,0, [],0)
+        node = self._get_render_root()
+        result = node.renderToString(0,0, [],0)
         return result
 
-    def output_content(self,path):
-        zipFile = zipfile.ZipFile(self.zip_file_path)  
-        content = zipFile.read(path)
-        zipFile.close()
-        vim.command("exec 'wincmd w'")
-        output(content)
-
-    def get_indent_level(self,line):
+    def _get_indent_level(self,line):
         matches = self.prefix_pat.search(line)
         if matches :
             return matches.start() / 2
         return -1
 
-    def strip_markup_from_line(self,line,remove_leading_spaces):
+    def _strip_markup_from_line(self,line,remove_leading_spaces):
 
         #remove the tree parts and the leading space
         line = self.tree_markup_pat.sub("",line)
@@ -134,30 +468,6 @@ class ZipTree(object):
 
         return line
 
-    def get_path(self):
-        (row,col) = vim.current.window.cursor
-        vim_buffer = vim.current.buffer
-        line = vim_buffer[row-1]
-        indent = self.get_indent_level(line)
-        curFile = self.strip_markup_from_line(line, False)
-        lnum = row - 1
-        dir = ""
-        while lnum > 0 :
-            lnum = lnum - 1
-            curLine = vim_buffer[lnum]
-            curLineStripped = self.strip_markup_from_line(curLine, True)
-            if lnum == 0 :
-                break
-            lpindent = self.get_indent_level(curLine)
-            if lpindent < indent :
-                indent = indent - 1
-                dir =  curLineStripped + dir
-        if not dir.endswith("/") :
-            curFile = dir + "/" + curFile
-        else :
-            curFile = dir + curFile
-        return curFile
-
     def get_path_cursor(self,path):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
@@ -169,10 +479,10 @@ class ZipTree(object):
 
         while lnum < max_row :
             curLine = vim_buffer[lnum]
-            curLineStripped = self.strip_markup_from_line(curLine, True)
+            curLineStripped = self._strip_markup_from_line(curLine, True)
             if curLineStripped.endswith("/"):
                 curLineStripped = curLineStripped[:-1]
-            lpindent = self.get_indent_level(curLine)
+            lpindent = self._get_indent_level(curLine)
             if curLineStripped == sections[section_idx] and lpindent == indent + 1 :
                 section_idx += 1
                 indent +=1
@@ -181,64 +491,83 @@ class ZipTree(object):
             lnum += 1
         return lnum+1, len(sections)*2
 
+    def open_path(self, path, node = None, abpath = False ):
+        if node == None :
+            node = self._get_render_root() 
 
-    def get_node_from_path(self, path):
-        sections = path.split("/")
-        if sections[-1] == "" :
-            sections = sections[:-1]
-        node = self.root
-        for section in sections :
-            node = node.getChild(section)
-        return node
-
-    def open_path(self, path):
-        sections = path.split("/")
-        if sections[-1] == "" :
-            sections = sections[:-1]
-        node = self.root
-        for section in sections :
-            node = node.getChild(section)
-            node.isOpen = True
-
-    def open_node(self):
-        (row,col) = vim.current.window.cursor
-        path = self.get_path()
-        if path.startswith("/") :
-            path = path[1:]
-        node = self.get_node_from_path(path)
-        if node.isDirectory :
-            if node.isOpen :
-                node.isOpen = False
-            else :
-                node.isOpen = True
-            output(self.renderToString())
-            vim.current.window.cursor = (row,col)
+        if path.startswith("jar://") :
+            zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
+            zip_base_name = os.path.basename(zip_file_path)
+            lib_node = node.get_child("Referenced Libraries")
+            lib_node.isOpen = True
+            zip_file_node = lib_node.get_child(zip_base_name)
+            zip_file_node.isOpen = True
+            return self.open_path(inner_path, zip_file_node, True)
         else :
-            vim.command("exec 'wincmd w'")
-            schmeme_path = "jar://"+self.zip_file_path+"!"+path
-            vim.command("edit %s" % schmeme_path)
+            if not abpath :
+                path = os.path.relpath(path, node.realpath)
+            sections = path.split("/")
+            if sections[-1] == "" :
+                sections = sections[:-1]
+            
+            print sections
+            for section in sections :
+                node = node.get_child(section)
+                node.isOpen = True
+
+            tree_path =[node.name]
+            while True :
+                node = node.parent
+                if node == None :
+                    break
+                tree_path.insert(0,node.name)
+            return "/".join(tree_path[1:])
 
     @staticmethod
-    def runApp(zip_file_path=None):
-        global ziptree
-        inner_path = None
-        if not zip_file_path :
-            path = vim.current.buffer.name
-            if path and path.startswith("jar:") :
-                zip_file_path, inner_path = ZipUtil.split_zip_scheme(path)
+    def locate_buf_in_tree(current_file_name = None):
 
-        if not os.path.exists(zip_file_path):
-            print "zip file path not exists."
+        if current_file_name == None :
+            vim_buffer = vim.current.buffer
+            current_file_name = vim_buffer.name
+
+        if current_file_name == None or "ProjectTree" in current_file_name:
+            return 
+
+        vim.command("call SwitchToSzToolView('ProjectTree')" )
+        tree_path = projectTree.open_path(current_file_name)
+        projectTree.render_tree()
+        (row,col) = projectTree.get_path_cursor(tree_path)
+        vim.current.window.cursor = (row,col)
+
+    @staticmethod
+    def runApp():
+        global projectTree
+        vim_buffer = vim.current.buffer
+        current_file_name = vim_buffer.name
+
+        projectRoot = None
+        if current_file_name == None :
+            if os.path.exists(".classpath") :
+                projectRoot = os.path.abspath(".")
+            else :
+                current_file_name = os.getcwd()
+
+        if projectRoot == None :
+            projectRoot = ProjectManager.getProjectRoot(current_file_name)
+
+        if projectRoot == None :
+            print "can't find .classpath file"
             return
-        ziptree = ZipTree(zip_file_path)
-        vim.command("call SplitLeftPanel(40, 'Ztree')")
-        vim.command("set filetype=ztree")
-        if inner_path != None :
-            ziptree.open_path(inner_path)
-        output(ziptree.renderToString())
-        if inner_path != None :
-            (row,col) = ziptree.get_path_cursor(inner_path)
-            vim.current.window.cursor = (row,col)
+        if not os.path.exists(os.path.join(projectRoot,".classpath")) :
+            print "can't find .classpath file"
+            return
 
-    
-    
+        projectTree = ProjectTree(projectRoot)
+        vim.command("call SplitLeftPanel(40, 'SzToolView_ProjectTree')")
+        vim.command("set filetype=ztree")
+        projectTree.render_tree()
+        if current_file_name != None :
+            ProjectTree.locate_buf_in_tree(current_file_name)
+
+
+

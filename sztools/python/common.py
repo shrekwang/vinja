@@ -2,6 +2,7 @@ import vim,os,re,sys,random
 from subprocess import Popen, PIPE
 import subprocess
 import logging
+import shutil
 import socket
 from StringIO import StringIO
 from distutils import dir_util
@@ -597,6 +598,17 @@ class BasicTalker(object):
         return data
 
 class VimUtil(object):
+
+    @staticmethod
+    def getInput(prompt,default_text = ""):
+        vim.command("redraw")
+        vim.command("let b:vjde_user_input = input('%s','%s')" % (prompt,default_text))
+        exists = vim.eval("exists('b:vjde_user_input')")
+        result = None
+        if exists  ==  "1" :
+            result = vim.eval("b:vjde_user_input")
+            vim.command("unlet b:vjde_user_input")
+        return result
 
     @staticmethod
     def inputOption(options):

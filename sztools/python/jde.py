@@ -108,16 +108,6 @@ class ProjectManager(object):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         Talker.projectClean(classPathXml)
 
-    @staticmethod
-    def projectTree():
-        vim_buffer = vim.current.buffer
-        cur_file = vim_buffer.name
-        project_root = ProjectManager.getProjectRoot(cur_file)
-        project_root.replace(" ", "\ ")
-        vim.command("NERDTree %s" % project_root)
-        edit_buffer=str(vim.eval("winnr('#')"))
-        vim.command("exec '%s wincmd w'" % edit_buffer)
-        vim.command("NERDTreeFind")
 
 class Talker(BasicTalker):
     

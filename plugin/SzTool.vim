@@ -344,15 +344,24 @@ function Javadoc()
   python Javadoc.runApp()
 endfunction
 
-function Ztree(...) 
+function ProjectTree(...) 
   call RunSzPyfile("tree.py")
-  if a:0 > 0
-    python ZipTree.runApp(vim.eval("a:1"))
-  else
-    python ZipTree.runApp()
-  endif
-  map <silent><buffer> <cr>  :python ziptree.open_node()<cr>
-  map <silent><buffer> o     :python ziptree.open_node()<cr>
+  python ProjectTree.runApp()
+  map <silent><buffer> <cr>  :python projectTree.open_selected_node()<cr>
+  map <silent><buffer> o     :python projectTree.open_selected_node()<cr>
+  map <silent><buffer> r     :python projectTree.refresh_selected_node()<cr>
+  map <silent><buffer> x     :python projectTree.close_parent_node()<cr>
+
+  map <silent><buffer> D     :python projectTree.delete_node()<cr>
+  map <silent><buffer> A     :python projectTree.add_node()<cr>
+
+  map <silent><buffer> ya    :python projectTree.yank_node_path()<cr>
+  map <silent><buffer> yy    :python projectTree.yank_selected_node(False)<cr>
+  map <silent><buffer> dd    :python projectTree.yank_selected_node(True)<cr>
+  map <silent><buffer> p     :python projectTree.paste()<cr>
+
+  map <silent><buffer> C     :python projectTree.change_root()<cr>
+  map <silent><buffer> B     :python projectTree.change_back()<cr>
 endfunction
 
 function PlayDict(word)
@@ -480,7 +489,6 @@ function! Jdext()
   command! -nargs=0   Overide          :python EditUtil.overideMethod()
   command! -nargs=0   ProjectInit      :python ProjectManager.projectInit()
   command! -nargs=0   ProjectClean     :python ProjectManager.projectClean()
-  command! -nargs=0   ProjectTree      :python ProjectManager.projectTree()
   command! -nargs=?   Ant              :call RunAntBuild('<args>')
 
   command! -nargs=0   Jdb              :call Jdb()
@@ -512,7 +520,6 @@ function! Jdext()
 endfunction
 
 
-command! -nargs=? Ztree         :call Ztree('<args>')
 command! -nargs=1 Example       :call WatchExample('<args>')
 command! -nargs=1 Dict          :call SearchDict('<args>')
 command! -nargs=0 Recite        :call Recite()
@@ -538,6 +545,12 @@ command! -nargs=0 TagList      :call TagList()
 command! -nargs=0 SaveNote            :python Notext.saveBufContent()
 command! -nargs=0 MakeNoteTemplate    :python Notext.makeTemplate()
 command! -nargs=+ FetchResult      :call FetchResult(<f-args>)
+
+
+command! -nargs=0 ProjectTree     :call ProjectTree()
+command! -nargs=0 ProjectTreeFind :python ProjectTree.locate_buf_in_tree()
+nmap <silent><leader>pt  :call ProjectTree()<cr>
+nmap <silent><leader>pf  :python ProjectTree.locate_buf_in_tree()<cr>
 
 "sztools mapping
 nmap <silent><leader>zc  :python ScratchUtil.startScriptEdit()<cr>
