@@ -180,6 +180,9 @@ public class CompilerContext {
 				File libFile = new File(entryAbsPath);
 				//output path should be searched first in classpath
 				try { classPathUrls.add(0, libFile.toURL()); } catch (Exception e) {}
+				if (entryAbsPath.endsWith("/") || entryAbsPath.endsWith("\\")) {
+					entryAbsPath = entryAbsPath.substring(0, entryAbsPath.length()-1);
+				}
 				outputDir=entryAbsPath;
 			} else if (entry.kind.equals("con")) {
 				addUserLib(entry.path);

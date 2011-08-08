@@ -1351,7 +1351,7 @@ class SzJdeCompletion(object):
                 result.append(item)
         if result :
             return result
-        return difflib.get_close_matches(base, completeList)
+        return difflib.get_close_matches(base,completeList)
 
     @staticmethod
     def simpleMatch(value,pat):
@@ -1453,11 +1453,11 @@ class SzJdeCompletion(object):
             result.append(menu)
 
         if len(result) == 0 :
-            names = list(set([ mname.lower() for mtype,mname,mparams,mreturntype in memberInfos]))
+            names = list(set([ mname for mtype,mname,mparams,mreturntype in memberInfos]))
             matched_names = SzJdeCompletion.getCloseMatches(base,names)
             for memberInfo in memberInfos :
                 mtype,mname,mparams,mreturntype = memberInfo
-                if mname.lower() in matched_names: 
+                if mname in matched_names: 
                     menu = SzJdeCompletion.buildCptMenu(mtype,mname,mparams,mreturntype,needParenthesis)
                     result.append(menu)
 
