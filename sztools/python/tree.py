@@ -575,14 +575,10 @@ class ProjectTree(object):
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
 
-        projectRoot = None
-        if current_file_name == None :
-            if os.path.exists(".classpath") :
-                projectRoot = os.path.abspath(".")
-            else :
-                current_file_name = os.getcwd()
-
-        if projectRoot == None :
+        if current_file_name == None or current_file_name.startswith("jar://") :
+            fake_file = os.path.join(os.getcwd(),"what_ever_fake_file_name")
+            projectRoot = ProjectManager.getProjectRoot(fake_file)
+        else :
             projectRoot = ProjectManager.getProjectRoot(current_file_name)
 
         if projectRoot == None :
@@ -593,8 +589,11 @@ class ProjectTree(object):
             return
 
         projectTree = ProjectTree(projectRoot)
-        vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree')")
-        vim.command("set filetype=ztree")
+        if not VimUtil.isSzToolBufferVisible("ProjectTree"):
+            vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree')")
+            vim.command("set filetype=ztree")
+        else :
+            vim.command("call SwitchToSzToolView('ProjectTree')" )
         projectTree.render_tree()
         if current_file_name != None :
             ProjectTree.locate_buf_in_tree(current_file_name)

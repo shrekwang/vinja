@@ -365,6 +365,22 @@ class MiscUtil(object):
             logging.debug(e)
             logging.debug("start ageng error")
 
+    @staticmethod
+    def remove_comment():
+        def replacer(match):
+            s = match.group(0)
+            if s.startswith('/'):
+                return ""
+            else:
+                return s
+        pattern = re.compile(
+            r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+            re.DOTALL | re.MULTILINE
+        )
+        text = "\n".join(vim.current.buffer)
+        text = re.sub(pattern, replacer, text)
+        output(text)
+
 class ScratchUtil(object):
 
     @staticmethod
