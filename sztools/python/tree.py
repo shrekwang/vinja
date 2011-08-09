@@ -93,10 +93,15 @@ class TreeNode(object):
 class NormalDirNode(TreeNode):
 
     def refresh(self):
+        global projectTree
         self._children = []
         files, dirs = [], []
         for file_name in os.listdir(self.realpath) :
+            if file_name.startswith(".") :
+                continue
             abpath = os.path.join(self.realpath, file_name)
+            if not projectTree.node_visible(abpath):
+                continue
             if os.path.isdir(abpath) :
                 dirs.append((file_name, abpath))
             else :
@@ -227,6 +232,13 @@ class ProjectTree(object):
         self.yank_buffer = []
         self.remove_orignal = False 
         self.render_root = None
+        self.work_path_set = []
+        work_set_config = os.path.join(root_dir, ".jde_work_set")
+        if os.path.exists(work_set_config):
+            for line in open(work_set_config):
+                line = line.strip()
+                self.work_path_set.append(os.path.join(root_dir,line))
+
         self.prefix_pat = re.compile(r"[^ \-+~`|]")
         self.tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
         varConfig = os.path.expanduser("~/.sztools/vars.txt")
@@ -278,10 +290,29 @@ class ProjectTree(object):
             node = ZipRootNode(basename,lib_src, False,False)
             lib_src_node.add_child(node)
 
+        jdk_lib_src = os.path.join(os.getenv("JAVA_HOME"),"src.zip")
+        if os.path.exists(jdk_lib_src) :
+            node = ZipRootNode("src.zip",jdk_lib_src, False,False)
+            lib_src_node.add_child(node)
+
+    def node_visible(self, abs_path):
+        if len(self.work_path_set) == 0 :
+            return True
+        for work_path in self.work_path_set :
+            if work_path == abs_path or work_path.startswith(abs_path) \
+                    or abs_path.startswith(work_path) :
+                return True
+        return False
+
     def _build_file_nodes(self):
         files, dirs = [], []
+        
         for file_name in os.listdir(self.root_dir) :
+            if file_name.startswith(".") :
+                continue
             abpath = os.path.join(self.root_dir,file_name)
+            if not self.node_visible(abpath) :
+                continue
             if os.path.isdir(abpath) :
                 dirs.append((file_name, abpath))
             else :
@@ -495,6 +526,7 @@ class ProjectTree(object):
         if node == None :
             node = self._get_render_root() 
 
+        path = path.replace("\\","/")
         if path.startswith("jar://") :
             zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
             zip_base_name = os.path.basename(zip_file_path)
@@ -510,7 +542,6 @@ class ProjectTree(object):
             if sections[-1] == "" :
                 sections = sections[:-1]
             
-            print sections
             for section in sections :
                 node = node.get_child(section)
                 node.isOpen = True
@@ -532,7 +563,6 @@ class ProjectTree(object):
 
         if current_file_name == None or "ProjectTree" in current_file_name:
             return 
-
         vim.command("call SwitchToSzToolView('ProjectTree')" )
         tree_path = projectTree.open_path(current_file_name)
         projectTree.render_tree()
@@ -563,11 +593,10 @@ class ProjectTree(object):
             return
 
         projectTree = ProjectTree(projectRoot)
-        vim.command("call SplitLeftPanel(40, 'SzToolView_ProjectTree')")
+        vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree')")
         vim.command("set filetype=ztree")
         projectTree.render_tree()
         if current_file_name != None :
             ProjectTree.locate_buf_in_tree(current_file_name)
-
 
 
