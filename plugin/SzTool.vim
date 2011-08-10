@@ -175,7 +175,7 @@ function! Dbext()
   endif    
 
   setlocal nobuflisted
-  setlocal ignorecase
+  "setlocal ignorecase
   call SetTabPageName("Dbext")
   python Dbext.runApp()
   map <buffer><silent>,,  :python dbext.queryVisualSQL()<cr>
@@ -358,6 +358,7 @@ function ProjectTree(...)
   map <silent><buffer> A     :python projectTree.add_node()<cr>
 
   map <silent><buffer> ya    :python projectTree.yank_node_path()<cr>
+  map <silent><buffer> cc    :python projectTree.rename_node()<cr>
   map <silent><buffer> yy    :python projectTree.yank_selected_node(False)<cr>
   map <silent><buffer> dd    :python projectTree.yank_selected_node(True)<cr>
   map <silent><buffer> p     :python projectTree.paste()<cr>

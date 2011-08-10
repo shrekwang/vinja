@@ -5,6 +5,7 @@ import time
 import re
 import traceback
 import StringIO
+import shutil
 from subprocess import Popen
 from string import Template
 import difflib

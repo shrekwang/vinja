@@ -1,4 +1,5 @@
 import zipfile, os  
+import shutil
 from common import ZipUtil,FileUtil 
 from xml.etree.ElementTree import *
 from jde import ProjectManager
@@ -188,7 +189,7 @@ class ZipFileItemNode(TreeNode):
     def set_zip_file(self,zip_file_path) :
         self.zip_file_path = zip_file_path
 
-    def open_node(self):
+    def open_node(self, edit_cmd):
         vim.command("exec 'wincmd w'")
         scheme_path = "jar://"+self.zip_file_path+"!"+ self.realpath
         vim.command("%s %s" %(edit_cmd, scheme_path))
@@ -357,7 +358,7 @@ class ProjectTree(object):
 
     def yank_node_path(self):
         node = self.get_selected_node()
-        vim.command('let @" = "%s" ' % node.realpath)
+        vim.command("let @\" = '%s' " % node.realpath)
         print "node path yanked"
 
     def get_selected_node(self):
@@ -393,6 +394,24 @@ class ProjectTree(object):
         if suc :
             self.render_tree()
             self.select_node(node.get_child(node_name))
+
+    def rename_node(self):
+        node = self.get_selected_node()
+        prompt = "enter new file name .\n" + os.path.dirname(node.realpath) +"/"
+        new_file_name = VimUtil.getInput(prompt,node.name)
+        if not new_file_name :
+            print "rename node aborted."
+            return
+        try :
+            new_file_path = os.path.join(os.path.dirname(node.realpath),new_file_name)
+            shutil.move(node.realpath, new_file_path)
+            node.realpath = new_file_path
+            node.name = new_file_name
+            self.render_tree()
+            self.select_node(node)
+        except Exception , e:
+            print e
+            print "rename operation failed"
 
     def delete_node(self):
         node = self.get_selected_node()
@@ -581,8 +600,7 @@ class ProjectTree(object):
         vim.current.window.cursor = (row,col)
 
     @staticmethod
-    def runApp():
-        global projectTree
+    def create_project_tree():
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
 
@@ -598,15 +616,26 @@ class ProjectTree(object):
         if not os.path.exists(os.path.join(projectRoot,".classpath")) :
             print "can't find .classpath file"
             return
+        tree = ProjectTree(projectRoot)
+        return tree
 
-        projectTree = ProjectTree(projectRoot)
-        if not VimUtil.isSzToolBufferVisible("ProjectTree"):
+    @staticmethod
+    def runApp():
+        if "projectTree" not in globals() :
+            global projectTree
+            projectTree = ProjectTree.create_project_tree()
+
+        vim_buffer = vim.current.buffer
+        current_file_name = vim_buffer.name
+        
+        if VimUtil.isSzToolBufferVisible("ProjectTree"):
+            VimUtil.closeSzToolBuffer("ProjectTree")
+        else :
             vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree')")
             vim.command("set filetype=ztree")
-        else :
             vim.command("call SwitchToSzToolView('ProjectTree')" )
-        projectTree.render_tree()
-        if current_file_name != None :
-            ProjectTree.locate_buf_in_tree(current_file_name)
+            projectTree.render_tree()
+            if current_file_name != None :
+                ProjectTree.locate_buf_in_tree(current_file_name)
 
 
