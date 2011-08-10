@@ -170,9 +170,9 @@ class NormalDirNode(TreeNode):
 
 class NormalFileNode(TreeNode):
 
-    def open_node(self):
+    def open_node(self, edit_cmd):
         vim.command("exec 'wincmd w'")
-        vim.command("edit %s" % self.realpath)
+        vim.command("%s %s" %(edit_cmd, self.realpath))
 
     def dispose(self):
         FileUtil.fileOrDirRm(self.realpath)
@@ -190,8 +190,8 @@ class ZipFileItemNode(TreeNode):
 
     def open_node(self):
         vim.command("exec 'wincmd w'")
-        schmeme_path = "jar://"+self.zip_file_path+"!"+ self.realpath
-        vim.command("edit %s" % schmeme_path)
+        scheme_path = "jar://"+self.zip_file_path+"!"+ self.realpath
+        vim.command("%s %s" %(edit_cmd, scheme_path))
 
 class ZipRootNode(TreeNode):
 
@@ -336,7 +336,7 @@ class ProjectTree(object):
                 node = node.get_child(section)
             return node
 
-    def open_selected_node(self):
+    def open_selected_node(self, edit_cmd = "edit"):
         node = self.get_selected_node()
         (row,col) = vim.current.window.cursor
         if node.isDirectory :
@@ -347,7 +347,7 @@ class ProjectTree(object):
             self.render_tree()
             vim.current.window.cursor = (row,col)
         else :
-            node.open_node()
+            node.open_node(edit_cmd)
 
     def close_parent_node(self):
         node = self.get_selected_node()
@@ -526,9 +526,9 @@ class ProjectTree(object):
         if node == None :
             node = self._get_render_root() 
 
-        path = path.replace("\\","/")
-        if path.startswith("jar://") :
+        if path.startswith("jar:") :
             zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
+            inner_path = inner_path.replace("\\","/")
             zip_base_name = os.path.basename(zip_file_path)
             lib_node = node.get_child("Referenced Libraries")
             lib_node.isOpen = True
@@ -538,13 +538,21 @@ class ProjectTree(object):
         else :
             if not abpath :
                 path = os.path.relpath(path, node.realpath)
+            path = path.replace("\\","/")
             sections = path.split("/")
             if sections[-1] == "" :
                 sections = sections[:-1]
             
+            found_node = True
             for section in sections :
                 node = node.get_child(section)
+                if node == None :
+                    found_node = False
+                    break
                 node.isOpen = True
+
+            if not found_node :
+                return None
 
             tree_path =[node.name]
             while True :
@@ -565,6 +573,9 @@ class ProjectTree(object):
             return 
         vim.command("call SwitchToSzToolView('ProjectTree')" )
         tree_path = projectTree.open_path(current_file_name)
+        if tree_path == None :
+            print "can't find node %s in ProjectTree" % current_file_name
+            return
         projectTree.render_tree()
         (row,col) = projectTree.get_path_cursor(tree_path)
         vim.current.window.cursor = (row,col)
@@ -575,7 +586,7 @@ class ProjectTree(object):
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
 
-        if current_file_name == None or current_file_name.startswith("jar://") :
+        if current_file_name == None or current_file_name.startswith("jar:") :
             fake_file = os.path.join(os.getcwd(),"what_ever_fake_file_name")
             projectRoot = ProjectManager.getProjectRoot(fake_file)
         else :
