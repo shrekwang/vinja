@@ -164,7 +164,6 @@ class QuickLocater(object) :
         row,col = vim.current.window.cursor
         line = work_buffer[row-1]
         self.clean()
-        vim.command("exec '%s wincmd w'" % self.last_winnr)
         self.content_manager.open_content(line, mode)
 
     def on_key_pressed(self, key):
@@ -187,6 +186,7 @@ class QuickLocater(object) :
         vim.command("bwipeout")
         vim.command("echo ''")
         self.restore_env()
+        vim.command("exec '%s wincmd w'" % self.last_winnr)
 
 class FileContentManager(object):
     def __init__(self):
