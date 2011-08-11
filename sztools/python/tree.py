@@ -244,11 +244,18 @@ class ZipRootNode(TreeNode):
 class ProjectRootNode(NormalDirNode):
 
     def __init__(self,root_dir, projectTree):
-        self.projectTree = projectTree
-        self.var_dict = {}
+        super(ProjectRootNode, self).__init__("project",root_dir, projectTree)
         self.root_dir = root_dir
+        self.projectTree = projectTree
+        self.is_java_project = True
+        self.var_dict = {}
         self.lib_srcs = []
+        self._load_class_path()
+        self._load_dir_content()
+        self._build_virtual_noes()
+        self.isOpen = True
 
+    def _load_class_path(self):
         varConfig = os.path.expanduser("~/.sztools/vars.txt")
         if not os.path.exists(varConfig) :
             varConfig = os.path.join(SzToolsConfig.getShareHome() , "conf/vars.txt")
@@ -258,7 +265,11 @@ class ProjectRootNode(NormalDirNode):
                     key,value = line.split("=")
                     key,value = key.strip() , value.strip()
                     self.var_dict[key] = value
-        classpathXml = os.path.join(root_dir, ".classpath")
+        classpathXml = os.path.join(self.root_dir, ".classpath")
+        if not os.path.exists(classpathXml) :
+            self.is_java_project = False
+            return 
+
         tree = ElementTree()
         tree.parse(classpathXml)
         entries = tree.findall("classpathentry")
@@ -270,15 +281,12 @@ class ProjectRootNode(NormalDirNode):
                     abpath = sourcepath.replace(var_key, self.var_dict.get(var_key))
                     self.lib_srcs.append(abpath)
             elif kind == "lib" and sourcepath :
-                abpath = os.path.normpath(os.path.join(root_dir,sourcepath))
+                abpath = os.path.normpath(os.path.join(self.root_dir,sourcepath))
                 self.lib_srcs.append(abpath)
 
-        super(ProjectRootNode, self).__init__("project",self.root_dir, self.projectTree)
-        self._load_dir_content()
-        self._build_virtual_noes()
-        self.isOpen = True
-
     def _build_virtual_noes(self):
+        if not self.is_java_project :
+            return 
         lib_src_node = TreeNode("Referenced Libraries","v", True,False,True)
         self.add_child(lib_src_node)
 
@@ -644,11 +652,7 @@ class ProjectTree(object):
             projectRoot = ProjectManager.getProjectRoot(current_file_name)
 
         if projectRoot == None :
-            print "can't find .classpath file"
-            return
-        if not os.path.exists(os.path.join(projectRoot,".classpath")) :
-            print "can't find .classpath file"
-            return
+            projectRoot = os.path.abspath(os.getcwd())
         tree = ProjectTree(projectRoot)
         return tree
 
