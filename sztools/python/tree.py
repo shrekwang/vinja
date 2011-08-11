@@ -93,15 +93,19 @@ class TreeNode(object):
 
 class NormalDirNode(TreeNode):
 
-    def refresh(self):
-        global projectTree
+    def __init__(self,dir_name,abpath,projectTree):
+        self.projectTree = projectTree
+        super(NormalDirNode, self).__init__(dir_name,abpath, True)
+
+    def _load_dir_content(self):
+        old_children = self._children
         self._children = []
         files, dirs = [], []
         for file_name in os.listdir(self.realpath) :
             if file_name.startswith(".") :
                 continue
             abpath = os.path.join(self.realpath, file_name)
-            if not projectTree.node_visible(abpath):
+            if not self.projectTree.node_visible(abpath):
                 continue
             if os.path.isdir(abpath) :
                 dirs.append((file_name, abpath))
@@ -110,13 +114,23 @@ class NormalDirNode(TreeNode):
         dirs.sort()
         files.sort()
         for dir_name, abpath in dirs :
-            node = NormalDirNode(dir_name, abpath, isDirectory=True, isOpen=False)
+            node = None
+            #see if there's old dir node, for keep the node state (open/close etc).
+            for old_node in old_children :
+                if old_node.name == dir_name and old_node.isDirectory :
+                    node = old_node
+                    break
+            if node == None :
+                node = NormalDirNode(dir_name, abpath, self.projectTree)
             self.add_child(node)
         for file_name, abpath in files :
-            node = NormalFileNode(file_name, abpath, isDirectory=False, isOpen=False)
+            node = NormalFileNode(file_name, abpath, isDirectory=False)
             self.add_child(node)
         self.isLoaded = True
 
+    def refresh(self):
+        self._load_dir_content()
+        
     def get_child(self,name):
         if not self.isLoaded : 
             self.refresh()
@@ -135,12 +149,12 @@ class NormalDirNode(TreeNode):
         abspath = os.path.join(self.realpath, name)
         if name.endswith("/") :
             os.makedirs(abspath)
-            node = NormalDirNode(name[:-1], abspath[:-1], isDirectory=True, isOpen=False)
+            node = NormalDirNode(name[:-1], abspath[:-1], self.projectTree)
             self.add_child(node)
         else :
             open(abspath, 'a').close()
             os.utime(abspath, None)
-            node = NormalFileNode(name, abspath, isDirectory=False, isOpen=False)
+            node = NormalFileNode(name, abspath, isDirectory=False)
             self.add_child(node)
         self.isOpen = True
         return True
@@ -162,10 +176,10 @@ class NormalDirNode(TreeNode):
                 FileUtil.fileOrDirCp(file_abpath,self.realpath)
 
             if os.path.isdir(file_abpath): 
-                node = NormalDirNode(basename, new_abspath, isDirectory=True, isOpen=False)
+                node = NormalDirNode(basename, new_abspath, self.projectTree)
                 self.add_child(node)
             else :
-                node = NormalFileNode(basename, new_abspath, isDirectory=False, isOpen=False)
+                node = NormalFileNode(basename, new_abspath, isDirectory=False)
                 self.add_child(node)
         return True
 
@@ -227,6 +241,85 @@ class ZipRootNode(TreeNode):
             else :
                 parentNode = sameChild
 
+class ProjectRootNode(NormalDirNode):
+
+    def __init__(self,root_dir, projectTree):
+        self.projectTree = projectTree
+        self.var_dict = {}
+        self.root_dir = root_dir
+        self.lib_srcs = []
+
+        varConfig = os.path.expanduser("~/.sztools/vars.txt")
+        if not os.path.exists(varConfig) :
+            varConfig = os.path.join(SzToolsConfig.getShareHome() , "conf/vars.txt")
+        if os.path.exists(varConfig):
+            for line in open(varConfig).readlines() :
+                if line.strip() != "" and not line.startswith("#") :
+                    key,value = line.split("=")
+                    key,value = key.strip() , value.strip()
+                    self.var_dict[key] = value
+        classpathXml = os.path.join(root_dir, ".classpath")
+        tree = ElementTree()
+        tree.parse(classpathXml)
+        entries = tree.findall("classpathentry")
+        for entry in  entries :
+            kind = entry.get("kind")
+            sourcepath = entry.get("sourcepath")
+            if kind == "var" and sourcepath :
+                    var_key = sourcepath[0: sourcepath.find("/")]
+                    abpath = sourcepath.replace(var_key, self.var_dict.get(var_key))
+                    self.lib_srcs.append(abpath)
+            elif kind == "lib" and sourcepath :
+                abpath = os.path.normpath(os.path.join(root_dir,sourcepath))
+                self.lib_srcs.append(abpath)
+
+        super(ProjectRootNode, self).__init__("project",self.root_dir, self.projectTree)
+        self._load_dir_content()
+        self._build_virtual_noes()
+        self.isOpen = True
+
+    def _build_virtual_noes(self):
+        lib_src_node = TreeNode("Referenced Libraries","v", True,False,True)
+        self.add_child(lib_src_node)
+
+        for lib_src in self.lib_srcs :
+            basename = os.path.basename(lib_src)
+            node = ZipRootNode(basename,lib_src, False,False)
+            lib_src_node.add_child(node)
+
+        jdk_lib_src = os.path.join(os.getenv("JAVA_HOME"),"src.zip")
+        if os.path.exists(jdk_lib_src) :
+            node = ZipRootNode("src.zip",jdk_lib_src, False,False)
+            lib_src_node.add_child(node)
+
+    def _build_file_nodes(self):
+        files, dirs = [], []
+        
+        for file_name in os.listdir(self.root_dir) :
+            if file_name.startswith(".") :
+                continue
+            abpath = os.path.join(self.root_dir,file_name)
+            if not self.projectTree.node_visible(abpath) :
+                continue
+            if os.path.isdir(abpath) :
+                dirs.append((file_name, abpath))
+            else :
+                files.append((file_name, abpath))
+
+        dirs.sort()
+        files.sort()
+        for dir_name, abpath in dirs :
+            node = NormalDirNode(dir_name, abpath, self.projectTree)
+            self.add_child(node)
+        for file_name, abpath in files :
+            node = NormalFileNode(file_name, abpath, isDirectory=False)
+            self.add_child(node)
+
+    def refresh(self):
+        self._load_dir_content()
+        self._build_virtual_noes()
+
+
 class ProjectTree(object):
 
     def __init__(self, root_dir):
@@ -242,59 +335,13 @@ class ProjectTree(object):
 
         self.prefix_pat = re.compile(r"[^ \-+~`|]")
         self.tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
-        varConfig = os.path.expanduser("~/.sztools/vars.txt")
-        self.var_dict = {}
-        if not os.path.exists(varConfig) :
-            varConfig = os.path.join(SzToolsConfig.getShareHome() , "conf/vars.txt")
-        if os.path.exists(varConfig):
-            for line in open(varConfig).readlines() :
-                if line.strip() != "" and not line.startswith("#") :
-                    key,value = line.split("=")
-                    key,value = key.strip() , value.strip()
-                    self.var_dict[key] = value
-
         self.root_dir = root_dir
-        classpathXml = os.path.join(root_dir, ".classpath")
-        tree = ElementTree()
-        tree.parse(classpathXml)
-        entries = tree.findall("classpathentry")
-        self.lib_srcs = []
-        for entry in  entries :
-            kind = entry.get("kind")
-            sourcepath = entry.get("sourcepath")
-            if kind == "var" and sourcepath :
-                    var_key = sourcepath[0: sourcepath.find("/")]
-                    abpath = sourcepath.replace(var_key, self.var_dict.get(var_key))
-                    self.lib_srcs.append(abpath)
-            elif kind == "lib" and sourcepath :
-                abpath = os.path.normpath(os.path.join(root_dir,sourcepath))
-                self.lib_srcs.append(abpath)
-        self._build_tree()
-
-    def _build_tree(self):
-        self.root = TreeNode("project",self.root_dir, True, True,True)
-        self._build_file_nodes()
-        self._build_virtual_noes()
+        self.root = ProjectRootNode(self.root_dir,self)
 
     def _get_render_root(self):
         if self.render_root == None :
             return self.root
         return self.render_root
-
-    def _build_virtual_noes(self):
-
-        lib_src_node = TreeNode("Referenced Libraries","v", True,False,True)
-        self.root.add_child(lib_src_node)
-
-        for lib_src in self.lib_srcs :
-            basename = os.path.basename(lib_src)
-            node = ZipRootNode(basename,lib_src, False,False)
-            lib_src_node.add_child(node)
-
-        jdk_lib_src = os.path.join(os.getenv("JAVA_HOME"),"src.zip")
-        if os.path.exists(jdk_lib_src) :
-            node = ZipRootNode("src.zip",jdk_lib_src, False,False)
-            lib_src_node.add_child(node)
 
     def node_visible(self, abs_path):
         if len(self.work_path_set) == 0 :
@@ -304,29 +351,6 @@ class ProjectTree(object):
                     or abs_path.startswith(work_path) :
                 return True
         return False
-
-    def _build_file_nodes(self):
-        files, dirs = [], []
-        
-        for file_name in os.listdir(self.root_dir) :
-            if file_name.startswith(".") :
-                continue
-            abpath = os.path.join(self.root_dir,file_name)
-            if not self.node_visible(abpath) :
-                continue
-            if os.path.isdir(abpath) :
-                dirs.append((file_name, abpath))
-            else :
-                files.append((file_name, abpath))
-
-        dirs.sort()
-        files.sort()
-        for dir_name, abpath in dirs :
-            node = NormalDirNode(dir_name, abpath, isDirectory=True, isOpen=False)
-            self.root.add_child(node)
-        for file_name, abpath in files :
-            node = NormalFileNode(file_name, abpath, isDirectory=False, isOpen=False)
-            self.root.add_child(node)
 
     def _get_node_from_path(self, path):
             sections = path.split("/")
@@ -364,6 +388,9 @@ class ProjectTree(object):
     def get_selected_node(self):
         (row,col) = vim.current.window.cursor
         path = self._get_path()
+        if path == "" :
+            return self._get_render_root()
+
         if path.startswith("/") :
             path = path[1:]
         node = self._get_node_from_path(path)
@@ -371,6 +398,10 @@ class ProjectTree(object):
 
     def select_node(self, node):
         node_list =[node.name]
+        #root node
+        if node.parent == None :
+            vim.current.window.cursor = (1,0)
+            return
         while True :
             node = node.parent
             if node == None :
@@ -472,6 +503,8 @@ class ProjectTree(object):
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]
         indent = self._get_indent_level(line)
+        if indent == 0 :
+            return ""
         curFile = self._strip_markup_from_line(line, False)
         lnum = row - 1
         dir = ""
