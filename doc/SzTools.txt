@@ -4,7 +4,7 @@
 
 ===============================================================================
 1. Contents                                    *SzTools* 
-    0. Misc                  |Misc|
+    0. Jdext                 |Jdext|
     1. Dbext                 |Dbext|
     2. Shext                 |Shext|
     3. Notext                |Notext|
