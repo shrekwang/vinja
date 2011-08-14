@@ -657,9 +657,18 @@ class ProjectTree(object):
         return tree
 
     @staticmethod
+    def dispose_tree():
+        if VimUtil.isSzToolBufferVisible("ProjectTree"):
+            VimUtil.closeSzToolBuffer("ProjectTree")
+            global projectTree
+            projectTree = None
+
+    @staticmethod
     def runApp():
         if "projectTree" not in globals() :
             global projectTree
+            projectTree = None
+        if projectTree == None :
             projectTree = ProjectTree.create_project_tree()
 
         vim_buffer = vim.current.buffer

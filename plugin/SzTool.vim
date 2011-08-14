@@ -550,8 +550,10 @@ command! -nargs=0 MakeNoteTemplate    :python Notext.makeTemplate()
 command! -nargs=+ FetchResult      :call FetchResult(<f-args>)
 
 
-command! -nargs=0 ProjectTree     :call ProjectTree()
-command! -nargs=0 ProjectTreeFind :python ProjectTree.locate_buf_in_tree()
+command! -nargs=0 ProjectTree          :call ProjectTree()
+command! -nargs=0 ProjectTreeFind      :python ProjectTree.locate_buf_in_tree()
+command! -nargs=0 ProjectTreeDispose   :python ProjectTree.dispose_tree()
+
 nmap <silent><leader>pt  :call ProjectTree()<cr>
 nmap <silent><leader>pf  :python ProjectTree.locate_buf_in_tree()<cr>
 
