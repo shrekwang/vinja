@@ -307,15 +307,23 @@ public class CompilerContext {
     }
 	public String buildClassName(String source) {
 		
-		String locatedSrcRoot = null;
-		for (String srcRoot : srcLocations ) {
-			if (source.indexOf(srcRoot) > -1 ) {
-				locatedSrcRoot=srcRoot;
-				break;
+		if (source == null) return null;
+		
+		String packageName = "";
+		if (source.startsWith("jar:")) {
+			packageName = source.substring(source.lastIndexOf("!")+1);
+		} else {
+			String locatedSrcRoot = null;
+			for (String srcRoot : srcLocations ) {
+				if (source.indexOf(srcRoot) > -1 ) {
+					locatedSrcRoot=srcRoot;
+					break;
+				}
 			}
+			if (locatedSrcRoot == null) return null;
+			packageName = source.substring(locatedSrcRoot.length()+1);
 		}
-		if (locatedSrcRoot == null) return null;
-		String packageName = source.substring(locatedSrcRoot.length()+1);
+		
 		String[] parts = packageName.split(Pattern.quote(File.separator));
 		StringBuilder fullQualifiedName=new StringBuilder();
 		for (int i=0; i<parts.length; i++) {
