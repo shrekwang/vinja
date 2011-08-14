@@ -3,6 +3,7 @@ package com.google.code.vimsztool.omni;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -58,9 +59,13 @@ public class ClassMetaInfoManager  {
 	
 	public void loadSingleMetaInfo(String className) {
 		try {
-			ClassReader cr = new ClassReader(className);
+			String classAsPath = className.replace('.', '/') + ".class";
+			InputStream stream = ctx.getClassLoader().getResourceAsStream(classAsPath);
+			ClassReader cr = new ClassReader(stream);
+			stream.close();
 			loadSingleMetaInfo(cr);
 		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
