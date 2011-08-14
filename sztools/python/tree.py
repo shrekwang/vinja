@@ -28,6 +28,10 @@ class TreeNode(object):
         self._children.append(child)
         child.parent = self
 
+    def insert_child(self,child):
+        self._children.insert(0,child)
+        child.parent = self
+
     def remove_child(self, child):
         self._children.remove(child)
         return
@@ -233,10 +237,11 @@ class ZipRootNode(TreeNode):
                     isDirectory = False
                 if isDirectory :
                     node = TreeNode(item,line,isDirectory,isOpen=False)
+                    parentNode.insert_child(node)
                 else :
                     node = ZipFileItemNode(item,line,isDirectory,isOpen=False)
                     node.set_zip_file(self.realpath)
-                parentNode.add_child(node)
+                    parentNode.add_child(node)
                 parentNode = node
             else :
                 parentNode = sameChild
