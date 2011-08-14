@@ -1008,9 +1008,9 @@ class Parser(object):
     def parseAllMemberInfo(lines):
         memberInfo = []
         scopeCount = 0
-        methodPat = re.compile(r"(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)")
-        assignPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*=")
-        defPat = re.compile("(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*;")
+        methodPat = re.compile(r"(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)")
+        assignPat = re.compile("(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*=")
+        defPat = re.compile("(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*;")
         commentLine = False
         for lineNum,line in enumerate(lines) :
             line = line.strip()
@@ -1079,7 +1079,7 @@ class Parser(object):
         scopeUnvisible = False
         visibleRowNum = []
         commentLine = False
-        methodPat = re.compile(r"(?P<modifier>\w+\s+)?(?P<rtntype>[\w<>,]+)\s+(?P<name>\w+)\s*\((?P<param>.*\)).*$")
+        methodPat = re.compile(r"(?P<modifier>\w+\s+)?(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*\((?P<param>.*\)).*$")
         for lineNum in range(cursorRow,-1,-1):
             lineText = vim_buffer[lineNum].strip()
             if lineText.startswith("//"):
