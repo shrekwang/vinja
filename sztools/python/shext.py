@@ -898,13 +898,20 @@ class Shext(object):
             serverName = vim.eval("v:servername")
             workDir = os.getcwd()
             file_list = self.pathResolver.resolve(cmdArray[0])
+            path_resolved_cmdarray = []
             if len(file_list) == 1 and  os.path.isfile(file_list[0]) :
                 cmdArray[0] = os.path.abspath(file_list[0])
+            for item in cmdArray :
+                if "*" in item or "?" in item :
+                    path_resolved_cmdarray.extend(self.pathResolver.resolve(item))
+                else :
+                    path_resolved_cmdarray.append(item)
+
             runInShell = "true"
             if os.name == "posix" :
                 runInShell = "false"
             Shext.stdout("")
-            BasicTalker.runSys(serverName," ".join(cmdArray),runInShell,"shext",workDir)
+            BasicTalker.runSys(serverName," ".join(path_resolved_cmdarray),runInShell,"shext",workDir)
         except (OSError,ValueError) , msg:
             Shext.stdout(msg)
 
