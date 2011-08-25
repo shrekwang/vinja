@@ -411,6 +411,7 @@ class ProjectTree(object):
             return
         file_names = inputStr.split(",")
         self._save_display_info(node, file_names)
+        self.refresh_selected_node()
         
 
     def _save_display_info(self, parent_node, file_names):
@@ -424,9 +425,17 @@ class ProjectTree(object):
         workset = [ line.strip() for line in workset if not_parent_filter(line.strip()) ]
 
         for file_name in file_names :
+            if file_name.strip() == "*" : 
+                file_name = ""
             abpath = os.path.join(parent_node.realpath, file_name)
             relpath = os.path.relpath(abpath, self.root.realpath)
-            workset.append(relpath)
+            exits_deeper_filter = False
+            for old_item in workset :
+                if old_item.startswith(relpath) :
+                    exits_deeper_filter = True
+                    break
+            if not exits_deeper_filter :
+                workset.append(relpath)
         workset_file = open(self.workset_config_path,"w") 
         for item in workset :
             workset_file.write(item)
