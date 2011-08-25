@@ -19,6 +19,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_QUIT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_TYPE_HIIRARCHY;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOAD_JAR_META;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -137,6 +138,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeTypeHierarchyCommand();
 	   } else if (cmdStr.equals(CMD_LOCATE_SOURCE)) {
 		   szjdeCommand = new SzjdeLocateSourceCommand();
+	   } else if (cmdStr.equals(CMD_LOAD_JAR_META)) {
+		   szjdeCommand = new SzjdeLoadJarMetaInfoCommand();
 	   } else if (cmdStr.equals(CMD_QUIT)) {
 		   Display.getDefault().syncExec(new Runnable() {
 				public void run() {

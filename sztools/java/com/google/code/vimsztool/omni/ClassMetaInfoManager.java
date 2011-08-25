@@ -5,11 +5,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import org.objectweb.asm.ClassReader;
 
@@ -40,6 +43,36 @@ public class ClassMetaInfoManager  {
 		}
 	}
 	
+	public void loadMetaInfoInJar(String jarPath) {
+		File file = new File(jarPath);
+		if (! file.exists()) return;
+		 JarFile jarFile = null;
+		try {
+			 jarFile = new JarFile(jarPath);         
+	         Enumeration<JarEntry> entries = jarFile.entries();
+	         while(entries.hasMoreElements()) {
+	             JarEntry entry = entries.nextElement();
+	             if (!entry.getName().endsWith(".class")) continue;
+	             InputStream is = jarFile.getInputStream(entry);
+	             loadSingleMetaInfo(is);
+	         }
+		} catch (IOException e ) {
+		} finally {
+			if (jarFile !=null ) try {jarFile.close();} catch (Exception e) {};
+		}
+		return ;
+	}
+	
+	public void loadSingleMetaInfo(InputStream stream) {
+		try {
+			ClassReader cr = new ClassReader(stream);
+			loadSingleMetaInfo(cr);
+		} catch (Throwable e) {
+			e.printStackTrace();
+		} finally {
+			if (stream !=null ) try {stream.close();} catch (Exception e) {}
+		}
+	}
 	
 	public void loadSingleMetaInfo(File classFile) {
 		if  (classFile.getName().endsWith(".class") ) {

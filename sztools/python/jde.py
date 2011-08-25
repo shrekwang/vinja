@@ -109,6 +109,13 @@ class ProjectManager(object):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         Talker.projectClean(classPathXml)
 
+    @staticmethod
+    def loadJarMeta():
+        vim_buffer = vim.current.buffer
+        current_file_name = vim_buffer.name
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+        Talker.loadJarMeta(classPathXml)
+
 
 class Talker(BasicTalker):
     
@@ -291,6 +298,14 @@ class Talker(BasicTalker):
     def projectClean(xmlPath):
         params = dict()
         params["cmd"]="projectClean"
+        params["classPathXml"] = xmlPath
+        data = Talker.send(params)
+        return data
+
+    @staticmethod
+    def loadJarMeta(xmlPath):
+        params = dict()
+        params["cmd"]="loadJarMeta"
         params["classPathXml"] = xmlPath
         data = Talker.send(params)
         return data

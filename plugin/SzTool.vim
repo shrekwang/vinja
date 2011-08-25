@@ -493,6 +493,7 @@ function! Jdext()
   command! -nargs=0   Overide          :python EditUtil.overideMethod()
   command! -nargs=0   ProjectInit      :python ProjectManager.projectInit()
   command! -nargs=0   ProjectClean     :python ProjectManager.projectClean()
+  command! -nargs=0   LoadJarMeta      :python ProjectManager.loadJarMeta()
   command! -nargs=?   Ant              :call RunAntBuild('<args>')
 
   command! -nargs=0   Jdb              :call Jdb()
