@@ -1049,9 +1049,9 @@ class Parser(object):
                         param = ""
                     memberInfo.append((name,mtype,rtntype,param,lineNum+1))
             if "{" in line :
-                scopeCount = scopeCount + 1
+                scopeCount = scopeCount + line.count("{")
             if "}" in lines[lineNum] :
-                scopeCount = scopeCount - 1
+                scopeCount = scopeCount - line.count("}")
         return  memberInfo
 
     @staticmethod

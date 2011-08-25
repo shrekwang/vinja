@@ -353,6 +353,7 @@ function ProjectTree(...)
   map <silent><buffer> i     :python projectTree.open_selected_node("split")<cr>
   map <silent><buffer> r     :python projectTree.refresh_selected_node()<cr>
   map <silent><buffer> x     :python projectTree.close_parent_node()<cr>
+  map <silent><buffer> s     :python projectTree.filter_display_node()<cr>
 
   map <silent><buffer> D     :python projectTree.delete_node()<cr>
   map <silent><buffer> A     :python projectTree.add_node()<cr>

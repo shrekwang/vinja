@@ -99,17 +99,20 @@ class NormalDirNode(TreeNode):
 
     def __init__(self,dir_name,abpath,projectTree):
         self.projectTree = projectTree
+        self.hidden_nodes = set()
         super(NormalDirNode, self).__init__(dir_name,abpath, True)
 
     def _load_dir_content(self):
         old_children = self._children
         self._children = []
+        self.hidden_nodes = set()
         files, dirs = [], []
         for file_name in os.listdir(self.realpath) :
             if file_name.startswith(".") :
                 continue
             abpath = os.path.join(self.realpath, file_name)
             if not self.projectTree.node_visible(abpath):
+                self.hidden_nodes.add(file_name)
                 continue
             if os.path.isdir(abpath) :
                 dirs.append((file_name, abpath))
@@ -313,6 +316,7 @@ class ProjectRootNode(NormalDirNode):
                 continue
             abpath = os.path.join(self.root_dir,file_name)
             if not self.projectTree.node_visible(abpath) :
+                self.hidden_nodes.add(file_name)
                 continue
             if os.path.isdir(abpath) :
                 dirs.append((file_name, abpath))
@@ -340,16 +344,21 @@ class ProjectTree(object):
         self.remove_orignal = False 
         self.render_root = None
         self.work_path_set = []
-        work_set_config = os.path.join(root_dir, ".jde_work_set")
-        if os.path.exists(work_set_config):
-            for line in open(work_set_config):
-                line = line.strip()
-                self.work_path_set.append(os.path.join(root_dir,line))
-
+        self.workset_config_path = os.path.join(root_dir, ".jde_work_set")
         self.prefix_pat = re.compile(r"[^ \-+~`|]")
         self.tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
         self.root_dir = root_dir
+        self._load_project_workset()
         self.root = ProjectRootNode(self.root_dir,self)
+
+    def _load_project_workset(self):
+        if not os.path.exists(self.workset_config_path):
+            return
+        self.work_path_set = []
+        for line in open(self.workset_config_path):
+            line = line.strip()
+            self.work_path_set.append(os.path.join(self.root_dir,line))
+
 
     def _get_render_root(self):
         if self.render_root == None :
@@ -386,6 +395,43 @@ class ProjectTree(object):
             vim.current.window.cursor = (row,col)
         else :
             node.open_node(edit_cmd)
+
+    def filter_display_node(self):
+        node = self.get_selected_node()
+        if not node.isDirectory :
+            return 
+        if len(node.hidden_nodes) > 0 :
+            hidden_item_str = "hidden items: " + ",".join(node.hidden_nodes) +"\n"
+            displayd_items = ",".join([item.name for item in node.get_children()])
+        else :
+            hidden_item_str = ""
+            displayd_items = ""
+        inputStr = VimUtil.getInput(hidden_item_str+"enter displayed items:\n", displayd_items)
+        if not inputStr :
+            return
+        file_names = inputStr.split(",")
+        self._save_display_info(node, file_names)
+        
+
+    def _save_display_info(self, parent_node, file_names):
+        
+        workset = []
+        if os.path.exists(self.workset_config_path):
+            workset = open(self.workset_config_path,"r").readlines()
+        parent_relpath = os.path.relpath(parent_node.realpath, self.root.realpath)
+        not_parent_filter = lambda path : not parent_relpath.startswith(path) \
+            and os.path.dirname(path) != parent_relpath
+        workset = [ line.strip() for line in workset if not_parent_filter(line.strip()) ]
+
+        for file_name in file_names :
+            abpath = os.path.join(parent_node.realpath, file_name)
+            relpath = os.path.relpath(abpath, self.root.realpath)
+            workset.append(relpath)
+        workset_file = open(self.workset_config_path,"w") 
+        for item in workset :
+            workset_file.write(item)
+            workset_file.write("\n")
+        workset_file.close()
 
     def close_parent_node(self):
         node = self.get_selected_node()
@@ -501,6 +547,7 @@ class ProjectTree(object):
         self.select_node(node)
 
     def refresh_selected_node(self):
+        self._load_project_workset()
         node = self.get_selected_node()
         node.refresh()
         self.render_tree()
