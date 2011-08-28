@@ -1795,15 +1795,13 @@ class Jdb(object):
         if cmdLine.startswith("print") :
             cmdLine = "eval " + cmdLine[5:]
 
-        if cmdLine.startswith("eval") :
-            arg = cmdLine[4:]
+        if cmdLine.startswith("eval") \
+                or cmdLine.startswith("reftype") \
+                or cmdLine.startswith("inspect") :
+            arg = cmdLine[ cmdLine.find(" ")+1 : ]
             ast = self.ivp.generate(arg)
-            cmdLine = "eval " + ast
-
-        if cmdLine.startswith("inspect") :
-            arg = cmdLine[7:]
-            ast = self.ivp.generate(arg)
-            cmdLine = "inspect " + ast
+            cmd = cmdLine[ 0 : cmdLine.find(" ") ]
+            cmdLine = cmd + " " + ast
 
         if cmdLine == "run" and self.defaultClassName :
             cmdLine = "run " + self.defaultClassName

@@ -461,6 +461,46 @@ class LocateCmd(object):
                     result.append([file_name,str(index+1),line.replace("\n","")])
         return result
 
+class ZipUtilCmd(object):
+
+    def do_command(self,cmd_array):
+        parser = ShextOptionParser()
+        parser.add_option("-c","--cmd",action="store", dest="cmd" , help ="cmd {unzip,zip,list,find}" )
+        parser.add_option("-t","--text",action="store", dest="text" , help ="find text pattern in zip" )
+        (options, args) = parser.parse_args(cmd_array)
+        if parser.noAction :
+            return 
+        zip_file_path = args[0]
+        if not options.cmd in ["list","zip","unzip","find"] :
+            Shext.stdout("not valid command")
+            return
+
+        if options.cmd == "list" :
+            self.list_content(zip_file_path)
+        elif options.cmd == "find" :
+            self.find_text(zip_file_path,options.text)
+
+    def list_content(self,zip_file_path):
+        zipFile = zipfile.ZipFile(zip_file_path)  
+        infolist = zipFile.infolist()
+        content = []
+        for info in infolist :
+            content.append("%s %s %s" % (info.file_size, info.date_time, info.filename))
+        Shext.stdout(content)
+
+    def find_text(self,zip_file_path, pat):
+        zipFile = zipfile.ZipFile(zip_file_path)  
+        namelist = zipFile.namelist()
+        result = []
+        for name in namelist :
+            content = "".join(zipFile.open(name).readlines())
+            if pat in content :
+                result.append(name)
+        if len(result) > 0 :
+            Shext.stdout(result)
+        else :
+            Shext.stdout("can't find any entry contains text " + pat)
+
 class ShUtil(object):
 
     def __init__(self,screen_width,yank_buffer):
@@ -471,12 +511,16 @@ class ShUtil(object):
             open(self.shext_bm_path, 'w').close()
         shext_locatedb_path = os.path.join(SzToolsConfig.getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
+        self.zipcmd = ZipUtilCmd()
         self.yank_buffer = yank_buffer
         self.cd_history = [os.getcwd()]
         self.pathResolver = PathResolver(self)
 
     def ls(self,cmd_array):
         self.lscmd.ls(cmd_array)
+
+    def dozip(self,cmd_array):
+        self.zipcmd.do_command(cmd_array)
 
     def updatedb(self,cmd_array):
         self.locatecmd.updatedb(cmd_array)
@@ -1028,6 +1072,8 @@ class Shext(object):
 
         elif cmd[0] == "locatedb" :
             self.locatedb(cmd[1:])
+        elif cmd[0] == "zu" :
+            self.shUtil.dozip(cmd[1:])
 
         elif cmd[0] == "touch" :
             self.shUtil.touch(cmd[1:])

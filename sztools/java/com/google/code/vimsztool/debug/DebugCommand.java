@@ -15,7 +15,7 @@ public class DebugCommand  extends SzjdeCommand {
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","stacks", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch",
-		"ignore","clear", "threads","thread", "syncbps","disconnect"};
+		"ignore","clear", "threads","thread", "syncbps","disconnect","reftype"};
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -68,7 +68,7 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = StepManager.step(StepRequest.STEP_OUT);
 		} else if (debugCmd.equals("eval") || debugCmd.equals("print")
 				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
-				|| debugCmd.equals("fields") ) {
+				|| debugCmd.equals("fields") || debugCmd.equals("reftype")) {
 			actionResult =  ExpressionEval.executeEvalCmd(debugCmd, debugCmdArgs);
 		} else if (debugCmd.equals("breakpoints")) {
 			actionResult = debugger.listBreakpoints();

@@ -396,6 +396,23 @@ class ProjectTree(object):
         else :
             node.open_node(edit_cmd)
 
+    def recursive_open_node(self):
+        node = self.get_selected_node()
+        opened = False
+        while node.isDirectory :
+            opened = True
+            node.isOpen = True
+            children = node.get_children()
+            dirs = [item for item in children if item.isDirectory]
+            if len(dirs) != 1 :
+                break
+            node = dirs[0]
+
+        if opened :
+            self.render_tree()
+            self.select_node(node)
+
+
     def filter_display_node(self):
         node = self.get_selected_node()
         if not node.isDirectory :
@@ -412,7 +429,7 @@ class ProjectTree(object):
         file_names = inputStr.split(",")
         self._save_display_info(node, file_names)
         self.refresh_selected_node()
-        
+    
 
     def _save_display_info(self, parent_node, file_names):
         

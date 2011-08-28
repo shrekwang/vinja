@@ -56,6 +56,9 @@ public class ExpressionEval {
 				actionResult = variables();
 			} else if (debugCmd.equals("fields")) {
 				actionResult = fields();
+			} else if (debugCmd.equals("reftype")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = reftype(exp);
 			}
 			return actionResult;
 		} catch (ExpressionEvalException e) {
@@ -133,11 +136,19 @@ public class ExpressionEval {
 		}
 		return sb.toString();
 	}
+	
+	public static String reftype(String expXmlStr) {
+		List<Expression> exps = Expression.parseExpXmlStr(expXmlStr);
+		if (exps ==null || exps.size() == 0) return "";
+		Value value = getJdiValue(exps.get(0));
+		return value.type().name();
+	}
 
 	public static String inspect(String expXmlStr) {
 		List<Expression> exps = Expression.parseExpXmlStr(expXmlStr);
 		if (exps ==null || exps.size() == 0) return "";
 		Value value = getJdiValue(exps.get(0));
+		
 		StringBuilder sb = new StringBuilder();
 		if (value instanceof ObjectReference) {
 			ObjectReference objRef = (ObjectReference) value;
