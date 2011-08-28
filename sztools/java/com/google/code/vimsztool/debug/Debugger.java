@@ -221,7 +221,12 @@ public class Debugger {
 			threadStack.setCurThreadRef(correctRef);
 			String className = refType.name();
 			int lineNum = loc.lineNumber();
-			String[] cmdLine = {"HandleJdiEvent" ,"suspend" , className, String.valueOf(lineNum)};
+			String abPath = "None";
+			try {
+				abPath = compilerContext.findSourceFile(loc.sourcePath());
+			} catch (Throwable e) {
+			}
+			String[] cmdLine = {"HandleJdiEvent" ,"suspend" , abPath, String.valueOf(lineNum), className };
 			VjdeUtil.runVimCmd(getVimServerName(), cmdLine);
 			return "success";
 		} catch (IncompatibleThreadStateException e) {
