@@ -85,7 +85,7 @@ public class Debugger {
 		ExceptionPointManager expm = ExceptionPointManager.getInstance();
 		expm.tryCreateExceptionRequest();
 		
-		return "";
+		return "attach to remote vm successd.";
 	}
 	
 	public String listBreakpoints() {

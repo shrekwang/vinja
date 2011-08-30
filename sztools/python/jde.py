@@ -1304,7 +1304,7 @@ class SzJdeCompletion(object):
             index = 0
             for i in range(col-1,-1, -1):
                 char = line[i]
-                if char in " =;,.'()<>[]@\"" :
+                if char in " =;,.'()!^+-/<>[]@\"" :
                     index = i + 1
                     break
             cmd = "let g:SzJdeCompletionIndex = %s" %str(index)
@@ -1682,7 +1682,7 @@ class Jdb(object):
 
     def handleSuspend(self,abs_path,lineNum,className):
         tab_count = int(vim.eval("tabpagenr('$')"))
-        for i in range(1,tab_count):
+        for i in range(1,tab_count+1):
             jdbvar = vim.eval('gettabvar('+str(i)+',"jdb_tab")')
             if jdbvar == "true" :
                 vim.command("tabn %s" % str(i)) 
@@ -1691,6 +1691,8 @@ class Jdb(object):
         for i in range(1,5):
             vim.command("%swincmd w" % str(i))    
             bufname = vim.current.buffer.name
+            if bufname == None :
+                continue
             if vim.eval("&buftype") == "" \
                     or bufname.endswith(".temp_src") \
                     or bufname.endswith(".class") :
@@ -1755,13 +1757,12 @@ class Jdb(object):
         global jdb
         tab_count = int(vim.eval("tabpagenr('$')"))
         cur_tab = int(vim.eval("tabpagenr()"))
-        for i in range(1,tab_count):
+        for i in range(1,tab_count+1):
             if i == cur_tab :
-                jdbvar = vim.eval('settabvar('+str(i)+',"jdb_tab","true")')
+                vim.command('call settabvar('+str(i)+',"jdb_tab","true")')
             else :
-                jdbvar = vim.eval('settabvar('+str(i)+',"jdb_tab","false")')
+                vim.command('call settabvar('+str(i)+',"jdb_tab","false")')
         
-
         if "jdb" not in globals() :
             jdb = Jdb()
         jdb.show()
