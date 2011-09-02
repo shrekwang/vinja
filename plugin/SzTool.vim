@@ -473,7 +473,7 @@ function InitJavaSetting()
   au CursorMoved <buffer> :python Compiler.displayMsg()
   python EditUtil.createSkeleton()
   if exists("*SuperTabSetDefaultCompletionType")
-    autocmd BufEnter *.java        call SuperTabSetDefaultCompletionType("<c-x><c-o>")
+    call SuperTabSetDefaultCompletionType("<c-x><c-o>")
   endif
 endfunction
 
