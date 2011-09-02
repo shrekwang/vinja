@@ -284,24 +284,28 @@ public class ExpressionEval {
 		
 		Value value = null;
 		try {
+			StackFrame stackFrame = threadRef.frame(0);
 			if (!hasParents) {
-				StackFrame stackFrame = threadRef.frame(0);
 				LocalVariable localVariable;
 				localVariable = stackFrame.visibleVariableByName(name);
 				if (localVariable != null) {
 					return stackFrame.getValue(localVariable);
 				}
 			}
-			if (thisObj == null ) {
-				throw new ExpressionEvalException("eval expression error, local variable '" + name +"' can't be found."); 
-			}
 			
-			ReferenceType refType = thisObj.referenceType();
+			ReferenceType refType = stackFrame.location().declaringType();
+			if (thisObj != null ) {
+				refType = thisObj.referenceType();
+			}
 			Field field = refType.fieldByName(name);
 			if (field == null ) {
 				throw new ExpressionEvalException("eval expression error, field '" + name +"' can't be found."); 
 			}
-			value = thisObj.getValue(field);
+			if (thisObj != null) {
+				value = thisObj.getValue(field);
+			} else {
+				value = refType.getValue(field);
+			}
 		} catch (IncompatibleThreadStateException e) {
 			throw new ExpressionEvalException("eval expression error, caused by:" + e.getMessage());
 		} catch (AbsentInformationException e) {

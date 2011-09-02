@@ -15,6 +15,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATE_SOURCE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
+import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_OPEN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_QUIT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
@@ -124,6 +125,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeLocatedbCommand();
 	   } else if (cmdStr.equals(CMD_PROJECT_CLEAN)) {
 		   szjdeCommand = new SzjdeProjectClean();
+	   } else if (cmdStr.equals(CMD_PROJECT_OPEN)) {
+		   szjdeCommand = new SzjdeProjectOpen();
 	   } else if (cmdStr.equals(CMD_GET_DEFCLASS)) {
 		   szjdeCommand = new SzjdeGetDefClassCommand();
 	   } else if (cmdStr.equals(CMD_GET_METHODDEFS)) {

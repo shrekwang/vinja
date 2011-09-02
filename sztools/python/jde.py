@@ -110,6 +110,17 @@ class ProjectManager(object):
         Talker.projectClean(classPathXml)
 
     @staticmethod
+    def projectOpen():
+        classPathXml = os.path.join(os.getcwd(),".classpath")
+        if not os.path.exists(classPathXml) :
+            vim_buffer = vim.current.buffer
+            current_file_name = vim_buffer.name
+            classPathXml = ProjectManager.getClassPathXml(current_file_name)
+        #if we can't find .classpath, defer the project init process later .
+        if classPathXml.endswith(".classpath") :
+            Talker.projectOpen(classPathXml)
+
+    @staticmethod
     def loadJarMeta():
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
@@ -298,6 +309,15 @@ class Talker(BasicTalker):
     def projectClean(xmlPath):
         params = dict()
         params["cmd"]="projectClean"
+        params["classPathXml"] = xmlPath
+        data = Talker.send(params)
+        return data
+
+
+    @staticmethod
+    def projectOpen(xmlPath):
+        params = dict()
+        params["cmd"]="projectOpen"
         params["classPathXml"] = xmlPath
         data = Talker.send(params)
         return data

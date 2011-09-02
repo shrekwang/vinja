@@ -50,6 +50,11 @@ public class CompilerContext {
 	private String lastSearchedRtlName = "";
 	private String lastSearchResult = "";
 	
+	private boolean flatProject = false;
+	
+	public static CompilerContext load(String classPathXml) {
+		return new CompilerContext(classPathXml);
+	}
 	
 	public CompilerContext(String classPathXml) {
 		
@@ -68,6 +73,7 @@ public class CompilerContext {
 			}
 			initClassPath(classPathXml);
 		} else {
+			this.flatProject = true;
 			this.projectRoot = abpath;
 			this.outputDir = abpath;
 			this.srcLocations.add(abpath);
@@ -206,8 +212,10 @@ public class CompilerContext {
 		URL urlsA[] = new URL[classPathUrls.size()];
 		classPathUrls.toArray(urlsA);
 		loader = new ReflectAbleClassLoader(urlsA, this.getClass().getClassLoader());
-		cachePackageInfo(urlsA,outputDir);
-		classMetaInfoManager.cacheAllInfo(outputDir,this);
+		if (! this.flatProject) {
+			cachePackageInfo(urlsA,outputDir);
+			classMetaInfoManager.cacheAllInfo(outputDir,this);
+		}
 	}
 	
 	private void cachePackageInfo(URL[] urls,String outputDir) {

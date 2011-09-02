@@ -523,6 +523,8 @@ function! Jdext()
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F6>     :python jdb.stepCmd('step_over')<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F7>     :python jdb.stepCmd('step_return')<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F8>     :python jdb.stepCmd('resume')<cr>
+  "load project java info in background
+  python ProjectManager.projectOpen()
 endfunction
 
 
