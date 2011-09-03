@@ -1730,6 +1730,10 @@ class Jdb(object):
             self.show()
         else :
             vim.command("call SwitchToSzToolView('Jdb')")
+
+        data = JdbTalker.submit("show_watch",self.class_path_xml,self.serverName)
+        if data : 
+            self.stdout(data)
         vim.command("call foreground()")
 
     def resumeSuspend(self):
@@ -1817,6 +1821,7 @@ class Jdb(object):
 
         if cmdLine.startswith("eval") \
                 or cmdLine.startswith("reftype") \
+                or cmdLine.startswith("watch") \
                 or cmdLine.startswith("inspect") :
             arg = cmdLine[ cmdLine.find(" ")+1 : ]
             ast = self.ivp.generate(arg)

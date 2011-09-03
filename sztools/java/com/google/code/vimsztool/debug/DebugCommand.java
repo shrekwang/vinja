@@ -10,11 +10,12 @@ public class DebugCommand  extends SzjdeCommand {
 	
 	private Debugger debugger = Debugger.getInstance();
 	private BreakpointManager bpMgr = BreakpointManager.getInstance();
+	private WatchVariableManager wvMgr = WatchVariableManager.getInstance();
 	private ExceptionPointManager ecpm  = ExceptionPointManager.getInstance();
 	
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","stacks", "attach","breakpoint_add", "breakpoint_remove",
-		"step_into","step_over","step_return", "resume", "shutdown" ,"catch",
+		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
 		"ignore","clear", "threads","thread", "syncbps","disconnect","reftype"};
 	
 	public String execute() {
@@ -70,6 +71,11 @@ public class DebugCommand  extends SzjdeCommand {
 				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
 				|| debugCmd.equals("fields") || debugCmd.equals("reftype")) {
 			actionResult =  ExpressionEval.executeEvalCmd(debugCmd, debugCmdArgs);
+		} else if (debugCmd.equals("watch")) {
+			String exp = debugCmdArgs.substring(debugCmd.length()+1);
+			actionResult =  wvMgr.setWatchVariables(exp);
+		} else if (debugCmd.equals("show_watch")) {
+			actionResult =  wvMgr.evalWatchVariables();
 		} else if (debugCmd.equals("breakpoints")) {
 			actionResult = debugger.listBreakpoints();
 		} else if (debugCmd.equals("stacks")) {

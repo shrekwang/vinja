@@ -43,6 +43,21 @@ public class ExpressionEval {
 		return max;
 	}
 	
+	public static String eval(List<Expression> exps) {
+		if (exps ==null || exps.size() == 0) return "";
+		StringBuilder sb = new StringBuilder();
+		int count = 0;
+		for (Expression exp :exps) {
+			count ++;
+			Value value = getJdiValue(exp);
+			sb.append(getPrettyPrintStr(value)).append("\n");
+			if (count < exps.size()) {
+				sb.append("----------------------\n");
+			}
+		}
+		return sb.toString();
+	}
+	
 	public static String executeEvalCmd(String debugCmd,String debugCmdArgs) {
 		String actionResult = null;
 		try {
@@ -65,6 +80,7 @@ public class ExpressionEval {
 			return e.getMessage();
 		}
 	}
+	
 	
 	private static ThreadReference checkAndGetCurrentThread() {
 		Debugger debugger = Debugger.getInstance();
@@ -170,20 +186,9 @@ public class ExpressionEval {
 
 	public static String eval(String expXmlStr) {
 		List<Expression> exps = Expression.parseExpXmlStr(expXmlStr);
-		if (exps ==null || exps.size() == 0) return "";
-		StringBuilder sb = new StringBuilder();
-		int count = 0;
-		for (Expression exp :exps) {
-			count ++;
-			Value value = getJdiValue(exp);
-			sb.append(getPrettyPrintStr(value)).append("\n");
-			if (count < exps.size()) {
-				sb.append("----------------------\n");
-			}
-		}
-		return sb.toString();
+		return eval(exps);
 	}
-
+	
 	public static Value getJdiValue(Expression exp) {
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		try {
