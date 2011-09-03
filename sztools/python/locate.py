@@ -241,9 +241,9 @@ class JavaMemberContentManager(object):
         result = []
         if not search_pat :
             search_pat = "*"
-
+        pat = re.compile("^%s.*" % search_pat.replace("*",".*") , re.IGNORECASE)
         for name ,mtype,rtntype,param,lineNum in self.memberInfo :
-            if fnmatch.fnmatch(name, search_pat) :
+            if pat.match(name) :
                 if mtype == "method" :
                     tipStr = "%s(%s) : %s " % (name,param,rtntype)
                 else :
@@ -273,8 +273,9 @@ class TypeHierarchyContentManager(object):
         if not search_pat :
             search_pat = "*"
 
+        pat = re.compile("^%s.*" % search_pat.replace("*",".*") , re.IGNORECASE)
         for line in self.hierarchy :
-            if fnmatch.fnmatch(line, search_pat) :
+            if pat.match(line.strip()) :
                 result.append(line)
         return result
 
