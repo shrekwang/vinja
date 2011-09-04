@@ -17,9 +17,37 @@ public class WatchVariableManager {
 		return instance;
 	}
 	
-	public String setWatchVariables(String expXmlStr) {
-		allVariables = Expression.parseExpXmlStr(expXmlStr);
-		return "";
+	public String addWatchVariables(String expXmlStr) {
+		List<Expression> tmpVarList = Expression.parseExpXmlStr(expXmlStr);
+		StringBuilder sb = new StringBuilder();
+		for (Expression exp : tmpVarList) {
+			if (!allVariables.contains(exp)) {
+				allVariables.add(exp);
+				sb.append(exp.getOriExp()+",");
+			}
+		}
+		if (sb.length() > 0) {
+			sb.deleteCharAt(sb.length()-1);
+		}
+		sb.append(" had been added to watch list");
+		return sb.toString();
+	}
+	
+	public String removeWatchVariables(String expXmlStr) {
+		
+		List<Expression> tmpVarList = Expression.parseExpXmlStr(expXmlStr);
+		StringBuilder sb = new StringBuilder();
+		for (Expression exp : tmpVarList) {
+			if (allVariables.contains(exp)) {
+				allVariables.remove(exp);
+				sb.append(exp.getOriExp()+",");
+			}
+		}
+		if (sb.length() > 0) {
+			sb.deleteCharAt(sb.length()-1);
+		}
+		sb.append(" has been removed from watch list");
+		return sb.toString();
 	}
 	
 	public List<Expression> getWatchVariables() {

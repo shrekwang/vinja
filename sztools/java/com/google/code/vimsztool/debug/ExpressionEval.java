@@ -14,6 +14,7 @@ import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.IntegerValue;
 import com.sun.jdi.InterfaceType;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
@@ -47,12 +48,20 @@ public class ExpressionEval {
 		if (exps ==null || exps.size() == 0) return "";
 		StringBuilder sb = new StringBuilder();
 		int count = 0;
+		List<String> oriExps = new ArrayList<String>();
+		for (Expression exp : exps ) {
+			oriExps.add(exp.getOriExp());
+		}
+		int maxLen = getMaxLength(oriExps)+2;
+		
 		for (Expression exp :exps) {
 			count ++;
-			Value value = getJdiValue(exp);
-			sb.append(getPrettyPrintStr(value)).append("\n");
-			if (count < exps.size()) {
-				sb.append("----------------------\n");
+			sb.append(padStr(maxLen,exp.getOriExp())).append(":");
+			try {
+				Value value = getJdiValue(exp);
+				sb.append(getPrettyPrintStr(value)).append("\n");
+			} catch (ExpressionEvalException e) {
+				sb.append("exception in calc the value");
 			}
 		}
 		return sb.toString();
@@ -245,7 +254,13 @@ public class ExpressionEval {
 		if (exp.isArrayExp()) {
 			if (basicExpValue instanceof ArrayReference) {
 				ArrayReference array = (ArrayReference)basicExpValue;
-				basicExpValue = array.getValue(exp.getArrayIdx());
+				Value arrayIdxValue = eval(threadRef, exp.getArrayIdxExp(), thisObj,false);
+				if (arrayIdxValue instanceof IntegerValue ) {
+					int idx = ((IntegerValue)arrayIdxValue).value();
+					basicExpValue = array.getValue(idx);
+				}  else {
+					throw new ExpressionEvalException("eval expression error, array index is not int type.");
+				}
 			}
 		}
 

@@ -1822,6 +1822,7 @@ class Jdb(object):
         if cmdLine.startswith("eval") \
                 or cmdLine.startswith("reftype") \
                 or cmdLine.startswith("watch") \
+                or cmdLine.startswith("unwatch") \
                 or cmdLine.startswith("inspect") :
             arg = cmdLine[ cmdLine.find(" ")+1 : ]
             ast = self.ivp.generate(arg)
@@ -1868,7 +1869,8 @@ class Jdb(object):
 class InspectorVarParser():
 
     def __init__(self):
-        self.parse = self.getParser()
+        self.parser = self.getParser()
+        self.locs = []
 
     @staticmethod
     def convertNumbers(s,l,toks):
@@ -1895,14 +1897,19 @@ class InspectorVarParser():
         param_atom = TRUE | FALSE | NULL | Group(java_exp) | java_str | java_num  
 
         func_param = Suppress("(")+Optional(delimitedList(param_atom)) + Suppress(")")
-        array_index_exp = Suppress("[")+java_num.setResultsName("arrayidx") + Suppress("]")
+        array_index_exp = Suppress("[")+param_atom.setResultsName("arrayidx") + Suppress("]")
 
         post_exp = Optional(Group(func_param).setResultsName("params")) + Optional(array_index_exp)
 
         atom_exp =  Group(Word(alphas+"_",alphanums+"_").setResultsName("name") + post_exp)
         java_exp << atom_exp + Optional(OneOrMore(Suppress(".") + atom_exp)).setResultsName("members")
 
-        return delimitedList(Group(java_exp))
+        java_exp_group = Group(java_exp)
+        java_exp_group.setParseAction(self.store_token_starts)
+        return delimitedList(java_exp_group)
+
+    def store_token_starts(self, string, loc, tokens):
+        self.locs.append(loc)
 
     def getClassNameFromEditBuf(self, name):
         for i in range(1,5):
@@ -1914,7 +1921,7 @@ class InspectorVarParser():
         return fullName
 
 
-    def buildAstTree(self, exp,parentEle):
+    def buildAstTree(self, exp,parentEle, ori_exp_str = None):
         expType = "expression"
         
         if isinstance(exp,basestring) :
@@ -1941,6 +1948,9 @@ class InspectorVarParser():
         if not isinstance(exp[0].params,str):
             ele.set("method","true")
 
+        if ori_exp_str :
+            ele.set("oriExp", ori_exp_str)
+
         if parentEle.tag == "root" and exp[0].name[0].isupper():
             fullName = self.getClassNameFromEditBuf(exp[0].name)[0]
             ele.set("name",fullName)
@@ -1951,9 +1961,10 @@ class InspectorVarParser():
             for param in exp[0].params:
                 self.buildAstTree(param,paramsEle)
             ele.append(paramsEle)
-        if isinstance(exp[0].arrayidx, int) :
-            paramsEle = Element("arrayidx", {"value": str(exp[0].arrayidx)})
-            ele.append(paramsEle)
+        if exp[0].arrayidx != None :
+            arrayidxEle = Element("arrayidx")
+            self.buildAstTree(exp[0].arrayidx, arrayidxEle)
+            ele.append(arrayidxEle)
 
         if exp.members:
             membersEle = Element("members")
@@ -1973,17 +1984,31 @@ class InspectorVarParser():
         parentEle.append(ele)
 
     def generate(self, exp):
+        self.locs = []
         stringIO = StringIO.StringIO()
         root = Element('root')
         eleTree = ElementTree(root)
-        parseResult = self.parse.parseString(exp)
+        parseResult = self.parser.parseString(exp)
+
+        ori_exp_names = []
+        for loc in self.locs[::-1]:
+            ori_exp = exp[loc:].strip()
+            if ori_exp.endswith(","):
+                ori_exp = ori_exp[0:-1]
+            exp = exp[0 : loc]
+            ori_exp_names.insert(0,ori_exp)
+
+        index = 0
         for item in  parseResult :
-            self.buildAstTree(item,root)
+            self.buildAstTree(item,root, ori_exp_names[index])
+            index += 1
         eleTree.write(stringIO)
         msg = stringIO.getvalue()
         return msg
 
 if __name__ == "__main__" :
     #ivp = InspectorVarParser()
-    #result = ivp.generate('aa[0],bb,cc.shit("what").let("dd")')
+    #result = ivp.generate('a,b,c')
+    #print result
     pass
+    

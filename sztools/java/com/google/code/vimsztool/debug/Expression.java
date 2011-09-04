@@ -21,13 +21,15 @@ public class Expression {
 	public static final String EXP_TYPE_BOOL = "boolean";
 	public static final String EXP_TYPE_NUM = "number";
 	
-	private String expType;
-	private String name;
+	private String expType = "";
+	private String name = "";
+	private String oriExp = "";
+	
 	private boolean isMethod;
 	private boolean isStaticMember;
 	
 	private boolean isArrayExp;
-	private int arrayIdx;
+	private Expression arrayIdxExp;
 	
 
 	private List<Expression> members = new ArrayList<Expression>();
@@ -75,6 +77,11 @@ public class Expression {
 			expObj.setMethod(true);
 		}
 		
+		String oriExp = el.getAttribute("oriExp");
+		if (method !=null ) {
+			expObj.setOriExp(oriExp);
+		}
+		
 		String clazz = el.getAttribute("clazz");
 		if (clazz !=null && clazz.equals("true")) {
 			expObj.setStaticMember(true);
@@ -92,9 +99,10 @@ public class Expression {
 		
 		Element arrayidxNode = getFirstChild(el, "arrayidx");
 		if (arrayidxNode != null ) {
-			int arrayIdx = Integer.parseInt(arrayidxNode.getAttribute("value"));
+			Element arrayidxValueNode = (Element)getFirstChild(arrayidxNode,"exp");
+			Expression arrayidxValueExp = parseExp(arrayidxValueNode);
 			expObj.setArrayExp(true);
-			expObj.setArrayIdx(arrayIdx);
+			expObj.setArrayIdxExp(arrayidxValueExp);
 		}
 		
 		Element membersNode = (Element)getFirstChild(el,"members");
@@ -181,11 +189,41 @@ public class Expression {
 	public void setArrayExp(boolean isArrayExp) {
 		this.isArrayExp = isArrayExp;
 	}
-	public int getArrayIdx() {
-		return arrayIdx;
+	public Expression getArrayIdxExp() {
+		return arrayIdxExp;
 	}
-	public void setArrayIdx(int arrayIdx) {
-		this.arrayIdx = arrayIdx;
+	public void setArrayIdxExp(Expression arrayIdxExp) {
+		this.arrayIdxExp = arrayIdxExp;
+	}
+	public String getOriExp() {
+		return oriExp;
+	}
+	public void setOriExp(String oriExp) {
+		this.oriExp = oriExp;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((oriExp == null) ? 0 : oriExp.hashCode());
+		return result;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Expression other = (Expression) obj;
+		if (oriExp == null) {
+			if (other.oriExp != null)
+				return false;
+		} else if (!oriExp.equals(other.oriExp))
+			return false;
+		return true;
 	}
 	
 

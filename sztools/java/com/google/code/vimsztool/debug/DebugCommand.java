@@ -16,7 +16,7 @@ public class DebugCommand  extends SzjdeCommand {
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","stacks", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
-		"ignore","clear", "threads","thread", "syncbps","disconnect","reftype"};
+		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype"};
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -73,7 +73,10 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult =  ExpressionEval.executeEvalCmd(debugCmd, debugCmdArgs);
 		} else if (debugCmd.equals("watch")) {
 			String exp = debugCmdArgs.substring(debugCmd.length()+1);
-			actionResult =  wvMgr.setWatchVariables(exp);
+			actionResult =  wvMgr.addWatchVariables(exp);
+		} else if (debugCmd.equals("unwatch")) {
+			String exp = debugCmdArgs.substring(debugCmd.length()+1);
+			actionResult =  wvMgr.removeWatchVariables(exp);
 		} else if (debugCmd.equals("show_watch")) {
 			actionResult =  wvMgr.evalWatchVariables();
 		} else if (debugCmd.equals("breakpoints")) {
