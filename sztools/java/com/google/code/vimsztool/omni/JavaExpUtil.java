@@ -16,8 +16,9 @@ public class JavaExpUtil {
 		if (tokens == null || tokens.length == 0) return aClass;
 
 		for (int i=0; i<tokens.length; i++) {
-			String token = tokens[i];
-			if (token.trim().equals("") || token.equals(".") ) continue;
+			String token = tokens[i].trim();
+			if (token.equals("this") || token.equals("super")) continue;
+			if (token.equals("") || token.equals(".") ) continue;
 			String memberType = "";
 			if (token.indexOf("(") > 0) {
 				memberType = "method";

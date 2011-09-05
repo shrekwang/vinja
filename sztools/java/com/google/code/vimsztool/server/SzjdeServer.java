@@ -8,7 +8,6 @@ import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DEBUG;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DUMP_CLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_FETCH_RESULT;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_CONSTRUCTDEFS;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_DEFCLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFCLASS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFS;
 import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
@@ -127,8 +126,6 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeProjectClean();
 	   } else if (cmdStr.equals(CMD_PROJECT_OPEN)) {
 		   szjdeCommand = new SzjdeProjectOpen();
-	   } else if (cmdStr.equals(CMD_GET_DEFCLASS)) {
-		   szjdeCommand = new SzjdeGetDefClassCommand();
 	   } else if (cmdStr.equals(CMD_GET_METHODDEFS)) {
 		   szjdeCommand = new SzjdeGetMethodDefs();
 	   } else if (cmdStr.equals(CMD_GET_METHODDEFCLASS)) {

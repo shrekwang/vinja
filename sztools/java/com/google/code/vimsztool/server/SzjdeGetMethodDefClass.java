@@ -1,6 +1,7 @@
 package com.google.code.vimsztool.server;
 
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASSPATHXML;
+import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_MEMBER_NAME;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_EXP_TOKENS;
 
 import java.util.Set;
@@ -20,12 +21,23 @@ public class SzjdeGetMethodDefClass extends SzjdeCommand {
 		String classPathXml = params.get(PARAM_CLASSPATHXML);
 		String[] classNameList = params.get("classnames").split(",");
 		String[] tokens = params.get(PARAM_EXP_TOKENS).split(",");
+		String memberName = params.get(PARAM_MEMBER_NAME);
+		
 	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
 		Class aClass = ClassInfoUtil.getExistedClass(classPathXml, classNameList, sourceFile);
 		if (aClass == null) return "None";
 		ModifierFilter filter = new ModifierFilter(false,true);
 		aClass = JavaExpUtil.parseExpResultType(tokens, aClass,filter);
 		if (aClass == null) return "None";
+		
+		String memberType = "field";
+		if (memberName.endsWith("()")) {
+			memberType = "method";
+			memberName = memberName.substring(0,memberName.indexOf("("));
+		}
+		aClass = JavaExpUtil.searchMemberInHierarchy(aClass, memberName ,memberType ,filter,true);
+		if (aClass == null) return "None";
+		
 		String className = aClass.getCanonicalName();
 		
 		String sourceType = params.get(SzjdeConstants.PARAM_SOURCE_TYPE);

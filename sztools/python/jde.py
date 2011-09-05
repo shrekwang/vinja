@@ -176,20 +176,8 @@ class Talker(BasicTalker):
         return data
 
     @staticmethod
-    def getDefClassName(args):
-        params = dict()
-        sourceFile ,classnameList,xmlPath,expTokens,memberName= args
-        params["cmd"]="getDefClassName"
-        params["sourceFile"] = sourceFile
-        params["classnames"] = ",".join(classnameList)
-        params["classPathXml"] = xmlPath
-        params["expTokens"] = ",".join(expTokens)
-        params["memberName"] = memberName
-        data = Talker.send(params)
-        return data
-
-    @staticmethod
     def getMethodDefs(args):
+        "print all methods of a variable"
         params = dict()
         sourceFile ,classnameList,xmlPath,expTokens,memberName= args
         params["cmd"]="getMethodDefs"
@@ -203,6 +191,7 @@ class Talker(BasicTalker):
 
     @staticmethod
     def getMethodDefClass(args):
+        "get whic class defines a method"
         params = dict()
         sourceFile ,classnameList,xmlPath,expTokens,memberName,sourceType= args
         params["cmd"]="getMethodDefClass"
@@ -471,14 +460,16 @@ class EditUtil(object):
         if line[tokenEndCol] == "(":
             expTokens[endTokenIndex] = expTokens[endTokenIndex] + "()"
 
+        superClass = Parser.getSuperClass()
         if varName[0].isupper():
             classname = varName
         elif varName == "this" :
             classname = "this"
+        elif varName == "super" :
+            classname = superClass
         else :
             classname = Parser.getVarType(varName,row-1)
 
-        superClass = Parser.getSuperClass()
         if not classname :
             if not superClass : return
             expTokens.insert(0,varName)
@@ -492,6 +483,8 @@ class EditUtil(object):
         if sourcePath != "None" :
             matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
             vim.command("edit +%s %s" % (matchedLine, sourcePath ))
+        else :
+            print "cant' locate the source code"
 
         """
         for className in classNameList :
