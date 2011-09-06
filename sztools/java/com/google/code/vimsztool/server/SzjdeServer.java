@@ -1,26 +1,5 @@
 package com.google.code.vimsztool.server;
 
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_AUTOIMPORT;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_COMPILE;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_COMPLETE;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_COPY_RESOURCE;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DEBUG;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_DUMP_CLASS;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_FETCH_RESULT;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_CONSTRUCTDEFS;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFCLASS;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_GET_METHODDEFS;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATEDB;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOCATE_SOURCE;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_OVERIDE;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_CLEAN;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_PROJECT_OPEN;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_QUIT;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_RUN_SYS;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_TYPE_HIIRARCHY;
-import static com.google.code.vimsztool.server.SzjdeConstants.CMD_LOAD_JAR_META;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -104,43 +83,45 @@ public class SzjdeServer extends Thread {
 		   }
 	   }
 	   SzjdeCommand szjdeCommand = null;
-	   if (cmdStr.equals(CMD_COMPILE)) {
+	   if (cmdStr.equals(SzjdeConstants.CMD_COMPILE)) {
 		   szjdeCommand = new SzjdeCompilerCommand();
-	   } else if (cmdStr.equals(CMD_COMPLETE)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_COMPLETE)) {
 		   szjdeCommand = new SzjdeCompletionCommand();
-	   } else if (cmdStr.equals(CMD_AUTOIMPORT)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_AUTOIMPORT)) {
 		  szjdeCommand = new SzjdeAutoImportCommand(); 
-	   } else if (cmdStr.equals(CMD_RUN)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_RUN)) {
 		   szjdeCommand = new SzjdeClassRunnerCommand();
-	   } else if (cmdStr.equals(CMD_DUMP_CLASS)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_DUMP_CLASS)) {
 		   szjdeCommand = new SzjdeDumpClassInfoCommand();
-	   } else if (cmdStr.equals(CMD_OVERIDE)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_OVERIDE)) {
 		   szjdeCommand = new SzjdeOverideMethodsCommand();
-	   } else if (cmdStr.equals(CMD_COPY_RESOURCE)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_COPY_RESOURCE)) {
 		   szjdeCommand = new SzjdeCopyResourceCommand();
-	   } else if (cmdStr.equals(CMD_RUN_SYS) || cmdStr.endsWith(CMD_FETCH_RESULT)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_RUN_SYS) || cmdStr.endsWith(SzjdeConstants.CMD_FETCH_RESULT)) {
 		   szjdeCommand = new SzjdeSystemCommand(cmdStr);
-	   } else if (cmdStr.equals(CMD_LOCATEDB)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_LOCATEDB)) {
 		   szjdeCommand = new SzjdeLocatedbCommand();
-	   } else if (cmdStr.equals(CMD_PROJECT_CLEAN)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_PROJECT_CLEAN)) {
 		   szjdeCommand = new SzjdeProjectClean();
-	   } else if (cmdStr.equals(CMD_PROJECT_OPEN)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_PROJECT_OPEN)) {
 		   szjdeCommand = new SzjdeProjectOpen();
-	   } else if (cmdStr.equals(CMD_GET_METHODDEFS)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_GET_METHODDEFS)) {
 		   szjdeCommand = new SzjdeGetMethodDefs();
-	   } else if (cmdStr.equals(CMD_GET_METHODDEFCLASS)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_GET_METHODDEFCLASS)) {
 		   szjdeCommand = new SzjdeGetMethodDefClass();
-	   } else if (cmdStr.equals(CMD_GET_CONSTRUCTDEFS)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_GET_CONSTRUCTDEFS)) {
 		   szjdeCommand = new SzjdeGetConstructorDefs();
-	   } else if (cmdStr.equals(CMD_DEBUG)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_DEBUG)) {
 		   szjdeCommand = new DebugCommand();
-	   } else if (cmdStr.equals(CMD_TYPE_HIIRARCHY)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_TYPE_HIIRARCHY)) {
 		   szjdeCommand = new SzjdeTypeHierarchyCommand();
-	   } else if (cmdStr.equals(CMD_LOCATE_SOURCE)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_LOCATE_SOURCE)) {
 		   szjdeCommand = new SzjdeLocateSourceCommand();
-	   } else if (cmdStr.equals(CMD_LOAD_JAR_META)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_LOAD_JAR_META)) {
 		   szjdeCommand = new SzjdeLoadJarMetaInfoCommand();
-	   } else if (cmdStr.equals(CMD_QUIT)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_SEARCH_REF)) {
+		   szjdeCommand = new SzjdeSearchReferenceCommand();
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_QUIT)) {
 		   Display.getDefault().syncExec(new Runnable() {
 				public void run() {
 				   JdtUI.instance.exit();

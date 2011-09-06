@@ -508,6 +508,7 @@ function! Jdext()
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gi  :python EditUtil.locateDefinition("impl")<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gh  :python EditUtil.searchRef()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>ai  :python AutoImport.autoImportVar()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>pt  :python ProjectManager.projectTree()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>go  :call LocateMember()<cr>

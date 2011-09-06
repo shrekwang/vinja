@@ -21,6 +21,7 @@ public class SzjdeConstants {
 	public final static String CMD_LOAD_JAR_META="loadJarMeta";
 	public final static String CMD_TYPE_HIIRARCHY="typeHierarchy";
 	public final static String CMD_LOCATE_SOURCE="locateSource";
+	public final static String CMD_SEARCH_REF="searchRef";
 	public final static String CMD_QUIT="quit";
 	
 	public final static String PARAM_CLASSPATHXML="classPathXml";
@@ -32,6 +33,7 @@ public class SzjdeConstants {
 	public final static String PARAM_CLASS_NAME="className";
 	public final static String PARAM_IGNORE_CASE="ignoreCase";
 	public final static String PARAM_MEMBER_NAME="memberName";
+	public final static String PARAM_MEMBER_DESC="memberDesc";
 	public final static String PARAM_PKG_NAME="pkgName";
 	public final static String PARAM_SUPER_CLASS="superClass";
 	public final static String PARAM_CMD_NAME="cmdName";

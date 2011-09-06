@@ -205,6 +205,16 @@ class Talker(BasicTalker):
         return data
 
     @staticmethod
+    def searchRef(xmlPath,sourceFile,memberDesc):
+        params = dict()
+        params["cmd"]="searchRef"
+        params["classPathXml"] = xmlPath
+        params["sourceFile"] = sourceFile
+        params["memberDesc"] = memberDesc
+        data = Talker.send(params)
+        return data
+
+    @staticmethod
     def getConstructDefs(sourceFile,classnameList,xmlPath):
         params = dict()
         params["cmd"]="getConstructDefs"
@@ -498,6 +508,44 @@ class EditUtil(object):
         """
                 
         return
+
+    @staticmethod
+    def searchRef():
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        line = vim_buffer[row-1]
+        current_file_name = vim_buffer.name
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+
+        result = Parser.parseCurrentMethod()
+        if result == None :
+            print "current line not contains a method declaration."
+            return 
+        rtntype,name,param = result
+        memberDesc = rtntype + " " + name + "(" + param +")"
+        resultText = Talker.searchRef(classPathXml,current_file_name,memberDesc)
+        qflist = []
+        for line in resultText.split("\n"):
+            if line.strip() == "" : continue
+            try :
+                filename,lnum,text= line.split("::")
+                bufnr=str(vim.eval("bufnr('%')"))
+                absname = os.path.normpath(filename)
+                filename = Compiler.relpath(absname)
+                if filename != Compiler.relpath(current_file_name) :
+                    qfitem = dict(filename=filename,lnum=lnum,text=text,type='w')
+                else :
+                    qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type='w')
+                qflist.append(qfitem)
+            except Exception , e:
+                fp = StringIO.StringIO()
+                traceback.print_exc(file=fp)
+                message = fp.getvalue()
+                logging.debug(message)
+
+        if len(qflist) > 0 :
+            vim.command("call setqflist(%s)" % qflist)
+            vim.command("cwindow")
 
     @staticmethod
     def searchMemeberLineNum(memberName,sourcePath):
@@ -1018,7 +1066,7 @@ class Parser(object):
         return end_line
 
     @staticmethod
-    def parseCurrentMethodName():
+    def parseCurrentMethod():
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         fullDeclLine = vim_buffer[row-1]
@@ -1032,8 +1080,19 @@ class Parser(object):
                 startLine = startLine + 1
         result =  methodPat.search(fullDeclLine)
         if result == None : return None
-        return result.group("name")
 
+        name = result.group("name")
+        rtntype = result.group("rtntype")
+        param = result.group("param")
+        return rtntype,name,param
+
+    @staticmethod
+    def parseCurrentMethodName():
+        result = Parser.parseCurrentMethod()
+        if result == None :
+            return ""
+        rtyntype,name,param = result
+        return name
 
     @staticmethod
     def parseAllMemberInfo(lines):

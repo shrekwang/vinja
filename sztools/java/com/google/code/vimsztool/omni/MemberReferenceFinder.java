@@ -1,6 +1,8 @@
 package com.google.code.vimsztool.omni;
 
 import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -19,25 +21,17 @@ public class MemberReferenceFinder {
     private String targetClass;
     private Method targetMethod;
 
-    private AppClassVisitor cv;
+    private AppClassVisitor cv = new AppClassVisitor();
 
-    private ArrayList<Callee> callees = new ArrayList<Callee>();
+    private ArrayList<ReferenceLocation> locations = new ArrayList<ReferenceLocation>();
 
-    private static class Callee {
-        String className;
-        String methodName;
-        String methodDesc;
-        String source;
-        int line;
-
-        public Callee(String cName, String mName, String mDesc, String src, int ln) {
-            className = cName; methodName = mName; methodDesc = mDesc; source = src; line = ln;
-        }
+        
+    public ArrayList<ReferenceLocation> getReferenceLocations() {
+    	return this.locations;
     }
 
     private class AppMethodVisitor extends MethodAdapter {
 
-        boolean callsTarget;
         int line;
 
         public AppMethodVisitor() { super(new EmptyVisitor()); }
@@ -46,23 +40,14 @@ public class MemberReferenceFinder {
             if (owner.equals(targetClass)
                     && name.equals(targetMethod.getName())
                     && desc.equals(targetMethod.getDescriptor())) {
-                callsTarget = true;
+                locations.add(new ReferenceLocation(cv.className, cv.methodName, cv.methodDesc, cv.source, line));
             }
-        }
-
-        public void visitCode() {
-            callsTarget = false;
         }
 
         public void visitLineNumber(int line, Label start) {
             this.line = line;
         }
 
-        public void visitEnd() {
-            if (callsTarget)
-                callees.add(new Callee(cv.className, cv.methodName, cv.methodDesc, 
-                        cv.source, line));
-        }
     }
 
     private class AppClassVisitor extends ClassAdapter {
@@ -102,7 +87,6 @@ public class MemberReferenceFinder {
         this.targetClass = targetClass;
         this.targetMethod = Method.getMethod(targetMethodDeclaration);
 
-        this.cv = new AppClassVisitor();
 
         JarFile jarFile = new JarFile(jarPath);
         Enumeration<JarEntry> entries = jarFile.entries();
@@ -113,13 +97,30 @@ public class MemberReferenceFinder {
             if (entry.getName().endsWith(".class")) {
                 InputStream stream = new BufferedInputStream(jarFile.getInputStream(entry), 1024);
                 ClassReader reader = new ClassReader(stream);
-
                 reader.accept(cv, 0);
-
                 stream.close();
             }
         }
     }
+    
+    public void findCallingMethodInDir(String dir,String targetClass, String memberDesc) throws Exception {
+
+        this.targetClass = targetClass;
+        this.targetMethod = Method.getMethod(memberDesc);
+
+		File file = new File(dir);
+		File[] classes = file.listFiles(); 
+		for (File classFile : classes ) {
+			if (classFile.isDirectory()) {
+				findCallingMethodInDir(classFile.getAbsolutePath(),targetClass, memberDesc);
+			} else {
+				FileInputStream fs = new FileInputStream(classFile);
+				ClassReader cr = new ClassReader(fs);
+                cr.accept(cv, 0);
+                fs.close();
+			}
+		}
+	}
 
 
     public static void main( String[] args ) {
@@ -130,11 +131,11 @@ public class MemberReferenceFinder {
             String targetClass = "com/google/code/vimsztool/omni/ClassInfo";
             app.findCallingMethodsInJar(jar, targetClass,"String getName()");
 
-            for (Callee c : app.callees) {
+            for (ReferenceLocation c : app.locations) {
                 System.out.println(c.source+":"+c.line+" "+c.className+" "+c.methodName+" "+c.methodDesc);
             }
 
-            System.out.println("--\n"+app.callees.size()+" methods invoke "+
+            System.out.println("--\n"+app.locations.size()+" methods invoke "+
                     app.targetClass+" "+
                     app.targetMethod.getName()+" "+app.targetMethod.getDescriptor());
         } catch(Exception x) {
