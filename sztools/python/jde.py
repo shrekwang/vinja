@@ -429,13 +429,16 @@ class EditUtil(object):
         searchResult = re.search(classNamePat, line[0:tokenEndCol])
         if searchResult :
             className = searchResult.group("name")
-            classNameList = Parser.getFullClassNames(className)
-            for className in classNameList :
-                sourcePath = Talker.locateSource(className, classPathXml,sourceType)
-                if sourcePath != "None" :
-                    vim.command("edit %s" % sourcePath )
-                    break
-            return 
+            tmpLine = line[0:tokenEndCol]
+            #check if the exp is some member name started with uppercase letter.
+            if tmpLine[len(tmpLine) - len(className) - 1] != "." :
+                classNameList = Parser.getFullClassNames(className)
+                for className in classNameList :
+                    sourcePath = Talker.locateSource(className, classPathXml,sourceType)
+                    if sourcePath != "None" :
+                        vim.command("edit %s" % sourcePath )
+                        break
+                return 
 
         #locate the method of class
         expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
