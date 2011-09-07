@@ -38,8 +38,8 @@ public class MemberReferenceFinder {
 
         public void visitMethodInsn(int opcode, String owner, String name, String desc) {
             if (owner.equals(targetClass)
-                    && name.equals(targetMethod.getName())
-                    && desc.equals(targetMethod.getDescriptor())) {
+                    && name.equals(targetMethod.getName()) ) {
+                    //&& desc.equals(targetMethod.getDescriptor())) {
                 locations.add(new ReferenceLocation(cv.className, cv.methodName, cv.methodDesc, cv.source, line));
             }
         }
@@ -114,10 +114,12 @@ public class MemberReferenceFinder {
 			if (classFile.isDirectory()) {
 				findCallingMethodInDir(classFile.getAbsolutePath(),targetClass, memberDesc);
 			} else {
-				FileInputStream fs = new FileInputStream(classFile);
-				ClassReader cr = new ClassReader(fs);
-                cr.accept(cv, 0);
-                fs.close();
+				if  (classFile.getName().endsWith(".class") ) {
+					FileInputStream fs = new FileInputStream(classFile);
+					ClassReader cr = new ClassReader(fs);
+	                cr.accept(cv, 0);
+	                fs.close();
+				}
 			}
 		}
 	}

@@ -510,6 +510,15 @@ class EditUtil(object):
         return
 
     @staticmethod
+    def reprDictInDoubleQuote(dic):
+        pairs = []
+        for item in dic.keys() :
+            value = re.escape(dic[item])
+            pair = '"'+str(item)+'"'+":"+'"'+value+'"'
+            pairs.append(pair)
+        return "{"+",".join(pairs)+"}"
+
+    @staticmethod
     def searchRef():
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
@@ -544,8 +553,13 @@ class EditUtil(object):
                 logging.debug(message)
 
         if len(qflist) > 0 :
-            vim.command("call setqflist(%s)" % qflist)
+            #since vim use single quote string as literal string, the escape char will not
+            #been handled, so repr the dict in a double quoted string
+            qflist_str = "[" + ",".join([EditUtil.reprDictInDoubleQuote(item) for item in qflist])+"]" 
+            vim.command("call setqflist(%s)" % qflist_str)
             vim.command("cwindow")
+        else :
+            print "can't find any reference location."
 
     @staticmethod
     def searchMemeberLineNum(memberName,sourcePath):

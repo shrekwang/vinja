@@ -38,21 +38,25 @@ public class SzjdeSearchReferenceCommand extends SzjdeCommand {
          }
          StringBuilder sb = new StringBuilder();
          for (ReferenceLocation loc : app.getReferenceLocations() ) {
-        	 sb.append(getSourcePath(ctx,loc.className)).append(SEPERATOR);
+        	 sb.append(getSourcePath(ctx,loc.className,loc.source)).append(SEPERATOR);
         	 sb.append(loc.line).append(SEPERATOR);
-        	 sb.append(getSourceLine(ctx,loc.className,loc.line)).append("\n");
+        	 sb.append(getSourceLine(ctx,loc.className,loc.source,loc.line)).append("\n");
          }
          return sb.toString();
 	}
 	
-	public String getSourcePath(CompilerContext ctx ,String className) {
-		String rtlPathName = className.replace(".", "/") + ".java";
+	public String getSourcePath(CompilerContext ctx ,String className,String sourceName) {
+		String rtlPathName = sourceName;
+		if (className.indexOf("/") > 0 ) {
+			rtlPathName = className.substring(0,className.lastIndexOf("/")+1) + sourceName;
+		}
+		
 		String sourcePath = ctx.findSourceFile(rtlPathName);
 		return sourcePath;
 	}
 	
-	public String getSourceLine(CompilerContext ctx, String className, int line) {
-		String sourcePath = getSourcePath(ctx,className);
+	public String getSourceLine(CompilerContext ctx, String className, String sourceName, int line) {
+		String sourcePath = getSourcePath(ctx,className,sourceName);
 	    FileReader fr = null;
 		try {
 		    fr = new FileReader(sourcePath);
