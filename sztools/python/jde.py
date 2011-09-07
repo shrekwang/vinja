@@ -542,9 +542,9 @@ class EditUtil(object):
                 absname = os.path.normpath(filename)
                 filename = Compiler.relpath(absname)
                 if filename != Compiler.relpath(current_file_name) :
-                    qfitem = dict(filename=filename,lnum=lnum,text=text,type='w')
+                    qfitem = dict(filename=filename,lnum=lnum,text=text)
                 else :
-                    qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type='w')
+                    qfitem = dict(bufnr=bufnr,lnum=lnum,text=text)
                 qflist.append(qfitem)
             except Exception , e:
                 fp = StringIO.StringIO()
