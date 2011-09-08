@@ -5,6 +5,9 @@ from xml.etree.ElementTree import *
 from jde import ProjectManager
 
 class TreeNode(object):
+    mark_postfix = " [mark]"
+    edit_postfix = " [edit]"
+
 
     def __init__(self, name, realpath, isDirectory, isOpen = False, isLoaded = False):
         self.name=name
@@ -14,6 +17,16 @@ class TreeNode(object):
         self.isLoaded = isLoaded
         self._children = []
         self.parent = None
+        self.isMarked = False
+        self.isEdited = False
+
+    def get_display_str(self):
+        dis_str = self.name
+        if self.isMarked :
+            dis_str = self.name + TreeNode.mark_postfix
+        elif self.isEdited :
+            dis_str = self.name + TreeNode.edit_postfix
+        return dis_str
 
     def get_child(self,name):
         for node in self._children :
@@ -61,9 +74,9 @@ class TreeNode(object):
             treeParts = self.name + "/" + "\n"
         else :
             if self.isDirectory :
-                treeParts = treeParts + self.name + "/" + "\n"
+                treeParts = treeParts + self.get_display_str() + "/" + "\n"
             else :
-                treeParts = treeParts + self.name + "\n"
+                treeParts = treeParts + self.get_display_str() + "\n"
 
         if self.isDirectory and self.isOpen :
             childNodes = self.get_children()
@@ -94,6 +107,16 @@ class TreeNode(object):
     def paste(self, file_names):
         print "unsupported operation."
         return False
+
+    def toggle_mark(self):
+        if self.isMarked :
+            self.isMarked = False
+        else :
+            self.isMarked = True
+
+    def set_edit_flag(self, flag) :
+        self.isEdited = flag
+
 
 class NormalDirNode(TreeNode):
 
@@ -396,6 +419,15 @@ class ProjectTree(object):
         else :
             node.open_node(edit_cmd)
 
+    def mark_selected_node(self):
+        node = self.get_selected_node()
+        (row,col) = vim.current.window.cursor
+        if node.isDirectory :
+            return 
+        node.toggle_mark()
+        self.render_tree()
+        vim.current.window.cursor = (row,col)
+
     def recursive_open_node(self):
         node = self.get_selected_node()
         opened = False
@@ -478,6 +510,10 @@ class ProjectTree(object):
 
         if path.startswith("/") :
             path = path[1:]
+        if path.endswith(TreeNode.mark_postfix) :
+            path = path[0: len(TreeNode.mark_postfix)]
+        if path.endswith(TreeNode.edit_postfix) :
+            path = path[0: len(TreeNode.edit_postfix)]
         node = self._get_node_from_path(path)
         return node
 
@@ -628,6 +664,8 @@ class ProjectTree(object):
 
         #strip off any read only flag
         line = re.sub(' \[RO\]', "", line)
+        line = line.replace(TreeNode.mark_postfix, "")
+        line = line.replace(TreeNode.edit_postfix, "")
 
         #strip off any bookmark flags
         line = re.sub( ' {[^}]*}', "", line)
@@ -660,7 +698,7 @@ class ProjectTree(object):
             lnum += 1
         return lnum+1, len(sections)*2
 
-    def open_path(self, path, node = None, abpath = False ):
+    def open_path(self, path, node = None, abpath = True ):
         if node == None :
             node = self._get_render_root() 
 
@@ -672,9 +710,9 @@ class ProjectTree(object):
             lib_node.isOpen = True
             zip_file_node = lib_node.get_child(zip_base_name)
             zip_file_node.isOpen = True
-            return self.open_path(inner_path, zip_file_node, True)
+            return self.open_path(inner_path, zip_file_node, False)
         else :
-            if not abpath :
+            if abpath :
                 path = os.path.relpath(path, node.realpath)
             path = path.replace("\\","/")
             sections = path.split("/")
@@ -699,6 +737,22 @@ class ProjectTree(object):
                     break
                 tree_path.insert(0,node.name)
             return "/".join(tree_path[1:])
+
+    def find_node(self,path):
+        node = self._get_render_root() 
+        path = os.path.relpath(path, node.realpath)
+        path = path.replace("\\","/")
+        sections = path.split("/")
+        if sections[-1] == "" :
+            sections = sections[:-1]
+        
+        found_node = None
+        for section in sections :
+            node = node.get_child(section)
+            if node == None :
+                return None
+            found_node = node
+        return found_node
 
     @staticmethod
     def locate_buf_in_tree(current_file_name = None):
@@ -733,6 +787,28 @@ class ProjectTree(object):
             projectRoot = os.path.abspath(os.getcwd())
         tree = ProjectTree(projectRoot)
         return tree
+
+    @staticmethod
+    def set_file_edit(path, flag):
+        if "projectTree" not in globals() :
+            return 
+        if flag == "true" :
+            flag = True
+        else :
+            flag = False
+        node = projectTree.find_node(path)
+        if node != None :
+            node.set_edit_flag(flag)
+        else : 
+            return
+
+        if not VimUtil.isSzToolBufferVisible('ProjectTree'):
+            return 
+        vim.command("call SwitchToSzToolView('ProjectTree')" )
+        (row,col) = vim.current.window.cursor
+        projectTree.render_tree()
+        vim.current.window.cursor = (row,col)
+        vim.command("exec 'wincmd w'")
 
     @staticmethod
     def dispose_tree():

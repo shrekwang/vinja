@@ -345,7 +345,6 @@ function Javadoc()
 endfunction
 
 function ProjectTree(...) 
-  call RunSzPyfile("tree.py")
   python ProjectTree.runApp()
   map <silent><buffer> <cr>  :python projectTree.open_selected_node()<cr>
   map <silent><buffer> o     :python projectTree.open_selected_node()<cr>
@@ -355,6 +354,8 @@ function ProjectTree(...)
   map <silent><buffer> r     :python projectTree.refresh_selected_node()<cr>
   map <silent><buffer> x     :python projectTree.close_parent_node()<cr>
   map <silent><buffer> s     :python projectTree.filter_display_node()<cr>
+
+  map <silent><buffer> m     :python projectTree.mark_selected_node()<cr>
 
   map <silent><buffer> D     :python projectTree.delete_node()<cr>
   map <silent><buffer> A     :python projectTree.add_node()<cr>
@@ -414,6 +415,7 @@ endfunction
 
 call RunSzPyfile("common.py")
 call RunSzPyfile("notext.py")
+call RunSzPyfile("tree.py")
 
 set completefunc=FuzzyCompletion
 set tabline=%!MyTabLine()
@@ -580,4 +582,10 @@ nmap <silent><leader>zl  :call TagList()<cr>
 nmap <silent><leader>lw  :call LocateFile()<cr>
 
 
-au BufReadCmd  jar://*	python ZipUtil.read_zip_cmd()
+function SetProjectTreeFileEditFlag(filename,flag)
+  python ProjectTree.set_file_edit(vim.eval("a:filename"),vim.eval("a:flag"))
+endfunction
+
+autocmd BufReadCmd  jar://*	python ZipUtil.read_zip_cmd()
+autocmd BufReadPost *  call SetProjectTreeFileEditFlag(expand("<amatch>"),"true")
+autocmd BufUnload   *  call SetProjectTreeFileEditFlag(expand("<amatch>"),"false")

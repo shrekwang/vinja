@@ -25,6 +25,10 @@ syn match treeHelpCommand #" :.\{-}\>#hs=s+3
 "highlighting for readonly files
 syn match treeRO #.*\[RO\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePartFile
 
+"highlighting for file status
+syn match treeEditedFile #.*\[edit\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePartFile
+syn match treeMarkedFile #.*\[mark\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePartFile
+
 "highlighting for sym links
 syn match treeLink #[^-| `].* -> # contains=treeBookmark,treeOpenable,treeClosable,treeDirSlash
 
@@ -67,4 +71,8 @@ hi def link treeOpenable Title
 hi def link treeFlag ignore
 hi def link treeRO WarningMsg
 hi def link treeBookmark Statement
+
+hi def link treeEditedFile Label
+hi def link treeMarkedFile Question
+
 
