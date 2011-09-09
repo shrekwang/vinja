@@ -29,7 +29,7 @@ syn match treeRO #.*\[RO\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePa
 
 "highlighting for file status
 syn match treeEditedFile #.*\[edit\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePartFile
-syn match treeMarkedFile #.*\[mark\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePartFile
+syn match treeMarkedFile #.*\[mark\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePartFile,treeClosable,treeOpenable
 
 "highlighting for sym links
 syn match treeLink #[^-| `].* -> # contains=treeBookmark,treeOpenable,treeClosable,treeDirSlash

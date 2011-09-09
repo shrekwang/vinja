@@ -74,7 +74,10 @@ class TreeNode(object):
             treeParts = self.name + "/" + "\n"
         else :
             if self.isDirectory :
-                treeParts = treeParts + self.get_display_str() + "/" + "\n"
+                mark = ""
+                if self.isMarked :
+                    mark = TreeNode.mark_postfix
+                treeParts = treeParts + self.name + "/" + mark + "\n"
             else :
                 treeParts = treeParts + self.get_display_str() + "\n"
 
@@ -195,23 +198,46 @@ class NormalDirNode(TreeNode):
         return True
 
     def paste(self, nodes , remove_orignal = False ):
+        node_paths = [node.realpath for node in nodes]
+        commonprefix = os.path.commonprefix(node_paths)
+
+        added_nodes = []
         for node in nodes :
             file_abpath = node.realpath
             basename = os.path.basename(file_abpath)
-            new_abspath = os.path.join(self.realpath, basename)
+            #keep the original direcotry structure
+            relpath = os.path.relpath(file_abpath, commonprefix)
+            rel_dir = os.path.dirname(relpath)
+            dst_dir = os.path.join(self.realpath, rel_dir)
+            if not os.path.exists(dst_dir):
+                os.makedirs(dst_dir)
+
             if remove_orignal :
-                FileUtil.fileOrDirMv(file_abpath,self.realpath)
+                FileUtil.fileOrDirMv(file_abpath,dst_dir)
                 node.parent.remove_child(node)
             else :
-                FileUtil.fileOrDirCp(file_abpath,self.realpath)
+                FileUtil.fileOrDirCp(file_abpath,dst_dir)
 
-            if os.path.isdir(file_abpath): 
-                node = NormalDirNode(basename, new_abspath, self.projectTree)
-                self.add_child(node)
+            if rel_dir == "" :
+                new_node_name = basename
             else :
-                node = NormalFileNode(basename, new_abspath, isDirectory=False)
+                dir_name = os.path.dirname(rel_dir) 
+                new_node_name = dir_name if dir_name !="" else rel_dir
+
+            new_node_path = os.path.join(self.realpath, new_node_name)
+
+            if os.path.isdir(new_node_path): 
+                node = NormalDirNode(new_node_name, new_node_path, self.projectTree)
+            else :
+                node = NormalFileNode(new_node_name, new_node_path, isDirectory=False)
+
+            if self.get_child(new_node_name) == None :
                 self.add_child(node)
-        return True
+                added_nodes.append(node)
+            else :
+                added_nodes.append(self.get_child(new_node_name))
+
+        return added_nodes
 
 class NormalFileNode(TreeNode):
 
@@ -422,8 +448,8 @@ class ProjectTree(object):
     def mark_selected_node(self):
         node = self.get_selected_node()
         (row,col) = vim.current.window.cursor
-        if node.isDirectory :
-            return 
+        #if node.isDirectory :
+        #    return 
         node.toggle_mark()
         self.render_tree()
         vim.current.window.cursor = (row,col)
@@ -584,17 +610,48 @@ class ProjectTree(object):
         self.remove_orignal = remove_orignal
         print "selected node has been yanked"
 
+    def yank_marked_node(self) :
+        nodes = self.get_marked_nodes()
+        self.yank_buffer = nodes
+        self.remove_orignal = False
+        print "visible marked node has been yanked"
+
+    def delete_marked_node(self) :
+        nodes = self.get_marked_nodes()
+        prompt = "Are you sure you with to delete marked node (yN):"
+        answer = VimUtil.getInput(prompt)
+        if not answer or answer != "y" :
+            print "delete node abort."
+            return
+        for node in nodes :
+            parent = node.parent
+            node.dispose()
+        self.render_tree()
+        self.select_node(parent)
+
+    def get_marked_nodes(self):
+        nodes = []
+        def _get_marked_nodes(parent_node) :
+            if parent_node.isMarked :
+                nodes.append(parent_node)
+            if not parent_node.isOpen :
+                return
+            for child in parent_node.get_children():
+                if child.isDirectory :
+                    _get_marked_nodes(child)
+                elif child.isMarked :
+                    nodes.append(child)
+        _get_marked_nodes(self._get_render_root())
+        return nodes
+
     def paste(self):
         node = self.get_selected_node()
-        suc = node.paste(self.yank_buffer, self.remove_orignal)
-        if suc :
+        added_nodes = node.paste(self.yank_buffer, self.remove_orignal)
+        if added_nodes :
             node.isOpen = True
             self.render_tree()
-            last_sub_node = node.get_child(self.yank_buffer[-1].name)
-            if last_sub_node != None :
-                self.select_node(last_sub_node)
-            else :
-                self.select_node(node)
+            last_sub_node = added_nodes[-1]
+            self.select_node(last_sub_node)
 
     def change_root(self):
         node = self.get_selected_node()
