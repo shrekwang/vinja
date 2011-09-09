@@ -2,6 +2,8 @@
 "how things should be highlighted
 syn match treeFlag #\~#
 syn match treeFlag #\[RO\]#
+syn match treeFlag #\[edit\]#
+syn match treeFlag #\[mark\]#
 
 "highlighting for the ~/+ symbols for the directory nodes
 syn match treeClosable #\~\<#
@@ -35,9 +37,9 @@ syn match treeLink #[^-| `].* -> # contains=treeBookmark,treeOpenable,treeClosab
 "highlighing for directory nodes and file nodes
 syn match treeDirSlash #/#
 syn match treeDir #[^-| `].*/# contains=treeLink,treeDirSlash,treeOpenable,treeClosable
-syn match treeExecFile  #[|`]-.*\*\($\| \)# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark
-syn match treeFile  #|-.*# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeExecFile
-syn match treeFile  #`-.*# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeExecFile
+syn match treeExecFile  #[|`]-.*\*\($\| \)# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeEditedFile,treeMarkedFile
+syn match treeFile  #|-.*# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeExecFile,treeEditedFile,treeMarkedFile
+syn match treeFile  #`-.*# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeExecFile,treeEditedFile,treeMarkedFile
 syn match treeCWD #^/.*$#
 
 "highlighting for bookmarks
