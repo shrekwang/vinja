@@ -740,7 +740,10 @@ class ProjectTree(object):
 
     def find_node(self,path):
         node = self._get_render_root() 
-        path = os.path.relpath(path, node.realpath)
+        try :
+            path = os.path.relpath(path, node.realpath)
+        except :
+            return None
         path = path.replace("\\","/")
         sections = path.split("/")
         if sections[-1] == "" :

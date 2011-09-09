@@ -429,10 +429,16 @@ class EditUtil(object):
 
         dotExpParser = Parser.getJavaDotExpParser()
         tokenEndCol = col
+        
         for char in line[col:] :
             if not re.match("\w",char) :
                 break
             tokenEndCol += 1
+
+        #if current line starts with "." or last line ends with "." . join the line
+        if re.match(r"^\s*\..*", line) or re.match(r".*\.$",vim_buffer[row-2]) :
+            line = vim_buffer[row-2].strip() + line[0:tokenEndCol+1]
+            tokenEndCol = len(line) - 1 
 
         #if locate the class source
         classNamePat = r".*\b(?P<name>[A-Z]\w+)$"
