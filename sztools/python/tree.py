@@ -758,6 +758,7 @@ class ProjectTree(object):
     def open_path(self, path, node = None, abpath = True ):
         if node == None :
             node = self._get_render_root() 
+            render_root = node
 
         if path.startswith("jar:") :
             zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
@@ -790,10 +791,10 @@ class ProjectTree(object):
             tree_path =[node.name]
             while True :
                 node = node.parent
-                if node == None :
+                if node == render_root :
                     break
                 tree_path.insert(0,node.name)
-            return "/".join(tree_path[1:])
+            return "/".join(tree_path)
 
     def find_node(self,path):
         node = self._get_render_root() 
