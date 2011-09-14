@@ -179,6 +179,7 @@ function! Dbext()
   call SetTabPageName("Dbext")
   python Dbext.runApp()
   map <buffer><silent>,,  :python dbext.queryVisualSQL()<cr>
+  map <buffer><silent>,gs :python dbext.executeOneStatement()<cr>
   map <buffer><silent>,go :python dbext.promptDbOption()<cr>
   map <buffer><silent>,gc :python dbext.promptTempOption()<cr>
   map <buffer><silent>,lt :python QueryUtil.queryTables()<cr>

@@ -167,6 +167,14 @@ class Dbext(object):
         listwinnr = str(vim.eval("winnr('#')"))
         vim.command("exec '" + listwinnr + " wincmd w'")
 
+    def executeOneStatement(self):
+        sql = MiscUtil.getVisualBlock()
+        outBuffer = Dbext.getOutputBuffer()
+        columns,result = dbext.query(sql)
+        if columns :
+            result = dbext.format(columns,result)
+        output(result,outBuffer,False)
+
     def queryVisualSQL(self):
         sql = MiscUtil.getVisualBlock()
         outBuffer = Dbext.getOutputBuffer()
