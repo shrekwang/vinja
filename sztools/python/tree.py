@@ -488,6 +488,20 @@ class ProjectTree(object):
         self._save_display_info(node, file_names)
         self.refresh_selected_node()
     
+    def close_opened_file(self):
+        def _close_opened_file(node):
+            if not node.isDirectory :
+                if node.isEdited :
+                    bufnr = vim.eval("bufnr('%s')" % node.realpath)    
+                    if bufnr != "-1" :
+                        vim.command('Bclose %s' % bufnr)
+                return
+            elif node.isLoaded :
+                for child in node.get_children() :
+                    _close_opened_file(child)
+
+        node = self.get_selected_node()
+        _close_opened_file(node)
 
     def _save_display_info(self, parent_node, file_names):
         
