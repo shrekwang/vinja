@@ -488,6 +488,11 @@ class ProjectTree(object):
         self._save_display_info(node, file_names)
         self.refresh_selected_node()
     
+    def up_one_level(self):
+        node = self.get_selected_node()
+        if node.parent != None :
+            self.select_node(node.parent)
+
     def close_opened_file(self):
         def _close_opened_file(node):
             if not node.isDirectory :

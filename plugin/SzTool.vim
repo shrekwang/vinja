@@ -356,7 +356,7 @@ function ProjectTree(...)
   map <silent><buffer> x     :python projectTree.close_parent_node()<cr>
   map <silent><buffer> s     :python projectTree.filter_display_node()<cr>
   map <silent><buffer> z     :python projectTree.close_opened_file()<cr>
-
+  map <silent><buffer> u     :python projectTree.up_one_level()<cr>
   map <silent><buffer> m     :python projectTree.mark_selected_node()<cr>
 
   map <silent><buffer> DD     :python projectTree.delete_node()<cr>
