@@ -127,7 +127,6 @@ class ProjectManager(object):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         Talker.loadJarMeta(classPathXml)
 
-
 class Talker(BasicTalker):
     
     @staticmethod
@@ -328,7 +327,6 @@ class Talker(BasicTalker):
         params["classPathXml"] = xmlPath
         data = Talker.send(params)
         return data
-
 
 class EditUtil(object):
 
@@ -539,6 +537,9 @@ class EditUtil(object):
         rtntype,name,param = result
         memberDesc = rtntype + " " + name + "(" + param +")"
         resultText = Talker.searchRef(classPathXml,current_file_name,memberDesc)
+
+        hltype = "R"
+        HighlightManager.removeHighlightType(hltype)
         qflist = []
         for line in resultText.split("\n"):
             if line.strip() == "" : continue
@@ -551,6 +552,9 @@ class EditUtil(object):
                     qfitem = dict(filename=filename,lnum=lnum,text=text)
                 else :
                     qfitem = dict(bufnr=bufnr,lnum=lnum,text=text)
+                lstart = text.find(name) 
+                lend = lstart + len(name) + 2 
+                HighlightManager.addHighlightInfo(absname,lnum,hltype,text,lstart, lend)
                 qflist.append(qfitem)
             except Exception , e:
                 fp = StringIO.StringIO()
@@ -558,6 +562,7 @@ class EditUtil(object):
                 message = fp.getvalue()
                 logging.debug(message)
 
+        HighlightManager.highlightCurrentBuf()
         if len(qflist) > 0 :
             #since vim use single quote string as literal string, the escape char will not
             #been handled, so repr the dict in a double quoted string
@@ -679,16 +684,13 @@ class EditUtil(object):
     @staticmethod
     def toggleBreakpoint():
         global bp_data
-        global jdb
         file_name = vim.current.buffer.name
         (row,col) = vim.current.window.cursor
         bp_set = bp_data.get(file_name)
-        signGroup = "SzjdeBreakPoint"
         if bp_set == None :
             bp_set = set()
 
         mainClassName = Parser.getMainClass()
-
         class_path_xml = ProjectManager.getClassPathXml(file_name)
         serverName = vim.eval("v:servername")
         bufnr=str(vim.eval("bufnr('%')"))
@@ -697,57 +699,19 @@ class EditUtil(object):
             cmdline = "breakpoint_remove %s %s" % (mainClassName,row)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
             if data == "success" :
-                signcmd="sign unplace %s buffer=%s" %(row, bufnr)
-                vim.command(signcmd)
                 bp_set.remove(row)
-                #if jdb is started, and suspend on current row, than place a SuspendLine sign
-                if "jdb" in globals() and jdb != None and int(jdb.suspendRow) == row:
-                    signcmd="sign place %s line=%s name=SuspendLine buffer=%s" % (row,row,bufnr)
-                    vim.command(signcmd)
+                HighlightManager.removeSign(file_name,row,"B")
             else :
                 print "remove breakpoint error : msgs "+data
         else :
             cmdline = "breakpoint_add %s %s" % (mainClassName,row)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
             if data == "success" :
-                signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
-                signcmd =signcmd.substitute(id=row,lnum=row,name=signGroup, nr=bufnr)
-                vim.command(signcmd)
+                HighlightManager.addSign(file_name,row, "B")
                 bp_set.add(row)
                 bp_data[file_name] = bp_set
             else :
                 print "can't create breakpoint here"
-
-    @staticmethod
-    def initBreakpointSign():
-        global bp_data
-        file_name = vim.current.buffer.name
-        bp_set = bp_data.get(file_name)
-        signGroup = "SzjdeBreakPoint"
-        if bp_set == None :
-            return
-        for row in bp_set :
-            signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
-            bufnr=str(vim.eval("bufnr('%')"))
-            signcmd =signcmd.substitute(id=row,lnum=row,name=signGroup, nr=bufnr)
-            vim.command(signcmd)
-
-    @staticmethod
-    def initCompilerErrorSign():
-        #vim.command("syntax clear SzjdeError")
-        #vim.command("syntax clear SzjdeWarning")
-        #vim.command("sign unplace *")
-        file_name = vim.current.buffer.name
-        allCompileMsg = globals().get("allCompileMsg")
-        if allCompileMsg == None :
-            return 
-        bufCompileMsg = allCompileMsg.get(file_name)
-        if bufCompileMsg == None : 
-            return
-        (row,col) = vim.current.window.cursor
-        for lnum in bufCompileMsg :
-            text,lstart,lend,errorType = bufCompileMsg.get(lnum)
-            Compiler.highlightErrorGroup(lnum,lstart,lend,errorType)
 
     @staticmethod
     def syncBreakpointInfo():
@@ -756,8 +720,7 @@ class EditUtil(object):
         for file_name in bp_data:
             bp_set = bp_data[file_name]
             for row_num in bp_set :
-                signcmd="sign unplace %s" %(row_num)
-                vim.command(signcmd)
+                HighlightManager.removeSign(file_name,row_num,"B")
 
         source_file_path = vim.current.buffer.name
         serverName = vim.eval("v:servername")
@@ -783,7 +746,8 @@ class EditUtil(object):
                         bp_set = set()
                     bp_set.add(int(line_num))
                     bp_data[matched_file] = bp_set
-            EditUtil.initBreakpointSign()
+                    if matched_file == vim.current.buffer.name :
+                        HighlightManager.addSign(matched_file,line_num,"B")
 
     @staticmethod
     def getTypeHierarchy():
@@ -797,32 +761,176 @@ class EditUtil(object):
         resultText = Talker.typeHierarchy(classPathXml,current_file_name)
         return resultText
 
-class Compiler(object):
+class HighlightManager(object):
+
+    class Info(object):
+        def __init__(self,msg,lstart,lend,hltype):
+            self.msg = msg
+            self.lstart = lstart
+            self.lend = lend
+            self.hltype = hltype
+        def __str__(self):
+            return "(%s,%s)" % (self.hltype,self.msg)
+        def __repr__(self):
+            return "(%s,%s)" % (self.hltype,self.msg)
+
+    @staticmethod
+    def removeHighlightType(removed_hltype):
+        global all_hl_info
+        all_hl_info = globals().get("all_hl_info")
+        if all_hl_info == None :
+            return 
+        empty_buf = []
+        for file_path in all_hl_info :
+            buf_hl_info = all_hl_info.get(file_path)
+            empty_line =[]
+            for line_num in buf_hl_info :
+                infos = [info for info in buf_hl_info.get(line_num) if info.hltype != removed_hltype]
+                if len(infos) > 0 :
+                    buf_hl_info[line_num] = infos
+                else :
+                    empty_line.append(line_num)
+            for line_num in empty_line:
+                del buf_hl_info[line_num]
+
+            if len(buf_hl_info) == 0 :
+                empty_buf.append(file_path)
+        for file_path in empty_buf :
+            del all_hl_info[file_path]
+
+
+    @staticmethod
+    def addHighlightInfo(abs_path,lnum,hltype,msg="",lstart=-1,lend=-1): 
+        global all_hl_info
+        lnum=int(lnum)
+        all_hl_info = globals().get("all_hl_info")
+        if all_hl_info == None :
+            all_hl_info = {} 
+
+        buf_hl_info = all_hl_info.get(abs_path)
+        if buf_hl_info == None :
+            buf_hl_info = {}
+
+        cur_hl_info = HighlightManager.Info(msg,lstart,lend,hltype)
+        line_hl_info = buf_hl_info.get(lnum)
+        if line_hl_info == None :
+            line_hl_info = []
+        line_hl_info.append(cur_hl_info)
+        logging.debug("line_hl_info is %s " % str(line_hl_info))
+        buf_hl_info[lnum] = line_hl_info
+        all_hl_info[abs_path] = buf_hl_info
+
+    @staticmethod
+    def addSign(abs_path, lnum,hltype,bufnr=None):
+        lnum=int(lnum)
+        HighlightManager.addHighlightInfo(abs_path,lnum,hltype)
+        if bufnr == None :
+            bufnr=str(vim.eval("bufnr('%')"))
+
+        global all_hl_info
+        all_hl_info = globals().get("all_hl_info")
+        buf_hl_info = all_hl_info.get(abs_path)
+        line_hl_info = buf_hl_info.get(lnum)
+
+        hltypes = "".join([info.hltype for info in line_hl_info])
+        group = HighlightManager._getGroupName(hltypes)
+        HighlightManager._signErrorGroup(lnum,group,bufnr)
+
+    @staticmethod
+    def removeSign(abs_path, lnum, hltype,bufnr = None):
+        global all_hl_info
+        lnum = int(lnum)
+        all_hl_info = globals().get("all_hl_info")
+        if all_hl_info == None :
+            return
+        buf_hl_info = all_hl_info.get(abs_path)
+        if buf_hl_info == None :
+            return
+        line_hl_info = buf_hl_info.get(lnum)
+        if line_hl_info == None :
+            return
+        logging.debug("line_hl_info is %s " % str(line_hl_info))
+        line_hl_info = [info for info in line_hl_info if info.hltype != hltype]
+
+        if bufnr == None :
+            bufnr=str(vim.eval("bufnr('%')"))
+        unsigncmd = "sign unplace %s buffer=%s" % (str(lnum),bufnr)
+        unsigncmd = "sign unplace %s buffer=%s" % (str(lnum),bufnr)
+        vim.command(unsigncmd)
+        logging.debug("line_hl_info is %s " % str(line_hl_info))
+        if len(line_hl_info) == 0 :
+            del buf_hl_info[lnum]
+        else :
+            buf_hl_info[lnum] = line_hl_info
+            hltypes = "".join([info.hltype for info in line_hl_info])
+            group = HighlightManager._getGroupName(hltypes)
+            signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
+            signcmd =signcmd.substitute(id=lnum,lnum=lnum,name=group, nr=bufnr)
+            logging.debug("signcmd is %s " % signcmd)
+            vim.command(signcmd)
 
     @staticmethod
     def displayMsg():
-        allCompileMsg = globals().get("allCompileMsg")
-        if allCompileMsg == None :
+        global all_hl_info
+        all_hl_info = globals().get("all_hl_info")
+        if all_hl_info == None :
             return 
         vim_buffer = vim.current.buffer
-        bufCompileMsg = allCompileMsg.get(vim_buffer.name)
-        if bufCompileMsg == None : 
+        buf_hl_info = all_hl_info.get(vim_buffer.name)
+        if buf_hl_info == None : 
             return
         (row,col) = vim.current.window.cursor
-        if bufCompileMsg.get(str(row)) != None :
-            errorText,lstart,lend,errorType = bufCompileMsg.get(str(row))
-            vim.command("call DisplayMsg('%s')" % errorText)
+        if buf_hl_info.get(row) != None :
+            fist_hl_info = buf_hl_info.get(row)[0]
+            msg = fist_hl_info.msg
+            vim.command("call DisplayMsg('%s')" % msg)
         else :
             vim.command("call DisplayMsg('%s')" % "")
 
     @staticmethod
-    def highlightErrorGroup(errorRow,start,end,errorType, bufnr = None):
-        if errorType == "W" :
-            group = "SzjdeWarning"
-        else :
-            group = "SzjdeError"
+    def highlightCurrentBuf():
+        global all_hl_info
+        HighlightManager._clearHighlightInVim()
+        all_hl_info = globals().get("all_hl_info")
+        if all_hl_info == None :
+            return 
+        file_name = vim.current.buffer.name
+        buf_hl_info = all_hl_info.get(file_name)
+        if buf_hl_info == None : 
+            return
+        bufnr=str(vim.eval("bufnr('%')"))
+        for lnum in buf_hl_info :
+            hltypes =[]
+            for info in buf_hl_info.get(lnum) :
+                group = HighlightManager._getGroupName(info.hltype)
+                HighlightManager._highlightErrorGroup(lnum,info.lstart,info.lend,group)
+                hltypes.append(info.hltype)
+            group = HighlightManager._getGroupName("".join(hltypes))
+            HighlightManager._signErrorGroup(lnum,group,bufnr)
 
+    @staticmethod
+    def _getGroupName(highlightType):
+        infos = {"W":"SzjdeWarning","E":"SzjdeError","R":"SzjdeReference",\
+                "B":"SzjdeBreakPoint","S":"SuspendLine", "SB":"SuspendLineBP"}
+        if "S" in highlightType and "B" in highlightType :
+            group = "SuspendLineBP"
+        elif "S" in highlightType:
+            group = "SuspendLine"
+        elif "B" in highlightType: 
+            group = "SzjdeBreakPoint"
+        elif "E" in highlightType:
+            group = "SzjdeError"
+        elif "W" in highlightType :
+            group = "SzjdeWarning"
+        elif "R" in highlightType:
+            group = "SzjdeReference"
+        return group
+
+    @staticmethod
+    def _highlightErrorGroup(errorRow,start,end,group):
         errorRow,start,end = int(errorRow), int(start), int(end)
+        if start < 0 or end < 0 or errorRow < 0 :
+            return
         vim_buffer = vim.current.buffer
         charCount = 0
         fileformat = vim.eval("&fileformat")
@@ -830,36 +938,40 @@ class Compiler(object):
         if fileformat == "dos" :
             newLineCount = 2
 
-        for row in vim_buffer[0:errorRow-1] :
-            charCount += len(unicode(row)) +  newLineCount
-        rowStart = 0 if start - charCount < 0 else start - charCount
-        rowEnd = end - charCount + 3
-        if rowEnd < 0 :
-            rowEnd = rowStart + len(unicode(vim_buffer[errorRow]))  
-        signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
-        if bufnr == None :
-            bufnr=str(vim.eval("bufnr('%')"))
-        signcmd =signcmd.substitute(id=errorRow,lnum=errorRow,name=group, nr=bufnr)
+        if group=="SzjdeError" or group == "SzjdeWarning" :
+            for row in vim_buffer[0:errorRow-1] :
+                charCount += len(unicode(row)) +  newLineCount
+            rowStart = 0 if start - charCount < 0 else start - charCount
+            #TODO : shit! where does that magic number come from ? don't fucing rember.
+            rowEnd = end - charCount + 3
+            if rowEnd < 0 :
+                rowEnd = rowStart + len(unicode(vim_buffer[errorRow]))  
+        else :
+            rowStart = start
+            rowEnd = end
+
         syncmd = """syn match %s "\%%%sl\%%>%sc.\%%<%sc" """ %(group, errorRow, rowStart, rowEnd)
         vim.command(syncmd)
+
+    @staticmethod
+    def _signErrorGroup(errorRow,group,bufnr):
+        signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
+        signcmd =signcmd.substitute(id=errorRow,lnum=errorRow,name=group, nr=bufnr)
         vim.command(signcmd)
 
     @staticmethod
-    def hightlightAllError():
-        allCompileMsg = globals().get("allCompileMsg")
-        if allCompileMsg == None :
-            return 
-        for file_name in allCompileMsg :
-            bufnr = vim.eval("bufnr('%s')" % file_name)
-            if bufnr == "-1" :
-                continue
-            bufCompileMsg = allCompileMsg.get(file_name)
-            if bufCompileMsg == None : 
-                continue
-            for lnum in bufCompileMsg :
-                text,lstart,lend,errorType = bufCompileMsg.get(lnum)
-                Compiler.highlightErrorGroup(lnum,lstart,lend,errorType,bufnr)
-
+    def initBreakpointSign():
+        HighlightManager.highlightCurrentBuf()
+        return
+        
+    @staticmethod
+    def _clearHighlightInVim():
+        vim.command("syntax clear SzjdeError")
+        vim.command("syntax clear SzjdeWarning")
+        vim.command("syntax clear SzjdeReference")
+        vim.command("sign unplace *")
+    
+class Compiler(object):
 
     @staticmethod
     def relpath(path):
@@ -885,11 +997,9 @@ class Compiler(object):
         errorMsgList = resultText.split("\n")
         hasError = False
         qflist = []
-        vim.command("syntax clear SzjdeError")
-        vim.command("syntax clear SzjdeWarning")
-        vim.command("sign unplace *")
-        global allCompileMsg 
-        allCompileMsg = {}
+        #clear highlight type E and W
+        HighlightManager.removeHighlightType("E")
+        HighlightManager.removeHighlightType("W")
         for line in errorMsgList:
             if line.strip() == "" : continue
             try :
@@ -899,16 +1009,11 @@ class Compiler(object):
                 bufnr=str(vim.eval("bufnr('%')"))
                 absname = os.path.normpath(filename)
                 filename = Compiler.relpath(absname)
-                bufCompileMsg = allCompileMsg.get(absname)
-                if bufCompileMsg == None :
-                    bufCompileMsg = {} 
                 if filename != Compiler.relpath(current_file_name) :
                     qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
                 else :
                     qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
-                    Compiler.highlightErrorGroup(lnum,lstart,lend,errorType)
-                bufCompileMsg[lnum]=(text,lstart,lend,errorType)
-                allCompileMsg[absname] = bufCompileMsg
+                HighlightManager.addHighlightInfo(absname,lnum,errorType,text,lstart,lend)
                 qflist.append(qfitem)
             except Exception , e:
                 fp = StringIO.StringIO()
@@ -916,15 +1021,13 @@ class Compiler(object):
                 message = fp.getvalue()
                 logging.debug(message)
         EditUtil.syncBreakpointInfo()
-        EditUtil.initBreakpointSign()
-        Compiler.hightlightAllError()
+        HighlightManager.highlightCurrentBuf()
 
         vim.command("call setqflist(%s)" % qflist)
         if hasError :
             vim.command("cwindow")
         else :
             vim.command("cclose")
-
 
     @staticmethod
     def copyResource():
@@ -1744,7 +1847,6 @@ class Jdb(object):
             row = len(buffer)
             vim.current.window.cursor = (row, 0)
 
-
     def handleSuspend(self,abs_path,lineNum,className):
         tab_count = int(vim.eval("tabpagenr('$')"))
         for i in range(1,tab_count+1):
@@ -1763,27 +1865,14 @@ class Jdb(object):
                     or bufname.endswith(".java") :
                 break
         
+        bufnr=str(vim.eval("bufnr('%')"))
         if os.path.exists(abs_path) or abs_path.startswith("jar:") :
             if abs_path != vim.current.buffer.name :
                 vim.command("edit %s" % abs_path)
-                bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
                 vim.command(signcmd)
-            global bp_data
-            bp_set = bp_data.get(vim.current.buffer.name)
-            bufnr=str(vim.eval("bufnr('%')"))
-            if bp_set != None and int(lineNum) in bp_set :
-                unplacecmd = "sign unplace %s buffer=%s" % (lineNum,bufnr)
-                vim.command(unplacecmd)
-                vim.command(unplacecmd)
-                signGroup = "SuspendLineBP"
-            else :
-                signGroup = "SuspendLine"
-
-            signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
-            signcmd =signcmd.substitute(id=lineNum,lnum=lineNum,name=signGroup,nr=bufnr)
-
-            vim.command(signcmd)
+            
+            HighlightManager.addSign(vim.current.buffer.name,lineNum,"S")
             self.suspendRow = lineNum
             self.suspendBufnr = bufnr
             self.suspendBufName = vim.current.buffer.name
@@ -1812,16 +1901,10 @@ class Jdb(object):
         vim.command("call foreground()")
 
     def resumeSuspend(self):
-        global bp_data
-        bp_set = bp_data.get(self.suspendBufName)
-        signcmd=""
-        if self.suspendRow != -1 :
-            if bp_set !=None and int(self.suspendRow) in bp_set :
-                signcmd="sign place %s name=SzjdeBreakPoint buffer=%s" %(self.suspendRow, self.suspendBufnr)
-            else :
-                signcmd="sign unplace %s buffer=%s" %(self.suspendRow, self.suspendBufnr)
-            self.suspendRow = -1
-            vim.command(signcmd)
+        if self.suspendRow == -1 :
+            return
+        HighlightManager.removeSign(self.suspendBufName,self.suspendRow,"S",bufnr=self.suspendBufnr)
+        self.suspendRow = -1
 
     @staticmethod
     def runApp():
@@ -2086,4 +2169,3 @@ if __name__ == "__main__" :
     #result = ivp.generate('a,b,c')
     #print result
     pass
-    

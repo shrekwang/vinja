@@ -3,7 +3,9 @@ highlight def BreakPoint   ctermbg=Blue     ctermfg=Black  guibg=#9999FF    guif
 
 highlight link SzjdeError SpellBad
 highlight link SzjdeWarning SpellLocal
+highlight link SzjdeReference Search
 
+sign define SzjdeReference  text=<< texthl=Search
 sign define SzjdeBreakPoint text=O texthl=BreakPoint
 sign define SzjdeError text=>> texthl=ErrorMsg
 sign define SzjdeWarning text=>> texthl=TODO

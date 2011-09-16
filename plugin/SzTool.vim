@@ -475,8 +475,8 @@ function InitJavaSetting()
   map <C-p> :cp<cr>
   setlocal omnifunc=SzJdeCompletion
   set cmdheight=2
-  au CursorHold <buffer> :python Compiler.displayMsg()
-  au CursorMoved <buffer> :python Compiler.displayMsg()
+  au CursorHold <buffer> :python HighlightManager.displayMsg()
+  au CursorMoved <buffer> :python HighlightManager.displayMsg()
   python EditUtil.createSkeleton()
   if exists("*SuperTabSetDefaultCompletionType")
     call SuperTabSetDefaultCompletionType("<c-x><c-o>")
@@ -488,8 +488,8 @@ function! Jdext()
   python SztoolAgent.startAgent()
   set completeopt=menuone
   autocmd BufEnter     *.java     call InitJavaSetting()
-  autocmd BufWinEnter   *.java    python EditUtil.initBreakpointSign()
-  autocmd BufReadPost   *.java    python EditUtil.initCompilerErrorSign()
+  autocmd BufWinEnter   *.java    python HighlightManager.highlightCurrentBuf()
+  "autocmd BufReadPost   *.java    python HighlightManager.highlightCurrentBuf()
   autocmd BufWritePost  *.java    python Compiler.compileCurrentFile()
   autocmd BufWritePost  *         python Compiler.copyResource()
 
