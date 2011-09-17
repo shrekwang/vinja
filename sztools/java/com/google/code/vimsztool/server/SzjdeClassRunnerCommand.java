@@ -15,17 +15,20 @@ public class SzjdeClassRunnerCommand extends SzjdeCommand {
 		String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
 		CompilerContext cc = getCompilerContext(classPathXml);
 		List<URL> urls = cc.getClassPathUrls();
-		StringBuilder cmd = new StringBuilder("java -cp ");
+		StringBuilder cmd = new StringBuilder("java::-cp::");
 		for (URL url : urls) {
 			cmd.append(url.getPath()).append(File.pathSeparator);
 		}
 
-		cmd.append(" ");
-		cmd.append(cc.buildClassName(sourceFile));
+		cmd.append(" ::");
+		String className = cc.buildClassName(sourceFile);
+		cmd.append(className);
 		String uuid=UUID.randomUUID().toString();
 		String vimServerName = params.get(SzjdeConstants.PARAM_VIM_SERVER);
 		String bufname = params.get(SzjdeConstants.PARAM_BUF_NAME);
-		SystemJob job = new SystemJob(cmd.toString(),vimServerName,"false",uuid,bufname,cc.getProjectRoot());
+		String origCmdLine = "Run " + className;
+		SystemJob job = new SystemJob(cmd.toString(),
+				vimServerName,"false",uuid,bufname,cc.getProjectRoot(),origCmdLine);
 		job.start();
 		return "";
 		

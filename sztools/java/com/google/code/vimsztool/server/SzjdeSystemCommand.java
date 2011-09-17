@@ -16,8 +16,9 @@ public class SzjdeSystemCommand extends SzjdeCommand {
 			String cmdShell = params.get(SzjdeConstants.PARAM_RUN_IN_SHELL);
 			String bufname = params.get(SzjdeConstants.PARAM_BUF_NAME);
 			String workDir = params.get(SzjdeConstants.PARAM_WORK_DIR);
+			String origCmdLine = params.get("origCmdLine");
 			String uuid=UUID.randomUUID().toString();
-			SystemJob job = new SystemJob(cmd,vimServerName,cmdShell,uuid,bufname,workDir);
+			SystemJob job = new SystemJob(cmd,vimServerName,cmdShell,uuid,bufname,workDir,origCmdLine);
 			job.start();
 			return "";
 		} else {

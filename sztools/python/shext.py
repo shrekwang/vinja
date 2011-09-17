@@ -937,7 +937,7 @@ class Shext(object):
         vim.command("bw!")
         shext = None
 
-    def runSysCmd(self,cmdArray):
+    def runSysCmd(self,cmdArray,cmdLine):
         try :
             serverName = vim.eval("v:servername")
             workDir = os.getcwd()
@@ -955,7 +955,7 @@ class Shext(object):
             if os.name == "posix" :
                 runInShell = "false"
             Shext.stdout("")
-            BasicTalker.runSys(serverName," ".join(path_resolved_cmdarray),runInShell,"shext",workDir)
+            BasicTalker.runSys(serverName,"::".join(path_resolved_cmdarray),runInShell,"shext",workDir,cmdLine)
         except (OSError,ValueError) , msg:
             Shext.stdout(msg)
 
@@ -1039,13 +1039,13 @@ class Shext(object):
             Shext.clearColorSyntax()
 
         if self.enoughArguments(cmd) :
-            self.dispatchCmd(cmd)
+            self.dispatchCmd(cmd,cmdLine)
 
         if cmd[0] not in self.special_cmds and not batchMode and insertMode :
             vim.command("normal o")
             vim.command("startinsert")
 
-    def dispatchCmd(self, cmd) :
+    def dispatchCmd(self, cmd,cmdLine) :
         if cmd[0] == "cd" :
             path = len(cmd) > 1 and cmd[1] or None
             self.shUtil.cd(path)
@@ -1124,7 +1124,7 @@ class Shext(object):
         elif cmd[0] == "help" :
             self.help()
         else :
-            self.runSysCmd(cmd)
+            self.runSysCmd(cmd,cmdLine)
 
     def saveSession(self):
         work_buffer = vim.current.buffer

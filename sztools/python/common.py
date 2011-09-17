@@ -585,7 +585,7 @@ class BasicTalker(object):
         return data
 
     @staticmethod
-    def runSys(vimServer,cmdName,runInShell,bufname,workDir):
+    def runSys(vimServer,cmdName,runInShell,bufname,workDir,origCmdLine):
         params = dict()
         params["cmd"]="runSys"
         params["vimServer"] = vimServer
@@ -593,6 +593,7 @@ class BasicTalker(object):
         params["runInShell"] = runInShell
         params["bufname"] = bufname
         params["workDir"] = workDir
+        params["origCmdLine"] = origCmdLine
         data = BasicTalker.send(params)
         return data
 

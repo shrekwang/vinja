@@ -12,12 +12,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class SystemJob extends Thread {
 
 	private static Map<String,SystemJob> jobs = new HashMap<String,SystemJob>();
-	private String cmd;
+	private String[] cmdArray;
 	private String workDir;
 	private String vimServerName;
 	private boolean runInShell = false;
 	private String uuid;
 	private String bufname;
+	private String origCmdLine;
 	private Preference pref = Preference.getInstance();
 	private ScheduledExecutorService exec = null;
 	private StringBuffer buffer = new StringBuffer();
@@ -28,12 +29,13 @@ public class SystemJob extends Thread {
 	}
 
 	public SystemJob(String cmd,String vimServerName,String cmdShell, 
-			String uuid,String bufname,String workDir) {
-		this.cmd = cmd;
+			String uuid,String bufname,String workDir,String origCmdLine) {
+		this.cmdArray = cmd.split("::");
 		this.vimServerName = vimServerName;
 		this.uuid = uuid;
 		this.bufname = bufname;
 		this.workDir = workDir;
+		this.origCmdLine = origCmdLine;
 		if (cmdShell !=null && cmdShell.equalsIgnoreCase("true")) {
 			runInShell = true;
 		}
@@ -49,9 +51,15 @@ public class SystemJob extends Thread {
 	public void run() {
 		try {
 			if (runInShell) {
-				process = Runtime.getRuntime().exec(new String[] {"cmd.exe", "/c",cmd},null, new File(workDir));
+				String[] newCmdArray = new String[cmdArray.length+2];
+				newCmdArray[0] = "cmd.exe";
+				newCmdArray[1] = "/c";
+				for (int i=0; i<cmdArray.length; i++) {
+					newCmdArray[i+2]=cmdArray[i];
+				}
+				process = Runtime.getRuntime().exec(newCmdArray,null, new File(workDir));
 			} else {
-				process = Runtime.getRuntime().exec(cmd,null, new File(workDir));
+				process = Runtime.getRuntime().exec(cmdArray,null, new File(workDir));
 			}
 			StreamGobbler stdOut=new StreamGobbler(buffer, process.getInputStream());
 			StreamGobbler stdErr=new StreamGobbler(buffer, process.getErrorStream());
@@ -83,7 +91,7 @@ public class SystemJob extends Thread {
 		} finally {
 			if (exec !=null ) { exec.shutdown(); }
 			buffer.append("\n");
-			buffer.append( "(" + cmd + "  finished.)");
+			buffer.append( "(" + origCmdLine + "  finished.)");
 		    new BufferChecker().run();
 		}
 		
