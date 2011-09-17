@@ -816,7 +816,6 @@ class HighlightManager(object):
         if line_hl_info == None :
             line_hl_info = []
         line_hl_info.append(cur_hl_info)
-        logging.debug("line_hl_info is %s " % str(line_hl_info))
         buf_hl_info[lnum] = line_hl_info
         all_hl_info[abs_path] = buf_hl_info
 
@@ -849,7 +848,6 @@ class HighlightManager(object):
         line_hl_info = buf_hl_info.get(lnum)
         if line_hl_info == None :
             return
-        logging.debug("line_hl_info is %s " % str(line_hl_info))
         line_hl_info = [info for info in line_hl_info if info.hltype != hltype]
 
         if bufnr == None :
@@ -857,7 +855,6 @@ class HighlightManager(object):
         unsigncmd = "sign unplace %s buffer=%s" % (str(lnum),bufnr)
         unsigncmd = "sign unplace %s buffer=%s" % (str(lnum),bufnr)
         vim.command(unsigncmd)
-        logging.debug("line_hl_info is %s " % str(line_hl_info))
         if len(line_hl_info) == 0 :
             del buf_hl_info[lnum]
         else :
@@ -866,7 +863,6 @@ class HighlightManager(object):
             group = HighlightManager._getGroupName(hltypes)
             signcmd=Template("sign place ${id} line=${lnum} name=${name} buffer=${nr}")
             signcmd =signcmd.substitute(id=lnum,lnum=lnum,name=group, nr=bufnr)
-            logging.debug("signcmd is %s " % signcmd)
             vim.command(signcmd)
 
     @staticmethod
@@ -1869,6 +1865,7 @@ class Jdb(object):
         if os.path.exists(abs_path) or abs_path.startswith("jar:") :
             if abs_path != vim.current.buffer.name :
                 vim.command("edit %s" % abs_path)
+                bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
                 vim.command(signcmd)
             
