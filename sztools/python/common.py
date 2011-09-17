@@ -24,6 +24,7 @@ class ZipUtil(object):
         output(content)
         vim.command("silent doau BufReadPost " + inner_path)
         vim.command("silent doau BufWinEnter " + inner_path)
+        vim.command("silent doau BufReadPost " + path)
 
     @staticmethod
     def read_zip_entry(path):

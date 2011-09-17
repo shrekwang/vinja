@@ -816,11 +816,22 @@ class ProjectTree(object):
 
     def find_node(self,path):
         node = self._get_render_root() 
-        try :
-            path = os.path.relpath(path, node.realpath)
-        except :
-            return None
-        path = path.replace("\\","/")
+
+        if path.startswith("jar:") :
+            zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
+            inner_path = inner_path.replace("\\","/")
+            zip_base_name = os.path.basename(zip_file_path)
+            lib_node = node.get_child("Referenced Libraries")
+            zip_file_node = lib_node.get_child(zip_base_name)
+            path = inner_path
+            node = zip_file_node
+        else :
+            try :
+                path = os.path.relpath(path, node.realpath)
+            except :
+                return None
+            path = path.replace("\\","/")
+
         sections = path.split("/")
         if sections[-1] == "" :
             sections = sections[:-1]
