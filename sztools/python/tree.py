@@ -816,6 +816,8 @@ class ProjectTree(object):
 
     def find_node(self,path):
         node = self._get_render_root() 
+        if path == None :
+            return None
 
         if path.startswith("jar:") :
             zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
