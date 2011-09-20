@@ -46,13 +46,16 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		
 		CompileResultInfo resultInfo =compiler.generateClass(allSrcFiles);
 		List<String> problemList = resultInfo.getProblemInfoList();
+		StringBuilder sb = new StringBuilder();
+		for (String srcFile : allSrcFiles) {
+			sb.append(srcFile).append("\n");
+		}
+		sb.append("$$$$$");
 		
 		if (!resultInfo.isError()) {
 			hotSwapClass(resultInfo);
 		}
 		
-		if (problemList.size() == 0 ) return "";
-		StringBuilder sb = new StringBuilder();
 		for (String problem : problemList) {
 			sb.append(problem);
 		}

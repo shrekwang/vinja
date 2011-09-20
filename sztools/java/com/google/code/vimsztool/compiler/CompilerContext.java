@@ -119,6 +119,7 @@ public class CompilerContext {
 		
 		for (String className : classNames ) {
 			packageInfo.addClassNameToCache(className);
+			packageInfo.addClasstoDstClass(className);
 			String classPath = getOutputDir() + "/" + className.replace('.', '/') + ".class";
 			File outFile = new File(classPath);
 			classMetaInfoManager.loadSingleMetaInfo(outFile);

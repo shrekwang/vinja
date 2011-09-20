@@ -20,7 +20,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
-import com.google.code.vimsztool.util.VjdeUtil;
 
 
 public class PackageInfo {
@@ -33,6 +32,10 @@ public class PackageInfo {
 	
 	public boolean isClassInDst(String className) {
 		return dstClassNames.contains(className);
+	}
+	
+	public void addClasstoDstClass(String className) {
+		dstClassNames.add(className);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -181,7 +184,7 @@ public class PackageInfo {
 			String relativeName = file.getAbsolutePath().substring(outputDir.length()+1);
 			String className = relativeName.replace('/', '.').replace('\\', '.').replace(".class", "");
 		    addClassNameToCache(className);
-		    dstClassNames.add(className);
+		    addClasstoDstClass(className);
 		}
 	}
 	

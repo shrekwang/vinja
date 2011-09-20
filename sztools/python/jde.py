@@ -990,18 +990,20 @@ class Compiler(object):
             current_file_name = "All"
             print "build project can take a while, please wait....."
         resultText = Talker.compileFile(classPathXml,current_file_name)
-        errorMsgList = resultText.split("\n")
-        hasError = False
+        allsrcFiles, errorMsgList = resultText.split("$$$$$")
+        allsrcFiles = allsrcFiles.split("\n")
+        errorMsgList = errorMsgList.split("\n")
         qflist = []
         #clear highlight type E and W
         HighlightManager.removeHighlightType("E")
         HighlightManager.removeHighlightType("W")
+        error_files = []
         for line in errorMsgList:
             if line.strip() == "" : continue
             try :
                 errorType,filename,lnum,text,lstart,lend = line.split("::")
                 if errorType == "E" :
-                    hasError = True
+                    error_files.append(filename)
                 bufnr=str(vim.eval("bufnr('%')"))
                 absname = os.path.normpath(filename)
                 filename = Compiler.relpath(absname)
@@ -1018,12 +1020,33 @@ class Compiler(object):
                 logging.debug(message)
         EditUtil.syncBreakpointInfo()
         HighlightManager.highlightCurrentBuf()
+        pathflags =[(filename.replace("\n",""),False) for filename in allsrcFiles]
+        pathflags.extend([(filename,True) for filename in error_files])
+        Compiler.set_error_flags(pathflags)
 
         vim.command("call setqflist(%s)" % qflist)
-        if hasError :
+        if len(error_files) > 0 :
             vim.command("cwindow")
         else :
             vim.command("cclose")
+
+    @staticmethod
+    def set_error_flags(pathflags):
+        if "projectTree" not in globals() :
+            return 
+        
+        for path,flag in pathflags :
+            node = projectTree.find_node(path)
+            if node != None :
+                node.set_error_flag(flag)
+
+        if not VimUtil.isSzToolBufferVisible('ProjectTree'):
+            return 
+        vim.command("call SwitchToSzToolView('ProjectTree')" )
+        (row,col) = vim.current.window.cursor
+        projectTree.render_tree()
+        vim.current.window.cursor = (row,col)
+        vim.command("exec 'wincmd w'")
 
     @staticmethod
     def copyResource():

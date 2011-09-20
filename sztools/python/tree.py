@@ -1,5 +1,6 @@
 import zipfile, os  
 import shutil
+import logging
 from common import ZipUtil,FileUtil 
 from xml.etree.ElementTree import *
 from jde import ProjectManager
@@ -7,7 +8,7 @@ from jde import ProjectManager
 class TreeNode(object):
     mark_postfix = " [mark]"
     edit_postfix = " [edit]"
-
+    error_postfix = " [error]"
 
     def __init__(self, name, realpath, isDirectory, isOpen = False, isLoaded = False):
         self.name=name
@@ -19,10 +20,13 @@ class TreeNode(object):
         self.parent = None
         self.isMarked = False
         self.isEdited = False
+        self.isError = False
 
     def get_display_str(self):
         dis_str = self.name
-        if self.isMarked :
+        if self.isError :
+            dis_str = self.name + TreeNode.error_postfix
+        elif self.isMarked :
             dis_str = self.name + TreeNode.mark_postfix
         elif self.isEdited :
             dis_str = self.name + TreeNode.edit_postfix
@@ -120,6 +124,8 @@ class TreeNode(object):
     def set_edit_flag(self, flag) :
         self.isEdited = flag
 
+    def set_error_flag(self, flag):
+        self.isError = flag
 
 class NormalDirNode(TreeNode):
 
@@ -559,6 +565,8 @@ class ProjectTree(object):
             path = path[0: len(TreeNode.mark_postfix)]
         if path.endswith(TreeNode.edit_postfix) :
             path = path[0: len(TreeNode.edit_postfix)]
+        if path.endswith(TreeNode.error_postfix) :
+            path = path[0: len(TreeNode.error_postfix)]
         node = self._get_node_from_path(path)
         return node
 
@@ -742,6 +750,7 @@ class ProjectTree(object):
         line = re.sub(' \[RO\]', "", line)
         line = line.replace(TreeNode.mark_postfix, "")
         line = line.replace(TreeNode.edit_postfix, "")
+        line = line.replace(TreeNode.error_postfix, "")
 
         #strip off any bookmark flags
         line = re.sub( ' {[^}]*}', "", line)

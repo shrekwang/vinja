@@ -4,6 +4,7 @@ syn match treeFlag #\~#
 syn match treeFlag #\[RO\]#
 syn match treeFlag #\[edit\]#
 syn match treeFlag #\[mark\]#
+syn match treeFlag #\[error\]#
 
 "highlighting for the ~/+ symbols for the directory nodes
 syn match treeClosable #\~\<#
@@ -30,6 +31,7 @@ syn match treeRO #.*\[RO\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePa
 "highlighting for file status
 syn match treeEditedFile #.*\[edit\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePartFile
 syn match treeMarkedFile #.*\[mark\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePartFile,treeClosable,treeOpenable
+syn match treeErrorFile  #.*\[error\]#hs=s+2 contains=treeFlag,treeBookmark,treePart,treePartFile
 
 "highlighting for sym links
 syn match treeLink #[^-| `].* -> # contains=treeBookmark,treeOpenable,treeClosable,treeDirSlash
@@ -37,9 +39,9 @@ syn match treeLink #[^-| `].* -> # contains=treeBookmark,treeOpenable,treeClosab
 "highlighing for directory nodes and file nodes
 syn match treeDirSlash #/#
 syn match treeDir #[^-| `].*/# contains=treeLink,treeDirSlash,treeOpenable,treeClosable
-syn match treeExecFile  #[|`]-.*\*\($\| \)# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeEditedFile,treeMarkedFile
-syn match treeFile  #|-.*# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeExecFile,treeEditedFile,treeMarkedFile
-syn match treeFile  #`-.*# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeExecFile,treeEditedFile,treeMarkedFile
+syn match treeExecFile  #[|`]-.*\*\($\| \)# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeEditedFile,treeMarkedFile,treeErrorFile
+syn match treeFile  #|-.*# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeExecFile,treeEditedFile,treeMarkedFile,treeErrorFile
+syn match treeFile  #`-.*# contains=treeLink,treePart,treeRO,treePartFile,treeBookmark,treeExecFile,treeEditedFile,treeMarkedFile,treeErrorFile
 syn match treeCWD #^/.*$#
 
 "highlighting for bookmarks
@@ -76,5 +78,6 @@ hi def link treeBookmark Statement
 
 hi def link treeEditedFile Label
 hi def link treeMarkedFile Question
+hi def link treeErrorFile  Error
 
 
