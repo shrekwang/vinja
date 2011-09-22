@@ -94,6 +94,7 @@ public class ClassMetaInfoManager  {
 		try {
 			String classAsPath = className.replace('.', '/') + ".class";
 			InputStream stream = ctx.getClassLoader().getResourceAsStream(classAsPath);
+			if (stream == null) return;
 			ClassReader cr = new ClassReader(stream);
 			stream.close();
 			loadSingleMetaInfo(cr);

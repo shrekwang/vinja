@@ -25,6 +25,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.google.code.vimsztool.debug.BreakpointManager;
+import com.google.code.vimsztool.omni.ClassInfo;
 import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.omni.PackageInfo;
 import com.google.code.vimsztool.util.JdeLogger;
@@ -373,6 +374,20 @@ public class CompilerContext {
 			}
 		}
 		return null;
+	}
+	
+	public String findSourceClass(String className) {
+		ClassInfo classInfo = classMetaInfoManager.getMetaInfo(className);
+		String rtlPathName = className.replace(".", "/") + ".java";
+		if (classInfo!=null) {
+			int dotIndex = className.lastIndexOf(".");
+			String packagePath = "";
+			if (dotIndex > -1) {
+				packagePath = className.substring(0,dotIndex+1).replace(".", "/");  
+			} 
+			rtlPathName = packagePath + classInfo.getSourceName();
+		}
+		return findSourceFile(rtlPathName);
 	}
 	
 	public String findSourceFile(String rtlPathName) {

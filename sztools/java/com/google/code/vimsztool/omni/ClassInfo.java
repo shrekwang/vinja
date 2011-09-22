@@ -9,6 +9,7 @@ public class ClassInfo {
 	
 	private String name;
 	private String superName;
+	private String sourceName;
 	private String[] interfaces;
 	private Set<String> subNames = new HashSet<String>();
 	private List<Integer> lineNums = new ArrayList<Integer>();
@@ -62,6 +63,12 @@ public class ClassInfo {
 	}
 	public Set<String> getDependents() {
 		return dependents;
+	}
+	public String getSourceName() {
+		return sourceName;
+	}
+	public void setSourceName(String sourceName) {
+		this.sourceName = sourceName;
 	}
 	
 	

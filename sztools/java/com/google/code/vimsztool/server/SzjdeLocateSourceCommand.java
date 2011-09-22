@@ -13,9 +13,9 @@ public class SzjdeLocateSourceCommand extends SzjdeCommand {
 		String className = params.get(SzjdeConstants.PARAM_CLASS_NAME);
 		String sourceType = params.get(SzjdeConstants.PARAM_SOURCE_TYPE);
 		CompilerContext cc = getCompilerContext(classPathXml);
+		ClassMetaInfoManager cmm = cc.getClassMetaInfoManager();
 
 		if (sourceType != null && sourceType.equals("impl")) {
-			ClassMetaInfoManager cmm = cc.getClassMetaInfoManager();
 			ClassInfo classInfo = cmm.getMetaInfo(className);
 			if (classInfo != null) {
 				Set<String> subNames = classInfo.getSubNames();
@@ -24,10 +24,17 @@ public class SzjdeLocateSourceCommand extends SzjdeCommand {
 				}
 			}
 		}
-
-		String rtlPathName = className.replace(".", "/") + ".java";
-		String sourcePath = cc.findSourceFile(rtlPathName);
-		return sourcePath;
+		String sourcePath = cc.findSourceClass(className);
+		if (sourcePath.equals("None")) return sourcePath;
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append(sourcePath).append("\n");
+		if (className.indexOf(".") > -1) {
+			sb.append(className.substring(className.lastIndexOf(".")+1));
+		}  else {
+			sb.append(className);
+		}
+		return sb.toString();
 	}
 
 }

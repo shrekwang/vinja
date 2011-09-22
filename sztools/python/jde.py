@@ -450,7 +450,9 @@ class EditUtil(object):
                 for className in classNameList :
                     sourcePath = Talker.locateSource(className, classPathXml,sourceType)
                     if sourcePath != "None" :
-                        vim.command("edit %s" % sourcePath )
+                        sourcePath, className = sourcePath.split("\n")
+                        matchedLine = EditUtil.searchClassDefLineNum(className, sourcePath)
+                        vim.command("edit +%s %s" % (matchedLine, sourcePath ))
                         break
                 return 
 
@@ -583,6 +585,24 @@ class EditUtil(object):
         for name,mtype,rtntype,param,lineNum in members :
             if name == memberName :
                 matched_row = lineNum
+        return str(matched_row)
+
+    @staticmethod
+    def searchClassDefLineNum(className, sourcePath):
+        if sourcePath.startswith("jar:") :
+            lines = ZipUtil.read_zip_entry(sourcePath)
+        else :
+            lines = open(sourcePath).readlines()
+        matched_row = 1
+
+        clsPat = re.compile(r"\s*((public|private|protected)\s+)?"
+                "((abstract|static|final|strictfp)\s+)?"
+                "(class|interface)\s"+className+r"\b")
+        for index,line in enumerate(lines):
+            if clsPat.match(line):
+                matched_row = index + 1
+                break
+        
         return str(matched_row)
 
     @staticmethod

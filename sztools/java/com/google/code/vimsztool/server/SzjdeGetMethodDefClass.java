@@ -38,6 +38,7 @@ public class SzjdeGetMethodDefClass extends SzjdeCommand {
 		aClass = JavaExpUtil.searchMemberInHierarchy(aClass, memberName ,memberType ,filter,true);
 		if (aClass == null) return "None";
 		
+		//FIXME: handle inner class here. 
 		String className = aClass.getCanonicalName();
 		
 		String sourceType = params.get(SzjdeConstants.PARAM_SOURCE_TYPE);
@@ -54,8 +55,7 @@ public class SzjdeGetMethodDefClass extends SzjdeCommand {
 			}
 		}
 
-		String rtlPathName = className.replace(".", "/") + ".java";
-		String sourcePath = cc.findSourceFile(rtlPathName);
+		String sourcePath = cc.findSourceClass(className);
 		return sourcePath;
 	}
 	

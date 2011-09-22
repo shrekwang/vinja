@@ -91,6 +91,7 @@ public class ClassMetaInfoReader implements AnnotationVisitor, SignatureVisitor,
 	}
 
 	public void visitSource(final String source, final String debug) {
+		this.classInfo.setSourceName(source);
 	}
 
 	public void visitInnerClass(final String name, final String outerName, final String innerName,
