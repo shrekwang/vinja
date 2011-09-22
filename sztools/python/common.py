@@ -125,11 +125,12 @@ class SztoolAgent(object):
 
         sztool_home = vim.eval("g:sztool_home")
         libpath = os.path.join(sztool_home,"lib")
-        cmdArray=["java"]
         cps=[os.path.join(libpath,item) for item in os.listdir(libpath) if item.endswith(".jar") ]
         if os.name == "nt" :
+            cmdArray=[os.path.join(os.getenv("JAVA_HOME"),"bin/javaw.exe")]
             swtLibPath = os.path.join(libpath,"swt-win\\swt.jar")
         else :
+            cmdArray=[os.path.join(os.getenv("JAVA_HOME"),"bin/java")]
             swtLibPath = os.path.join(libpath,"swt-linux/swt.jar")
         cps.append(swtLibPath)
         toolsJarPath = os.path.join(os.getenv("JAVA_HOME"),"lib/tools.jar")
