@@ -257,11 +257,14 @@ class JavaMemberContentManager(object):
         
 class TypeHierarchyContentManager(object):
 
-    def __init__(self,source_file, memberName):
+    def __init__(self,source_file, memberName, params):
         work_buffer=vim.current.buffer
         self.hierarchy = EditUtil.getTypeHierarchy().split("\n")
         self.source_file = source_file
         self.memberName = memberName
+        self.param_count = -1
+        if params != None :
+            self.param_count = len(params.split(",")) if params.strip() != "" else 0
         self.show_on_open = True
 
     def get_init_prompt(self):
@@ -288,7 +291,7 @@ class TypeHierarchyContentManager(object):
         else :
             defClassName = pkgName +"."+ binName
 
-        EditUtil.searchAndEdit(self.source_file, defClassName,self.memberName,mode)
+        EditUtil.searchAndEdit(self.source_file, defClassName,self.memberName,mode,self.param_count)
 
 class JavaClassNameContentManager(object):
 

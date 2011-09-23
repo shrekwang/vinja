@@ -497,22 +497,30 @@ class EditUtil(object):
         classNameList = Parser.getFullClassNames(classname)
         expTokens = expTokens[:-1]
         tmpName = memberName + "()" if line[tokenEndCol] == "(" else memberName 
+
+        #get the param count of method, match method by name and count of param first
+        param_count = -1 
+        if line[tokenEndCol] == "(":
+            matched_count = -1
+            param_names = None
+            for index, ch in enumerate(line[tokenEndCol+1:]) :
+                if "(" == ch :
+                    matched_count = matched_count - 1
+                if ")" == ch :
+                    matched_count = matched_count + 1
+                if matched_count == 0 :
+                    param_names = line[tokenEndCol+1 : tokenEndCol+1+index]
+                    break
+            if param_names != None :
+                param_count = len(param_names.split(",")) if param_names.strip() != "" else 0
+
         params =(current_file_name,classNameList,classPathXml,expTokens,tmpName,sourceType)
         sourcePath = Talker.getMethodDefClass(params)
         if sourcePath != "None" :
-            matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
+            matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath,param_count)
             vim.command("edit +%s %s" % (matchedLine, sourcePath ))
         else :
             print "cant' locate the source code"
-
-        """
-        for className in classNameList :
-            sourcePath = Talker.locateSource(className, classPathXml,sourceType)
-            if sourcePath != "None" :
-                matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
-                vim.command("edit +%s %s" % (matchedLine, sourcePath ))
-        """
-                
         return
 
     @staticmethod
@@ -575,17 +583,28 @@ class EditUtil(object):
             print "can't find any reference location."
 
     @staticmethod
-    def searchMemeberLineNum(memberName,sourcePath):
+    def searchMemeberLineNum(memberName,sourcePath,paramCount = -1):
         if sourcePath.startswith("jar:") :
             lines = ZipUtil.read_zip_entry(sourcePath)
         else :
             lines = open(sourcePath).readlines()
         matched_row = 1
         members = Parser.parseAllMemberInfo(lines)
+        nameMatches = [1]
+        gotExactMatch = False
         for name,mtype,rtntype,param,lineNum in members :
             if name == memberName :
-                matched_row = lineNum
-        return str(matched_row)
+                tmp_count = len(param.split(",")) if  param.strip() != "" else 0
+                if paramCount == -1 or paramCount == tmp_count :
+                    matched_row = lineNum
+                    gotExactMatch = True
+                    break
+                else :
+                    nameMatches.append(lineNum)
+        if gotExactMatch :
+            return str(matched_row)
+        else :
+            return str(nameMatches[-1])
 
     @staticmethod
     def searchClassDefLineNum(className, sourcePath):
@@ -606,7 +625,7 @@ class EditUtil(object):
         return str(matched_row)
 
     @staticmethod
-    def searchAndEdit(current_file_name, className,memberName, mode="local"):
+    def searchAndEdit(current_file_name, className,memberName, mode="local",param_count=-1):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         sourcePath = Talker.locateSource(className, classPathXml)
 
@@ -620,7 +639,7 @@ class EditUtil(object):
         if sourcePath != "None" :
             sourcePath, className = sourcePath.split("\n")
             if memberName.strip() != "" :
-                matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
+                matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath,param_count)
             else :
                 matchedLine = EditUtil.searchClassDefLineNum(className, sourcePath)
             vim.command("edit +%s %s" % (matchedLine, sourcePath ))
@@ -1256,9 +1275,9 @@ class Parser(object):
     def parseCurrentMethodName():
         result = Parser.parseCurrentMethod()
         if result == None :
-            return ""
+            return "", None
         rtyntype,name,param = result
-        return name
+        return name,param
 
     @staticmethod
     def parseAllMemberInfo(lines):

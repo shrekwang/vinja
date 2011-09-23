@@ -407,8 +407,8 @@ endfunction
 
 function LocateHierarchy()
   call RunSzPyfile("locate.py")
-  python method = Parser.parseCurrentMethodName()
-  python thmgr = TypeHierarchyContentManager(vim.current.buffer.name,method)
+  python method,param = Parser.parseCurrentMethodName()
+  python thmgr = TypeHierarchyContentManager(vim.current.buffer.name,method,param)
   python QuickLocater.runApp(thmgr)
 endfunction
 
