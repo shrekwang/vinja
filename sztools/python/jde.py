@@ -618,7 +618,11 @@ class EditUtil(object):
             vim.command("tabnew")
 
         if sourcePath != "None" :
-            matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
+            sourcePath, className = sourcePath.split("\n")
+            if memberName.strip() != "" :
+                matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath)
+            else :
+                matchedLine = EditUtil.searchClassDefLineNum(className, sourcePath)
             vim.command("edit +%s %s" % (matchedLine, sourcePath ))
             
         return

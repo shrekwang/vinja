@@ -134,13 +134,18 @@ class NormalDirNode(TreeNode):
         self.hidden_nodes = set()
         super(NormalDirNode, self).__init__(dir_name,abpath, True)
 
+    def _default_hidden(self,file_name):
+        if file_name.startswith(".") or file_name == "CVS" :
+            return True
+        return False
+
     def _load_dir_content(self):
         old_children = self._children
         self._children = []
         self.hidden_nodes = set()
         files, dirs = [], []
         for file_name in os.listdir(self.realpath) :
-            if file_name.startswith(".") :
+            if self._default_hidden(file_name):
                 continue
             abpath = os.path.join(self.realpath, file_name)
             if not self.projectTree.node_visible(abpath):
