@@ -172,6 +172,12 @@ class NormalDirNode(TreeNode):
             self.add_child(node)
         self.isLoaded = True
 
+    def force_reload(self):
+        #this is for change node name, since the path had been
+        #changed, the children need to be reload.
+        self._children = []
+        self._load_dir_content()
+
     def refresh(self):
         self._load_dir_content()
         
@@ -617,6 +623,8 @@ class ProjectTree(object):
             shutil.move(node.realpath, new_file_path)
             node.realpath = new_file_path
             node.name = new_file_name
+            if node.isDirectory :
+                node.force_reload()
             self.render_tree()
             self.select_node(node)
         except Exception , e:
