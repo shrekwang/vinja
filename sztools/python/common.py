@@ -4,6 +4,7 @@ import subprocess
 import logging
 import shutil
 import socket
+import uuid
 from StringIO import StringIO
 from distutils import dir_util
 from distutils import file_util
@@ -545,6 +546,7 @@ def initSztool():
     gscope["search_pat"] = None
     gscope["stardict"] = None
     gscope["scratch_buf"] = []
+    gscope["edit_history"] = EditHistory()
     gscope["markSchemeInited"] = False
     gscope["sztoolsCfg"]=SzToolsConfig(os.path.join(SzToolsConfig.getShareHome(),"conf/sztools.cfg"))
 
@@ -741,5 +743,38 @@ class VimUtil(object):
                 shext_buffer=buffer
                 break
         return shext_buffer
+
+class EditHistory(object):
+    def __init__(self):
+        self.history = {}
+
+    def _get_win_id(self):
+        exists = vim.eval("exists('w:id')")
+        if exists == "0" :
+            return None
+        return  vim.eval("w:id")
+
+    def create_win_id(self):
+        if self._get_win_id() == None :
+            vim.command('let w:id="%s"' % uuid.uuid4())
+
+    def record_current_buf(self):
+        if vim.eval("&buftype") != "" :
+            return
+        uuid_str = self._get_win_id()
+        path = vim.current.buffer.name
+        (row,col)=vim.current.window.cursor
+        if path != None and path.strip() != "" :
+            file_list = self.history.get(uuid_str)
+            if file_list == None :
+                file_list = []
+            if path not in file_list :
+                file_list.append(path)
+            self.history[uuid_str] = file_list
+
+    def get_history(self):
+        uuid_str = self._get_win_id()
+        records = self.history.get(uuid_str)
+        return records
 
 initSztool()

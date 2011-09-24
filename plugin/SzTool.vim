@@ -393,6 +393,12 @@ function LocateFile()
   python QuickLocater.runApp(fcmgr)
 endfunction
 
+function LocateHistory()
+  call RunSzPyfile("locate.py")
+  python hismgr = EditHistoryManager()
+  python QuickLocater.runApp(hismgr)
+endfunction
+
 function LocateMember()
   call RunSzPyfile("locate.py")
   python membermgr = JavaMemberContentManager()
@@ -584,7 +590,7 @@ nmap <silent><leader>zw  :w<cr>
 nmap <silent><leader>zt  :call Tagext()<cr>
 nmap <silent><leader>zl  :call TagList()<cr>
 nmap <silent><leader>lw  :call LocateFile()<cr>
-
+nmap <silent><leader>la  :call LocateHistory()<cr>
 
 function SetProjectTreeFileEditFlag(filename,flag)
   python ProjectTree.set_file_edit(vim.eval("a:filename"),vim.eval("a:flag"))
@@ -593,3 +599,6 @@ endfunction
 autocmd BufReadCmd  jar://*	python ZipUtil.read_zip_cmd()
 autocmd BufReadPost *  call SetProjectTreeFileEditFlag(expand("<amatch>"),"true")
 autocmd BufUnload   *  call SetProjectTreeFileEditFlag(expand("<amatch>"),"false")
+
+autocmd BufEnter           *  python edit_history.record_current_buf()
+autocmd VimEnter,WinEnter  *  python edit_history.create_win_id()

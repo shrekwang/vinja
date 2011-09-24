@@ -225,7 +225,6 @@ class FileContentManager(object):
         elif mode == "tab" :
             vim.command("tabedit %s "  %(fname))
 
-
 class JavaMemberContentManager(object):
 
     def __init__(self):
@@ -332,3 +331,31 @@ class JavaClassNameContentManager(object):
     def open_content(self,line,mode):
         className = line.strip()
         EditUtil.searchAndEdit(self.current_file_name, className,"",mode)
+
+class EditHistoryManager(object):
+    def __init__(self):
+        self.file_history = edit_history.get_history()
+        logging.debug("file history is %s " % str(self.file_history))
+        self.show_on_open = True
+
+    def get_init_prompt(self):
+        return ""
+
+    def search_content(self,search_pat):
+        rows = []
+        self.start_dirs = {}
+        if not search_pat :
+            search_pat = "*"
+        pat = re.compile("^%s.*" % search_pat.replace("*",".*") , re.IGNORECASE)
+        for path in self.file_history :
+            if pat.match(path):
+                rows.append("%s\t%s" %(os.path.basename(path),path))
+        return rows
+
+    def open_content(self,line,mode="local"):
+        line = line.strip()
+        if line == "" :
+            return
+        basename,path = line.split("\t")
+        vim.command("edit %s "  %(path))
+
