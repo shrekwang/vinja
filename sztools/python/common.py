@@ -777,4 +777,12 @@ class EditHistory(object):
         records = self.history.get(uuid_str)
         return records
 
+    def remove_from_history(self,filename):
+        if len(self.history) == 0 :
+            return 
+        for uuid_str in self.history :
+            file_list = self.history.get(uuid_str)
+            if filename in file_list :
+                file_list.remove(filename)
+
 initSztool()

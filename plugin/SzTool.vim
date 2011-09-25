@@ -600,5 +600,10 @@ autocmd BufReadCmd  jar://*	python ZipUtil.read_zip_cmd()
 autocmd BufReadPost *  call SetProjectTreeFileEditFlag(expand("<amatch>"),"true")
 autocmd BufUnload   *  call SetProjectTreeFileEditFlag(expand("<amatch>"),"false")
 
+function RemoveFromHistory(filename)
+  python edit_history.remove_from_history(vim.eval("a:filename"))
+endfunction
+
 autocmd BufEnter           *  python edit_history.record_current_buf()
 autocmd VimEnter,WinEnter  *  python edit_history.create_win_id()
+autocmd BufUnload          *  call RemoveFromHistory(expand("<amatch>"))

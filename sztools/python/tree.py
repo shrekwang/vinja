@@ -408,7 +408,6 @@ class ProjectTree(object):
     def __init__(self, root_dir):
         self.yank_buffer = []
         self.remove_orignal = False 
-        self.render_root = None
         self.work_path_set = []
         self.workset_config_path = os.path.join(root_dir, ".jde_work_set")
         self.prefix_pat = re.compile(r"[^ \-+~`|]")
@@ -416,6 +415,7 @@ class ProjectTree(object):
         self.root_dir = root_dir
         self._load_project_workset()
         self.root = ProjectRootNode(self.root_dir,self)
+        self.root_map = {}
 
     def _load_project_workset(self):
         if not os.path.exists(self.workset_config_path):
@@ -425,11 +425,21 @@ class ProjectTree(object):
             line = line.strip()
             self.work_path_set.append(os.path.join(self.root_dir,line))
 
+    def _set_render_root(self, node):
+        cur_tab = vim.eval("tabpagenr()")
+        uuid_str = str(uuid.uuid4())
+        self.root_map[uuid_str] = node
+        vim.command('call settabvar("%s","render_root_id","%s")' %(cur_tab,uuid_str))
 
     def _get_render_root(self):
-        if self.render_root == None :
+        cur_tab = vim.eval("tabpagenr()")
+        render_root_id = vim.eval('gettabvar("%s","render_root_id")' % cur_tab)
+        if render_root_id == None :
             return self.root
-        return self.render_root
+        node = self.root_map.get(render_root_id)
+        if node == None :
+            return self.root
+        return node
 
     def node_visible(self, abs_path):
         if len(self.work_path_set) == 0 :
@@ -696,12 +706,12 @@ class ProjectTree(object):
     def change_root(self):
         node = self.get_selected_node()
         if node.isDirectory :
-            self.render_root = node
+            self._set_render_root(node)
             self.render_tree()
 
     def change_back(self):
         node = self.get_selected_node()
-        self.render_root = None
+        self._set_render_root(None)
         self.render_tree()
         self.select_node(node)
 
@@ -714,7 +724,11 @@ class ProjectTree(object):
 
     def render_tree(self):
         vim.command("setlocal modifiable")
-        output(self.renderToString())
+        node = self._get_render_root()
+        tab_title = os.path.basename(node.realpath)
+        vim.command("call SetTabPageName('%s')" % tab_title)
+        result = node.renderToString(0,0, [],0)
+        output(result)
         vim.command("setlocal nomodifiable")
             
     def _get_path(self):
@@ -743,10 +757,6 @@ class ProjectTree(object):
             curFile = dir + curFile
         return curFile
 
-    def renderToString(self):
-        node = self._get_render_root()
-        result = node.renderToString(0,0, [],0)
-        return result
 
     def _get_indent_level(self,line):
         matches = self.prefix_pat.search(line)
@@ -805,6 +815,8 @@ class ProjectTree(object):
             inner_path = inner_path.replace("\\","/")
             zip_base_name = os.path.basename(zip_file_path)
             lib_node = node.get_child("Referenced Libraries")
+            if lib_node == None :
+                return None
             lib_node.isOpen = True
             zip_file_node = lib_node.get_child(zip_base_name)
             zip_file_node.isOpen = True
@@ -877,7 +889,9 @@ class ProjectTree(object):
 
         if current_file_name == None or "ProjectTree" in current_file_name:
             return 
-        vim.command("call SwitchToSzToolView('ProjectTree')" )
+
+        cur_tab = vim.eval("tabpagenr()")
+        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % cur_tab )
         tree_path = projectTree.open_path(current_file_name)
         if tree_path == None :
             print "can't find node %s in ProjectTree" % current_file_name
@@ -916,9 +930,10 @@ class ProjectTree(object):
         else : 
             return
 
-        if not VimUtil.isSzToolBufferVisible('ProjectTree'):
+        cur_tab = vim.eval("tabpagenr()")
+        if not VimUtil.isSzToolBufferVisible('ProjectTree_%s' % cur_tab):
             return 
-        vim.command("call SwitchToSzToolView('ProjectTree')" )
+        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % cur_tab )
         (row,col) = vim.current.window.cursor
         projectTree.render_tree()
         vim.current.window.cursor = (row,col)
@@ -926,8 +941,9 @@ class ProjectTree(object):
 
     @staticmethod
     def dispose_tree():
-        if VimUtil.isSzToolBufferVisible("ProjectTree"):
-            VimUtil.closeSzToolBuffer("ProjectTree")
+        cur_tab = vim.eval("tabpagenr()")
+        if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % cur_tab):
+            VimUtil.closeSzToolBuffer("ProjectTree_%s" % cur_tab)
             global projectTree
             projectTree = None
 
@@ -942,12 +958,13 @@ class ProjectTree(object):
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
         
-        if VimUtil.isSzToolBufferVisible("ProjectTree"):
-            VimUtil.closeSzToolBuffer("ProjectTree")
+        cur_tab = vim.eval("tabpagenr()")
+        if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % cur_tab):
+            VimUtil.closeSzToolBuffer("ProjectTree_%s" % cur_tab)
         else :
-            vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree')")
+            vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree_%s')" % cur_tab )
             vim.command("set filetype=ztree")
-            vim.command("call SwitchToSzToolView('ProjectTree')" )
+            vim.command("call SwitchToSzToolView('ProjectTree_%s')" % cur_tab )
             projectTree.render_tree()
             if current_file_name != None :
                 ProjectTree.locate_buf_in_tree(current_file_name)
