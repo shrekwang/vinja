@@ -440,7 +440,7 @@ class ProjectTree(object):
         if node == None :
             return self.root
         return node
-
+    
     def node_visible(self, abs_path):
         if len(self.work_path_set) == 0 :
             return True
@@ -599,9 +599,9 @@ class ProjectTree(object):
             return
         while True :
             node = node.parent
-            if node == None :
-                break
             node_list.insert(0,node.name)
+            if node == self._get_render_root() :
+                break
         tree_path = "/".join(node_list[1:])
         (row,col) = projectTree.get_path_cursor(tree_path)
         vim.current.window.cursor = (row,col)
