@@ -335,7 +335,6 @@ class JavaClassNameContentManager(object):
 class EditHistoryManager(object):
     def __init__(self):
         self.file_history = edit_history.get_history()
-        logging.debug("file history is %s " % str(self.file_history))
         self.show_on_open = True
 
     def get_init_prompt(self):
