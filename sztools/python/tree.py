@@ -168,7 +168,13 @@ class NormalDirNode(TreeNode):
                 node = NormalDirNode(dir_name, abpath, self.projectTree)
             self.add_child(node)
         for file_name, abpath in files :
-            node = NormalFileNode(file_name, abpath, isDirectory=False)
+            node = None
+            for old_node in old_children :
+                if old_node.name == file_name and old_node.isDirectory == False:
+                    node = old_node
+                    break
+            if node == None :
+                node = NormalFileNode(file_name, abpath, isDirectory=False)
             self.add_child(node)
         self.isLoaded = True
 
@@ -425,18 +431,21 @@ class ProjectTree(object):
             line = line.strip()
             self.work_path_set.append(os.path.join(self.root_dir,line))
 
-    def _set_render_root(self, node):
+    def _get_tab_id(self):
         cur_tab = vim.eval("tabpagenr()")
-        uuid_str = str(uuid.uuid4())
-        self.root_map[uuid_str] = node
-        vim.command('call settabvar("%s","render_root_id","%s")' %(cur_tab,uuid_str))
+        tab_id = vim.eval('gettabvar("%s","tab_id")' % cur_tab)
+        if tab_id == None :
+            tab_id = str(uuid.uuid4())
+            vim.command('call settabvar("%s","tab_id","%s")' %(cur_tab,tab_id))
+        return tab_id
+
+    def _set_render_root(self, node):
+        tab_id = self._get_tab_id()
+        self.root_map[tab_id] = node
 
     def _get_render_root(self):
-        cur_tab = vim.eval("tabpagenr()")
-        render_root_id = vim.eval('gettabvar("%s","render_root_id")' % cur_tab)
-        if render_root_id == None :
-            return self.root
-        node = self.root_map.get(render_root_id)
+        tab_id = self._get_tab_id()
+        node = self.root_map.get(tab_id)
         if node == None :
             return self.root
         return node
@@ -593,8 +602,8 @@ class ProjectTree(object):
 
     def select_node(self, node):
         node_list =[node.name]
-        #root node
-        if node.parent == None :
+        #render root node
+        if node == self._get_render_root() :
             vim.current.window.cursor = (1,0)
             return
         while True :
@@ -849,7 +858,7 @@ class ProjectTree(object):
             return "/".join(tree_path)
 
     def find_node(self,path):
-        node = self._get_render_root() 
+        node = self.root
         if path == None :
             return None
 
@@ -892,8 +901,8 @@ class ProjectTree(object):
         if current_file_name == None or "ProjectTree" in current_file_name:
             return 
 
-        cur_tab = vim.eval("tabpagenr()")
-        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % cur_tab )
+        tab_id = projectTree._get_tab_id()
+        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
         tree_path = projectTree.open_path(current_file_name)
         if tree_path == None :
             print "can't find node %s in ProjectTree" % current_file_name
@@ -932,10 +941,23 @@ class ProjectTree(object):
         else : 
             return
 
-        cur_tab = vim.eval("tabpagenr()")
-        if not VimUtil.isSzToolBufferVisible('ProjectTree_%s' % cur_tab):
+        render_root = projectTree._get_render_root()
+        tmp_node = node.parent
+        under_render_root = False
+        while True :
+            if tmp_node == render_root :
+                under_render_root = True
+                break
+            tmp_node = tmp_node.parent
+            if tmp_node == None :
+                break
+        if not under_render_root :
             return 
-        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % cur_tab )
+
+        tab_id = projectTree._get_tab_id()
+        if not VimUtil.isSzToolBufferVisible('ProjectTree_%s' % tab_id):
+            return 
+        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
         (row,col) = vim.current.window.cursor
         projectTree.render_tree()
         vim.current.window.cursor = (row,col)
@@ -943,10 +965,10 @@ class ProjectTree(object):
 
     @staticmethod
     def dispose_tree():
-        cur_tab = vim.eval("tabpagenr()")
-        if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % cur_tab):
-            VimUtil.closeSzToolBuffer("ProjectTree_%s" % cur_tab)
-            global projectTree
+        global projectTree
+        tab_id = projectTree._get_tab_id()
+        if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % tab_id):
+            VimUtil.closeSzToolBuffer("ProjectTree_%s" % tab_id)
             projectTree = None
 
     @staticmethod
@@ -960,13 +982,13 @@ class ProjectTree(object):
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
         
-        cur_tab = vim.eval("tabpagenr()")
-        if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % cur_tab):
-            VimUtil.closeSzToolBuffer("ProjectTree_%s" % cur_tab)
+        tab_id = projectTree._get_tab_id()
+        if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % tab_id):
+            VimUtil.closeSzToolBuffer("ProjectTree_%s" % tab_id)
         else :
-            vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree_%s')" % cur_tab )
+            vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree_%s')" % tab_id )
             vim.command("set filetype=ztree")
-            vim.command("call SwitchToSzToolView('ProjectTree_%s')" % cur_tab )
+            vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
             projectTree.render_tree()
             if current_file_name != None :
                 ProjectTree.locate_buf_in_tree(current_file_name)

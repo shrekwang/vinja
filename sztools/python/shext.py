@@ -630,6 +630,18 @@ class ShUtil(object):
             nextTabNum = vim.eval("tabpagenr()")
             if currentTabNum == nextTabNum :
                 vim.command("tabnew")
+
+            #find a window that's a normal buf (not ProjectTree or other Szjde Window) 
+            #to edit the file
+            for i in range(1,5):
+                vim.command("%swincmd w" % str(i))    
+                bufname = vim.current.buffer.name
+                if bufname == None :
+                    continue
+                if vim.eval("&buftype") == "" \
+                        or bufname.endswith(".temp_src") \
+                        or bufname.endswith(".java") :
+                    break
             vim.command("edit %s" %(name))
             vim.command("tabprevious")
 

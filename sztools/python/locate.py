@@ -342,19 +342,22 @@ class EditHistoryManager(object):
 
     def search_content(self,search_pat):
         rows = []
+        if self.file_history == None or len(self.file_history)==0 :
+            return rows
         self.start_dirs = {}
         if not search_pat :
             search_pat = "*"
         pat = re.compile("^%s.*" % search_pat.replace("*",".*") , re.IGNORECASE)
+        maxlen = max([len(os.path.basename(path)) for path in self.file_history])
         for path in self.file_history :
             if pat.match(path):
-                rows.append("%s\t%s" %(os.path.basename(path),path))
+                rows.append("%s %s" %(os.path.basename(path).ljust(maxlen),path))
         return rows
 
     def open_content(self,line,mode="local"):
         line = line.strip()
         if line == "" :
             return
-        basename,path = line.split("\t")
+        basename,path = re.split("\s+",line)
         vim.command("edit %s "  %(path))
 
