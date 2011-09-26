@@ -726,7 +726,7 @@ class ProjectTree(object):
         vim.command("setlocal modifiable")
         node = self._get_render_root()
         tab_title = os.path.basename(node.realpath)
-        vim.command("call SetTabPageName('%s')" % tab_title)
+        vim.command('call setbufvar("%%", "buf_tab_title","%s")' % tab_title)
         result = node.renderToString(0,0, [],0)
         output(result)
         vim.command("setlocal nomodifiable")
@@ -858,6 +858,8 @@ class ProjectTree(object):
             inner_path = inner_path.replace("\\","/")
             zip_base_name = os.path.basename(zip_file_path)
             lib_node = node.get_child("Referenced Libraries")
+            if lib_node == None :
+                return None
             zip_file_node = lib_node.get_child(zip_base_name)
             path = inner_path
             node = zip_file_node

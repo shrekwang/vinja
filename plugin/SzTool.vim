@@ -37,7 +37,11 @@ function MyTabLabel(n)
   if getbufvar(buflist[winnr - 1], "&modified")
     let modified_part = '+'
   endif
-  
+
+  if getbufvar(buflist[winnr - 1], "buf_tab_title") != '' 
+    return  label . modified_part . getbufvar(buflist[winnr - 1], "buf_tab_title")
+  endif
+
   let name = bufname(buflist[winnr - 1])
   if name == ''
     if &buftype=='quickfix'

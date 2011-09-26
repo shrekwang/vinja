@@ -53,7 +53,11 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		sb.append("$$$$$");
 		
 		if (!resultInfo.isError()) {
-			hotSwapClass(resultInfo);
+			try {
+				hotSwapClass(resultInfo);
+			} catch (Throwable e) {
+				//do nothing
+			}
 		}
 		
 		for (String problem : problemList) {
