@@ -765,6 +765,7 @@ class EditHistory(object):
         path = vim.current.buffer.name
         (row,col)=vim.current.window.cursor
         if path != None and path.strip() != "" :
+            path = path.replace("\\","/")
             file_list = self.history.get(uuid_str)
             if file_list == None :
                 file_list = []
@@ -778,8 +779,9 @@ class EditHistory(object):
         return records
 
     def remove_from_history(self,filename):
-        if len(self.history) == 0 :
+        if len(self.history) == 0 or filename == None :
             return 
+        filename = filename.replace("\\","/")
         for uuid_str in self.history :
             file_list = self.history.get(uuid_str)
             if filename in file_list :
