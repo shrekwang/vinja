@@ -25,8 +25,11 @@ public class ClassMetaInfoManager  {
 	private CompilerContext ctx;
 	
 	
-	public void cacheAllInfo(String dir,CompilerContext ctx) {
+	public ClassMetaInfoManager(CompilerContext ctx) {
 		this.ctx = ctx;
+	}
+	
+	public void cacheAllInfo(String dir) {
 		loadAllMetaInfo(dir);
 		constructAllSubNames();
 	}
@@ -105,8 +108,7 @@ public class ClassMetaInfoManager  {
 	
 	private void loadSingleMetaInfo(ClassReader cr) {
 		ClassInfo classInfo = new ClassInfo();
-		ClassMetaInfoReader classInfoReader = new ClassMetaInfoReader(
-				classInfo, ctx);
+		ClassMetaInfoReader classInfoReader = new ClassMetaInfoReader(classInfo, ctx);
 		cr.accept(classInfoReader, 0);
 		if (metaInfos.get(classInfo.getName()) != null) {
 			ClassInfo oldInfo = metaInfos.get(classInfo.getName());
@@ -233,9 +235,6 @@ public class ClassMetaInfoManager  {
 			constructSubNames(name);
 		}
 	}
-	
 
-
-	
 
 }

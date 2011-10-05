@@ -46,7 +46,7 @@ public class CompilerContext {
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	private Preference pref = Preference.getInstance();
 	private PackageInfo packageInfo = new PackageInfo();
-	private ClassMetaInfoManager classMetaInfoManager = new ClassMetaInfoManager();
+	private ClassMetaInfoManager classMetaInfoManager = null;
 	
 	private String lastSearchedRtlName = "";
 	private String lastSearchResult = "";
@@ -74,12 +74,13 @@ public class CompilerContext {
 			}
 			initClassPath(classPathXml);
 		} else {
-			this.flatProject = true;
+			this.setFlatProject(true);
 			this.projectRoot = abpath;
 			this.outputDir = abpath;
 			this.srcLocations.add(abpath);
 			try { classPathUrls.add(file.toURL()); } catch (Exception e) {}
 		}
+		this.classMetaInfoManager = new ClassMetaInfoManager(this);
 		initClassLoader();
 	}
 	
@@ -214,10 +215,16 @@ public class CompilerContext {
 		URL urlsA[] = new URL[classPathUrls.size()];
 		classPathUrls.toArray(urlsA);
 		loader = new ReflectAbleClassLoader(urlsA, this.getClass().getClassLoader());
-		if (! this.flatProject) {
+		if (!this.isFlatProject()) {
 			cachePackageInfo(urlsA,outputDir);
-			classMetaInfoManager.cacheAllInfo(outputDir,this);
+			classMetaInfoManager.cacheAllInfo(outputDir);
+		} else {
+			cacheFlatProjectPackageInfo(outputDir);
 		}
+	}
+	
+	private void cacheFlatProjectPackageInfo(String dir) {
+		packageInfo.cacheSystemRtJar();
 	}
 	
 	private void cachePackageInfo(URL[] urls,String outputDir) {
@@ -525,6 +532,14 @@ public class CompilerContext {
 	
 	public ClassMetaInfoManager getClassMetaInfoManager() {
 		return classMetaInfoManager;
+	}
+
+	public boolean isFlatProject() {
+		return flatProject;
+	}
+
+	public void setFlatProject(boolean flatProject) {
+		this.flatProject = flatProject;
 	}
 
 
