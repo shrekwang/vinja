@@ -456,7 +456,7 @@ class EditUtil(object):
                         break
                 return 
 
-        #locate the method of class
+        #locate the member of class
         expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
         if not expTokens :
             return 
@@ -467,10 +467,20 @@ class EditUtil(object):
                 memberName = expTokens[0]
             else :
                 memberName = expTokens[2]
+
+            #search in visible scope(only upward)
+            var_type, var_type_row = Parser.getVarTypeInfo(memberName,row-1)
+            if var_type != None :
+                vim.command("let @/='\<%s\>'" % memberName)
+                vim.command("normal %sG" % str(var_type_row + 1))
+                return
+
+            #search in class member info
             members = Parser.parseAllMemberInfo(vim_buffer)
             for name,mtype,rtntype,param,lineNum in members :
                 if name == memberName :
                     matched_row = lineNum
+                    vim.command("let @/='\<%s\>'" % memberName)
                     vim.command("normal %sG" % str(matched_row))
                     return
         else :
@@ -518,6 +528,7 @@ class EditUtil(object):
         sourcePath = Talker.getMethodDefClass(params)
         if sourcePath != "None" :
             matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath,param_count)
+            vim.command("let @/='\<%s\>'" % memberName)
             vim.command("edit +%s %s" % (matchedLine, sourcePath ))
         else :
             print "cant' locate the source code"
@@ -1333,13 +1344,13 @@ class Parser(object):
     def isJavaKeyword(word):
         keyword_str = """
             abstract    default    if            private      this
-            boolean     do         implements    protected    throw
-            break       double     import        public       throws
-            byte        else       instanceof    return       transient
-            case        extends    int           short        try
+            do         implements    protected    throw
+            break       import        public       throws
+            else       instanceof    return       transient
+            case        extends    try
             catch       final      interface     static       void
-            char        finally    long          strictfp     volatile
-            class       float      native        super        while
+            finally    strictfp     volatile
+            class       native        super        while
             const       for        new           switch
             continue    goto       package       synchronized """
         match=re.search(r"\b%s\b" % word ,keyword_str)
@@ -1411,11 +1422,12 @@ class Parser(object):
         return comp_exp
 
     @staticmethod
-    def getVarType(varName,cursorRow):
+    def getVarTypeInfo(varName,cursorRow):
         vim_buffer = vim.current.buffer
         jdef_parser = Parser.getJavaVarDefParser(varName)
         visibleRowNum = Parser.getVisibleRowNum(cursorRow)
         var_type = None
+        var_type_row = -1
         searchLines = []
         found = False
         for row in visibleRowNum:
@@ -1427,12 +1439,18 @@ class Parser(object):
             for result in jdef_parser.searchString(vim_buffer[row]):
                 if Parser.isJavaKeyword(result[0][0]) : continue
                 var_type = result[0][0]
+                var_type_row = row
                 found = True
                 break
             if found : break
 
-        return var_type
+        return var_type, var_type_row
 
+    @staticmethod
+    def getVarType(varName,cursorRow):
+        var_type, var_type_row = Parser.getVarTypeInfo(varName,cursorRow)
+        return var_type
+        
     @staticmethod
     def getFullClassNames(classname):
         vim_buffer = vim.current.buffer

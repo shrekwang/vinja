@@ -225,6 +225,7 @@ public class CompilerContext {
 	
 	private void cacheFlatProjectPackageInfo(String dir) {
 		packageInfo.cacheSystemRtJar();
+		packageInfo.cacheClassNameInDist(outputDir,false);
 	}
 	
 	private void cachePackageInfo(URL[] urls,String outputDir) {
@@ -235,7 +236,7 @@ public class CompilerContext {
 				packageInfo.cacheClassNameInJar(path);
 			}
 		}
-		packageInfo.cacheClassNameInDist(outputDir);
+		packageInfo.cacheClassNameInDist(outputDir,true);
 	}
 	
 	private Map<String,String> parseJdeXmlFile(String jdeXmlPath ) {

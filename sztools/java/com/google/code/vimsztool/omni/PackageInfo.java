@@ -169,7 +169,7 @@ public class PackageInfo {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void cacheClassNameInDist(String outputDir) {
+	public void cacheClassNameInDist(String outputDir,boolean recursive) {
 		File dir = new File(outputDir) ;
 		if (!dir.exists()) {
 			boolean suc = dir.mkdirs();
@@ -178,7 +178,7 @@ public class PackageInfo {
 		if (!dir.isDirectory()) {
 			return;
 		}
-		Iterator it=FileUtils.iterateFiles(dir, new String[] {"class"}	,true);
+		Iterator it=FileUtils.iterateFiles(dir, new String[] {"class"}	,recursive);
 		while (it.hasNext()) {
 			File file = (File)it.next();
 			String relativeName = file.getAbsolutePath().substring(outputDir.length()+1);
