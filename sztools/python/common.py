@@ -399,7 +399,8 @@ class ScratchUtil(object):
         if not scratch_buf :
             template=[]
             template.append("import vim")
-            template.append("buffer=VimUtil.getLastBuffer()")
+            template.append("inbuf = VimUtil.getLastBuffer()")
+            template.append('#outbuf = VimUtil.createOutputBuffer("result")')
             output(template)
         else :
             output(scratch_buf)
@@ -732,8 +733,10 @@ class VimUtil(object):
 
         """
         vim.command("call SwitchToSzToolView('%s')" % name )
+        resultbuf = vim.current.buffer
         listwinnr=str(vim.eval("winnr('#')"))
         vim.command("exec '%s wincmd w'" % listwinnr)
+        return resultbuf
 
     @staticmethod
     def getOutputBuffer(name):
