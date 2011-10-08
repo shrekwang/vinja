@@ -115,7 +115,10 @@ class ProjectManager(object):
         if not os.path.exists(classPathXml) :
             vim_buffer = vim.current.buffer
             current_file_name = vim_buffer.name
-            classPathXml = ProjectManager.getClassPathXml(current_file_name)
+            if os.path.exists(current_file_name):
+                classPathXml = ProjectManager.getClassPathXml(current_file_name)
+            else :
+                classPathXml = ProjectManager.getClassPathXml(os.getcwd())
         #if we can't find .classpath, defer the project init process later .
         if classPathXml.endswith(".classpath") :
             Talker.projectOpen(classPathXml)
