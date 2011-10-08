@@ -400,7 +400,8 @@ class ScratchUtil(object):
             template=[]
             template.append("import vim")
             template.append("inbuf = VimUtil.getLastBuffer()")
-            template.append('#outbuf = VimUtil.createOutputBuffer("result")')
+            template.append('#outbuf = VimUtil.createOutputBuffer("result",True)')
+            template.append('#VimUtil.setLine(["aa","bb"])')
             output(template)
         else :
             output(scratch_buf)
@@ -721,7 +722,7 @@ class VimUtil(object):
         return buffer
 
     @staticmethod
-    def createOutputBuffer(name):
+    def createOutputBuffer(name, switch = False):
         """ create output vim buffer ,the created buffer is 
         a temp buffer, flowing flags has been set.
 
@@ -734,6 +735,8 @@ class VimUtil(object):
         """
         vim.command("call SwitchToSzToolView('%s')" % name )
         resultbuf = vim.current.buffer
+        if switch : 
+            return resultbuf
         listwinnr=str(vim.eval("winnr('#')"))
         vim.command("exec '%s wincmd w'" % listwinnr)
         return resultbuf
@@ -746,6 +749,11 @@ class VimUtil(object):
                 shext_buffer=buffer
                 break
         return shext_buffer
+
+    @staticmethod
+    def setLine(lines):
+        array_str = "['" + "','".join([item.replace("'","''") for item in lines]) + "']"
+        vim.command("call setline(1,%s)" % str(array_str))
 
 class EditHistory(object):
     def __init__(self):
