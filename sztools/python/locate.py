@@ -41,6 +41,9 @@ class QuickLocater(object) :
         output(result)
         win_height = len(result)
         vim.command("resize %s" % str(win_height) )
+        if isinstance(self.content_manager,EditHistoryManager):
+            self.content_manager.cursor_current_buf()
+
 
     def save_env(self):
         self.timeoutlen = vim.eval("&timeoutlen")
@@ -335,23 +338,29 @@ class JavaClassNameContentManager(object):
 class EditHistoryManager(object):
     def __init__(self):
         self.file_history = edit_history.get_history()
+        self.matched_item = []
         self.show_on_open = True
+        self.cur_buf = vim.current.buffer.name
 
     def get_init_prompt(self):
         return ""
 
     def search_content(self,search_pat):
         rows = []
+        self.matched_item = []
         if self.file_history == None or len(self.file_history)==0 :
+            self.matched_item = []
             return rows
         self.start_dirs = {}
         if not search_pat :
             search_pat = "*"
-        pat = re.compile("^%s.*" % search_pat.replace("*",".*") , re.IGNORECASE)
+        pat = re.compile(".*%s.*" % search_pat.replace("*",".*") , re.IGNORECASE)
         maxlen = max([len(os.path.basename(path)) for path in self.file_history])
         for path in self.file_history :
-            if pat.match(path):
-                rows.append("%s %s" %(os.path.basename(path).ljust(maxlen),path))
+            basename = os.path.basename(path)
+            if pat.match(basename):
+                self.matched_item.append(path)
+                rows.append("%s %s" %(basename.ljust(maxlen),path))
         return rows
 
     def open_content(self,line,mode="local"):
@@ -360,4 +369,11 @@ class EditHistoryManager(object):
             return
         basename,path = re.split("\s+",line)
         vim.command("edit %s "  %(path))
+
+    def cursor_current_buf(self):
+        if self.cur_buf == None :
+            return 
+        cur_name = self.cur_buf.replace("\\","/")
+        if cur_name in self.matched_item :
+            vim.current.window.cursor = ( self.matched_item.index(cur_name)+1, 0)
 
