@@ -371,6 +371,8 @@ class ProjectRootNode(NormalDirNode):
         self.add_child(lib_src_node)
 
         for lib_src in self.lib_srcs :
+            if not os.path.exists(lib_src):
+                continue
             basename = os.path.basename(lib_src)
             node = ZipRootNode(basename,lib_src, False,False)
             lib_src_node.add_child(node)

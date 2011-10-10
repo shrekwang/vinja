@@ -1,13 +1,17 @@
 run className             --run class, example : run org.fake.test.Main
-attach port               --attach to java process.
+attach port               --attach to java process
+disconnect                --disconnect from debuged vm session
 shutdown                  --end the target process
 exit                      --exit jdb
 
-print expression          --eval the value of the expression
+print expressions         --eval the value of the expressions, seperated by ","
 eval expression           --same as print
-inspect expression        --print the field value of the inspect object
+reftype expression        --print the type of the expression
+inspect expression        --print the field value of the inspect expression
 breakpoints               --list breakpoints
 locals                    --list stack frame local variables
+fields                    --list fields 
+stacks                    --print stacks info
 
 step_into         --step into method
 step_over         --step over one line
@@ -16,7 +20,9 @@ resume            --resume current thread
 thread threadId   --change current thread
 threads           --list threads state
 
-catch  exception-class --create exception request
-ignore exception-class --remove exception request
-
+catch  exception-class    --create exception request
+ignore exception-class    --remove exception request
+watch expressions         --add watch variables, seperated by ","
+show_watch                --list current watched variables
+unwatch expressions       --remove watched variables, seperated by ","
 
