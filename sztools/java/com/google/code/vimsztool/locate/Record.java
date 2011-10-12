@@ -6,6 +6,16 @@ public class Record {
 	private String name;
 	private String relativePath;
 	
+	public Record() {
+		
+	}
+	public Record(String name, String startDir, String relativePath ) {
+		this.name = name;
+		this.startDir = startDir;
+		this.relativePath = relativePath;
+	}
+	
+	
 	public String getStartDir() {
 		return startDir;
 	}

@@ -1,6 +1,7 @@
 package com.google.code.vimsztool.locate;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class RecordBatchUpdater implements Runnable {
@@ -16,16 +17,29 @@ public class RecordBatchUpdater implements Runnable {
 
 	}
 	
-	public synchronized void addCreatedRecords(String[] values) {
-		createdRecords.add(values);
+	public synchronized void addCreatedRecord(Record record) {
+		createdRecords.add( new String[] {
+				record.getName(), record.getStartDir(), record.getRelativePath()});
 	}
-	public synchronized void addDeletedRecords(String[] values) {
-		deletedRecords.add(values);
+	
+	public synchronized void addDeletedRecord(Record record) {
+		deletedRecords.add(new String[] {
+				record.getStartDir(), record.getRelativePath() 
+		});
+		
+		for (Iterator<String[]> it=createdRecords.iterator(); it.hasNext(); ) {
+			String[] values = it.next();
+			if (record.getStartDir().equals(values[1]) 
+					&& record.getRelativePath().equals(values[2])) {
+				it.remove();
+			}
+			
+		}
 	}
 	
 	private synchronized void updateDb() {
-		if (createdRecords.size() > 0) sqliteManager.batchUpdate(insertSql	, createdRecords);
 		if (deletedRecords.size() > 0) sqliteManager.batchUpdate(deleteSql, deletedRecords);
+		if (createdRecords.size() > 0) sqliteManager.batchUpdate(insertSql	, createdRecords);
 		
 		createdRecords.clear();
 		deletedRecords.clear();

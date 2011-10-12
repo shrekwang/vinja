@@ -223,7 +223,8 @@ public class FileSystemDb  implements JNotifyListener {
     	WatchedDirInfo watchedDirInfo=watchedDir.get(startDir);
     	
     	if (! PatternUtil.isExclude(watchedDirInfo.getExcludes(), new File(absPath))) {
-	    	batchUpdater.addCreatedRecords(new String[] {name,startDir,rtlPath});
+    		Record record = new Record(name,startDir, rtlPath);
+	    	batchUpdater.addCreatedRecord(record);
     	}
     	
     }
@@ -232,9 +233,8 @@ public class FileSystemDb  implements JNotifyListener {
     	String absPath = FilenameUtils.concat(rootPath, name);
     	String[] indexedData = getIndexedData(absPath);
     	if  (indexedData == null ) return ;
-    	String startDir = indexedData[0];
-    	String rtlPath = indexedData[1];
-    	batchUpdater.addDeletedRecords(new String[] {startDir,rtlPath});
+		Record record = new Record(name,indexedData[0], indexedData[1]);
+    	batchUpdater.addDeletedRecord(record);
     	
     }
     
