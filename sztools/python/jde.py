@@ -1804,8 +1804,8 @@ class SzJdeCompletion(object):
         elif completionType == "member" :
             result = SzJdeCompletion.getMemberCompleteResult(completionType,base)
         elif completionType == "word" :
+            classNameMenus = []
             if base[0].isupper():
-                result = SzJdeCompletion.getWordCompleteResult(base)
                 classNameList = Talker.getClassList(base,classPathXml).split("\n")
                 for className in classNameList :
                     menu = dict()
@@ -1816,23 +1816,27 @@ class SzJdeCompletion(object):
                     menu["dup"] = "1"
                     menu["word"] = shortName
                     menu["menu"] = className
-                    result.append(menu)
-            else :
-                result = SzJdeCompletion.getWordCompleteResult(base)
-                completionType = "inheritmember"
-                classNameList = ["this"]
-                expTokens = []
-                params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
-                memberInfos = []
-                memberInfoLines = Talker.getMemberList(params).split("\n")
-                pat = re.compile("^%s.*" % base.replace("*",".*"), re.IGNORECASE)
-                for line in memberInfoLines :
-                    if line == "" : continue
-                    mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
-                    memberInfos.append( (mtype,mname,mparams,mreturntype) )
-                inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
-                for item in inheritMembers :
-                    result.append(item)
+                    classNameMenus.append(menu)
+            result = SzJdeCompletion.getWordCompleteResult(base)
+            completionType = "inheritmember"
+            classNameList = ["this"]
+            expTokens = []
+            params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
+            memberInfos = []
+            memberInfoLines = Talker.getMemberList(params).split("\n")
+            pat = re.compile("^%s.*" % base.replace("*",".*"), re.IGNORECASE)
+            if base[0].isupper():
+                pat = re.compile("^%s.*" % base.replace("*",".*"))
+            for line in memberInfoLines :
+                if line == "" : continue
+                mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
+                memberInfos.append( (mtype,mname,mparams,mreturntype) )
+            inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
+            for item in inheritMembers :
+                result.append(item)
+
+            result.extend(classNameMenus)
+
             if len(result) == 0 :
                 result = SzJdeCompletion.getWordFuzzyCompleteResult(base)
 
