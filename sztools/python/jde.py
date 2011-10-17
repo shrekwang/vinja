@@ -2207,10 +2207,12 @@ class InspectorVarParser():
             for param in exp[0].params:
                 self.buildAstTree(param,paramsEle)
             ele.append(paramsEle)
-        if exp[0].arrayidx != None :
-            arrayidxEle = Element("arrayidx")
-            self.buildAstTree(exp[0].arrayidx, arrayidxEle)
-            ele.append(arrayidxEle)
+
+        if exp[0].arrayidx !=None :
+            if not isinstance(exp[0].arrayidx,basestring) or exp[0].arrayidx !="" :
+                arrayidxEle = Element("arrayidx")
+                self.buildAstTree(exp[0].arrayidx, arrayidxEle)
+                ele.append(arrayidxEle)
 
         if exp.members:
             membersEle = Element("members")
@@ -2254,6 +2256,6 @@ class InspectorVarParser():
 
 if __name__ == "__main__" :
     #ivp = InspectorVarParser()
-    #result = ivp.generate('a,b,c')
+    #result = ivp.generate('a[what.get(10)]')
     #print result
     pass
