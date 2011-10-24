@@ -1,0 +1,29 @@
+?     :print this help
+
+<cr>  :open select node
+o     :open select node
+O     :open select node recursively
+t     :open select node in new tab
+i     :open select node in split window
+r     :refresh select node
+x     :close parent node
+s     :prompt to filter display node
+z     :close edited file, if the current node is dir, close all file under it.
+u     :move cursor to upper dir
+m     :mark current node (for copy, delete , move etc.)
+
+DD    :delete select dir or file
+Dm    :delete marked dir or file
+A     :prompt to add a dir or a file
+
+ya    :yank select node path to vim register
+cc    :rename current file or dir
+yy    :yank current file or dir
+ym    :yank marked file or dir
+dd    :cut current file or dir
+p     :paste yanked or cut file or dir under selected dir node
+
+C     :change root to select node
+B     :change root back
+U     :change root to upper dir
+QQ    :dispse the project tree

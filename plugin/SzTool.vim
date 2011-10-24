@@ -374,8 +374,11 @@ function ProjectTree(...)
   map <silent><buffer> dd    :python projectTree.yank_selected_node(True)<cr>
   map <silent><buffer> p     :python projectTree.paste()<cr>
 
+  map <silent><buffer> ?     :python projectTree.print_help()<cr>
   map <silent><buffer> C     :python projectTree.change_root()<cr>
   map <silent><buffer> B     :python projectTree.change_back()<cr>
+  map <silent><buffer> U     :python projectTree.change_root_upper()<cr>
+  map <silent><buffer> QQ    :python projectTree.dispose_tree()<cr>
 endfunction
 
 function PlayDict(word)

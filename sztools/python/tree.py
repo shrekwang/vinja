@@ -324,7 +324,7 @@ class ZipRootNode(TreeNode):
 class ProjectRootNode(NormalDirNode):
 
     def __init__(self,root_dir, projectTree):
-        super(ProjectRootNode, self).__init__("project",root_dir, projectTree)
+        super(ProjectRootNode, self).__init__(os.path.basename(root_dir),root_dir, projectTree)
         self.root_dir = root_dir
         self.projectTree = projectTree
         self.is_java_project = True
@@ -714,11 +714,33 @@ class ProjectTree(object):
             last_sub_node = added_nodes[-1]
             self.select_node(last_sub_node)
 
+    def print_help(self):
+        help_file = os.path.join(SzToolsConfig.getShareHome(),"doc/tree.help")
+        vim.command("exec 'wincmd w'")
+        vim.command("%s %s" %("edit", help_file))
+
     def change_root(self):
         node = self.get_selected_node()
         if node.isDirectory :
             self._set_render_root(node)
             self.render_tree()
+
+    def change_root_upper(self):
+        node = self._get_render_root()
+        parent_node = node.parent
+        if parent_node == None :
+            updir_path = os.path.dirname(node.realpath)
+            dir_name = os.path.basename(updir_path)
+            self.work_path_set = []
+            parent_node = NormalDirNode(dir_name, updir_path, self)
+            parent_node.add_child(node)
+            parent_node.refresh()
+            self.root_dir = updir_path
+            self.root = parent_node
+        parent_node.isOpen = True
+        self._set_render_root(parent_node)
+        self.render_tree()
+
 
     def change_back(self):
         node = self.get_selected_node()
@@ -920,9 +942,9 @@ class ProjectTree(object):
 
         if current_file_name == None or current_file_name.startswith("jar:") :
             fake_file = os.path.join(os.getcwd(),"what_ever_fake_file_name")
-            projectRoot = ProjectManager.getProjectRoot(fake_file)
+            projectRoot = ProjectManager.getProjectRoot(fake_file,False)
         else :
-            projectRoot = ProjectManager.getProjectRoot(current_file_name)
+            projectRoot = ProjectManager.getProjectRoot(current_file_name,False)
 
         if projectRoot == None :
             projectRoot = os.path.abspath(os.getcwd())
@@ -971,7 +993,7 @@ class ProjectTree(object):
         tab_id = projectTree._get_tab_id()
         if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % tab_id):
             VimUtil.closeSzToolBuffer("ProjectTree_%s" % tab_id)
-            projectTree = None
+        projectTree = None
 
     @staticmethod
     def runApp():

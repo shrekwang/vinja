@@ -23,7 +23,7 @@ lastProjectRoot = None
 
 class ProjectManager(object):
     @staticmethod
-    def getProjectRoot(filePath):
+    def getProjectRoot(filePath, useLastRoot = True):
         global lastProjectRoot
         projectRoot = None
         parent = filePath
@@ -41,7 +41,7 @@ class ProjectManager(object):
                 break
         if projectRoot != None :
             lastProjectRoot = projectRoot
-        else :
+        elif useLastRoot :
             projectRoot = lastProjectRoot
         return projectRoot
 
