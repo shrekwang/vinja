@@ -4,7 +4,7 @@
   <property name="dist" value="classes" />
   <property name="lib" value="lib" />
   <property name="rootDir" value=".." />
-  <property name="version" value="0.1" />
+  <property name="version" value="20111025" />
   <property environment="env"/>
 
 
@@ -37,6 +37,8 @@
   <target name="release" depends="jar">
     <zip zipfile="${rootDir}/sztools-${version}.jar" basedir="${rootDir}" >
     	<include name="doc/**"/>
+        <include name="ftplugin/**" />
+        <include name="syntax/**" />
     	<include name="plugin/**"/>
     	<include name="sztools/**"/>
   	</zip>
