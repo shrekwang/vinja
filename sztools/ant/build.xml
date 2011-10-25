@@ -35,7 +35,7 @@
   </target>
 	
   <target name="release" depends="jar">
-    <zip zipfile="${rootDir}/sztools-${version}.jar" basedir="${rootDir}" >
+    <zip zipfile="${rootDir}/sztools-${version}.zip" basedir="${rootDir}" >
     	<include name="doc/**"/>
         <include name="ftplugin/**" />
         <include name="syntax/**" />
