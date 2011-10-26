@@ -3,6 +3,7 @@ import glob,time,vim,re, sys, logging
 from subprocess import Popen, PIPE
 from optparse import OptionParser 
 import sqlite3 as sqlite
+import chardet
 from datetime import timedelta, datetime ,date
 
 
@@ -275,6 +276,9 @@ class FindCmd(object):
                     all_the_text = file_object.read()
                 finally:
                     file_object.close()
+                file_encoding = chardet.detect(all_the_text).get("encoding")
+                if file_encoding != None :
+                    all_the_text = all_the_text.decode(file_encoding, "ignore")
                 if all_the_text.find(self.content) > -1 :
                     return True
                 return False
