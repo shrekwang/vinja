@@ -265,8 +265,9 @@ class FindCmd(object):
                 return True
 
         class ContentFilter(object):
-            def __init__(self, content):
+            def __init__(self, content, encoding_param):
                 self.content = content
+                self.encoding_param = encoding_param
             def accepted(self, filename, filepath):
                 abPath = os.path.join(filepath, filename)
                 if os.path.isdir(abPath) or not os.path.exists(abPath) :
@@ -276,9 +277,15 @@ class FindCmd(object):
                     all_the_text = file_object.read()
                 finally:
                     file_object.close()
-                file_encoding = chardet.detect(all_the_text).get("encoding")
-                if file_encoding != None :
-                    all_the_text = all_the_text.decode(file_encoding, "ignore")
+
+                # only do decode when there's a encoding param 
+                if self.encoding_param :
+                    if self.encoding_param == "auto" :
+                        file_encoding = chardet.detect(all_the_text).get("encoding")
+                    else :
+                        file_encoding = self.encoding_param
+                    if file_encoding != None :
+                        all_the_text = all_the_text.decode(file_encoding, "ignore")
                 if all_the_text.find(self.content) > -1 :
                     return True
                 return False
@@ -321,11 +328,12 @@ class FindCmd(object):
         Shext.stdout("")
 
         parser = ShextOptionParser( usage="usage: find [paths] [options]")
-        parser.add_option("-n","--name",action="store", dest="name")
-        parser.add_option("-t","--text",action="store", dest="text")
-        parser.add_option("-c","--type",action="store", dest="type")
-        parser.add_option("-s","--size",action="store", dest="size")
-        parser.add_option("-p","--path",action="store", dest="path")
+        parser.add_option("-n","--name",action="store", dest="name", help= "simple pattern for matching file name")
+        parser.add_option("-t","--text",action="store", dest="text", help = "simple pattern for matching file content")
+        parser.add_option("-c","--type",action="store", dest="type", help="colud be 'dir' or 'file'")
+        parser.add_option("-s","--size",action="store", dest="size", help ="not implement yet.")
+        parser.add_option("-p","--path",action="store", dest="path", help="regex pattern for matching full file path")
+        parser.add_option("-e","--encoding",action="store", dest="encoding" , help="could be encoding name like 'gbk' or just 'auto' " )
         parser.add_option("-m","--mtime",nargs=1,action="store", dest="mtime")
         parser.add_option("-a","--include-dot",action = "store_true", dest="includeDot", default=False)
 
@@ -347,7 +355,7 @@ class FindCmd(object):
         if options.size:
             filters.append(SizeFilter(options.size))
         if options.text :
-            filters.append(ContentFilter(options.text))
+            filters.append(ContentFilter(options.text,options.encoding))
         if options.type :
             filters.append(TypeFilter(options.type))
         if options.mtime :
