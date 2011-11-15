@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SystemJob extends Thread {
 
@@ -23,6 +22,8 @@ public class SystemJob extends Thread {
 	private ScheduledExecutorService exec = null;
 	private StringBuffer buffer = new StringBuffer();
 	private Process process ;
+	private StreamGobbler stdOut = null;
+	private StreamGobbler stdErr = null;
 	
 	public static SystemJob getJob(String uuid) {
 		return jobs.get(uuid);
@@ -61,8 +62,8 @@ public class SystemJob extends Thread {
 			} else {
 				process = Runtime.getRuntime().exec(cmdArray,null, new File(workDir));
 			}
-			StreamGobbler stdOut=new StreamGobbler(buffer, process.getInputStream());
-			StreamGobbler stdErr=new StreamGobbler(buffer, process.getErrorStream());
+			stdOut=new StreamGobbler(buffer, process.getInputStream());
+			stdErr=new StreamGobbler(buffer, process.getErrorStream());
 			stdOut.start();
 			stdErr.start();
 			
@@ -90,8 +91,20 @@ public class SystemJob extends Thread {
 			buffer.append(err.getMessage());
 		} finally {
 			if (exec !=null ) { exec.shutdown(); }
+			//wait max 3 seconds till stdout gobbler finished.
+			int count = 0;
+			while (true) {
+				if (!stdOut.isAlive())  break;
+				if (count > 30 ) break;
+				try {
+					sleep(100);
+					count++;
+				}  catch (Exception e) {
+				}
+			}
 			buffer.append("\n");
 			buffer.append( "(" + origCmdLine + "  finished.)");
+			//run buffer checker last time 
 		    new BufferChecker().run();
 		}
 		
@@ -99,17 +112,19 @@ public class SystemJob extends Thread {
 
 	class BufferChecker implements Runnable {
 		public void run() {
-			if (buffer.length() > 0) {
-				try {
-					String vimCmdCall = "<esc><esc>:FetchResult " + uuid + " "
-							+ bufname + "<cr>";
-					String[] vimRemoteCmdArray = new String[] { "gvim",
-							"--servername", vimServerName, "--remote-send",
-							vimCmdCall };
-					Runtime.getRuntime().exec(vimRemoteCmdArray);
-				} catch (IOException e) {
-					e.printStackTrace();
+			synchronized (buffer) {
+				if (buffer.length() > 0) {
+					try {
+						String vimCmdCall = "<esc><esc>:FetchResult " + uuid + " " + bufname
+								+ "<cr>";
+						String[] vimRemoteCmdArray = new String[] { "gvim", "--servername",
+								vimServerName, "--remote-send", vimCmdCall };
+						Runtime.getRuntime().exec(vimRemoteCmdArray);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}
+
 			}
 
 		}
