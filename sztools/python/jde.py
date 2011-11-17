@@ -2082,21 +2082,21 @@ class Jdb(object):
         if cmdLine.startswith("print") :
             cmdLine = "eval " + cmdLine[5:]
 
-        if cmdLine.startswith("eval") \
-                or cmdLine.startswith("reftype") \
-                or cmdLine.startswith("watch") \
-                or cmdLine.startswith("unwatch") \
-                or cmdLine.startswith("inspect") :
-            arg = cmdLine[ cmdLine.find(" ")+1 : ]
-            ast = self.ivp.generate(arg)
-            cmd = cmdLine[ 0 : cmdLine.find(" ") ]
-            cmdLine = cmd + " " + ast
+        need_gen_ast_cmds = ["eval","reftype","watch","unwatch","inspect"]
+        for cmd_name in need_gen_ast_cmds :
+            if cmdLine.startswith(cmd_name) :
+                arg = cmdLine[ cmdLine.find(" ")+1 : ]
+                ast = self.ivp.generate(arg)
+                cmd = cmdLine[ 0 : cmdLine.find(" ") ]
+                cmdLine = cmd + " " + ast
 
         if cmdLine == "run" and self.defaultClassName :
             cmdLine = "run " + self.defaultClassName
 
-        if cmdLine in ["step_into","step_over","step_return","resume","exit","shutdown"]:
-            self.resumeSuspend()
+        change_suspend_cmds = ["step_into","step_over","step_return","resume","exit","shutdown","frame"]
+        for cmd_name in change_suspend_cmds :
+            if cmdLine.strip().split(" ")[0] in change_suspend_cmds :
+                self.resumeSuspend()
 
         if cmdLine.startswith("help"):
             self.printHelp()

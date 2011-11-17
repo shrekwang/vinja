@@ -14,9 +14,10 @@ public class DebugCommand  extends SzjdeCommand {
 	private ExceptionPointManager ecpm  = ExceptionPointManager.getInstance();
 	
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
-		"breakpoints","locals","fields","stacks", "attach","breakpoint_add", "breakpoint_remove",
+		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
-		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype"};
+		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame"
+		};
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -81,13 +82,16 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult =  wvMgr.evalWatchVariables();
 		} else if (debugCmd.equals("breakpoints")) {
 			actionResult = debugger.listBreakpoints();
-		} else if (debugCmd.equals("stacks")) {
-			actionResult = debugger.listCurrentStack();
+		} else if (debugCmd.equals("frames")) {
+			actionResult = debugger.listFrames();
 		} else if (debugCmd.equals("threads")) {
 			actionResult = debugger.listThreads();
-		} else if (debugCmd.endsWith("thread")) {
+		} else if (debugCmd.equals("thread")) {
 			String uniqueId = args[1];
 			actionResult = debugger.changeCurrentThread(uniqueId);
+		} else if (debugCmd.equals("frame") ) {
+			int frameNum = Integer.parseInt(args[1]);
+			actionResult = debugger.changeCurrentFrame(frameNum);
 		} else if (debugCmd.equals("catch")) {
 			String className = args[1];
 			actionResult = ecpm.addExceptionPoint(className);

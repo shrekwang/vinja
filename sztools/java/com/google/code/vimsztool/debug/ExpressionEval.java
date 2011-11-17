@@ -117,9 +117,10 @@ public class ExpressionEval {
 	
 	public static String fields() {
 		ThreadReference threadRef = checkAndGetCurrentThread();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		StringBuilder sb = new StringBuilder();
 		try {
-			StackFrame stackFrame = threadRef.frame(0);
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			ObjectReference thisObj = stackFrame.thisObject();
 			Map<Field, Value> values = thisObj.getValues(thisObj.referenceType().visibleFields());
 			List<String> fieldNames = new ArrayList<String>();
@@ -131,7 +132,7 @@ public class ExpressionEval {
 				sb.append(padStr(maxLen,field.name())).append(":");
 				sb.append(getPrettyPrintStr(values.get(field)));
 				sb.append("\n");
-				stackFrame = threadRef.frame(0);
+				//stackFrame = threadRef.frame(0);
 			}
 		} catch (IncompatibleThreadStateException e) {
 		}
@@ -141,15 +142,17 @@ public class ExpressionEval {
 
 	public static String variables() {
 		ThreadReference threadRef = checkAndGetCurrentThread();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		int curFrame = threadStack.getCurFrame();
 		StringBuilder sb = new StringBuilder();
 		try {
 			List<String> varNames = new ArrayList<String>();
-			for (LocalVariable var : threadRef.frame(0).visibleVariables()) {
+			for (LocalVariable var : threadRef.frame(curFrame).visibleVariables()) {
 				varNames.add(var.name());
 			}
 			int maxLen = getMaxLength(varNames)+2;
-			for (LocalVariable var : threadRef.frame(0).visibleVariables()) {
-				Value value = threadRef.frame(0).getValue(var);
+			for (LocalVariable var : threadRef.frame(curFrame).visibleVariables()) {
+				Value value = threadRef.frame(curFrame).getValue(var);
 				sb.append(padStr(maxLen,var.name())).append(":");
 				sb.append(getPrettyPrintStr(value));
 				sb.append("\n");
@@ -206,7 +209,8 @@ public class ExpressionEval {
 	public static Value getJdiValue(Expression exp) {
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		try {
-			StackFrame stackFrame = threadRef.frame(0);
+			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			ObjectReference thisObj = stackFrame.thisObject();
 			Value value = eval(threadRef, exp, thisObj,false);
 			return value;
@@ -309,7 +313,8 @@ public class ExpressionEval {
 		
 		Value value = null;
 		try {
-			StackFrame stackFrame = threadRef.frame(0);
+			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			if (!hasParents) {
 				LocalVariable localVariable;
 				localVariable = stackFrame.visibleVariableByName(name);

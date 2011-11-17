@@ -8,17 +8,19 @@ print expressions         --eval the value of the expressions, seperated by ","
 eval expression           --same as print
 reftype expression        --print the type of the expression
 inspect expression        --print the field value of the inspect expression
-breakpoints               --list breakpoints
 locals                    --list stack frame local variables
 fields                    --list fields 
-stacks                    --print stacks info
+
+threads           --list threads state
+thread threadId   --change current thread
+frames            --list frame info in current stack
+frame n           --change current frame to n-th frame in current stack, start with 0
+breakpoints       --list breakpoints
 
 step_into         --step into method
 step_over         --step over one line
 step_return       --step return 
 resume            --resume current thread
-thread threadId   --change current thread
-threads           --list threads state
 
 catch  exception-class    --create exception request
 ignore exception-class    --remove exception request

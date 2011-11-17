@@ -123,12 +123,19 @@ public class Debugger {
 	
 	private List<String> getStackFrameInfos(ThreadReference threadRef) {
 		List<String> result = new ArrayList<String>();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		try {
-			for (StackFrame frame : threadRef.frames()) {
+			List<StackFrame> frames = threadRef.frames();
+			for (int i=0; i<frames.size(); i++) {
+				StackFrame frame = frames.get(i);
 				Location loc = frame.location();
 				String name = loc.declaringType().name() + "."
 						+ loc.method().name();
-				result.add(name + " line: " + loc.lineNumber());
+				String frameInfo = name + " line: " + loc.lineNumber();
+				if (i == threadStack.getCurFrame()) {
+					frameInfo = frameInfo + "  (current frame) ";
+				}
+				result.add(frameInfo);
 			}
 		} catch (Throwable e) {
 		}
@@ -175,7 +182,7 @@ public class Debugger {
 		}
 	}
 	
-	public String listCurrentStack() {
+	public String listFrames() {
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
 		StringBuilder sb = new StringBuilder();
@@ -199,6 +206,7 @@ public class Debugger {
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
 		threadRef.resume();
+		threadStack.clean();
 		return "";
 	}
 	
@@ -219,19 +227,43 @@ public class Debugger {
 			refType = loc.declaringType();
 			threadStack.setCurRefType(refType);
 			threadStack.setCurThreadRef(correctRef);
-			String className = refType.name();
-			int lineNum = loc.lineNumber();
-			String abPath = "None";
-			try {
-				abPath = compilerContext.findSourceFile(loc.sourcePath());
-			} catch (Throwable e) {
-			}
-			String[] cmdLine = {"HandleJdiEvent" ,"suspend" , abPath, String.valueOf(lineNum), className };
-			VjdeUtil.runVimCmd(getVimServerName(), cmdLine);
+			changeVimEditSourceLocaton(loc);
 			return "success";
 		} catch (IncompatibleThreadStateException e) {
 			return "error:" + e.getMessage();
 		}
+	}
+	
+	public String changeCurrentFrame(int frameNum) {
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		ThreadReference threadRef = threadStack.getCurThreadRef();
+		if (threadRef == null ) {
+			return "no suspended thread";
+		}
+		try {
+			Location loc = threadRef.frame(frameNum).location();
+			ReferenceType refType= loc.declaringType();
+			threadStack.setCurRefType(refType);
+			threadStack.setCurFrame(frameNum);
+			changeVimEditSourceLocaton(loc);
+			return "success";
+		} catch (IncompatibleThreadStateException e) {
+			return "error" + e.getMessage();
+		}
+	}
+	
+	private void changeVimEditSourceLocaton(Location loc) {
+		ReferenceType refType = loc.declaringType();
+		String className = refType.name();
+		int lineNum = loc.lineNumber();
+		String abPath = "None";
+		try {
+			abPath = compilerContext.findSourceFile(loc.sourcePath());
+		} catch (Throwable e) {
+		}
+		String[] cmdLine = { "HandleJdiEvent", "suspend", abPath, String.valueOf(lineNum),
+				className };
+		VjdeUtil.runVimCmd(getVimServerName(), cmdLine);
 	}
 	
 
@@ -258,8 +290,7 @@ public class Debugger {
 	
 	private void clean() {
 		SuspendThreadStack suspendThreadStack = SuspendThreadStack.getInstance();
-		suspendThreadStack.setCurRefType(null);
-		suspendThreadStack.setCurThreadRef(null);
+		suspendThreadStack.clean();
 	}
 	
 	public VirtualMachine getVm() {

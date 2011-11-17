@@ -35,7 +35,9 @@ public class StepManager {
 		request.addCountFilter(1);
 		request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 		request.enable();
+		
 		threadRef.resume();
+		threadStack.clean();
 		return "";
 	}
 

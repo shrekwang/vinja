@@ -13,6 +13,13 @@ public class SuspendThreadStack {
 	
 	private ThreadReference curThreadRef; 
 	private ReferenceType curRefType;
+	private int curFrame = 0 ;
+	
+	public void clean() {
+		this.curFrame = 0;
+		this.curRefType = null;
+		this.curThreadRef = null;
+	}
 	
 	public void setCurThreadRef(ThreadReference curThreadRef) {
 		this.curThreadRef = curThreadRef;
@@ -25,6 +32,12 @@ public class SuspendThreadStack {
 	}
 	public ReferenceType getCurRefType() {
 		return curRefType;
+	}
+	public void setCurFrame(int curFrame) {
+		this.curFrame = curFrame;
+	}
+	public int getCurFrame() {
+		return curFrame;
 	} 
 
 }
