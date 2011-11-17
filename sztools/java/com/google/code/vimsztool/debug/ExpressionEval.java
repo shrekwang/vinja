@@ -172,19 +172,24 @@ public class ExpressionEval {
 	public static String inspect(String expXmlStr) {
 		List<Expression> exps = Expression.parseExpXmlStr(expXmlStr);
 		if (exps ==null || exps.size() == 0) return "";
-		Value value = getJdiValue(exps.get(0));
+		Expression exp = exps.get(0);
+		Value value = getJdiValue(exp);
 		
 		StringBuilder sb = new StringBuilder();
 		if (value instanceof ObjectReference) {
+			sb.append(exp.getOriExp()).append(" = ");
+			sb.append(value.type().name()).append("\n");
+			
 			ObjectReference objRef = (ObjectReference) value;
-			Map<Field, Value> values = objRef.getValues(objRef.referenceType()
-					.visibleFields());
+			Map<Field, Value> values = objRef.getValues(objRef.referenceType().visibleFields());
 			List<String> fieldNames = new ArrayList<String>();
 			for (Field field : values.keySet()) {
+				if (field.isStatic()) continue;
 				fieldNames.add(field.name());
 			}
 			int maxLen = getMaxLength(fieldNames)+2;
 			for (Field field : values.keySet()) {
+				sb.append("    ");
 				sb.append(padStr(maxLen,field.name())).append(":");
 				sb.append(getPrettyPrintStr(values.get(field)));
 				sb.append("\n");
