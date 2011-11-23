@@ -671,10 +671,10 @@ class ProjectTree(object):
         self.remove_orignal = remove_orignal
         print "selected node has been yanked"
 
-    def yank_marked_node(self) :
+    def yank_marked_node(self, remove_orignal = False):
         nodes = self.get_marked_nodes()
         self.yank_buffer = nodes
-        self.remove_orignal = False
+        self.remove_orignal = remove_orignal
         print "visible marked node has been yanked"
 
     def delete_marked_node(self) :

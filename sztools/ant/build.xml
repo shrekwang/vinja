@@ -4,7 +4,6 @@
   <property name="dist" value="classes" />
   <property name="lib" value="lib" />
   <property name="rootDir" value=".." />
-  <property name="version" value="20111025" />
   <property environment="env"/>
 
 
@@ -35,7 +34,10 @@
   </target>
 	
   <target name="release" depends="jar">
-    <zip zipfile="${rootDir}/sztools-${version}.zip" basedir="${rootDir}" >
+    <tstamp>
+      <format property="builtat" pattern="yyyy-MM-dd" />
+    </tstamp>   
+    <zip zipfile="${rootDir}/vim-sztools-${builtat}.zip" basedir="${rootDir}" >
     	<include name="doc/**"/>
         <include name="ftplugin/**" />
         <include name="syntax/**" />

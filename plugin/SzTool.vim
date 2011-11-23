@@ -370,8 +370,9 @@ function ProjectTree(...)
   map <silent><buffer> ya    :python projectTree.yank_node_path()<cr>
   map <silent><buffer> cc    :python projectTree.rename_node()<cr>
   map <silent><buffer> yy    :python projectTree.yank_selected_node(False)<cr>
-  map <silent><buffer> ym    :python projectTree.yank_marked_node()<cr>
   map <silent><buffer> dd    :python projectTree.yank_selected_node(True)<cr>
+  map <silent><buffer> ym    :python projectTree.yank_marked_node(False)<cr>
+  map <silent><buffer> dm    :python projectTree.yank_marked_node(True)<cr>
   map <silent><buffer> p     :python projectTree.paste()<cr>
 
   map <silent><buffer> ?     :python projectTree.print_help()<cr>

@@ -219,31 +219,35 @@ public class ClassInfoUtil {
 		return sb.toString();
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	public static LinkedList<Class> getAllSuperClass(Class aClass) {
 		LinkedList<Class> classList = new LinkedList<Class>();
 		if (aClass == null) return classList;
 		if (aClass.isInterface()) {
 			classList.add(aClass);
-			for (Class tmpIntf : aClass.getInterfaces()) {
-				classList.add(tmpIntf);
-			}
 		} else {
 			Class tmpClass =  aClass;
 			while (true) {
 				classList.add(tmpClass);
-				for (Class tmpIntf : tmpClass.getInterfaces()) {
-					classList.add(tmpIntf);
-				}
 				tmpClass =  tmpClass.getSuperclass();
 				if (tmpClass == null) break;
 				if (tmpClass.getName().equals("java.lang.Object")) break;
 			}
 		}
+		addInterfaceToList(classList, aClass);
 		return classList;
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
+	private static void addInterfaceToList(List<Class> result, Class aClass) {
+		if (aClass ==null || aClass.getInterfaces() == null) return;
+		for (Class intf : aClass.getInterfaces()) {
+			result.add(intf);
+			addInterfaceToList(result, intf);
+		}
+	}
+	
+	@SuppressWarnings("rawtypes")
 	public static Class getExistedClass(String classPathXml , String[] classNameList,String sourceFile) {
 		CompilerContextManager ccm = CompilerContextManager.getInstnace();
 		CompilerContext ctx = ccm.getCompilerContext(classPathXml);
