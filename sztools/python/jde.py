@@ -115,7 +115,7 @@ class ProjectManager(object):
         if not os.path.exists(classPathXml) :
             vim_buffer = vim.current.buffer
             current_file_name = vim_buffer.name
-            if os.path.exists(current_file_name):
+            if current_file_name != None and os.path.exists(current_file_name):
                 classPathXml = ProjectManager.getClassPathXml(current_file_name)
             else :
                 classPathXml = ProjectManager.getClassPathXml(os.getcwd())
