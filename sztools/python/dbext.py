@@ -69,8 +69,9 @@ class QueryUtil(object):
             sql = sql % name
         elif server_type == "mysql":
             sql = """ SELECT table_name FROM INFORMATION_SCHEMA.TABLES
-            where table_name like '%%%s%%' """ % name
+            where table_name like '%%%s%%' and table_schema=database() """ % name
 
+        logging.debug("sql is %s " % sql)
         columns,result = dbext.query(sql)
         return columns, result
         
@@ -103,7 +104,7 @@ class QueryUtil(object):
         elif server_type == "mysql":
             sql = """ SELECT COLUMN_NAME, DATA_TYPE,  CHARACTER_MAXIMUM_LENGTH , IS_NULLABLE
                           FROM INFORMATION_SCHEMA.COLUMNS
-                          WHERE table_name = '""" + name +"'"
+                          WHERE table_name = '%s' and table_schema=database() """ % name
 
         columns,result = dbext.query(sql)
         if not columns :
