@@ -374,13 +374,20 @@ class ProjectRootNode(NormalDirNode):
             if not os.path.exists(lib_src):
                 continue
             basename = os.path.basename(lib_src)
-            node = ZipRootNode(basename,lib_src, False,False)
-            lib_src_node.add_child(node)
+            try :
+                node = ZipRootNode(basename,lib_src, False,False)
+                lib_src_node.add_child(node)
+            except Exception , e:
+                logging.debug(basename+" not exists or is corrupted")
 
         jdk_lib_src = os.path.join(os.getenv("JAVA_HOME"),"src.zip")
         if os.path.exists(jdk_lib_src) :
-            node = ZipRootNode("src.zip",jdk_lib_src, False,False)
-            lib_src_node.add_child(node)
+            try : 
+                node = ZipRootNode("src.zip",jdk_lib_src, False,False)
+                lib_src_node.add_child(node)
+            except Exception , e:
+                logging.debug(basename+" not exists or is corrupted")
+ 
 
     def _build_file_nodes(self):
         files, dirs = [], []
