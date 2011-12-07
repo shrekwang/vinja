@@ -5,6 +5,7 @@ import logging
 import shutil
 import socket
 import uuid
+import chardet
 from StringIO import StringIO
 from distutils import dir_util
 from distutils import file_util
@@ -22,6 +23,10 @@ class ZipUtil(object):
         inner_path = path.split("!")[1]
         vim.command("silent doau BufReadPre " + inner_path)
         content = ZipUtil.read_zip_entry(path)
+        content = "\n".join(content)
+        file_encoding = chardet.detect(content).get("encoding")
+        if file_encoding != None :
+            content = content.decode(file_encoding, "ignore")
         output(content)
         vim.command("silent doau BufReadPost " + inner_path)
         vim.command("silent doau BufWinEnter " + inner_path)
