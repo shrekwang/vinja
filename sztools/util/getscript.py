@@ -9,7 +9,7 @@ import shutil
 
 scripts = {
         "NERD tree":"1658",
-        "taglist"  :"273",
+        "tagbar"  :"3465",
         "bufexplorer" : "42",
         "snipMate" : "2540",
         "xmledit" : "301",
@@ -21,7 +21,8 @@ scripts = {
         "CRefVim" : "614",
         "Drawit"  : "40" ,
         "gundo"   : "3304",
-        "pathogen" : "2332"
+        "pathogen" : "2332",
+        "easymotion" : "3526"
     }
 
 def download_script(script_id,save_to):
