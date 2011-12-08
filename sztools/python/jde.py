@@ -497,6 +497,9 @@ class EditUtil(object):
             classname = varName
         elif varName == "this" :
             classname = "this"
+        elif varName.endswith("()") : 
+            classname = "this"
+            expTokens.insert(0,varName)
         elif varName == "super" :
             classname = superClass
         else :
@@ -1715,6 +1718,10 @@ class SzJdeCompletion(object):
         elif varName == "this" :
             classname = "this"
             completionType = "inheritmember"
+        elif varName.endswith("()") : 
+            expTokens.insert(0,varName)
+            classname = "this"
+            completionType = "objectmember"
         else :
             classname = Parser.getVarType(varName,row-1)
             completionType = "objectmember"
