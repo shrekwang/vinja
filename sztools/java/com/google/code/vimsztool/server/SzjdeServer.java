@@ -90,7 +90,9 @@ public class SzjdeServer extends Thread {
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_AUTOIMPORT)) {
 		  szjdeCommand = new SzjdeAutoImportCommand(); 
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_RUN)) {
-		   szjdeCommand = new SzjdeClassRunnerCommand();
+		   szjdeCommand = new SzjdeClassRunnerCommand(false);
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_RUN_AS_UNITTEST)) {
+		   szjdeCommand = new SzjdeClassRunnerCommand(true);
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_DUMP_CLASS)) {
 		   szjdeCommand = new SzjdeDumpClassInfoCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_OVERIDE)) {

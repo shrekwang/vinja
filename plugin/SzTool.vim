@@ -351,6 +351,7 @@ endfunction
 
 function ProjectTree(...) 
   python ProjectTree.runApp()
+  nnoremap <silent><buffer> <2-leftmouse> :python projectTree.open_selected_node()<cr>
   map <silent><buffer> <cr>  :python projectTree.open_selected_node()<cr>
   map <silent><buffer> o     :python projectTree.open_selected_node()<cr>
   map <silent><buffer> O     :python projectTree.recursive_open_node()<cr>
@@ -359,7 +360,8 @@ function ProjectTree(...)
   map <silent><buffer> r     :python projectTree.refresh_selected_node()<cr>
   map <silent><buffer> x     :python projectTree.close_parent_node()<cr>
   map <silent><buffer> s     :python projectTree.filter_display_node()<cr>
-  map <silent><buffer> z     :python projectTree.close_opened_file()<cr>
+  map <silent><buffer> z     :python projectTree.close_opened_file(False)<cr>
+  map <silent><buffer> Z     :python projectTree.close_opened_file(True)<cr>
   map <silent><buffer> u     :python projectTree.up_one_level()<cr>
   map <silent><buffer> m     :python projectTree.mark_selected_node()<cr>
 
@@ -511,6 +513,7 @@ function! Jdext()
   command! -nargs=0   DumpClass        :python EditUtil.dumpClassInfo()
   command! -nargs=0   AutoImport       :python AutoImport.autoImportVar()
   command! -nargs=0   Run              :python Runner.runCurrentFile()
+  command! -nargs=0   RunTest          :python Runner.runCurrentFile("runTest")
   command! -nargs=0   Overide          :python EditUtil.overideMethod()
   command! -nargs=0   ProjectInit      :python ProjectManager.projectInit()
   command! -nargs=0   ProjectClean     :python ProjectManager.projectClean()

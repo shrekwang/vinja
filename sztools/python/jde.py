@@ -256,9 +256,9 @@ class Talker(BasicTalker):
         return data
 
     @staticmethod
-    def runFile(xmlPath,sourceFile,vimServer,bufname):
+    def runFile(xmlPath,sourceFile,vimServer,bufname,runCmd="run"):
         params = dict()
-        params["cmd"]="run"
+        params["cmd"]=runCmd
         params["classPathXml"] = xmlPath
         params["sourceFile"] = sourceFile
         params["vimServer"] = vimServer
@@ -1122,7 +1122,7 @@ class Compiler(object):
 class Runner(object):
 
     @staticmethod
-    def runCurrentFile():
+    def runCurrentFile(runCmd="run"):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]
@@ -1130,7 +1130,7 @@ class Runner(object):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         if not classPathXml : return
         serverName = vim.eval("v:servername")
-        resultText = Talker.runFile(classPathXml,current_file_name,serverName,"JdeConsole")
+        resultText = Talker.runFile(classPathXml,current_file_name,serverName,"JdeConsole",runCmd)
         VimUtil.writeToSzToolBuffer("JdeConsole",resultText)
 
     @staticmethod

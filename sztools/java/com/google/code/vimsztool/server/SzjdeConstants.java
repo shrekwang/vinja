@@ -8,6 +8,7 @@ public class SzjdeConstants {
 	public final static String CMD_LOCATEDB="locatedb";
 	public final static String CMD_AUTOIMPORT="autoimport";
 	public final static String CMD_RUN="run";
+	public final static String CMD_RUN_AS_UNITTEST="runTest";
 	public final static String CMD_DUMP_CLASS="dumpClass";
 	public final static String CMD_GET_METHODDEFS="getMethodDefs";
 	public final static String CMD_GET_METHODDEFCLASS="getMethodDefClass";

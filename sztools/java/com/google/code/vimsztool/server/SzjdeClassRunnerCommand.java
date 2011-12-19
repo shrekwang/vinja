@@ -9,6 +9,11 @@ import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.util.SystemJob;
 
 public class SzjdeClassRunnerCommand extends SzjdeCommand {
+	boolean runAsUnitTest;
+	
+	public SzjdeClassRunnerCommand(boolean runAsUnitTest) {
+		this.runAsUnitTest = runAsUnitTest;
+	}
 
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -21,6 +26,9 @@ public class SzjdeClassRunnerCommand extends SzjdeCommand {
 		}
 
 		cmd.append(" ::");
+		if (runAsUnitTest) {
+			cmd.append("org.junit.runner.JUnitCore::");
+		}
 		String className = cc.buildClassName(sourceFile);
 		cmd.append(className);
 		String uuid=UUID.randomUUID().toString();

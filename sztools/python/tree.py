@@ -538,13 +538,14 @@ class ProjectTree(object):
         if node.parent != None :
             self.select_node(node.parent)
 
-    def close_opened_file(self):
+    def close_opened_file(self, discard_change):
         def _close_opened_file(node):
             if not node.isDirectory :
                 if node.isEdited :
                     bufnr = vim.eval("bufnr('%s')" % node.realpath)    
+                    bang = "!" if discard_change else ""
                     if bufnr != "-1" :
-                        vim.command('Bclose %s' % bufnr)
+                        vim.command('Bclose%s %s' % (bang,bufnr))
                 return
             elif node.isLoaded :
                 for child in node.get_children() :
