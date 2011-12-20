@@ -3,7 +3,7 @@ import shutil
 import logging
 from common import ZipUtil,FileUtil 
 from xml.etree.ElementTree import *
-from jde import ProjectManager
+from jde import ProjectManager,EditUtil
 
 class TreeNode(object):
     mark_postfix = " [mark]"
@@ -126,6 +126,9 @@ class TreeNode(object):
 
     def set_error_flag(self, flag):
         self.isError = flag
+
+    def get_content(self):
+        return ""
 
 class NormalDirNode(TreeNode):
 
@@ -264,6 +267,13 @@ class NormalDirNode(TreeNode):
 
 class NormalFileNode(TreeNode):
 
+    def get_content(self):
+        filecontent = open(self.realpath).readlines()
+        return filecontent
+
+    def get_uri_path(self):
+        return self.realpath
+
     def open_node(self, edit_cmd):
         vim.command("exec 'wincmd w'")
         vim.command("%s %s" %(edit_cmd, self.realpath))
@@ -281,6 +291,15 @@ class ZipFileItemNode(TreeNode):
 
     def set_zip_file(self,zip_file_path) :
         self.zip_file_path = zip_file_path
+
+    def get_content(self):
+        scheme_path = "jar://"+self.zip_file_path+"!"+ self.realpath
+        content = ZipUtil.read_zip_entry(scheme_path)
+        return content
+
+    def get_uri_path(self):
+        scheme_path = "jar://"+self.zip_file_path+"!"+ self.realpath
+        return scheme_path
 
     def open_node(self, edit_cmd):
         vim.command("exec 'wincmd w'")
@@ -515,6 +534,38 @@ class ProjectTree(object):
             self.render_tree()
             self.select_node(node)
 
+    def recursive_search(self):
+        text = VimUtil.getInput("enter string to be searched: ")
+        if not text :
+            return
+        node = self.get_selected_node()
+        if not node.isDirectory :
+            return 
+        result = []
+        def _search_node(node,text) :
+            if not node.isDirectory :
+                content = node.get_content()
+                file_path = node.get_uri_path()
+                for index,line in enumerate(content) :
+                    if line.find(text) > -1 :
+                        result.append([file_path,str(index+1),line.replace("\n","")])
+            else :
+                for subnode in node.get_children():
+                    _search_node(subnode, text)
+        _search_node(node,text)
+        qflist = []
+        for filename,lineNum,lineText in result :
+            qfitem = dict(filename=str(self.relpath(filename)),lnum=lineNum,text=lineText.strip())
+            qflist.append(qfitem)
+
+        if len(qflist) > 0 :
+            #since vim use single quote string as literal string, the escape char will not
+            #been handled, so repr the dict in a double quoted string
+            qflist_str = "[" + ",".join([EditUtil.reprDictInDoubleQuote(item) for item in qflist])+"]" 
+            vim.command("call setqflist(%s)" % qflist_str)
+            vim.command("cwindow")
+        else :
+            print "can't find any reference location."
 
     def filter_display_node(self):
         node = self.get_selected_node()
@@ -798,6 +849,11 @@ class ProjectTree(object):
             curFile = dir + curFile
         return curFile
 
+    def relpath(self, path):
+        if path.startswith(os.getcwd()) :
+            return os.path.relpath(path)
+        else :
+            return path
 
     def _get_indent_level(self,line):
         matches = self.prefix_pat.search(line)
