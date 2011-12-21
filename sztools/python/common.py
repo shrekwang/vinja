@@ -150,9 +150,9 @@ class SztoolAgent(object):
 
 
         if os.name == "posix" :
-            Popen(" ".join(cmdArray),shell = True)
+            Popen(" ".join(cmdArray),shell = False)
         else :
-            Popen(cmdArray,shell = True)
+            Popen(cmdArray,shell = False)
 
     @staticmethod
     def stopAgent():
