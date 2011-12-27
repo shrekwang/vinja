@@ -71,7 +71,6 @@ class QueryUtil(object):
             sql = """ SELECT table_name FROM INFORMATION_SCHEMA.TABLES
             where table_name like '%%%s%%' and table_schema=database() """ % name
 
-        logging.debug("sql is %s " % sql)
         columns,result = dbext.query(sql)
         return columns, result
         
