@@ -900,11 +900,12 @@ class Shext(object):
         cmdLine = cmdLine.replace("\\","/").strip()
         cmdArray = shlex.split(cmdLine)
         result = []
+        varPat = re.compile(r".*(#|\$)\[(\d+)(:\d+)?\].*")
         for item in cmdArray :
             #replace the $[1] $[1:2] like variables
             #  $[1] stands for output buffer line 1
             #  #[1] stands for cmd edit buffer line 1
-            if item.find("$") > -1 or item.find("#") > -1 :
+            if varPat.match(item):
                 varBuffer = []
                 if item.find("$") > -1 :
                     varBuffer = Shext.getOutputBuffer()

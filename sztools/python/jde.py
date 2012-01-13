@@ -1245,6 +1245,9 @@ class AutoImport(object):
             line = vim_buffer[rowIndex].strip()
             if line.startswith("import") :
                 lastName = line[7:-1].split(".")[-1]
+                if lastName == "*" : 
+                    del vim_buffer[rowIndex]
+                    continue
                 groups = re.findall(r"\b%s\b" % lastName, "\n".join(vim_buffer))
                 if len(groups) <= 1 :
                     del vim_buffer[rowIndex]
