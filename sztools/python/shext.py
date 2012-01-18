@@ -1205,6 +1205,8 @@ class OutputNavigator(object):
 
     @staticmethod
     def next():
+        if "shext_ngt_index" not in globals() :
+            return
         global shext_ngt_index 
         outputBuffer = Shext.getOutputBuffer()
         if shext_ngt_index >= len(outputBuffer)-1 :
@@ -1214,6 +1216,8 @@ class OutputNavigator(object):
         
     @staticmethod
     def prev():
+        if "shext_ngt_index" not in globals() :
+            return
         global shext_ngt_index 
         if shext_ngt_index == 0 : return
         shext_ngt_index = shext_ngt_index - 1

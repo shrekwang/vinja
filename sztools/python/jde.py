@@ -1046,6 +1046,16 @@ class Compiler(object):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         if not classPathXml :
             return
+
+        need_compiled = False
+        src_locs = ProjectManager.getSrcLocations(current_file_name)
+        for abs_src in src_locs :
+            if current_file_name.startswith(abs_src) :
+                need_compiled = True
+                break
+        if not need_compiled :
+            return 
+
         if buildProject :
             current_file_name = "All"
             print "build project can take a while, please wait....."

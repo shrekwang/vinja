@@ -315,7 +315,11 @@ class MiscUtil(object):
     def tabulate():
         startCol,endCol,startLine,endLine=MiscUtil.getVisualArea()
         buffer=vim.current.buffer
-        pat = re.compile("\s+")
+        split_char = VimUtil.getInput("please input the split char:")
+        if not split_char :
+            pat = re.compile("\s+")
+        else :
+            pat = re.compile("\\"+split_char)
         rows = []
         for row in buffer[startLine-1:endLine]:
             fields = pat.split(row)
