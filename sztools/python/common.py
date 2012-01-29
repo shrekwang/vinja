@@ -346,7 +346,7 @@ class MiscUtil(object):
         result.append(headline)
         del buffer[startLine-1:endLine]
         for line in result[::-1] :
-            vim.command("call append(%s,'%s')" %(str(startLine-1),line))
+            vim.command('call append(%s,"%s")' %(str(startLine-1),line))
 
     @staticmethod
     def initHightLightScheme():
