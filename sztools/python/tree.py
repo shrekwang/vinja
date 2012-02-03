@@ -589,6 +589,24 @@ class ProjectTree(object):
         if node.parent != None :
             self.select_node(node.parent)
 
+    def get_next_open_node(self):
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        for row_num in range(row+1,len(vim_buffer)+1):
+            node = self.get_selected_node(row_num)
+            if node.isEdited :
+                vim.current.window.cursor = (row_num,col)
+                break
+
+    def get_prev_open_node(self):
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        for row_num in range(row-1,0,-1):
+            node = self.get_selected_node(row_num)
+            if node.isEdited :
+                vim.current.window.cursor = (row_num,col)
+                break
+
     def close_opened_file(self, discard_change):
         def _close_opened_file(node):
             if not node.isDirectory :
@@ -644,9 +662,10 @@ class ProjectTree(object):
         vim.command("let @\" = '%s' " % node.realpath)
         print "node path yanked"
 
-    def get_selected_node(self):
-        (row,col) = vim.current.window.cursor
-        path = self._get_path()
+    def get_selected_node(self, row = None ):
+        if row == None :
+            (row,col) = vim.current.window.cursor
+        path = self._get_path(row)
         if path == "" :
             return self._get_render_root()
 
@@ -823,8 +842,9 @@ class ProjectTree(object):
         output(result)
         vim.command("setlocal nomodifiable")
             
-    def _get_path(self):
-        (row,col) = vim.current.window.cursor
+    def _get_path(self, row = None):
+        if row == None :
+            (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]
         indent = self._get_indent_level(line)

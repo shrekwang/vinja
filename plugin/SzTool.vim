@@ -365,6 +365,8 @@ function ProjectTree(...)
   map <silent><buffer> u     :python projectTree.up_one_level()<cr>
   map <silent><buffer> m     :python projectTree.mark_selected_node()<cr>
   map <silent><buffer> f     :python projectTree.recursive_search()<cr>
+  map <silent><buffer> <     :python projectTree.get_prev_open_node()<cr>
+  map <silent><buffer> >     :python projectTree.get_next_open_node()<cr>
 
   map <silent><buffer> DD     :python projectTree.delete_node()<cr>
   map <silent><buffer> Dm     :python projectTree.delete_marked_node()<cr>
