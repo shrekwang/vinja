@@ -13,6 +13,8 @@ Z     :like above , but close the file even if it had been changed.
 u     :move cursor to upper dir
 m     :mark current node (for copy, delete , move etc.)
 f     :search node content for prompted string.
+>     :jump to next editing file
+<     :jump to prev editing file
 
 DD    :delete select dir or file
 Dm    :delete marked dir or file
