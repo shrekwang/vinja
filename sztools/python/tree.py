@@ -276,7 +276,10 @@ class NormalFileNode(TreeNode):
 
     def open_node(self, edit_cmd):
         vim.command("exec 'wincmd w'")
-        vim.command("%s %s" %(edit_cmd, self.realpath))
+        vim_buffer = vim.current.buffer
+        current_file_name = vim_buffer.name
+        if self.realpath != current_file_name :
+            vim.command("%s %s" %(edit_cmd, self.realpath))
 
     def dispose(self):
         FileUtil.fileOrDirRm(self.realpath)
