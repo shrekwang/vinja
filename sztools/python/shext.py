@@ -1068,7 +1068,7 @@ class Shext(object):
             self.dispatchCmd(cmd,cmdLine)
 
         #diff command, like "svn diff", "hg diff"
-        if cmd[1] == "diff" :
+        if len(cmd)> 1 and cmd[1] == "diff" :
             vim.command("call SwitchToSzToolView('shext')" )
             vim.command("set filetype=diff")
             listwinnr = str(vim.eval("winnr('#')"))
@@ -1079,8 +1079,8 @@ class Shext(object):
             vim.command("startinsert")
 
     def dispatchCmd(self, cmd,cmdLine) :
-        if cmd[0] == "cd" :
-            path = len(cmd) > 1 and cmd[1] or None
+        if cmd[0] == "cd" and len(cmd) > 1 :
+            path = cmd[1]
             self.shUtil.cd(path)
         elif cmd[0] == "cdlist" :
             self.shUtil.cdlist()
