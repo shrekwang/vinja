@@ -319,6 +319,7 @@ class ZipRootNode(TreeNode):
         for name in zipFile.namelist() :
             self.add_tree_entry(name)
         zipFile.close()
+        self.isLoaded = True
 
     def add_tree_entry(self,line):
         sections = line.strip().split("/")
@@ -333,7 +334,7 @@ class ZipRootNode(TreeNode):
                 if index == len(sections)-1 and not line.endswith("/"):
                     isDirectory = False
                 if isDirectory :
-                    node = TreeNode(item,line,isDirectory,isOpen=False)
+                    node = TreeNode(item,line,isDirectory,isOpen=False,isLoaded=True)
                     parentNode.insert_child(node)
                 else :
                     node = ZipFileItemNode(item,line,isDirectory,isOpen=False)

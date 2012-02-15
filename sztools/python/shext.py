@@ -870,6 +870,7 @@ class Shext(object):
     @staticmethod
     def clearColorSyntax():
         vim.command("call SwitchToSzToolView('shext')" )
+        vim.command("set filetype=")
         vim.command("syntax clear")
         listwinnr = str(vim.eval("winnr('#')"))
         vim.command("exec '"+listwinnr+" wincmd w'")
@@ -1065,6 +1066,13 @@ class Shext(object):
 
         if self.enoughArguments(cmd) :
             self.dispatchCmd(cmd,cmdLine)
+
+        #diff command, like "svn diff", "hg diff"
+        if cmd[1] == "diff" :
+            vim.command("call SwitchToSzToolView('shext')" )
+            vim.command("set filetype=diff")
+            listwinnr = str(vim.eval("winnr('#')"))
+            vim.command("exec '"+listwinnr+" wincmd w'")
 
         if cmd[0] not in self.special_cmds and not batchMode and insertMode :
             vim.command("normal o")
