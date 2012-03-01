@@ -1335,7 +1335,7 @@ class Parser(object):
                 elif "(" in line :
                     startLine = lineNum + 1
                     while True :
-                        if ")" in fullDeclLine :
+                        if ")" in fullDeclLine or startLine >= len(lines) :
                             break
                         fullDeclLine = fullDeclLine +lines[startLine].replace("\t","  ")
                         startLine = startLine + 1
