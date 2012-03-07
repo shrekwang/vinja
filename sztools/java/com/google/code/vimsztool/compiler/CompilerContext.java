@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -34,7 +33,7 @@ import com.google.code.vimsztool.util.UserLibConfig;
 import com.google.code.vimsztool.util.VjdeUtil;
 
 public class CompilerContext {
-	private static Logger log = JdeLogger.getLogger("CompilerContext");
+	private static JdeLogger log = JdeLogger.getLogger("CompilerContext");
 	private String encoding = null;
 	private String srcVM = null;
 	private String dstVM = null;
@@ -198,11 +197,22 @@ public class CompilerContext {
 			} else if (entry.kind.equals("var")) {
 				String entryPath = entry.path;
 				String sourcePath = entry.sourcepath;
-				String varName = entryPath.substring(0, entryPath.indexOf("/"));
+				String varName = entryPath ;
+				if (entryPath.indexOf("/") > 0) {
+					varName = entryPath.substring(0, entryPath.indexOf("/"));
+				}
 				String varValue = VarsConfiger.getVarValue(varName	);
+				if (varValue == null  ) {
+					log.info(varName + " is not properly configured in vars.txt");
+					continue;
+				}
 				entryPath = entryPath.replace(varName, varValue);
 				sourcePath = sourcePath.replace(varName, varValue);
 				File libFile = new File(entryPath);
+				if (!libFile.exists())  {
+					log.info(entryPath + " in classpath not exists.");
+					continue;
+				}
 				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {}
 				if (entry.sourcepath !=null) {
 					libSrcLocations.add(sourcePath);

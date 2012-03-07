@@ -6,14 +6,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Logger;
 
 import com.google.code.vimsztool.debug.Debugger;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.VirtualMachine;
 
 public class HotSwapUtil {
-	private static Logger log = JdeLogger.getLogger("HotSwapServer");
+	private static JdeLogger log = JdeLogger.getLogger("HotSwapServer");
 
 	@SuppressWarnings("unchecked")
 	public static void replace(Debugger debugger, File classFile, String className) {

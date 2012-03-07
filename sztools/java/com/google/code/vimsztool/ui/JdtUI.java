@@ -2,7 +2,6 @@ package com.google.code.vimsztool.ui;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.logging.Logger;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -26,7 +25,7 @@ import com.google.code.vimsztool.util.VjdeUtil;
 
 public class JdtUI {
 	
-	private static Logger log = JdeLogger.getLogger("JdtUI");
+	private static JdeLogger log = JdeLogger.getLogger("JdtUI");
 	public static JdtUI instance = null;
 	private Shell shell;
 	private Tray systemTray;
@@ -72,7 +71,6 @@ public class JdtUI {
 		img.dispose();
 		systemTray.dispose();
 		shell.dispose();
-		JdeLogger.closeHandler();
 		System.exit(0);
 	}
 	

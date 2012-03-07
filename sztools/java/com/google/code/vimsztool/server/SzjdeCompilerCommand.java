@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import com.google.code.vimsztool.compiler.CompileResultInfo;
 import com.google.code.vimsztool.compiler.CompilerContext;
@@ -16,7 +15,7 @@ import com.google.code.vimsztool.util.HotSwapUtil;
 import com.google.code.vimsztool.util.JdeLogger;
 
 public class SzjdeCompilerCommand extends SzjdeCommand {
-	private static Logger log = JdeLogger.getLogger("SzjdeCompilerCommand");
+	private static JdeLogger log = JdeLogger.getLogger("SzjdeCompilerCommand");
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -56,7 +55,7 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 			try {
 				hotSwapClass(resultInfo);
 			} catch (Throwable e) {
-				//do nothing
+				log.info("hotswap class file failed.");
 			}
 		}
 		

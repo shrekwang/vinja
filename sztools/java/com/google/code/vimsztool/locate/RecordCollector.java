@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.DirectoryWalker;
 
@@ -13,7 +12,7 @@ import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.VjdeUtil;
 
 public class RecordCollector extends DirectoryWalker<Record> {
-	private static Logger log = JdeLogger.getLogger("RecordCollector");
+	private static JdeLogger log = JdeLogger.getLogger("RecordCollector");
 	private String startPath;
 	private String excludes;
 	

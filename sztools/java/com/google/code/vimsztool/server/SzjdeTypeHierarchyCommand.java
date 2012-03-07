@@ -1,7 +1,6 @@
 package com.google.code.vimsztool.server;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.omni.ClassMetaInfoManager;
@@ -9,7 +8,7 @@ import com.google.code.vimsztool.util.JdeLogger;
 
 public class SzjdeTypeHierarchyCommand extends SzjdeCommand {
 	
-	private static Logger log = JdeLogger.getLogger("SzjdeTypeHierarchyCommand");
+	private static JdeLogger log = JdeLogger.getLogger("SzjdeTypeHierarchyCommand");
 	
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);

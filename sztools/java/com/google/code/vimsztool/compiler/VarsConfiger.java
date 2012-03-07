@@ -35,7 +35,7 @@ public class VarsConfiger {
 			loadVarsFromFile(getConfigFile());
 		}
 		String value= config.get(name);
-		return value == null ? "" : value;
+		return value ;
 	}
 
 	private static File getConfigFile() {

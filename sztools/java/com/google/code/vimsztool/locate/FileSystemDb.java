@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyListener;
@@ -22,7 +21,7 @@ import com.google.code.vimsztool.util.VjdeUtil;
 
 
 public class FileSystemDb  implements JNotifyListener {
-	private static Logger log = JdeLogger.getLogger("FileSystemDb");
+	private static JdeLogger log = JdeLogger.getLogger("FileSystemDb");
 	private SqliteManager sqliteManager ;
 	private Map<String,WatchedDirInfo> watchedDir= new HashMap<String,WatchedDirInfo>();
 	private static final FileSystemDb instance = new FileSystemDb();

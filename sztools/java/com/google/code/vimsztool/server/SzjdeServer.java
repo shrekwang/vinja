@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.eclipse.swt.widgets.Display;
 
@@ -21,7 +20,7 @@ import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.VjdeUtil;
 
 public class SzjdeServer extends Thread {
-	private static Logger log = JdeLogger.getLogger("SzjdeServer");
+	private static JdeLogger log = JdeLogger.getLogger("SzjdeServer");
  
    private ServerSocket ss;
    private final static String END_TOKEN="==end==";
