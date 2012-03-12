@@ -1,20 +1,34 @@
 package com.google.code.vimsztool.debug;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.tree.CommonTree;
 
+import com.google.code.vimsztool.exception.ExpressionEvalException;
 import com.google.code.vimsztool.parser.JavaLexer;
 import com.google.code.vimsztool.parser.JavaParser;
+import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.ArrayReference;
+import com.sun.jdi.Field;
+import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.IntegerValue;
+import com.sun.jdi.LocalVariable;
 import com.sun.jdi.LongValue;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.StackFrame;
+import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 public class ExpEval {
 
 	public static void main(String[] args) {
 		ExpEval app = new ExpEval();
-		String aa = app.eval("aa");
-		aa = app.eval("22");
+		String aa = app.eval("aa.toUp");
 		System.out.print(aa);
 	}
 
@@ -24,6 +38,8 @@ public class ExpEval {
 			CommonTokenStream tokens = new CommonTokenStream(lex);
 			JavaParser parser = new JavaParser(tokens);
 			CommonTree tree = (CommonTree) parser.expression().getTree();
+			printTree(tree,0);
+			System.out.println("===================================");
 			Object result = evalTreeNode(tree);
 			if (result == null)
 				return null;
@@ -34,6 +50,8 @@ public class ExpEval {
 		}
 
 	}
+
+
 
 	private Object evalTreeNode(CommonTree node) {
 		
@@ -48,10 +66,17 @@ public class ExpEval {
 		case JavaParser.EXPR:
 			subNode = (CommonTree) node.getChild(0);
 			return evalTreeNode(subNode);
+			
 		case JavaParser.LOGICAL_NOT:
 			subNode = (CommonTree) node.getChild(0);
 			Object value = evalTreeNode(subNode);
 			return ! (Boolean)value;
+			
+		case JavaParser.IDENT:
+			return evalJdiVar(node.getText());
+		case JavaParser.METHOD_CALL:
+			return "method call";
+			
 		case JavaParser.PLUS:
 		case JavaParser.MINUS:
 		case JavaParser.STAR:
@@ -136,6 +161,78 @@ public class ExpEval {
 	private Object operatePlus(CommonTree leftOp, CommonTree rightOp) {
 		return null;
 	}
+	public static void printTree(CommonTree t, int indent) {
+        if ( t != null ) {
+            StringBuffer sb = new StringBuffer(indent);
+            for ( int i = 0; i < indent; i++ )
+                sb = sb.append("   ");
+            for ( int i = 0; i < t.getChildCount(); i++ ) {
+                System.out.println(sb.toString() + t.getChild(i).toString());
+                printTree((CommonTree)t.getChild(i), indent+1);
+            }
+        }
+    }
 	
+	private Value evalJdiVar(String name) {
+		ThreadReference threadRef = checkAndGetCurrentThread();
+		try {
+			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			ObjectReference thisObj = stackFrame.thisObject();
+			Value value = findValueInFrame(threadRef, name, thisObj);
+			return value;
+		} catch (IncompatibleThreadStateException e) {
+			throw new ExpressionEvalException("eval expression error, caused by : " + e.getMessage());
+		}
+	}
+	private static ThreadReference checkAndGetCurrentThread() {
+		Debugger debugger = Debugger.getInstance();
+		if (debugger.getVm() == null ) {
+			throw new ExpressionEvalException("no virtual machine connected.");
+		}
+		
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		ThreadReference threadRef = threadStack.getCurThreadRef();
+		if (threadRef == null ) {
+			throw new ExpressionEvalException("no suspend thread.");
+		}
+		return threadRef;
+	}
+	
+
+	public static Value findValueInFrame(ThreadReference threadRef, String name,
+			ObjectReference thisObj)  {
+		
+		Value value = null;
+		try {
+			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			
+			LocalVariable localVariable;
+			localVariable = stackFrame.visibleVariableByName(name);
+			if (localVariable != null) {
+				return stackFrame.getValue(localVariable);
+			}
+			
+			ReferenceType refType = stackFrame.location().declaringType();
+			if (thisObj != null ) {
+				refType = thisObj.referenceType();
+			}
+			Field field = refType.fieldByName(name);
+			if (field == null ) {
+				throw new ExpressionEvalException("eval expression error, field '" + name +"' can't be found."); 
+			}
+			if (thisObj != null) {
+				value = thisObj.getValue(field);
+			} else {
+				value = refType.getValue(field);
+			}
+		} catch (IncompatibleThreadStateException e) {
+			throw new ExpressionEvalException("eval expression error, caused by:" + e.getMessage());
+		} catch (AbsentInformationException e) {
+			throw new ExpressionEvalException("eval expression error, caused by:" + e.getMessage());
+		}
+		return value;
+	}
 
 }
