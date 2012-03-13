@@ -71,7 +71,7 @@ public class BreakpointManager {
 		return false;
 	}
 
-	public String addBreakpoint(String mainClass, int lineNum) {
+	public String addBreakpoint(String mainClass, int lineNum,String conExp) {
 		Debugger debugger = Debugger.getInstance();
 		CompilerContext ctx = debugger.getCompilerContext();
 		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
@@ -92,6 +92,9 @@ public class BreakpointManager {
 		}
 		
 		if (breakpoint == null) return "failure";
+		breakpoint.setConExp(conExp);
+		
+		
 		allBreakpoints.add(breakpoint);
 		tryCreateBreakpointRequest(breakpoint);
 		return "success";

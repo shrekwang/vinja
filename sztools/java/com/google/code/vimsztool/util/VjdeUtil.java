@@ -33,8 +33,8 @@ public class VjdeUtil {
 				sb.append(arg).append(" ");
 			}
 			String vimCmdCall="<esc><esc>:"+sb.toString()+"<cr>";
-			//String[] vimRemoteCmdArray = new String[] {"gvim","--servername",serverName,"--remote-send",	vimCmdCall};
-			String[] vimRemoteCmdArray = new String[] {"C:\\Program Files\\Vim\\vim73\\gvim.exe","--servername",serverName,"--remote-send",	vimCmdCall};
+			String[] vimRemoteCmdArray = new String[] {"gvim","--servername",serverName,"--remote-send",	vimCmdCall};
+			//String[] vimRemoteCmdArray = new String[] {"C:\\Program Files\\Vim\\vim73\\gvim.exe","--servername",serverName,"--remote-send",	vimCmdCall};
 			Runtime.getRuntime().exec(vimRemoteCmdArray);
 		} catch (IOException e) {
 			e.printStackTrace();

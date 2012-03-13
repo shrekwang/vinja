@@ -1,6 +1,9 @@
 package com.google.code.vimsztool.debug;
 
+import java.util.List;
+
 import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.debug.eval.ExpEval;
 import com.google.code.vimsztool.util.VjdeUtil;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
@@ -106,6 +109,34 @@ public class EventHandler extends Thread {
 	}
 	
 	private void handleBreakpointEvent(BreakpointEvent event) {
+		ThreadReference threadRef = event.thread();
+		ReferenceType refType = event.location().declaringType();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		threadStack.setCurRefType(refType);
+		threadStack.setCurThreadRef(threadRef);
+		
+		BreakpointManager bpm = BreakpointManager.getInstance();
+		List<Breakpoint> allBreakpoints = bpm.getAllBreakpoints();
+		Breakpoint breakpoint = null;
+		
+		Location loc = event.location();
+		String className = loc.declaringType().name();
+		int lineNum = loc.lineNumber();
+
+		for (Breakpoint bp : allBreakpoints) {
+			if (bp.getMainClass().equals(className) && bp.getLineNum() == lineNum) {
+				breakpoint = bp;
+				break;
+			}
+		}
+		if (breakpoint !=null && breakpoint.getConExp() != null) {
+			Object obj =ExpEval.eval(breakpoint.getConExp());
+			if (obj ==null || !obj.equals("true")) {
+				event.thread().resume();
+				return; 
+			}
+			
+		}
 		handleSuspendLocatableEvent(event);
 	}
  

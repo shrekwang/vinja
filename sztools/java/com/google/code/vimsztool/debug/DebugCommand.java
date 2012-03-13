@@ -17,7 +17,8 @@ public class DebugCommand  extends SzjdeCommand {
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
-		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , "pr"
+		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
+		"pr", "bpa"
 		};
 	
 	public String execute() {
@@ -53,7 +54,7 @@ public class DebugCommand  extends SzjdeCommand {
 			String mainClass = args[1];
 			int lineNum = Integer.parseInt(args[2]);
 			//String mainClass = ctx.buildClassName(fileName);	
-			actionResult = bpMgr.addBreakpoint(mainClass, lineNum);
+			actionResult = bpMgr.addBreakpoint(mainClass, lineNum,null);
 		} else if (debugCmd.equals("breakpoint_remove")) {
 			String mainClass = args[1];
 			//String mainClass = ctx.buildClassName(fileName);
@@ -112,6 +113,11 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("pr")) {
 			String exp = debugCmdArgs.substring(2).trim();
 			actionResult = ExpEval.eval(exp);
+		} else if (debugCmd.equals("bpa")) {
+			String mainClass = args[1];
+			int lineNum = Integer.parseInt(args[2]);
+			String conExp = debugCmdArgs.substring( debugCmdArgs.indexOf(args[2]) + args[2].length());
+			actionResult = bpMgr.addBreakpoint(mainClass, lineNum,conExp);
 		}
 		return actionResult;
 	}

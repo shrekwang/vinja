@@ -774,6 +774,19 @@ class EditUtil(object):
                 print "can't create breakpoint here"
 
     @staticmethod
+    def addConditionalBreakpoint(lineNum):
+        global bp_data
+        file_name = vim.current.buffer.name
+        (row,col) = vim.current.window.cursor
+        bp_set = bp_data.get(file_name)
+        if bp_set == None :
+            bp_set = set()
+
+        HighlightManager.addSign(file_name,lineNum, "B")
+        bp_set.add(row)
+        bp_data[file_name] = bp_set
+
+    @staticmethod
     def syncBreakpointInfo():
 
         global bp_data
@@ -2113,7 +2126,7 @@ class Jdb(object):
         if cmdLine == "run" and self.defaultClassName :
             cmdLine = "run " + self.defaultClassName
 
-        change_suspend_cmds = ["step_into","step_over","step_return","resume","exit","shutdown","frame"]
+        change_suspend_cmds = ["step_into","step_over","step_return","resume","exit","shutdown","frame","disconnect"]
         for cmd_name in change_suspend_cmds :
             if cmdLine.strip().split(" ")[0] in change_suspend_cmds :
                 self.resumeSuspend()
@@ -2136,6 +2149,16 @@ class Jdb(object):
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
             self.stdout(data)
+
+        if cmdLine.startswith("bpa") and data == "success" :
+            args = cmdLine.split(" ")
+            for i in range(1,5):
+                vim.command("%swincmd w" % str(i))    
+                if vim.eval("&buftype") == "" :
+                    break
+            EditUtil.addConditionalBreakpoint(args[2])
+            vim.command("call SwitchToSzToolView('Jdb')")
+
         if cmdLine == "exit" :
             self.closeBuffer()
             return 
