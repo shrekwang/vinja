@@ -10,6 +10,16 @@ public class Breakpoint {
 	private String mainClass;
 	private String innerClass;
 	private int lineNum;
+	
+	private String conExp;
+	
+	public String getConExp() {
+		return conExp;
+	}
+
+	public void setConExp(String conExp) {
+		this.conExp = conExp;
+	}
 	private List<BreakpointRequest> requests = new ArrayList<BreakpointRequest>();
 	
 	public Breakpoint(String className, int lineNum) {
