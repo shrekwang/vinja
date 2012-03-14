@@ -18,7 +18,7 @@ public class DebugCommand  extends SzjdeCommand {
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
-		"pr", "bpa"
+		"bpa"
 		};
 	
 	public String execute() {
@@ -73,10 +73,10 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("eval") || debugCmd.equals("print")
 				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
 				|| debugCmd.equals("fields") || debugCmd.equals("reftype")) {
-			actionResult =  ExpressionEval.executeEvalCmd(debugCmd, debugCmdArgs);
+			actionResult =  ExpEval.executeEvalCmd(debugCmd, debugCmdArgs);
 		} else if (debugCmd.equals("watch")) {
 			String exp = debugCmdArgs.substring(debugCmd.length()+1);
-			actionResult =  wvMgr.addWatchVariables(exp);
+			actionResult =  wvMgr.addWatchExpression(exp);
 		} else if (debugCmd.equals("unwatch")) {
 			String exp = debugCmdArgs.substring(debugCmd.length()+1);
 			actionResult =  wvMgr.removeWatchVariables(exp);
@@ -110,9 +110,6 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = bpMgr.allBreakpointsInfo();
 		} else if (debugCmd.equals("disconnect")) {
 			debugger.disconnectOrExit();
-		} else if (debugCmd.equals("pr")) {
-			String exp = debugCmdArgs.substring(2).trim();
-			actionResult = ExpEval.eval(exp);
 		} else if (debugCmd.equals("bpa")) {
 			String mainClass = args[1];
 			int lineNum = Integer.parseInt(args[2]);

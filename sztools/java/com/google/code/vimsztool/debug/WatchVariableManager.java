@@ -3,11 +3,12 @@ package com.google.code.vimsztool.debug;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.code.vimsztool.debug.eval.ExpEval;
 import com.google.code.vimsztool.exception.ExpressionEvalException;
 
 public class WatchVariableManager {
 	
-	private List<Expression> allVariables = new ArrayList<Expression>();
+	private List<String> allExps = new ArrayList<String>();
 	private static WatchVariableManager instance = new WatchVariableManager();
 
 	private WatchVariableManager() {
@@ -17,47 +18,29 @@ public class WatchVariableManager {
 		return instance;
 	}
 	
-	public String addWatchVariables(String expXmlStr) {
-		List<Expression> tmpVarList = Expression.parseExpXmlStr(expXmlStr);
-		StringBuilder sb = new StringBuilder();
-		for (Expression exp : tmpVarList) {
-			if (!allVariables.contains(exp)) {
-				allVariables.add(exp);
-				sb.append(exp.getOriExp()+",");
-			}
+	public String addWatchExpression(String exp) {
+		if (!allExps.contains(exp)) {
+			allExps.add(exp);
 		}
-		if (sb.length() > 0) {
-			sb.deleteCharAt(sb.length()-1);
-		}
-		sb.append(" had been added to watch list");
-		return sb.toString();
+		return "success";
 	}
 	
-	public String removeWatchVariables(String expXmlStr) {
+	public String removeWatchVariables(String exp) {
 		
-		List<Expression> tmpVarList = Expression.parseExpXmlStr(expXmlStr);
-		StringBuilder sb = new StringBuilder();
-		for (Expression exp : tmpVarList) {
-			if (allVariables.contains(exp)) {
-				allVariables.remove(exp);
-				sb.append(exp.getOriExp()+",");
-			}
+		if (allExps.contains(exp)) {
+			allExps.remove(exp);
 		}
-		if (sb.length() > 0) {
-			sb.deleteCharAt(sb.length()-1);
-		}
-		sb.append(" has been removed from watch list");
-		return sb.toString();
+		return "success";
 	}
 	
-	public List<Expression> getWatchVariables() {
-		return this.allVariables;
+	public List<String> getWatchVariables() {
+		return this.allExps;
 	}
 	
 	public String evalWatchVariables() {
-		if (allVariables.size() < 1 ) return "";
+		if (allExps.size() < 1 ) return "";
 		try {
-			String result = ExpressionEval.eval(allVariables);
+			String result = ExpEval.eval(allExps);
 			return result;
 		} catch (ExpressionEvalException e) {
 			return e.getMessage();

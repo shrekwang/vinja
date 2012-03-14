@@ -2115,6 +2115,7 @@ class Jdb(object):
         if cmdLine.startswith("print") :
             cmdLine = "eval " + cmdLine[5:]
 
+        """
         need_gen_ast_cmds = ["eval","reftype","watch","unwatch","inspect"]
         for cmd_name in need_gen_ast_cmds :
             if cmdLine.startswith(cmd_name) :
@@ -2122,6 +2123,7 @@ class Jdb(object):
                 ast = self.ivp.generate(arg)
                 cmd = cmdLine[ 0 : cmdLine.find(" ") ]
                 cmdLine = cmd + " " + ast
+        """
 
         if cmdLine == "run" and self.defaultClassName :
             cmdLine = "run " + self.defaultClassName

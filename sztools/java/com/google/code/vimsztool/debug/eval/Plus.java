@@ -69,7 +69,15 @@ public class Plus {
 					+ Double.parseDouble(rightValue.toString());
 		}
 		if (leftValue instanceof String || leftValue instanceof StringReference ) {
-			return leftValue.toString() + rightValue.toString();
+			String left = leftValue.toString();
+			String right = rightValue.toString();
+			if (leftValue instanceof StringReference) {
+				left = ((StringReference)leftValue).value();
+			}
+			if (rightValue instanceof StringReference) {
+				right = ((StringReference)rightValue).value();
+			}
+			return left + right;
 		}
 		return null;
 	}

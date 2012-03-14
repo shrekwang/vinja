@@ -3,17 +3,19 @@ package com.google.code.vimsztool.debug.eval;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
-import org.antlr.runtime.ANTLRStringStream;
-import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.tree.CommonTree;
 
 import com.google.code.vimsztool.debug.Debugger;
+import com.google.code.vimsztool.debug.Expression;
 import com.google.code.vimsztool.debug.SuspendThreadStack;
 import com.google.code.vimsztool.exception.ExpressionEvalException;
-import com.google.code.vimsztool.parser.JavaLexer;
+import com.google.code.vimsztool.parser.AstTreeFactory;
 import com.google.code.vimsztool.parser.JavaParser;
+import com.google.code.vimsztool.parser.ParseResult;
 import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
 import com.sun.jdi.BooleanType;
 import com.sun.jdi.ClassNotLoadedException;
@@ -39,44 +41,152 @@ public class ExpEval {
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
 		"short", "int", "long", "float", "double" };
 
+	public static String executeEvalCmd(String debugCmd,String debugCmdArgs) {
+		String actionResult = null;
+		try {
+			if (debugCmd.equals("eval") || debugCmd.equals("print")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult =  eval(exp);
+			} else if (debugCmd.equals("inspect")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult =  inspect(exp);
+			} else if (debugCmd.equals("locals")) {
+				actionResult = variables();
+			} else if (debugCmd.equals("fields")) {
+				actionResult = fields();
+			} else if (debugCmd.equals("reftype")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = reftype(exp);
+			}
+			return actionResult;
+		} catch (ExpressionEvalException e) {
+			return e.getMessage();
+		}
+	}
+	
+	public static String fields() {
+		ThreadReference threadRef = checkAndGetCurrentThread();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		StringBuilder sb = new StringBuilder();
+		try {
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			ObjectReference thisObj = stackFrame.thisObject();
+			Map<Field, Value> values = thisObj.getValues(thisObj.referenceType().visibleFields());
+			List<String> fieldNames = new ArrayList<String>();
+			for (Field field : values.keySet()) {
+				fieldNames.add(field.name());
+			}
+			int maxLen = getMaxLength(fieldNames)+2;
+			for (Field field : values.keySet()) {
+				sb.append(padStr(maxLen,field.name())).append(":");
+				sb.append(getPrettyPrintStr(values.get(field)));
+				sb.append("\n");
+				//stackFrame = threadRef.frame(0);
+			}
+		} catch (IncompatibleThreadStateException e) {
+		}
 
-	public static void main(String[] args) {
-		char a = '9';
+		return sb.toString();
+	}
+
+	
+	public static String variables() {
+		ThreadReference threadRef = checkAndGetCurrentThread();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		int curFrame = threadStack.getCurFrame();
+		StringBuilder sb = new StringBuilder();
+		try {
+			List<String> varNames = new ArrayList<String>();
+			for (LocalVariable var : threadRef.frame(curFrame).visibleVariables()) {
+				varNames.add(var.name());
+			}
+			int maxLen = getMaxLength(varNames)+2;
+			for (LocalVariable var : threadRef.frame(curFrame).visibleVariables()) {
+				Value value = threadRef.frame(curFrame).getValue(var);
+				sb.append(padStr(maxLen,var.name())).append(":");
+				sb.append(getPrettyPrintStr(value));
+				sb.append("\n");
+			}
+		} catch (AbsentInformationException e) {
+			e.printStackTrace();
+		} catch (IncompatibleThreadStateException e) {
+			e.printStackTrace();
+		}
+		return sb.toString();
+	}
+	
+	public static String reftype(String exp) {
+		ParseResult result = AstTreeFactory.getExpressionAst(exp);
+		if (result.hasError()) {
+			return result.getErrorMsg();
+		}
+		Value value = (Value)evalTreeNode(result.getTree());
+		return value.type().name();
+	}
+
+	public static String inspect(String exp) {
+		ParseResult result = AstTreeFactory.getExpressionAst(exp);
+		if (result.hasError()) {
+			return result.getErrorMsg();
+		}
+		Value value = (Value)evalTreeNode(result.getTree());
 		
-		int b = 97;
-		char c = 'z';
-		
-		int j = c;
-		
-		System.out.print(j);
-		//System.out.println((int)a);
-		//System.out.print(a + c);
+		StringBuilder sb = new StringBuilder();
+		if (value instanceof ObjectReference) {
+			sb.append(exp).append(" = ");
+			sb.append(value.type().name()).append("\n");
+			
+			ObjectReference objRef = (ObjectReference) value;
+			Map<Field, Value> values = objRef.getValues(objRef.referenceType().visibleFields());
+			List<String> fieldNames = new ArrayList<String>();
+			for (Field field : values.keySet()) {
+				if (field.isStatic()) continue;
+				fieldNames.add(field.name());
+			}
+			int maxLen = getMaxLength(fieldNames)+2;
+			for (Field field : values.keySet()) {
+				sb.append("    ");
+				sb.append(padStr(maxLen,field.name())).append(":");
+				sb.append(getPrettyPrintStr(values.get(field)));
+				sb.append("\n");
+			}
+		}
+		return sb.toString();
+	}
+	
+	public static String eval(List<String> exps) {
+		if (exps ==null || exps.size() == 0) return "";
+		StringBuilder sb = new StringBuilder();
+		int count = 0;
+		int maxLen = getMaxLength(exps)+2;
+		for (String exp :exps) {
+			count ++;
+			sb.append(padStr(maxLen,exp)).append(":");
+			try {
+				Object value = eval(exp);
+				sb.append(getPrettyPrintStr(value)).append("\n");
+			} catch (ExpressionEvalException e) {
+				sb.append("exception in calc the value");
+			}
+		}
+		return sb.toString();
 	}
 
 	public static String eval(String exp) {
-		try {
-			JavaLexer lex = new JavaLexer(new ANTLRStringStream(exp));
-			CommonTokenStream tokens = new CommonTokenStream(lex);
-			JavaParser parser = new JavaParser(tokens);
-			CommonTree tree = (CommonTree) parser.expression().getTree();
-			printTree(tree,0);
-			System.out.println("===================================");
-			Object result = evalTreeNode(tree);
-			if (result == null)
-				return null;
-			return result.toString();
-		} catch (Throwable e) {
-			e.printStackTrace();
-			return "error in eval expression.";
+		
+		ParseResult result = AstTreeFactory.getExpressionAst(exp);
+		if (result.hasError()) {
+			return result.getErrorMsg();
 		}
-
+		
+		Object value = evalTreeNode(result.getTree());
+		if (value != null	) return value.toString();
+		return null;
 	}
-
 
 
 	public static Object evalTreeNode(CommonTree node) {
 		
-		System.out.println(node.getText());
 		CommonTree subNode = null;
 		CommonTree leftOp = null;
 		CommonTree rightOp = null;
@@ -127,7 +237,8 @@ public class ExpEval {
 		case JavaParser.CHARACTER_LITERAL:
 			return Character.valueOf(node.getText().charAt(1));
 		case JavaParser.STRING_LITERAL:
-			return node.getText();
+			String text = node.getText(); 
+			return text.substring(1, text.length()-1);
 			
 		default:
 			return null;
@@ -207,6 +318,11 @@ public class ExpEval {
 		String methodName = dotNode.getChild(1).getText();
 		if (var instanceof ObjectReference) {
 			return invoke(var,methodName,arguments);
+		}
+		if (var instanceof String) {
+			Debugger debugger = Debugger.getInstance();
+			VirtualMachine vm = debugger.getVm();
+			return invoke(vm.mirrorOf((String)var),methodName,arguments);
 		}
 		return null;
 	}
@@ -452,6 +568,50 @@ public class ExpEval {
 			return false;
 		}
 		return isAssignableTo(fromType, toType);
+	}
+	
+	
+	private static int getMaxLength(List<String> names) {
+		int max = 0;
+		if (names == null || names.size() ==0) return 0;
+		for (String name : names ) {
+			int len = name.length();
+			if (len > max) max = len;
+		}
+		return max;
+	}
+	private static String padStr(int maxLen, String origStr) {
+		if (origStr  == null) return "";
+		int len = origStr.length();
+		if (len >= maxLen ) return origStr;
+		for (int i=0; i< (maxLen-len); i++) {
+			origStr = origStr + " ";
+		}
+		return origStr;
+	}
+	
+	public static String getPrettyPrintStr(Object var) {
+		if (var == null)
+			return "null";
+		if (var instanceof ArrayReference) {
+			StringBuilder sb = new StringBuilder("[");
+			ArrayReference arrayObj = (ArrayReference) var;
+			if (arrayObj.length() == 0)
+				return "[]";
+			List<Value> values = arrayObj.getValues();
+			for (Value value : values) {
+				sb.append(getPrettyPrintStr(value)).append(",");
+			}
+			sb.deleteCharAt(sb.length() - 1);
+			sb.append("]");
+			return sb.toString();
+		} else if (var instanceof ObjectReference) {
+			Value strValue = invoke((ObjectReference) var, "toString",
+					new ArrayList());
+			return strValue.toString();
+		} else {
+			return var.toString();
+		}
 	}
 
 }
