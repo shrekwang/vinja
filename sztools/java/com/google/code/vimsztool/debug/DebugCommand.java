@@ -18,7 +18,7 @@ public class DebugCommand  extends SzjdeCommand {
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
-		"bpa"
+		"bpa","setvalue"
 		};
 	
 	public String execute() {
@@ -115,6 +115,10 @@ public class DebugCommand  extends SzjdeCommand {
 			int lineNum = Integer.parseInt(args[2]);
 			String conExp = debugCmdArgs.substring( debugCmdArgs.indexOf(args[2]) + args[2].length());
 			actionResult = bpMgr.addBreakpoint(mainClass, lineNum,conExp);
+		} else if (debugCmd.equals("setvalue")) {
+			String name = args[1];
+			String value = args[2];
+			actionResult =  ExpEval.setFieldValue(name,value);
 		}
 		return actionResult;
 	}

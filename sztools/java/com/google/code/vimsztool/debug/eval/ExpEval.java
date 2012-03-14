@@ -49,6 +49,41 @@ public class ExpEval {
 		System.out.println(result.getTree());
 		
 	}
+	
+	public static String setFieldValue(String name, String exp) {
+		ThreadReference threadRef = checkAndGetCurrentThread();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		try {
+			
+			Debugger debugger = Debugger.getInstance();
+			VirtualMachine vm = debugger.getVm();
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			ObjectReference thisObj = stackFrame.thisObject();
+			if (thisObj == null) return "";
+			ReferenceType refType = thisObj.referenceType();
+			Field field = refType.fieldByName(name);
+			ParseResult result = AstTreeFactory.getExpressionAst(exp);
+			if (result.hasError()) {
+				return result.getErrorMsg();
+			}
+			
+			Object obj = evalTreeNode(result.getTree());
+			Value value = null;
+			if (obj instanceof Integer) {
+				value = vm.mirrorOf(((Integer)obj).intValue());
+			} else if (obj instanceof Boolean) {
+				value = vm.mirrorOf(((Boolean)obj).booleanValue());
+			} else if (obj instanceof String) {
+				value = vm.mirrorOf((String)obj);
+			} else {
+				value = (Value)obj;
+			}
+			thisObj.setValue(field, value);
+		} catch (Throwable e) {
+			return e.getMessage();
+		}
+		return "success";
+	}
 
 	public static String executeEvalCmd(String debugCmd,String debugCmdArgs) {
 		String actionResult = null;
@@ -252,6 +287,10 @@ public class ExpEval {
 		case JavaParser.STRING_LITERAL:
 			String text = node.getText(); 
 			return text.substring(1, text.length()-1);
+		case JavaParser.FALSE :
+			return Boolean.FALSE;
+		case JavaParser.TRUE :
+			return Boolean.TRUE;
 			
 		default:
 			return null;
