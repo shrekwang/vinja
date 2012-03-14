@@ -8,7 +8,6 @@ import java.util.Map;
 import org.antlr.runtime.tree.CommonTree;
 
 import com.google.code.vimsztool.debug.Debugger;
-import com.google.code.vimsztool.debug.Expression;
 import com.google.code.vimsztool.debug.SuspendThreadStack;
 import com.google.code.vimsztool.exception.ExpressionEvalException;
 import com.google.code.vimsztool.parser.AstTreeFactory;
@@ -22,6 +21,7 @@ import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.Field;
 import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.IntegerValue;
 import com.sun.jdi.InterfaceType;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
@@ -40,6 +40,15 @@ public class ExpEval {
 	
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
 		"short", "int", "long", "float", "double" };
+	
+	public static void main(String[] args) {
+		ParseResult result = AstTreeFactory.getExpressionAst("aa[2]");
+		if (result.hasError()) {
+			System.out.println(result.getErrorMsg());
+		}
+		System.out.println(result.getTree());
+		
+	}
 
 	public static String executeEvalCmd(String debugCmd,String debugCmdArgs) {
 		String actionResult = null;
@@ -207,6 +216,10 @@ public class ExpEval {
 			return evalJdiVar(node.getText());
 		case JavaParser.METHOD_CALL:
 			return evalJdiInvoke(node);
+		case JavaParser.ARRAY_ELEMENT_ACCESS:
+			return evalJdiArray(node);
+		case JavaParser.DOT:
+			return evalJdiMember(node);
 			
 		case JavaParser.PLUS:
 		case JavaParser.MINUS:
@@ -365,6 +378,35 @@ public class ExpEval {
 			return value;
 		} catch (IncompatibleThreadStateException e) {
 			throw new ExpressionEvalException("eval expression error, caused by : " + e.getMessage());
+		}
+	}
+	
+	private static Value evalJdiMember(CommonTree node) {
+		
+		CommonTree objNode = (CommonTree)node.getChild(0);
+		String memberName = node.getChild(1).getText();
+		
+		ThreadReference threadRef = checkAndGetCurrentThread();
+		ObjectReference thisObj = (ObjectReference)evalTreeNode(objNode);
+		
+		Value value = findValueInFrame(threadRef, memberName, thisObj);
+		return value;
+	}
+	
+	private static Value evalJdiArray(CommonTree node) {
+		CommonTree arrayNode = (CommonTree)node.getChild(0);
+		CommonTree indexExpNode = (CommonTree)node.getChild(1);
+		
+		ArrayReference array = (ArrayReference)evalTreeNode(arrayNode);
+		Object arrayIdxValue = evalTreeNode((CommonTree)indexExpNode.getChild(0));
+		if (arrayIdxValue instanceof IntegerValue ) {
+			int idx = ((IntegerValue)arrayIdxValue).value();
+			return  array.getValue(idx);
+		} else if (arrayIdxValue instanceof Integer) {
+			int idx = ((Integer)arrayIdxValue).intValue();
+			return  array.getValue(idx);
+		}  else {
+			throw new ExpressionEvalException("eval expression error, array index is not int type.");
 		}
 	}
 	private static ThreadReference checkAndGetCurrentThread() {
