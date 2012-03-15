@@ -11,7 +11,7 @@ import com.sun.jdi.IntegerValue;
 import com.sun.jdi.LongValue;
 import com.sun.jdi.ShortValue;
 
-public class LessOrEqual {
+public class Mod {
 	
 	public static Object operate(CommonTree leftOp, CommonTree rightOp) {
 		Object leftValue = ExpEval.evalTreeNode(leftOp);
@@ -52,23 +52,22 @@ public class LessOrEqual {
 			} else {
 				right = Integer.parseInt(rightValue.toString());
 			}
-			return left <= right;
+			return left % right;
 		} 
-		
 		
 		
 		if (leftValue instanceof Long || leftValue instanceof LongValue) {
 			return Long.parseLong(leftValue.toString()) 
-					<= Long.parseLong(rightValue.toString());
+					% Long.parseLong(rightValue.toString());
 		}
 		if (leftValue instanceof Float || leftValue instanceof FloatValue) {
 			return Float.parseFloat(leftValue.toString()) 
-					<= Float.parseFloat(rightValue.toString());
+					% Float.parseFloat(rightValue.toString());
 		}
 		if (leftValue instanceof Double || leftValue instanceof DoubleValue) {
-			return Float.parseFloat(leftValue.toString()) 
-					<= Float.parseFloat(rightValue.toString());
+			return Double.parseDouble(leftValue.toString()) 
+					% Double.parseDouble(rightValue.toString());
 		}
-		throw new ExpressionEvalException("'<=' operation can't be done.");
+		throw new ExpressionEvalException("'%' operation can't be done.");
 	}
 }

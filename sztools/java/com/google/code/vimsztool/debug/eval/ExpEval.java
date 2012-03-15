@@ -31,6 +31,7 @@ import com.sun.jdi.ObjectReference;
 import com.sun.jdi.PrimitiveType;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
+import com.sun.jdi.StringReference;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Type;
 import com.sun.jdi.Value;
@@ -224,8 +225,7 @@ public class ExpEval {
 		}
 		
 		Object value = evalTreeNode(result.getTree());
-		if (value != null	) return value.toString();
-		return null;
+		return getPrettyPrintStr(value);
 	}
 
 
@@ -260,6 +260,7 @@ public class ExpEval {
 		case JavaParser.MINUS:
 		case JavaParser.STAR:
 		case JavaParser.DIV:
+		case JavaParser.MOD:
 			
 		case JavaParser.EQUAL:
 		case JavaParser.NOT_EQUAL:
@@ -293,7 +294,7 @@ public class ExpEval {
 			return Boolean.TRUE;
 			
 		default:
-			return null;
+			throw new ExpressionEvalException("parse expression error.");
 		}
 	}
 	
@@ -311,6 +312,8 @@ public class ExpEval {
 			return Multi.operate(leftOp, rightOp);
 		case JavaParser.DIV:
 			return Divide.operate(leftOp, rightOp);
+		case JavaParser.MOD:
+			return Mod.operate(leftOp, rightOp);
 			
 		case JavaParser.NOT_EQUAL:
 			return NotEqual.operate(leftOp, rightOp);
@@ -690,6 +693,9 @@ public class ExpEval {
 			Value strValue = invoke((ObjectReference) var, "toString",
 					new ArrayList());
 			return strValue.toString();
+		} else if (var instanceof String) {
+			return "\"" + (String)var + "\"";
+			
 		} else {
 			return var.toString();
 		}

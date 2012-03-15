@@ -2,6 +2,7 @@ package com.google.code.vimsztool.debug.eval;
 
 import org.antlr.runtime.tree.CommonTree;
 
+import com.google.code.vimsztool.exception.ExpressionEvalException;
 import com.sun.jdi.ByteValue;
 import com.sun.jdi.CharValue;
 import com.sun.jdi.DoubleValue;
@@ -67,6 +68,6 @@ public class GreaterOrEqual {
 			return Float.parseFloat(leftValue.toString()) 
 					> Float.parseFloat(rightValue.toString());
 		}
-		return null;
+		throw new ExpressionEvalException("'>=' operation can't be done.");
 	}
 }
