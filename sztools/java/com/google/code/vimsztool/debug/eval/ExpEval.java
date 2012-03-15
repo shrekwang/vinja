@@ -54,20 +54,15 @@ public class ExpEval {
 	public static String setFieldValue(String name, String exp) {
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		Debugger debugger = Debugger.getInstance();
+		VirtualMachine vm = debugger.getVm();
+		
 		try {
 			
-			Debugger debugger = Debugger.getInstance();
-			VirtualMachine vm = debugger.getVm();
-			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
-			ObjectReference thisObj = stackFrame.thisObject();
-			if (thisObj == null) return "";
-			ReferenceType refType = thisObj.referenceType();
-			Field field = refType.fieldByName(name);
 			ParseResult result = AstTreeFactory.getExpressionAst(exp);
 			if (result.hasError()) {
 				return result.getErrorMsg();
 			}
-			
 			Object obj = evalTreeNode(result.getTree());
 			Value value = null;
 			if (obj instanceof Integer) {
@@ -79,7 +74,21 @@ public class ExpEval {
 			} else {
 				value = (Value)obj;
 			}
-			thisObj.setValue(field, value);
+			
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			LocalVariable localVariable;
+			localVariable = stackFrame.visibleVariableByName(name);
+			if (localVariable != null) {
+				stackFrame.setValue(localVariable, value);
+			} else {
+				ObjectReference thisObj = stackFrame.thisObject();
+				if (thisObj == null) {
+					return "can't find field or variable with name '"+name+"'";
+				}
+				ReferenceType refType = thisObj.referenceType();
+				Field field = refType.fieldByName(name);
+				thisObj.setValue(field, value);
+			}
 		} catch (Throwable e) {
 			return e.getMessage();
 		}
