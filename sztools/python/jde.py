@@ -1951,8 +1951,9 @@ class Jdb(object):
 
         if self.cmd_buf_list :
             output(self.cmd_buf_list)
-            cur_row = len(self.cmd_buf_list)
-            cur_col = len(self.cmd_buf_list[-1])
+            buffer=vim.current.buffer
+            cur_row = len(buffer)
+            cur_col = len(buffer[-1])
         else :
             output(">",buffer,False)
             cur_row =1 
