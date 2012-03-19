@@ -1,15 +1,21 @@
 package com.google.code.vimsztool.debug.eval;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.antlr.runtime.tree.CommonTree;
 
+import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.debug.Debugger;
 import com.google.code.vimsztool.debug.SuspendThreadStack;
 import com.google.code.vimsztool.exception.ExpressionEvalException;
+import com.google.code.vimsztool.exception.VariableOrFieldNotFoundException;
 import com.google.code.vimsztool.parser.AstTreeFactory;
 import com.google.code.vimsztool.parser.JavaParser;
 import com.google.code.vimsztool.parser.ParseResult;
@@ -17,21 +23,27 @@ import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
 import com.sun.jdi.BooleanType;
+import com.sun.jdi.ByteType;
+import com.sun.jdi.CharType;
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassType;
+import com.sun.jdi.DoubleType;
 import com.sun.jdi.Field;
+import com.sun.jdi.FloatType;
 import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.IntegerType;
 import com.sun.jdi.IntegerValue;
 import com.sun.jdi.InterfaceType;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
 import com.sun.jdi.LocalVariable;
+import com.sun.jdi.LongType;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.PrimitiveType;
 import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ShortType;
 import com.sun.jdi.StackFrame;
-import com.sun.jdi.StringReference;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Type;
 import com.sun.jdi.Value;
@@ -43,7 +55,7 @@ public class ExpEval {
 		"short", "int", "long", "float", "double" };
 	
 	public static void main(String[] args) {
-		ParseResult result = AstTreeFactory.getExpressionAst("aa[2]");
+		ParseResult result = AstTreeFactory.getExpressionAst("new Date(2+3)");
 		if (result.hasError()) {
 			System.out.println(result.getErrorMsg());
 		}
@@ -378,9 +390,15 @@ public class ExpEval {
 			
 		}
 				
-		Object var = evalTreeNode((CommonTree)dotNode.getChild(0));
+		Object var = null;
+		try {
+			var = evalTreeNode((CommonTree)dotNode.getChild(0));
+		} catch (VariableOrFieldNotFoundException e) {
+			var = getClassType(dotNode.getChild(0).getText());
+			
+		}
 		String methodName = dotNode.getChild(1).getText();
-		if (var instanceof ObjectReference) {
+		if (var instanceof ObjectReference || var instanceof ReferenceType) {
 			return invoke(var,methodName,arguments);
 		}
 		if (var instanceof String) {
@@ -390,6 +408,7 @@ public class ExpEval {
 		}
 		return null;
 	}
+	
 	
 	private static Value getMirrorValue(Object value) {
 		if (value == null) return null;
@@ -495,7 +514,7 @@ public class ExpEval {
 			}
 			Field field = refType.fieldByName(name);
 			if (field == null ) {
-				throw new ExpressionEvalException("eval expression error, field '" + name +"' can't be found."); 
+				throw new VariableOrFieldNotFoundException("eval expression error, field '" + name +"' can't be found."); 
 			}
 			if (thisObj != null) {
 				value = thisObj.getValue(field);
@@ -608,25 +627,32 @@ public class ExpEval {
 			return true;
 		if (toType instanceof BooleanType)
 			return false;
-		if (fromType instanceof PrimitiveType
-				&& toType instanceof PrimitiveType)
-			return true;
-		if (toType instanceof PrimitiveType)
-			return false;
+		
+		if (fromType instanceof BooleanType && toType instanceof BooleanType) return true;
+		if (fromType instanceof ByteType && toType instanceof ByteType) return true;
+		if (fromType instanceof CharType && toType instanceof CharType) return true;
+		if (fromType instanceof IntegerType && toType instanceof IntegerType) return true;
+		if (fromType instanceof LongType && toType instanceof LongType) return true;
+		if (fromType instanceof ByteType && toType instanceof ByteType) return true;
+		if (fromType instanceof FloatType && toType instanceof FloatType) return true;
+		if (fromType instanceof DoubleType && toType instanceof DoubleType) return true;
+		if (fromType instanceof ShortType && toType instanceof ShortType) return true;
 
 		if (fromType instanceof ArrayType) {
 			return isArrayAssignableTo((ArrayType) fromType, toType);
 		}
-		List interfaces;
+		List interfaces = null;;
 		if (fromType instanceof ClassType) {
 			ClassType superclazz = ((ClassType) fromType).superclass();
 			if ((superclazz != null) && isAssignableTo(superclazz, toType)) {
 				return true;
 			}
 			interfaces = ((ClassType) fromType).interfaces();
-		} else {
+		} else if (fromType instanceof InterfaceType) {
 			interfaces = ((InterfaceType) fromType).superinterfaces();
 		}
+		if (interfaces == null ) return false;
+		
 		Iterator iter = interfaces.iterator();
 		while (iter.hasNext()) {
 			InterfaceType interfaze = (InterfaceType) iter.next();
@@ -710,4 +736,46 @@ public class ExpEval {
 		}
 	}
 
+	
+    private static ReferenceType getClassType(String className) {
+		
+		try {
+			ThreadReference threadRef = checkAndGetCurrentThread();
+			Debugger debugger = Debugger.getInstance();
+			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			CompilerContext ctx = debugger.getCompilerContext();
+			VirtualMachine vm = debugger.getVm();
+			List<ReferenceType> refTypes = vm.classesByName("java.lang."+className);
+			if (refTypes !=null && refTypes.size() >0 ) {
+				return refTypes.get(0);
+			}
+			String abPath = ctx.findSourceFile(stackFrame.location().sourcePath());
+			BufferedReader br = new BufferedReader(new FileReader(abPath));
+			Pattern pat = Pattern.compile("import\\s+(.*\\."+className+")\\s*;\\s*$");
+			String qualifiedClass = null;
+			while (true) {
+				String tmp = br.readLine();
+				if (tmp == null) break;
+				tmp = tmp.trim();
+				Matcher matcher = pat.matcher(tmp);
+				if (matcher.matches()) {
+					qualifiedClass = matcher.group(1);
+					break;
+				}
+			}
+			br.close();
+			if (qualifiedClass != null ) {
+				refTypes = vm.classesByName(qualifiedClass);
+				if (refTypes !=null && refTypes.size() >0 ) {
+					return refTypes.get(0);
+				}
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 }
