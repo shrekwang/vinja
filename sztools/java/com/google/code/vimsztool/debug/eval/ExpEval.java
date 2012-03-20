@@ -1,6 +1,7 @@
 package com.google.code.vimsztool.debug.eval;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -457,10 +458,19 @@ public class ExpEval {
 		String memberName = node.getChild(1).getText();
 		
 		ThreadReference threadRef = checkAndGetCurrentThread();
-		ObjectReference thisObj = (ObjectReference)evalTreeNode(objNode);
+		ObjectReference thisObj = null;
 		
-		Value value = findValueInFrame(threadRef, memberName, thisObj);
-		return value;
+		try {
+			thisObj = (ObjectReference)evalTreeNode(objNode);
+			Value value = findValueInFrame(threadRef, memberName, thisObj);
+			return value;
+		} catch (VariableOrFieldNotFoundException e) {
+			ReferenceType refType = getClassType(objNode.getText());
+			Field field = refType.fieldByName(memberName);
+			Value value = refType.getValue(field);
+			return value;
+		}
+		
 	}
 	
 	private static Value evalJdiArray(CommonTree node) {
@@ -750,10 +760,18 @@ public class ExpEval {
 			if (refTypes !=null && refTypes.size() >0 ) {
 				return refTypes.get(0);
 			}
-			String abPath = ctx.findSourceFile(stackFrame.location().sourcePath());
+			String locSourcePath = stackFrame.location().sourcePath();
+			String abPath = ctx.findSourceFile(locSourcePath);
 			BufferedReader br = new BufferedReader(new FileReader(abPath));
 			Pattern pat = Pattern.compile("import\\s+(.*\\."+className+")\\s*;\\s*$");
 			String qualifiedClass = null;
+			
+			int pkgIndex = locSourcePath.lastIndexOf(File.separator);
+			String packageName = "";
+			if (pkgIndex != -1 ){
+				packageName = locSourcePath.substring(0,pkgIndex).replace(File.separator, ".");
+			}
+			
 			while (true) {
 				String tmp = br.readLine();
 				if (tmp == null) break;
@@ -762,14 +780,17 @@ public class ExpEval {
 				if (matcher.matches()) {
 					qualifiedClass = matcher.group(1);
 					break;
-				}
+				} 
 			}
 			br.close();
-			if (qualifiedClass != null ) {
-				refTypes = vm.classesByName(qualifiedClass);
-				if (refTypes !=null && refTypes.size() >0 ) {
-					return refTypes.get(0);
-				}
+			if (qualifiedClass == null && !packageName.equals("")) {
+				qualifiedClass = packageName + "." + className;
+			} else {
+				qualifiedClass = className;
+			}
+			refTypes = vm.classesByName(qualifiedClass);
+			if (refTypes !=null && refTypes.size() >0 ) {
+				return refTypes.get(0);
 			}
 			
 		} catch (Exception e) {

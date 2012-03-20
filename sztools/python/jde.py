@@ -790,10 +790,11 @@ class EditUtil(object):
     def syncBreakpointInfo():
 
         global bp_data
-        for file_name in bp_data:
-            bp_set = bp_data[file_name]
+        current_file = vim.current.buffer.name
+        bp_set = bp_data.get(current_file)
+        if bp_set :
             for row_num in bp_set :
-                HighlightManager.removeSign(file_name,row_num,"B")
+                HighlightManager.removeSign(current_file,row_num,"B")
 
         source_file_path = vim.current.buffer.name
         serverName = vim.eval("v:servername")
@@ -1035,10 +1036,22 @@ class HighlightManager(object):
         
     @staticmethod
     def _clearHighlightInVim():
+
         vim.command("syntax clear SzjdeError")
         vim.command("syntax clear SzjdeWarning")
         vim.command("syntax clear SzjdeReference")
-        vim.command("sign unplace *")
+
+        pat = re.compile(r".*id=(?P<name>\d+)\b.*$")
+        bufnr=str(vim.eval("bufnr('%')"))
+        vim.command("redir => g:current_signplace")
+        vim.command("silent sign place buffer=%s" % bufnr )
+        vim.command("redir END")
+        output = vim.eval("g:current_signplace")
+        lines = output.split("\n")
+        for line in lines :
+            sign_ids = pat.findall(line)
+            if (len(sign_ids) == 1 ) :
+                vim.command("silent sign unplace %s buffer=%s" % (sign_ids[0], bufnr ))
     
 class Compiler(object):
 
