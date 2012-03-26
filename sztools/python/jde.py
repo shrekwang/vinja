@@ -2109,6 +2109,20 @@ class Jdb(object):
         self.resumeSuspend()
         data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
 
+    def removeDuplicate(self):
+        curBuf = vim.current.buffer
+        lineset = set()
+        rowNum = len(curBuf)
+        while True :
+            if rowNum == 0 :
+                break
+            trimed_line = curBuf[rowNum-1].strip()
+            if trimed_line in lineset :
+                del curBuf[rowNum-1]
+            else :
+                lineset.add(curBuf[rowNum-1])
+            rowNum = rowNum -1
+
     def executeCmd(self, insertMode = True):
         
         #if self.project_root == None or not os.path.exists(self.project_root) :
@@ -2120,6 +2134,8 @@ class Jdb(object):
             return
 
         cmdLine = cmdLine.replace("\ ","$$").strip()[1:]
+        #remove duplicate line 
+        self.removeDuplicate()
 
         if cmdLine == "wow":
             self.stdout(self)
