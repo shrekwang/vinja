@@ -8,8 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FilenameUtils;
+
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.CompilerContextManager;
+import com.google.code.vimsztool.util.Preference;
 import com.google.code.vimsztool.util.VjdeUtil;
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.IncompatibleThreadStateException;
@@ -23,6 +26,7 @@ import com.sun.jdi.connect.AttachingConnector;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
 import com.sun.jdi.connect.LaunchingConnector;
+import com.sun.jdi.connect.ListeningConnector;
 import com.sun.jdi.connect.VMStartException;
 
 public class Debugger {
@@ -34,6 +38,7 @@ public class Debugger {
 	private EventHandler eventHandler = null;
 	private String vimServerName = "";
 	private CompilerContext compilerContext =null;
+	private Preference pref = Preference.getInstance();
 
 	private Debugger() {
 	}
@@ -365,12 +370,48 @@ public class Debugger {
 		return port;
 	}
 	
+	public String launchTomcat() {
+		
+		String port = String.valueOf(getAvailPort());
+		
+		String tomcatHome=pref.getValue(Preference.TOMCAT_HOME);
+		StringBuilder cmd = new StringBuilder("java");
+		cmd.append(" -agentlib:jdwp=transport=dt_socket,address=localhost:"+port+",suspend=y ");
+		cmd.append(" -Dcatalina.base="+tomcatHome);
+		cmd.append(" -Dcatalina.home="+tomcatHome);
+		cmd.append(" -Djava.io.tmpdir="+FilenameUtils.concat(tomcatHome, "temp"));
+		cmd.append(" -cp " + FilenameUtils.concat(tomcatHome, "bin/bootstrap.jar"));
+		cmd.append(" org.apache.catalina.startup.Bootstrap  start");
+		
+		try {
+			File workingDir = new File(tomcatHome);
+			process = Runtime.getRuntime().exec(cmd.toString(),null,workingDir);
+		} catch (Exception err) {
+			err.printStackTrace();
+		}
+		
+		ListeningConnector connector = getListeningConnector();
+		Map<String, Connector.Argument> connectArgs = connector.defaultArguments();
+		Connector.Argument portArg = connectArgs.get("port");
+		Connector.Argument hostArg = connectArgs.get("localAddress");
+		portArg.setValue(port);
+		hostArg.setValue("localhost"); 
+		try {
+			vm = connector.accept(connectArgs);
+			startProcess();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+	
 	public VirtualMachine launch(String mainClass, String classPathXml,
 			List<String> opts,List<String> args) {
 		
+		
 		String port = String.valueOf(getAvailPort());
-		StringBuilder cmd = new StringBuilder("java -agentlib:jdwp=transport=dt_socket,address="
-			+port+",server=y,suspend=y");
+		StringBuilder cmd = new StringBuilder("java -agentlib:jdwp=transport=dt_socket,address=localhost:"
+			+port+",suspend=y");
 		cmd.append(" -cp " + getClassPath(classPathXml));
 		cmd.append(" ");
 		if (opts !=null && opts.size() > 0) {
@@ -394,12 +435,17 @@ public class Debugger {
 		} catch (Exception err) {
 			err.printStackTrace();
 		}
-		for (int i=0; i<10; i++) {
-			VirtualMachine vm = attachToVm(port); 
-			if (vm != null) return vm;
-			try {
-				Thread.sleep(100);
-			} catch (Exception e) {}
+		
+		ListeningConnector connector = getListeningConnector();
+		Map<String, Connector.Argument> connectArgs = connector.defaultArguments();
+		Connector.Argument portArg = connectArgs.get("port");
+		Connector.Argument hostArg = connectArgs.get("localAddress");
+		portArg.setValue(port);
+		hostArg.setValue("localhost"); 
+		try {
+			return connector.accept(connectArgs);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -474,7 +520,7 @@ public class Debugger {
 		return null;
 	}
 
-	private AttachingConnector getAttachingConnector() {
+	private static AttachingConnector getAttachingConnector() {
 		VirtualMachineManager vmm = Bootstrap.virtualMachineManager();
 		List<AttachingConnector> connectors = vmm.attachingConnectors();
 		AttachingConnector connector = null;
@@ -484,5 +530,17 @@ public class Debugger {
 		}
 		return connector;
 	}
+	
+	private static ListeningConnector getListeningConnector() {
+		VirtualMachineManager vmm = Bootstrap.virtualMachineManager();
+		List<ListeningConnector> connectors = vmm.listeningConnectors();
+		ListeningConnector connector = null;
+		for (ListeningConnector conn : connectors) {
+			if (conn.name().equals("com.sun.jdi.SocketListen"))
+				connector = conn;
+		}
+		return connector;
+	}
+	
 }
 	 

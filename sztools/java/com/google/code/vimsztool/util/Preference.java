@@ -25,6 +25,9 @@ public class Preference {
 	public static final String JDE_ECLIPSE_CONXML_PATH = "jde_eclipse_conxml_path" ; 
 	public static final String DEFAULT_EXCLUDE_PATTERN = "default_exclude_pattern";
 	public static final String JDE_RUN_TIMEOUT = "jde_run_timeout";
+	
+	public static final String TOMCAT_HOME = "tomcat_home";
+	public static final String TOMCAT_VERSION = "tomcat_version";
 
 	
 	public static Preference getInstance() {
@@ -35,7 +38,7 @@ public class Preference {
 		this.sztoolHome = sztoolHome;
 		String defaultCfgPath = FilenameUtils.concat(sztoolHome, "share/conf/sztools.cfg");
 		loadPrefFromFile(defaultCfgPath);
-		String userCfgPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(), ".sztools.cfg");
+		String userCfgPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(), "sztools.cfg");
 		loadPrefFromFile(userCfgPath);
 	}
 	
