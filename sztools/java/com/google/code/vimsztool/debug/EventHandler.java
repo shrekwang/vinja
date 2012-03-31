@@ -77,14 +77,16 @@ public class EventHandler extends Thread {
 	
 	public void handleVMDeathEvent(VMDeathEvent event) {
 		Debugger debugger = Debugger.getInstance();
-		String[] cmdLine = {"HandleJdiEvent" ,"msg", "process\\ terminated."};
-		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
+		String funcName = "HandleJdiEvent";
+		String[] args = {"msg", "process terminated."};
+		VjdeUtil.callVimFunc(debugger.getVimServerName(), funcName, args);
 	}
 	
 	public void handleVMDisconnectEvent(VMDisconnectEvent event) {
 		Debugger debugger = Debugger.getInstance();
-		String[] cmdLine = {"HandleJdiEvent" ,"msg", "process\\ disconnected."};
-		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
+		String funcName = "HandleJdiEvent";
+		String[] args = {"msg", "process disconnected."};
+		VjdeUtil.callVimFunc(debugger.getVimServerName(), funcName, args);
 	}
 	
 	private void handleVMStartEvent(VMStartEvent event) {
@@ -163,8 +165,9 @@ public class EventHandler extends Thread {
 		} catch (Throwable e) {
 		}
 		
-		String[] cmdLine = {"HandleJdiEvent" ,"suspend" , abPath, String.valueOf(lineNum), className };
-		VjdeUtil.runVimCmd(debugger.getVimServerName(), cmdLine);
+		String funcName = "HandleJdiEvent";
+		String[] args = {"suspend", abPath, String.valueOf(lineNum), className };
+		VjdeUtil.callVimFunc(debugger.getVimServerName(), funcName, args);
 	}
 
 }

@@ -83,15 +83,24 @@ function SetSzToolBuf()
     exec "setlocal nobuflisted"
 endfunction
 
-function! SwitchToSzToolView(viewname)    
+function! SwitchToSzToolView(...)    
+  let viewname = a:1
+  let direct = "belowright"
+  let height = winheight(0) / 2
+  if len(a:000) > 1 
+    let direct = a:2
+  endif
+  if len(a:000) > 2
+    let height = a:3
+  endif
   let s:cur_buf = bufnr("%")    
-  let s:szdb_result_buf=bufnr("SzToolView_" . a:viewname)    
+  let s:szdb_result_buf=bufnr("SzToolView_" . viewname)    
   if bufwinnr(s:szdb_result_buf) > 0    
     exec bufwinnr(s:szdb_result_buf) . "wincmd w"    
     "%d    
   else    
-    exec 'silent! belowright split SzToolView_' . a:viewname    
-    exec "e SzToolView_" . a:viewname    
+    exec 'silent! '.direct.' '.height.'split SzToolView_' . viewname    
+    exec "e SzToolView_" . viewname    
     call SetSzToolBuf()
   endif    
 endfunction    
@@ -453,14 +462,17 @@ endfunction
 
 function FetchResult(...)
   python fetchCallBack(vim.eval("a:000"))
+  redraw
 endfunction
 
 function FetchDebugOutput(line)
   python VimUtil.writeToSzToolBuffer("JdeConsole",vim.eval("a:line"),True)
+  redraw
 endfunction
 
 function HandleJdiEvent(...)
   python jdb.handleJdiEvent(vim.eval("a:000"))
+  redraw
 endfunction
 
 
@@ -493,7 +505,7 @@ function InitJavaSetting()
   map <C-n> :cn<cr>
   map <C-p> :cp<cr>
   setlocal omnifunc=SzJdeCompletion
-  set cmdheight=2
+  "set cmdheight=2
   au CursorHold <buffer> :python HighlightManager.displayMsg()
   au CursorMoved <buffer> :python HighlightManager.displayMsg()
   python EditUtil.createSkeleton()
@@ -579,7 +591,7 @@ command! -nargs=0 Tagext      :call Tagext()
 command! -nargs=0 TagList      :call TagList()
 command! -nargs=0 SaveNote            :python Notext.saveBufContent()
 command! -nargs=0 MakeNoteTemplate    :python Notext.makeTemplate()
-command! -nargs=+ FetchResult      :call FetchResult(<f-args>)
+"command! -nargs=+ FetchResult      :call FetchResult(<f-args>)
 
 
 command! -nargs=0 ProjectTree          :call ProjectTree()

@@ -113,20 +113,10 @@ public class SystemJob extends Thread {
 	class BufferChecker implements Runnable {
 		public void run() {
 			synchronized (buffer) {
-				if (buffer.length() > 0) {
-					try {
-						String vimCmdCall = "<esc><esc>:FetchResult " + uuid + " " + bufname
-								+ "<cr>";
-						String[] vimRemoteCmdArray = new String[] { "gvim", "--servername",
-								vimServerName, "--remote-send", vimCmdCall };
-						Runtime.getRuntime().exec(vimRemoteCmdArray);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-
+				if ( ! (buffer.length() > 0)) return; 
+				String[] args = new String[] { uuid,bufname };
+				VjdeUtil.callVimFunc(vimServerName, "FetchResult", args);
 			}
-
 		}
 	}
 }

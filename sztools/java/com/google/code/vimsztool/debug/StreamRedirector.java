@@ -22,7 +22,7 @@ public class StreamRedirector extends Thread {
 		String line;
 		try {
 			while ((line = br.readLine()) != null) {
-				VjdeUtil.runVimCmd(vimServerName, new String[] {"FetchDebugOutput", line});
+				VjdeUtil.callVimFunc(vimServerName, "FetchDebugOutput",new String[] { line} );
 			}
 		} catch (Exception e) {
 			throw new Error(e);

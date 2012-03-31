@@ -266,9 +266,9 @@ public class Debugger {
 			abPath = compilerContext.findSourceFile(loc.sourcePath());
 		} catch (Throwable e) {
 		}
-		String[] cmdLine = { "HandleJdiEvent", "suspend", abPath, String.valueOf(lineNum),
-				className };
-		VjdeUtil.runVimCmd(getVimServerName(), cmdLine);
+		String funcName = "HandleJdiEvent";
+		String[] args = {"suspend", abPath, String.valueOf(lineNum), className };
+		VjdeUtil.callVimFunc(getVimServerName(), funcName, args);
 	}
 	
 

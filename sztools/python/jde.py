@@ -1955,11 +1955,15 @@ class Jdb(object):
     def show(self):
         self.display = True
         self.defaultClassName = Parser.getMainClass()
-        vim.command("call SwitchToSzToolView('Jdb')")
+        # 40% height
+        height = vim.eval("winheight(0) / 5 * 2")
+        vim.command("call SwitchToSzToolView('JdeConsole','belowright','%s')" % height)
+        vim.command("call SwitchToSzToolView('Jdb','aboveleft','7')")
         vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
         if self.out_buf_list :
             output(self.out_buf_list)
         vim.command("call SwitchToSzToolView('Jdb')")
+        vim.command("vertical resize 45")
         buffer=vim.current.buffer
 
         if self.cmd_buf_list :
@@ -1997,6 +2001,7 @@ class Jdb(object):
             buffer=vim.current.buffer
             row = len(buffer)
             vim.current.window.cursor = (row, 0)
+            vim.command("call SwitchToSzToolView('Jdb')")
 
     def handleSuspend(self,abs_path,lineNum,className):
         tab_count = int(vim.eval("tabpagenr('$')"))
@@ -2016,6 +2021,7 @@ class Jdb(object):
                     or bufname.endswith(".java") :
                 break
         
+        bufname = vim.current.buffer.name
         bufnr=str(vim.eval("bufnr('%')"))
         if os.path.exists(abs_path) or abs_path.startswith("jar:") :
             if abs_path != vim.current.buffer.name :
@@ -2181,6 +2187,7 @@ class Jdb(object):
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
             self.stdout(data)
+            vim.command("call SwitchToSzToolView('Jdb')")
 
         if cmdLine.startswith("bpa") and data == "success" :
             args = cmdLine.split(" ")

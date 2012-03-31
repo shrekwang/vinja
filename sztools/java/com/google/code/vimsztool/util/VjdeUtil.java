@@ -65,5 +65,35 @@ public class VjdeUtil {
         }
         return true;
     }
+	
+	public static synchronized void callVimFunc(String serverName, String funcName, String[] args) {
+		
+		try {
+			StringBuffer sb = new StringBuffer();
+			sb.append(funcName).append("(");
+			// '"' and '\' needs to be escaped in command line.
+			if (args !=null && args.length > 0) {
+				for (int i=0; i<args.length; i++ ) {
+					String arg = args[i];
+					arg = arg.replace("'", "''");
+					//arg = arg.replace("\\", "\\\\");
+					sb.append("'").append(arg).append("'");
+					if (i<args.length-1) {
+						sb.append(",");
+					}
+				}
+			}
+			sb.append(")");
+			String[] vimRemoteCmdArray = new String[] {"vim","--servername",serverName,"--remote-expr",sb.toString()};
+			Runtime.getRuntime().exec(vimRemoteCmdArray);
+			//prevent call vim command in multi thread simultaneously
+			Thread.sleep(100);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
 
 }
