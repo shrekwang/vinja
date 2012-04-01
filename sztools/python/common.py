@@ -150,7 +150,7 @@ class SztoolAgent(object):
 
 
         if os.name == "posix" :
-            Popen(" ".join(cmdArray),shell = False)
+            Popen(" ".join(cmdArray),shell = True)
         else :
             Popen(cmdArray,shell = False)
 
@@ -392,6 +392,29 @@ class MiscUtil(object):
         text = "\n".join(vim.current.buffer)
         text = re.sub(pattern, replacer, text)
         output(text)
+
+    @staticmethod
+    def select_project_open():
+        project_cfg_path = os.path.join(SzToolsConfig.getDataHome(), "project.cfg")
+        if not os.path.exists(project_cfg_path):
+            return
+        lines = open(project_cfg_path,"r").readlines()
+        prj_dict = {}
+        options = []
+        for line in lines:
+            if not line.strip() : continue
+            if line[0] == "#" : continue
+            split_index= line.find ("=")
+            if split_index < 0 : continue 
+            name = line[0:split_index].strip()
+            path = line[split_index+1:].strip()
+            prj_dict[name] = path
+            options.append(name)
+
+        selectedIndex = VimUtil.inputOption(options)
+        if (selectedIndex) :
+            projectName = options[int(selectedIndex)]
+            vim.command("silent lcd %s" % prj_dict[projectName].replace(" ",r"\ "))
 
 class ScratchUtil(object):
 

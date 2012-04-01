@@ -841,7 +841,6 @@ class Shext(object):
 
     @staticmethod
     def runApp():
-        SztoolAgent.startAgent()
         global shext
         shext = Shext()
         VimUtil.createOutputBuffer("shext")

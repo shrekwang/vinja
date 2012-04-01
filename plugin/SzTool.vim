@@ -516,7 +516,6 @@ endfunction
 
 function! Jdext()
   call RunSzPyfile("jde.py")
-  python SztoolAgent.startAgent()
   set completeopt=menuone
   autocmd BufEnter     *.java     call InitJavaSetting()
   autocmd BufWinEnter   *.java    python HighlightManager.highlightCurrentBuf()
@@ -566,6 +565,12 @@ function! Jdext()
   python ProjectManager.projectOpen()
 endfunction
 
+function! Jdesp()
+  python MiscUtil.select_project_open()
+  call Jdext()
+  call ProjectTree()
+endfunction
+
 
 command! -nargs=1 Example       :call WatchExample('<args>')
 command! -nargs=1 Dict          :call SearchDict('<args>')
@@ -585,6 +590,8 @@ command! -nargs=0 StartAgent  :python SztoolAgent.startAgent()
 command! -nargs=0 StopAgent   :python SztoolAgent.stopAgent()
 command! -nargs=0 Shext       :call Shext()
 command! -nargs=0 Jdext       :call Jdext()
+"select project to open in jde.
+command! -nargs=0 Jdesp       :call Jdesp()
 command! -nargs=0 Dbext       :call Dbext()
 command! -nargs=0 Notext      :call Notext()
 command! -nargs=0 Tagext      :call Tagext()
@@ -633,3 +640,9 @@ endfunction
 autocmd BufEnter           *  python edit_history.record_current_buf()
 autocmd VimEnter,WinEnter  *  python edit_history.create_win_id()
 autocmd BufUnload          *  call RemoveFromHistory(expand("<amatch>"))
+
+command! -nargs=1 Silent
+\ | execute ':silent !'.<q-args>
+\ | execute ':redraw!'
+
+python SztoolAgent.startAgent()
