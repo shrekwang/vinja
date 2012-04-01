@@ -266,8 +266,7 @@ public class ExpEval {
 			
 		case JavaParser.LOGICAL_NOT:
 			subNode = (CommonTree) node.getChild(0);
-			Object value = evalTreeNode(subNode);
-			return ! (Boolean)value;
+			return LogicalNot.operate(subNode);
 			
 		case JavaParser.IDENT:
 			return evalJdiVar(node.getText());
@@ -314,6 +313,8 @@ public class ExpEval {
 			return Boolean.FALSE;
 		case JavaParser.TRUE :
 			return Boolean.TRUE;
+		case JavaParser.NULL :
+			return null;
 			
 		default:
 			throw new ExpressionEvalException("parse expression error.");
