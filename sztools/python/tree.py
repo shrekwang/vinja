@@ -1024,10 +1024,14 @@ class ProjectTree(object):
         vim.current.window.cursor = (row,col)
 
     @staticmethod
-    def create_project_tree():
+    def create_project_tree(projectRoot = None):
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
 
+        if projectRoot != None :
+            tree = ProjectTree(projectRoot)
+            return tree
+    
         if current_file_name == None or current_file_name.startswith("jar:") :
             fake_file = os.path.join(os.getcwd(),"what_ever_fake_file_name")
             projectRoot = ProjectManager.getProjectRoot(fake_file,False)
@@ -1104,5 +1108,30 @@ class ProjectTree(object):
             projectTree.render_tree()
             if current_file_name != None :
                 ProjectTree.locate_buf_in_tree(current_file_name)
+
+    @staticmethod
+    def gotoBookmark():
+        shext_bm_path = os.path.join(SzToolsConfig.getDataHome(), "shext-bm.txt")
+        lines = open(shext_bm_path).readlines()
+        options = []
+        bm_dict = {}
+        for line in lines:
+            path_start = line.find(" ")
+            name = line[0:path_start]
+            path = line[path_start:-1].strip()
+            options.append(name)
+            bm_dict[name] = path
+        selectedIndex = VimUtil.inputOption(options)
+        if (selectedIndex) :
+            global projectTree
+            projectTree = None
+            vim.command("setlocal modifiable")
+            vim_buffer = vim.current.buffer
+            vim_buffer[:] = None
+            vim.command("setlocal nomodifiable")
+            treeRootName = options[int(selectedIndex)]
+            treeRootPath = bm_dict[treeRootName]
+            projectTree = ProjectTree.create_project_tree(treeRootPath)
+            projectTree.render_tree()
 
 

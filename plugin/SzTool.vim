@@ -377,8 +377,9 @@ function ProjectTree(...)
   map <silent><buffer> <     :python projectTree.get_prev_open_node()<cr>
   map <silent><buffer> >     :python projectTree.get_next_open_node()<cr>
 
-  map <silent><buffer> DD     :python projectTree.delete_node()<cr>
-  map <silent><buffer> Dm     :python projectTree.delete_marked_node()<cr>
+  map <silent><buffer> @     :python projectTree.gotoBookmark()<cr>
+  map <silent><buffer> DD    :python projectTree.delete_node()<cr>
+  map <silent><buffer> Dm    :python projectTree.delete_marked_node()<cr>
   map <silent><buffer> A     :python projectTree.add_node()<cr>
 
   map <silent><buffer> ya    :python projectTree.yank_node_path()<cr>
