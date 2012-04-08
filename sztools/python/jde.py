@@ -463,8 +463,13 @@ class EditUtil(object):
         expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
         if not expTokens :
             return 
-        varName = expTokens[0]
+        if len(expTokens) == 1 :
+            varName = "this"
+        else :
+            varName = expTokens[0]
+
         endTokenIndex = 0 if len(expTokens)==1 else -1
+        #try find in local file first
         if len(expTokens) == 1 or (len(expTokens) == 3  and varName == "this"):
             if len(expTokens) ==1 :
                 memberName = expTokens[0]
@@ -688,7 +693,10 @@ class EditUtil(object):
         dotExpParser = Parser.getJavaDotExpParser()
         expTokens = dotExpParser.searchString(line[0:tokenEndCol])[0]
         if not expTokens : return 
-        varName = expTokens[0]
+        if len(expTokens) == 1 :
+            varName = "this"
+        else :
+            varName = expTokens[0]
         endTokenIndex = 0 if len(expTokens)==1 else -1
 
         if len(expTokens) == 1 or (len(expTokens) == 3  and varName == "this"):
