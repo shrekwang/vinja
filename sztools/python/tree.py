@@ -380,7 +380,13 @@ class ProjectRootNode(NormalDirNode):
             kind = entry.get("kind")
             sourcepath = entry.get("sourcepath")
             if kind == "var" and sourcepath :
-                    var_key = sourcepath[0: sourcepath.find("/")]
+                if sourcepath.startswith("/"):
+                    sourcepath = sourcepath[1:]
+                var_key = sourcepath[0: sourcepath.find("/")]
+                var_path = self.var_dict.get(var_key)
+                if not var_path :
+                    logging.debug("var %s not exist in ~/.sztools/vars.txt" % var_key)
+                else :
                     abpath = sourcepath.replace(var_key, self.var_dict.get(var_key))
                     self.lib_srcs.append(abpath)
             elif kind == "lib" and sourcepath :

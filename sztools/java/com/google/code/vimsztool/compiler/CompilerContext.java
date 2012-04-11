@@ -56,6 +56,7 @@ public class CompilerContext {
 		return new CompilerContext(classPathXml);
 	}
 	
+	@SuppressWarnings("deprecation")
 	public CompilerContext(String classPathXml) {
 		
 		encoding = pref.getValue(Preference.JDE_COMPILE_ENCODING);
@@ -147,6 +148,7 @@ public class CompilerContext {
 			
 	}
 	
+	@SuppressWarnings("deprecation")
 	private void addUserLib(String entryPath) {
 		int userLibIndex = entryPath.indexOf("USER_LIBRARY");
 		if (userLibIndex > -1 ) {
@@ -163,6 +165,7 @@ public class CompilerContext {
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	private void initClassPath(String classPathXml) {
 		List<ClassPathEntry> classPathEntries=parseClassPathXmlFile(classPathXml);
 		
@@ -197,24 +200,33 @@ public class CompilerContext {
 			} else if (entry.kind.equals("var")) {
 				String entryPath = entry.path;
 				String sourcePath = entry.sourcepath;
-				String varName = entryPath ;
+				String libVarName = entryPath ;
+				String srcVarName = sourcePath;
 				if (entryPath.indexOf("/") > 0) {
-					varName = entryPath.substring(0, entryPath.indexOf("/"));
+					libVarName = entryPath.substring(0, entryPath.indexOf("/"));
 				}
-				String varValue = VarsConfiger.getVarValue(varName	);
+				if (sourcePath.startsWith("/")) {
+					sourcePath = sourcePath.substring(1);
+				}
+				if (sourcePath.indexOf("/")>0) {
+					srcVarName = sourcePath.substring(0, sourcePath.indexOf("/"));
+				}
+				String varValue = VarsConfiger.getVarValue(libVarName);
+				String srcVarValue = VarsConfiger.getVarValue(srcVarName);
 				if (varValue == null  ) {
-					log.info(varName + " is not properly configured in vars.txt");
+					log.info(libVarName + " is not properly configured in vars.txt");
 					continue;
 				}
-				entryPath = entryPath.replace(varName, varValue);
-				sourcePath = sourcePath.replace(varName, varValue);
+				if (varValue !=null) entryPath = entryPath.replace(libVarName, varValue);
+				if (srcVarValue !=null) sourcePath = sourcePath.replace(srcVarName, srcVarValue);
+				
 				File libFile = new File(entryPath);
 				if (!libFile.exists())  {
 					log.info(entryPath + " in classpath not exists.");
 					continue;
 				}
 				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {}
-				if (entry.sourcepath !=null) {
+				if (sourcePath !=null && !sourcePath.equals("")) {
 					libSrcLocations.add(sourcePath);
 				}
 			}
