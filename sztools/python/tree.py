@@ -548,17 +548,22 @@ class ProjectTree(object):
         text = VimUtil.getInput("enter string to be searched: ")
         if not text :
             return
+        if text.startswith("/"):
+            text = re.compile(text[1:-1])
         node = self.get_selected_node()
         if not node.isDirectory :
             return 
         result = []
+
+        re_type = type(re.compile(""))
         def _search_node(node,text) :
             if not node.isDirectory :
                 content = node.get_content()
                 file_path = node.get_uri_path()
                 for index,line in enumerate(content) :
-                    if line.find(text) > -1 :
-                        result.append([file_path,str(index+1),line.replace("\n","")])
+                    if (isinstance(text,str) and line.find(text) > -1 ) \
+                            or (isinstance(text,re_type) and text.search(line)) :
+                            result.append([file_path,str(index+1),line.replace("\n","")])
             else :
                 for subnode in node.get_children():
                     _search_node(subnode, text)
@@ -574,6 +579,7 @@ class ProjectTree(object):
             qflist_str = "[" + ",".join([EditUtil.reprDictInDoubleQuote(item) for item in qflist])+"]" 
             vim.command("call setqflist(%s)" % qflist_str)
             vim.command("cwindow")
+            vim.command("exec 'wincmd w'")
         else :
             print "can't find any reference location."
 
