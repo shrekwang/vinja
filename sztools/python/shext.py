@@ -165,7 +165,8 @@ class LsCmd(object):
         if pathname.startswith("/") or re.match("^.:.*",pathname) :
             abspath = pathname
         elif pathname.startswith("~"):
-            abspath = os.path.expanduser(pathname)
+            rtlpath = "" if len(pathname) < 2 else pathname[2:]
+            abspath = os.path.join(os.path.expanduser("~"),rtlpath)
         else :
             abspath = os.path.join(os.getcwd(),pathname)
 
@@ -1250,7 +1251,8 @@ class PathResolver(object):
     def resolve(self,path):
         path = path.strip()
         if path.startswith("~"):
-            abspath = os.path.join(os.path.expanduser("~"),path[1:])
+            rtlpath = "" if len(path) < 2 else path[2:]
+            abspath = os.path.join(os.path.expanduser("~"),rtlpath)
             path = abspath
         else :
             abspath = os.path.join(os.getcwd(),path)
