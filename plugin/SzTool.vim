@@ -191,11 +191,16 @@ function! Dbext()
   "setlocal ignorecase
   call SetTabPageName("Dbext")
   python Dbext.runApp()
-  map <buffer><silent>,,  :python dbext.queryVisualSQL()<cr>
-  map <buffer><silent>,gs :python dbext.executeOneStatement()<cr>
+
+  vmap <buffer><silent>,,  :python dbext.queryVisualSQL()<cr>
+  imap <buffer><silent>,,  <C-o>:python dbext.executeOneStatement("line")<cr>
+  nmap <buffer><silent>,,  :python dbext.executeOneStatement("line")<cr>
+
+  map <buffer><silent>,gs :python dbext.executeOneStatement("visual")<cr>
   map <buffer><silent>,go :python dbext.promptDbOption()<cr>
   map <buffer><silent>,gc :python dbext.promptTempOption()<cr>
-  map <buffer><silent>,lt :python QueryUtil.queryTables()<cr>
+  map <buffer><silent>,lt :python QueryUtil.queryTables(True)<cr>
+  map <buffer><silent>,la :python QueryUtil.queryTables(False)<cr>
   map <buffer><silent>,ld :python QueryUtil.queryDataBases()<cr>
   map <buffer><silent>,dt :python QueryUtil.descTable()<cr>
   map <buffer><silent>,gg :python QueryUtil.generateSQL()<cr>

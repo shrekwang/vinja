@@ -34,8 +34,10 @@ class QueryUtil(object):
             output(dbext.format(columns, result), outBuffer)
 
     @staticmethod
-    def queryTables():
-        name = MiscUtil.getVisualBlock()
+    def queryTables(visualMode = False):
+        name = ""
+        if visualMode :
+            name = MiscUtil.getVisualBlock()
         columns , result = QueryUtil.queryTablesByName(name)
         outBuffer = Dbext.getOutputBuffer()
         if not columns :
@@ -64,8 +66,8 @@ class QueryUtil(object):
                 where table_name like '%%%s%%' """ 
             sql = sql % name.upper()
         elif server_type == "mssql":
-            sql = """SELECT name FROM sysobjects Where 
-                name like '%%%s%%' and type = 'U' order by name"""
+            sql = """SELECT  table_schema+'.'+table_name as table_name FROM 
+                INFORMATION_SCHEMA.TABLES where table_name like '%%%s%%' order by table_name """
             sql = sql % name
         elif server_type == "mysql":
             sql = """ SELECT table_name FROM INFORMATION_SCHEMA.TABLES
@@ -93,23 +95,32 @@ class QueryUtil(object):
                 where table_name = '%s' and owner = '%s' """ % (name.upper(), schema.upper())
 
         elif server_type == "mssql":
-            sql = """select syscolumns.name column_name,systypes.name
-                        data_type,syscolumns.length
-                        from sysobjects
-                            join syscolumns on sysobjects.id = syscolumns.id
-                            join systypes on syscolumns.xtype = systypes.xtype
-                        where sysobjects.name = '""" + name + "'"
+            sql = """ select column_name, data_type,  character_maximum_length , is_nullable
+                        from information_schema.columns
+                        where table_schema+'.'+table_name = '%s';
+
+                        select a.table_schema+'.'+a.table_name as table_name ,a.constraint_name,
+                        a.column_name,b.constraint_type from 
+                        information_schema.key_column_usage a, information_schema.table_constraints b 
+                        where a.table_schema=b.table_schema 
+                        and a.table_name=b.table_name
+                        and a.constraint_name = b.constraint_name
+                        and a.table_schema+'.'+a.table_name = '%s' """ % (name,name)
 
         elif server_type == "mysql":
             sql = """ SELECT COLUMN_NAME, DATA_TYPE,  CHARACTER_MAXIMUM_LENGTH , IS_NULLABLE
                           FROM INFORMATION_SCHEMA.COLUMNS
                           WHERE table_name = '%s' and table_schema=database() """ % name
 
-        columns,result = dbext.query(sql)
-        if not columns :
-            output(result,outBuffer)
-        else :
-            output(dbext.format(columns, result), outBuffer)
+        append = False
+        for index,item in enumerate(sql.split(";")):
+            if item.strip() != "" :
+                columns,result = dbext.query(item)
+                if columns :
+                    result = dbext.format(columns,result)
+                if index!=0 :
+                    append = True
+                output(result,outBuffer,append)
 
     @staticmethod
     def generateSQL():
@@ -167,8 +178,13 @@ class Dbext(object):
         listwinnr = str(vim.eval("winnr('#')"))
         vim.command("exec '" + listwinnr + " wincmd w'")
 
-    def executeOneStatement(self):
-        sql = MiscUtil.getVisualBlock()
+    def executeOneStatement(self, sql_type):
+        if sql_type == "visual" :
+            sql = MiscUtil.getVisualBlock()
+        else :
+            (row,col) = vim.current.window.cursor
+            vim_buffer = vim.current.buffer
+            sql = vim_buffer[row-1]
         outBuffer = Dbext.getOutputBuffer()
         columns,result = dbext.query(sql)
         if columns :
@@ -513,8 +529,9 @@ class SzDbCompletion(object):
         elif server_type == "mssql":
             tableCon = "','".join(tableList)
             tableCon = "'%s'" % tableCon
-            sql = """select syscolumns.name column_name from sysobjects
-                join syscolumns on sysobjects.id = syscolumns.id where sysobjects.name in (%s) """ % tableCon
+            sql = """select column_name, data_type,  character_maximum_length , is_nullable
+                          from information_schema.columns
+                          WHERE table_schema+'.'+table_name in (%s) """ % tableCon
         elif server_type == "mysql":
             tableCon = "','".join(tableList)
             tableCon = "'%s'" % tableCon
