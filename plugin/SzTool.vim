@@ -371,6 +371,7 @@ function ProjectTree(...)
   map <silent><buffer> O     :python projectTree.recursive_open_node()<cr>
   map <silent><buffer> t     :python projectTree.open_selected_node("tabnew")<cr>
   map <silent><buffer> i     :python projectTree.open_selected_node("split")<cr>
+  map <silent><buffer> go    :python projectTree.preview_selected_node()<cr>
   map <silent><buffer> r     :python projectTree.refresh_selected_node()<cr>
   map <silent><buffer> x     :python projectTree.close_parent_node()<cr>
   map <silent><buffer> s     :python projectTree.filter_display_node()<cr>

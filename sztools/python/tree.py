@@ -506,6 +506,11 @@ class ProjectTree(object):
                 node = node.get_child(section)
             return node
 
+    def preview_selected_node(self, edit_cmd = "edit"):
+        self.open_selected_node(edit_cmd)
+        tab_id = self._get_tab_id()
+        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
+
     def open_selected_node(self, edit_cmd = "edit"):
         node = self.get_selected_node()
         (row,col) = vim.current.window.cursor
