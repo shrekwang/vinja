@@ -513,8 +513,8 @@ function InitJavaSetting()
   map <C-p> :cp<cr>
   setlocal omnifunc=SzJdeCompletion
   "set cmdheight=2
-  au CursorHold <buffer> :python HighlightManager.displayMsg()
-  au CursorMoved <buffer> :python HighlightManager.displayMsg()
+  "au CursorHold <buffer> :python HighlightManager.displayMsg()
+  "au CursorMoved <buffer> :python HighlightManager.displayMsg()
   python EditUtil.createSkeleton()
   if exists("*SuperTabSetDefaultCompletionType")
     call SuperTabSetDefaultCompletionType("<c-x><c-o>")
@@ -529,6 +529,9 @@ function! Jdext()
   "autocmd BufReadPost   *.java    python HighlightManager.highlightCurrentBuf()
   autocmd BufWritePost  *.java    python Compiler.compileCurrentFile()
   autocmd BufWritePost  *         python Compiler.copyResource()
+
+  autocmd CursorHold *.java  :python HighlightManager.displayMsg()
+  autocmd CursorMoved *.java :python HighlightManager.displayMsg()
 
   command! -nargs=0   BuildProject     :python Compiler.compileCurrentFile(buildProject=True)
   command! -nargs=0   DumpClass        :python EditUtil.dumpClassInfo()
