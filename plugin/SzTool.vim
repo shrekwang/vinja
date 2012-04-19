@@ -472,8 +472,8 @@ function FetchResult(...)
   redraw
 endfunction
 
-function FetchDebugOutput(line)
-  python VimUtil.writeToSzToolBuffer("JdeConsole",vim.eval("a:line"),True)
+function FetchJdbResult()
+  python jdb.fetchJdbResult()
   redraw
 endfunction
 

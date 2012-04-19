@@ -7,12 +7,16 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FilenameUtils;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.CompilerContextManager;
 import com.google.code.vimsztool.util.Preference;
+import com.google.code.vimsztool.util.StreamGobbler;
 import com.google.code.vimsztool.util.VjdeUtil;
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.IncompatibleThreadStateException;
@@ -39,6 +43,8 @@ public class Debugger {
 	private String vimServerName = "";
 	private CompilerContext compilerContext =null;
 	private Preference pref = Preference.getInstance();
+	private StringBuffer buffer = new StringBuffer();
+	private ScheduledExecutorService exec = null;
 
 	private Debugger() {
 	}
@@ -46,6 +52,13 @@ public class Debugger {
 	public static Debugger getInstance() {
 		return instance;
 	}
+	
+	public synchronized String fetchResult() {
+		String result =this.buffer.toString();
+		this.buffer.delete(0, buffer.length());
+		return result;
+	}
+
 
 	private void startProcess() {
 		if (process == null) {
@@ -58,10 +71,17 @@ public class Debugger {
 		eventHandler.start();
 
 		if (process !=null) {
-			StreamRedirector outRedirector = new StreamRedirector(process .getInputStream(), getVimServerName());
-			StreamRedirector errRedirector = new StreamRedirector(process .getErrorStream(), getVimServerName());
-			outRedirector.start();
-			errRedirector.start();
+			//StreamRedirector outRedirector = new StreamRedirector(process .getInputStream(), getVimServerName());
+			//StreamRedirector errRedirector = new StreamRedirector(process .getErrorStream(), getVimServerName());
+			//outRedirector.start();
+			//errRedirector.start();
+			
+			StreamGobbler stdOut=new StreamGobbler(buffer, process.getInputStream());
+			StreamGobbler stdErr=new StreamGobbler(buffer, process.getErrorStream());
+			stdOut.start();
+			stdErr.start();
+			exec = Executors.newScheduledThreadPool(1);
+	        exec.scheduleAtFixedRate(new BufferChecker(), 1, 100, TimeUnit.MILLISECONDS);
 		}
 	}
 	
@@ -296,6 +316,9 @@ public class Debugger {
 	private void clean() {
 		SuspendThreadStack suspendThreadStack = SuspendThreadStack.getInstance();
 		suspendThreadStack.clean();
+		if (this.exec != null) {
+			exec.shutdown();
+		}
 	}
 	
 	public VirtualMachine getVm() {
@@ -380,6 +403,10 @@ public class Debugger {
 		cmd.append(" -Dcatalina.base="+tomcatHome);
 		cmd.append(" -Dcatalina.home="+tomcatHome);
 		cmd.append(" -Djava.io.tmpdir="+FilenameUtils.concat(tomcatHome, "temp"));
+		String customOpts = pref.getValue(Preference.TOMCAT_JVMOPTS);
+		if (customOpts != null ) {
+			cmd.append(" " + customOpts);
+		}
 		cmd.append(" -cp " + FilenameUtils.concat(tomcatHome, "bin/bootstrap.jar"));
 		cmd.append(" org.apache.catalina.startup.Bootstrap  start");
 		
@@ -542,5 +569,14 @@ public class Debugger {
 		return connector;
 	}
 	
+	class BufferChecker implements Runnable {
+		public void run() {
+			synchronized (buffer) {
+				if ( ! (buffer.length() > 0)) return; 
+				String[] args = new String[]{} ;
+				VjdeUtil.callVimFunc(vimServerName, "FetchJdbResult", args);
+			}
+		}
+	}
 }
 	 

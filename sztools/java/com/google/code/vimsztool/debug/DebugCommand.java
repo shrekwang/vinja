@@ -18,7 +18,7 @@ public class DebugCommand  extends SzjdeCommand {
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
-		"bpa","setvalue","runtomcat"
+		"bpa","setvalue","runtomcat","fetchJdbResult"
 		};
 	
 	public String execute() {
@@ -121,6 +121,8 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult =  ExpEval.setFieldValue(name,value);
 		} else if (debugCmd.equals("runtomcat")) {
 			actionResult = debugger.launchTomcat();
+		} else if (debugCmd.equals("fetchJdbResult")) {
+			actionResult = debugger.fetchResult();
 		}
 		return actionResult;
 	}

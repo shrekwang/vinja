@@ -1192,12 +1192,6 @@ class Runner(object):
         else :
             print "can't find the build.xml."
 
-    @staticmethod
-    def fetchResult(guid):
-        resultText = BasicTalker.fetchResult(guid)
-        lines = resultText.split("\n")
-        VimUtil.writeToSzToolBuffer("JdeConsole",lines)
-
 class AutoImport(object):
 
     @staticmethod
@@ -2226,6 +2220,12 @@ class Jdb(object):
         vim.command("call SwitchToSzToolView('Jdb')")
         if insertMode :
             self.appendPrompt()
+
+    def fetchJdbResult(self):
+        logging.debug("fetch jdb result")
+        resultText = JdbTalker.submit("fetchJdbResult",self.class_path_xml,self.serverName)
+        lines = resultText.split("\n")
+        VimUtil.writeToSzToolBuffer("JdeConsole",lines,append=True)
 
 class InspectorVarParser():
 
