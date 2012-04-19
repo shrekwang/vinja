@@ -28,6 +28,7 @@ public class Preference {
 	
 	public static final String TOMCAT_HOME = "tomcat_home";
 	public static final String TOMCAT_VERSION = "tomcat_version";
+	public static final String TOMCAT_JVMOPTS = "tomcat_jvmopts";
 
 	
 	public static Preference getInstance() {
