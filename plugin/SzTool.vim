@@ -479,7 +479,7 @@ endfunction
 
 function HandleJdiEvent(...)
   python jdb.handleJdiEvent(vim.eval("a:000"))
-  redraw
+  "redraw
 endfunction
 
 

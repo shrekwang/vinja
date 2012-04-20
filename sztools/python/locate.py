@@ -58,6 +58,12 @@ class QuickLocater(object) :
         if self.cursor_bg == None :
             self.cursor_bg = "white"
 
+        #save each window height
+        winnr = vim.eval("winnr('$')")
+        self.winheights = []
+        for i in range(1,int(winnr)):
+            self.winheights.append(vim.eval("winheight('%s')" % str(i)))
+
     def restore_env(self):
         vim.command("set timeoutlen=%s" % self.timeoutlen)
 
@@ -77,6 +83,12 @@ class QuickLocater(object) :
 
         vim.command("set guicursor=%s" % self.guicursor)
         vim.command("highlight Cursor guifg=black guibg=%s" % (self.cursor_bg))
+
+
+    def restore_winsize(self):
+        for i in range(0,len(self.winheights)):
+            vim.command("exec '%s wincmd w'" % str(i+1) )
+            vim.command("resize %s" % self.winheights[i])
 
     @staticmethod
     def runApp(content_manager ):
@@ -168,6 +180,9 @@ class QuickLocater(object) :
         line = work_buffer[row-1]
         self.clean()
         self.content_manager.open_content(line, mode)
+        if mode == "local":
+            self.restore_winsize()
+            vim.command("exec '%s wincmd w'" % self.last_winnr)
 
     def on_key_pressed(self, key):
         if key == "Tab" :
