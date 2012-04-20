@@ -315,9 +315,23 @@ public class ExpEval {
 			return Boolean.TRUE;
 		case JavaParser.NULL :
 			return null;
+		case JavaParser.THIS:
+			return evalThisObject();
 			
 		default:
 			throw new ExpressionEvalException("parse expression error.");
+		}
+	}
+	
+	private static Object evalThisObject() {
+		try {
+			ThreadReference threadRef = checkAndGetCurrentThread();
+			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			ObjectReference thisObj = stackFrame.thisObject();
+			return thisObj;
+		} catch (Throwable e) {
+			throw new ExpressionEvalException("parse expression error. msg:" + e.getMessage());
 		}
 	}
 	
@@ -379,7 +393,7 @@ public class ExpEval {
     }
 	
 	private static Value evalJdiInvoke(CommonTree node) {
-		CommonTree dotNode = (CommonTree)node.getChild(0);
+		CommonTree firstNode = (CommonTree)node.getChild(0);
 		CommonTree argNode = (CommonTree)node.getChild(1);
 		int argCount = argNode.getChildCount();
 		List<Value> arguments = new ArrayList<Value>();
@@ -391,24 +405,30 @@ public class ExpEval {
 			}
 			
 		}
+		
+		if (firstNode.getType() == JavaParser.DOT) {
+			Object var = null;
+			try {
+				var = evalTreeNode((CommonTree)firstNode.getChild(0));
+			} catch (VariableOrFieldNotFoundException e) {
+				var = getClassType(firstNode.getChild(0).getText());
 				
-		Object var = null;
-		try {
-			var = evalTreeNode((CommonTree)dotNode.getChild(0));
-		} catch (VariableOrFieldNotFoundException e) {
-			var = getClassType(dotNode.getChild(0).getText());
-			
+			}
+			String methodName = firstNode.getChild(1).getText();
+			if (var instanceof ObjectReference || var instanceof ReferenceType) {
+				return invoke(var,methodName,arguments);
+			}
+			if (var instanceof String) {
+				Debugger debugger = Debugger.getInstance();
+				VirtualMachine vm = debugger.getVm();
+				return invoke(vm.mirrorOf((String)var),methodName,arguments);
+			}
+			return null;
+		} else {
+			String methodName = firstNode.getText();
+			ObjectReference thisObj = (ObjectReference)evalThisObject();
+			return invoke(thisObj,methodName,arguments);
 		}
-		String methodName = dotNode.getChild(1).getText();
-		if (var instanceof ObjectReference || var instanceof ReferenceType) {
-			return invoke(var,methodName,arguments);
-		}
-		if (var instanceof String) {
-			Debugger debugger = Debugger.getInstance();
-			VirtualMachine vm = debugger.getVm();
-			return invoke(vm.mirrorOf((String)var),methodName,arguments);
-		}
-		return null;
 	}
 	
 	
