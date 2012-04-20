@@ -15,6 +15,18 @@ HOST = 'localhost'
 PORT = 9527
 END_TOKEN = "==end=="
 
+class PathUtil(object):
+    @staticmethod
+    def same_path(path1, path2):
+        if path1 == None and path2 == None :
+            return True
+        if path1 == None or path2 == None :
+            return False
+        path1 = path1.replace("\\","#")
+        path1 = path1.replace("/","#")
+        path2 = path2.replace("\\","#")
+        path2 = path2.replace("/","#")
+        return path1 == path2
 
 class ZipUtil(object):
     @staticmethod

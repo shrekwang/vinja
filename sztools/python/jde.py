@@ -9,7 +9,7 @@ import shutil
 from subprocess import Popen
 from string import Template
 import difflib
-from common import output,SzToolsConfig,MiscUtil,VimUtil,BasicTalker,ZipUtil
+from common import output,SzToolsConfig,MiscUtil,VimUtil,BasicTalker,ZipUtil,PathUtil
 
 from pyparsing import *
 from xml.etree.ElementTree import *
@@ -2005,6 +2005,7 @@ class Jdb(object):
             row = len(buffer)
             vim.current.window.cursor = (row, 0)
             vim.command("call SwitchToSzToolView('Jdb')")
+            vim.command("redraw")
 
     def switchSourceBuffer(self):
         for i in range(1,6):
@@ -2029,7 +2030,8 @@ class Jdb(object):
         
         bufnr=str(vim.eval("bufnr('%')"))
         if os.path.exists(abs_path) or abs_path.startswith("jar:") :
-            if abs_path != vim.current.buffer.name :
+            if not PathUtil.same_path(abs_path, vim.current.buffer.name):
+                #if abs_path != vim.current.buffer.name :
                 vim.command("edit %s" % abs_path)
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
@@ -2223,7 +2225,6 @@ class Jdb(object):
             self.appendPrompt()
 
     def fetchJdbResult(self):
-        logging.debug("fetch jdb result")
         resultText = JdbTalker.submit("fetchJdbResult",self.class_path_xml,self.serverName)
         if resultText == "" :
             return 
