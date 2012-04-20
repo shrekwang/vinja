@@ -178,7 +178,7 @@ def output(content,buffer=None,append=False):
         lines = lines[:-1]
     rowList = str(lines).split("\n")
     for index,line in enumerate(rowList):  
-        if index == 0 and not append :
+        if index == 0 and len(buffer)==1 and buffer[0] == "" :
             buffer[0]=line
         else :
             buffer.append(line)  

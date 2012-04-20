@@ -474,6 +474,56 @@ class LocateCmd(object):
                     result.append([file_name,str(index+1),line.replace("\n","")])
         return result
 
+class JdeUtilCmd(object):
+
+    def do_command(self,cmd_array):
+        if cmd_array[0] == "start" : 
+            self.jde_start()
+        elif cmd_array[0] == "help" :
+            self.jde_help()
+        elif cmd_array[0] == "project" :
+            self.do_project_command(cmd_array[1:])
+        else :
+            Shext.stdout("not recognized jde command,please run 'jde help' .")
+            return
+
+    def do_project_command(self, cmd_array):
+        if cmd_array[0] == "init" :
+            self.jde_create_project()
+        elif cmd_array[0] == "index" :
+            Shext.stdout("not implement yet.")
+        else :
+            Shext.stdout("not recognized jde command.")
+            return
+
+    def jde_help(self):
+        help_text =[
+                "jde start ---> start jde mode.",
+                "jde stop  ---> no, you can't stop jde mode unless you quit vim :)" ,
+                "jde help  ---> print this help.",
+                "jde project init  --> create .classpath file and src dir.",
+                "jde project index --> index current project." ]
+        Shext.stdout(help_text)
+
+    def _jde_has_started(self):
+        if vim.eval("exists(':Jdb')") != "2":
+            Shext.stdout("jde mode not started yet. please run 'jde start'.")
+            return False
+        return True
+
+    def jde_start(self):
+        if self._jde_has_started() : 
+            Shext.stdout("jde mode has started already.")
+            return
+        vim.command("call Jdext()")
+        Shext.stdout("jde mode started.")
+
+    def jde_create_project(self):
+        if not self._jde_has_started() : return
+        ProjectManager.projectInit()
+        Shext.stdout("project created.")
+
+
 class ZipUtilCmd(object):
 
     def do_command(self,cmd_array):
@@ -525,6 +575,7 @@ class ShUtil(object):
         shext_locatedb_path = os.path.join(SzToolsConfig.getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
         self.zipcmd = ZipUtilCmd()
+        self.jdecmd = JdeUtilCmd()
         self.yank_buffer = yank_buffer
         self.cd_history = [os.getcwd()]
         self.pathResolver = PathResolver(self)
@@ -534,6 +585,9 @@ class ShUtil(object):
 
     def dozip(self,cmd_array):
         self.zipcmd.do_command(cmd_array)
+
+    def dojde(self,cmd_array):
+        self.jdecmd.do_command(cmd_array)
 
     def updatedb(self,cmd_array):
         self.locatecmd.updatedb(cmd_array)
@@ -1107,6 +1161,8 @@ class Shext(object):
             self.locatedb(cmd[1:])
         elif cmd[0] == "zu" :
             self.shUtil.dozip(cmd[1:])
+        elif cmd[0] == "jde":
+            self.shUtil.dojde(cmd[1:])
 
         elif cmd[0] == "touch" :
             self.shUtil.touch(cmd[1:])
