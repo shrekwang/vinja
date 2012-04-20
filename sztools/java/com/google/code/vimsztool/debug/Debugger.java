@@ -81,7 +81,7 @@ public class Debugger {
 			stdOut.start();
 			stdErr.start();
 			exec = Executors.newScheduledThreadPool(1);
-	        exec.scheduleAtFixedRate(new BufferChecker(), 1, 100, TimeUnit.MILLISECONDS);
+	        exec.scheduleAtFixedRate(new BufferChecker(), 1, 70, TimeUnit.MILLISECONDS);
 		}
 	}
 	

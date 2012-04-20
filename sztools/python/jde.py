@@ -2046,6 +2046,7 @@ class Jdb(object):
             if lineNum < winStartRow or lineNum > winEndRow :
                 vim.command("normal %sG" % str(lineNum))
                 vim.command("normal zt")
+                vim.command("redraw")
 
         else :
             vim.command("edit .temp_src")
@@ -2224,6 +2225,8 @@ class Jdb(object):
     def fetchJdbResult(self):
         logging.debug("fetch jdb result")
         resultText = JdbTalker.submit("fetchJdbResult",self.class_path_xml,self.serverName)
+        if resultText == "" :
+            return 
         lines = resultText.split("\n")
         VimUtil.writeToSzToolBuffer("JdeConsole",lines,append=True)
 
