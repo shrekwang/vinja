@@ -2193,11 +2193,15 @@ class Jdb(object):
             self.closeBuffer()
             return 
 
+        # run or runtomcat command.
         if cmdLine.startswith("run"):
             self.switchSourceBuffer()
             # 30% height
             height = vim.eval("winheight(0) / 10 * 3")
             vim.command("call SwitchToSzToolView('JdeConsole','belowright','%s')" % height)
+            #clear buffer content
+            vim.current.buffer[:] = None
+
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
