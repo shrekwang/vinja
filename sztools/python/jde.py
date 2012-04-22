@@ -1983,6 +1983,7 @@ class Jdb(object):
         #vim.command("startinsert")
         vim.command("imap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>")
         vim.command("nnoremap <buffer><silent><cr>   :python jdb.executeCmd(insertMode=False)<cr>")
+        vim.command("nnoremap <buffer><silent>o      :python jdb.appendPrompt()<cr>")
 
     def __str__(self):
 
