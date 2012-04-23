@@ -101,6 +101,7 @@ function! SwitchToSzToolView(...)
   else    
     exec 'silent! '.direct.' '.height.'split SzToolView_' . viewname    
     exec "e SzToolView_" . viewname    
+    exec 'setlocal statusline=\ '.viewname
     call SetSzToolBuf()
   endif    
 endfunction    
@@ -114,6 +115,7 @@ function! SwitchToSzToolViewVertical(viewname)
   else    
     exec 'silent! belowright vsplit SzToolView_' . a:viewname    
     exec "e SzToolView_" . a:viewname    
+    exec 'setlocal statusline=\ '. a:viewname
     call SetSzToolBuf()
   endif    
 endfunction    
@@ -145,6 +147,7 @@ function! Shext()
   endif
   call RunSzPyfile("shext.py")
   file SzToolView_cmd_buffer
+  exec 'setlocal statusline=\ shext_cmd_buffer'
   call SetTabPageName("Shext")
   call SetSzToolBuf()
   nnoremap <buffer><silent><cr>   :python shext.executeCmd(insertMode=False)<cr>

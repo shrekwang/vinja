@@ -1121,6 +1121,7 @@ class ProjectTree(object):
         else :
             vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree_%s')" % tab_id )
             vim.command("set filetype=ztree")
+            vim.command("setlocal statusline=\ ProjectTree")
             vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
             projectTree.render_tree()
             if current_file_name != None :
