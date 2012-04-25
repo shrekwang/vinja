@@ -2,4 +2,8 @@ sztools/classes
 sztools/lib/szjde.jar
 *.pyc
 .classpath
+doc/meta/*.aux
+doc/meta/*.log
+doc/meta/*.out
+doc/meta/*.pdf
 
