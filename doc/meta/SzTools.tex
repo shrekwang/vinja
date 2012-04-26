@@ -1,5 +1,6 @@
 \documentclass[oneside,openany]{book}
 
+  \usepackage{color}
   \usepackage{booktabs}
   \usepackage{mdframed}
   \usepackage{titlesec}
@@ -12,8 +13,9 @@
   \setCJKmainfont[BoldFont={SimHei}]{SimSun}
 
   \title{Vim-Sztools使用手册}
-  \author{左晃右过 shrek.wang挨特gmail.com}
+  \author{左晃右过<shrek.wang挨特gmail.com>}
 
+  \setlength{\parskip}{0.5em}
   \restylefloat{table}
   \restylefloat{figure}
   \pagestyle{fancy}
@@ -56,90 +58,91 @@
     \large\textbf{工欲善其事，必先利其器}
   \end{center}
 
-  对于开发人员来说,能选好一个工具并用到纯熟,无疑对工作效率有很好的提升. 文本编辑器,编译器,调试
-器就是开发必不可少的几个工具.  Vim, 编辑器中的战斗鸡,就是功能最强大的文本编辑器之一(另一个是Emacs). 
-但是Vim中可选的java开发类插件并不多, 可能是用Vim做java开发的程序员太少了吧. 许多Java程序员现在都转向eclipse了,
-不过eclipse除了其臭名昭著的体积庞大,运行慢等缺点之外, 其编辑功能跟vim比起来,实在连鸡肋都算不上. 
+  对于开发人员来说，能选好一个工具并用到纯熟，无疑对工作效率有很好的提升。 文本编辑器，编译器，调试
+器就是开发必不可少的几个工具。  Vim是功能最强大的文本编辑器之一(另一个是Emacs)。 
+但是Vim中可选的java开发类插件并不多， 可能是用Vim做java开发的程序员太少了。 许多Java程序员现在都用的是eclipse，jbuilder之类
+的IDE， 不过eclipse除了其臭名昭著的体积庞大，运行慢等缺点之外， 其编辑功能跟vim比起来，实在连鸡肋都算不上。 
 
-  其实在vim官网已经有一个比较著名的java开发插件,VJDE. 另外eclim直接将eclipse做为后端, 将很多功能
-直接引入了vim. 另外eclipse下也有形形色色的仿vim插件(参见附录),为什么还要再作一个插件Vim-Sztoo呢
+  其实在vim官网已经有一个比较著名的java开发插件，VJDE。 另外eclim直接将eclipse做为后端， 将很多功能
+直接引入了vim。 另外eclipse下也有形形色色的仿vim插件(参见附录)，为什么还要再作一个插件Vim-Sztool呢
   
   \begin{enumerate}
-    \item Vim JDE每次补全都需调用外部java命令用反射来读取类信息,速度比较慢.eclim因为用eclipse作为后端, 速度也是偏慢.
-    \item 无法在vim中调试java程序.
+    \item VJDE每次补全都需调用外部java命令用反射来读取类信息，速度比较慢。eclim因为用eclipse作为后端， 速度也是偏慢。
+    \item 无法在vim中调试java程序。
     \item 此处省略n条理由...
   \end{enumerate}
 
-  相比于现有的java开发类插件,Vim-Sztool有自己的一些特色
+  相比于现有的java开发类插件，Vim-Sztool有自己的一些特色
   \begin{enumerate}
     \item 快速的补全(类相关信息缓存在Agent中)
-    \item java程序调试功能,可能是仅有的支持java调试的vim插件
-    \item 扩展的NerdTree树,显示项目树,支持显示项目引用的源码包(source jar).
-    \item 快速文件定位,类似于Eclipse中的open resource功能.
-    \item 源码跳转,支持跳转到source jar包中的文件.
-    \item 远程调试,可以连接到tomcat
+    \item java程序调试功能，可能是仅有的支持java调试的vim插件
+    \item 扩展的NerdTree树，显示项目树，支持显示项目引用的源码包(source jar)。
+    \item 快速文件定位，类似于Eclipse中的open resource功能。
+    \item 源码跳转，支持跳转到source jar包中的文件。
+    \item 远程调试
     \item 直接从自带jdb中启动tomcat
   \end{enumerate}
 
 \chapter{安装和配置}
   \section{需求}
-  Vim-Sztool是一个用python,java,vim脚本混合编写的插件, 要使此插件能运行,需求如下:
+  Vim-Sztool是一个用python，java，vim脚本混合编写的插件， 要使此插件能运行，需求如下:\newline
   软件:
     \begin{itemize}
-      \item vim7.3,只支持gvim版本
+      \item vim7.3，只支持gvim版本
       \item Jdk1.6以上
-      \item Python2.7 (2.6的也许可以运行),需安装pyparsing,BeautifulSoup,chardet模块
+      \item Python2.7 (2.6的也许可以运行)，需安装pyparsing，BeautifulSoup，chardet模块
     \end{itemize}
 
-  人件(我不知道对不对):
+  人件(好吧，我知道这么说不对):
     \begin{itemize}
-      \item 熟悉vim,懂一点vim script
-      \item 熟悉python, 会自己安装一些python模块,比如上面提到的pyparsing
-      \item 有用vim写java程序的需求,不满足就别折腾了
+      \item 熟悉vim，懂一点vim script
+      \item 熟悉python， 会自己安装一些python模块，比如上面提到的pyparsing
+      \item 有用vim写java程序的需求，没需求就别折腾了
     \end{itemize}
 
   \section{安装}
     \begin{enumerate}
-      \item 解压安装包, plugin目录覆盖到vim插件路径上,或
-      者设置runtimepath, 比如set runtimepath+=C:/project/vim-sztool
+      \item 解压安装包， plugin目录覆盖到vim插件路径上，或
+      者设置runtimepath， 比如
+      \begin{verbatim} set runtimepath+=D:\\soft\\vim-sztool \end{verbatim}
       \item 在vimrc中添加全局变量 g:sztool\_home
-      let g:sztool\_home="d:\\Program Files/vim/vimfiles/sztools"
+      \begin{verbatim} let g:sztool_home="D:\\soft\\vim-sztool\\sztools" \end{verbatim}
       \item 设置环境变量
-      JDK\_HOME,path(需要把gvim,python的可执行文件目录加到path中)
+      JDK\_HOME，path(需要把gvim，python的可执行文件目录加到path中)
     \end{enumerate}
-   如果安装成功,此时启动gvim,在系统托盘区会有个军刀的图标,这个是Agent程序,
-   说明已经安装成功了.
+   如果安装成功，此时启动gvim，在系统托盘区会有个军刀的图标，这个是Agent程序，
+   说明已经安装成功了。
 
   \section{配置}
-    Vim-Sztool的默认配置文件位于/sztools/share/conf目录下,一般不要改动此文件中的内容,
-  而是把文件复制到 ~/.sztools/目录下进行改动. Vim-Sztool会读取此两个目录下的内容,
-  优先级以home目录下的为高.
+    Vim-Sztool的默认配置文件位于安装目录的sztools/share/conf目录下，一般不要改动此文件中的内容，
+  而是把文件复制到 \~/.sztools/目录下进行改动。 Vim-Sztool会读取此两个目录下的内容，
+  优先级以home目录下的为高。
   \begin{description}
-    \item{sztools.cfg} 主要配置文件,用于配置jde的一些基本设置
+    \item{sztools.cfg} 主要配置文件，用于配置jde的一些基本设置
     \item{vars.txt} 配置.classpath文件中引用的变量
-    \item{stepfilters.txt} 配置jdb调试时,略过的一些package
+    \item{stepfilters.txt} 配置jdb调试时，略过的一些package
     \item{db.conf} 配置Dbext用到的数据库连接
   \end{description}
   
 
 \chapter{使用}
   \section{Shext}
-  Shext是一个仿shell的东西,启动后, vim会被split成上下两个buffer. 如图
-  \begin{figure}[H]%位置选项
+  Shext是一个仿shell的东西，启动后， vim会被split成上下两个buffer。 如图
+  \begin{figure}[htbp]%位置选项
   \centering
-  \includegraphics[bb=0 0 517 337,scale=.8]{shext.jpg}
+  \includegraphics[scale=0.5]{shext.jpg}
   \caption{Shext截图}
   \end{figure}
   
 
-  上面一个是命令编辑区, 用于编辑和运行命令. 下面一个是命令输出区,用于显示命令的输出.
+  上面一个是命令编辑区， 用于编辑和运行命令。 下面一个是命令输出区，用于显示命令的输出。
   \newline
-  Shext支持内置实现的一些的命令和系统的命令, 内置命令优先.
+  Shext支持内置实现的一些的命令和系统的命令， 内置命令优先。
   \newline
-  不支持交互式命令, 如ftp,mysql等 
+  不支持交互式命令， 如ftp，mysql等 
   \newline
   \begin{mdframed}[style=BestPracticeFrame]
-  最佳实践: 由于可能需要经常的切换window, 最好在vimrc中定义下列的map
+  最佳实践: 由于可能需要经常的切换window， 最好在vimrc中定义下列的map
     \begin{verbatim}
       map <C-j> <C-W>j
       map <C-k> <C-W>k
@@ -148,49 +151,50 @@
     \end{verbatim}
   \end{mdframed}
 
-  Shext启动后, 如果输入"/",如果对应的参数是目路路径, 则在命令输出buffer会显示
-对应路径的内容作为提示. 比如 
+  Shext启动后， 如果输入"/"，如果对应的参数是目路路径， 则在命令输出buffer会显示
+对应路径的内容作为提示。 比如 
   \begin{verbatim} cd c:/ \end{verbatim}
- 在"/"按下后, 会列出c:根目录的内容.(Shext默认在linux和win下都使用"/"作为目录分隔符)
+ 在"/"按下后， 会列出c:根目录的内容。(Shext默认在linux和win下都使用"/"作为目录分隔符)
 
-  在命令编辑区, 在insert模式下输入"\$n;;", 则会把输出buffer的第n行补全到当前命令行中.
-在某些条件下会比较有用.
+  在命令编辑区， 在insert模式下输入"\$n;;"， 则会把输出buffer的第n行补全到当前命令行中。
+在某些条件下会比较有用。
 
-  比如你可以先用 find --name *.java --text Apple 查找包含Apple的java文件, 在找到后,
-如果想编辑其中的第5个文件, 则可以用 "edit \$5;;<cr>" 来实现. 注意这个补全是带状态的,
-在\$5;;后,如果你还要编辑上一个文件,可以用<C-p>, 如果想编辑下一个文件,可以用<C-n>.
+  比如你可以先用 find --name *.java --text Apple 查找包含Apple的java文件， 在找到后，
+如果想编辑其中的第5个文件， 则可以用 "edit \$5;;<cr>" 来实现。 注意这个补全是带状态的，
+在\$5;;后，如果你还要编辑上一个文件，可以用<C-p>， 如果想编辑下一个文件，可以用<C-n>。
 
-  \subsection{内置命令:}
+
+  \subsection{内置命令}
 
   \begin{verbatim}
   改变和显示目录:
     pwd : 显示当前目录
 
-    cd [arg] : 改变当前目录, 可使用bookmark和通配符
+    cd [arg] : 改变当前目录， 可使用bookmark和通配符
     举例
     cd ~/.vim/plugin
-    cd work/project   --其中work是定义的一个书签,并非子目录
-    cd *doc           --如果当前目录下只有一个doc结尾的子目录,则进入该子目录
+    cd work/project   --其中work是定义的一个书签，并非子目录
+    cd *doc           --如果当前目录下只有一个doc结尾的子目录，则进入该子目录
 
-    cdlist   : list the cd history.
-    cdlist   : 列出cd过的目录历史.
-    lsd      : 列出当前目录下的子目录.
+    cdlist   : list the cd history。
+    cdlist   : 列出cd过的目录历史。
+    lsd      : 列出当前目录下的子目录。
 
     ls [ -l | -L ][ -t | -s | -n ] [ --help ] [args] 
-    列当前目录内容. 
-    -l 表示长格式, 每一行列一个文件
+    列当前目录内容。 
+    -l 表示长格式， 每一行列一个文件
     -t 表示按时间排序
     -s 表示按大小排序
     -n 表示按名称排序
     --help 打印ls命令的帮助信息
 
-    因为实现上的原因, 以"."开头的文件默认是不显示的, 你可以用 "ls ." 来显示所有文件
+    因为实现上的原因， 以"."开头的文件默认是不显示的， 你可以用 "ls ." 来显示所有文件
 
 
   书签 :
-      bmadd   : 将当前目录加到bookmarks中,能在"cd"命令中引用
+      bmadd   : 将当前目录加到bookmarks中，能在"cd"命令中引用
       bmedit  : 编辑"bookmarks"文件
-      bmlist  : 列出所有bookmark.
+      bmlist  : 列出所有bookmark。
 
   文件管理:
       touch [args]       : 新建文件或者更新文件时间戳
@@ -205,115 +209,139 @@
       cut  [args]        : 剪切args表示的文件到"yankbuffer"(清空原"yankbuffer"内容)
       cutadd [args]      : 剪切追加args表示的文件到"yankbuffer"
 
-      paste              : 粘贴"yankbuffer"中的文件名到当前目录.
-                           如果是cut到"yankbuffer"的,同时删除源文件.
+      paste              : 粘贴"yankbuffer"中的文件名到当前目录。
+                           如果是cut到"yankbuffer"的，同时删除源文件。
 
       yankbuffer         : 显示"yankbuffer"中的内容
       merge [src...][dst]: 合并多个文件
-      find [-n name][-t text] [-s size] [-p path] [--help] [args] : find files.
+      find [-n name][-t text] [-s size] [-p path] [--help] [args] : find files。
 
   File display & edit :
       cat [arg]      : 显示文件内容
       head [arg]     : 显示文件前10行
-      edit [args]    : 在打开新tab,并编辑文件
+      edit [args]    : 在打开新tab，并编辑文件
 
   locate命令 :
       此命令在Locate一节描述
 
   杂项 :
       help           : 打印Shext帮助信息
-      exit           : 退出Shext.
+      exit           : 退出Shext。
   \end{verbatim}
 
 \section{Jdext}
-  Jdext 是另一个 java 插件, 不同于流行插件Vjde, Jdext需要一个独立运行的Agent来完成补全，编译等功能。
-这个Agent缓存了一些包名信息，并且采用了eclipse Jdt compiler来编译类，所以编译速度很快. 
+  Jdext 是另一个 java 插件， 不同于流行插件Vjde， Jdext需要一个独立运行的Agent来完成补全，编译等功能。
+这个Agent缓存了一些包名信息，并且采用了eclipse Jdt compiler来编译类，所以编译速度很快。 
 
 \subsection{项目结构}
-    Jdext使用了和eclipse一样的项目管理方式, 在项目根目中,有一个.classpath和.project文件. 所以建
-议用eclipse建立项目,包括设置类路径等.在项目建立完成后, 再在Vim中进行开发.
+    Jdext使用了和eclipse一样的项目管理方式， 在项目根目中，有一个.classpath和.project文件。 所以建
+议用eclipse建立项目，包括设置类路径等。在项目建立完成后， 再在Vim中进行开发。
 
-   对于使用maven的项目来说, 还可以直接用maven命令行建maven项目,然后用
+   对于使用maven的项目来说， 还可以直接用maven命令行建maven项目，然后用
   \begin{verbatim} mvn eclipse:eclipse \end{verbatim}
-  来生成eclipse项目文件. 此种方式生成的.classpath文件,引用的jar包都是以M2\_REPO来开头的, Vim-SzTool
-在默认情况下找不到这个变量相对应的路径. 需要在~/.sztools/vars.txt配置变量对应的路径. 格式很简单
+  来生成eclipse项目文件。 此种方式生成的.classpath文件，引用的jar包都是以M2\_REPO来开头的， Vim-SzTool
+在默认情况下找不到这个变量相对应的路径。 需要在\~/.sztools/vars.txt配置变量对应的路径。 格式很简单
   \begin{verbatim} M2\_REPO = /usr/maven/repo \end{verbatim}
-所以如果原来用eclipse建立了项目的，那么直接用:Jdext启动 jdext, 就可以使用补全，编译等功能了
-如果是没用的， 可以启动:Jdext 后中，用:InitProject在当前目录生成 这两个文件. 类路径的在.classpath 
-中,如果更改了这个文件，需要重启 vim和 Agent. 
+所以如果原来用eclipse建立了项目的，那么直接用\colorbox{lightgray}{:Jdext}启动 jdext， 就可以使用补全，编译等功能了
+如果是没用的， 可以启动:Jdext 后中，用\colorbox{lightgray}{:InitProject}在当前目录生成 这两个文件。 类路径的在.classpath 
+中，如果更改了这个文件，需要重启 vim和 Agent。 
 
-   对于简单的类,如果只引用JDK自带类库的话, 也可以不用项目结构.在Jdext启动后,直接在任意目录新建Java
-文件,然后就可以保存编译和调试.
+   对于简单的类，如果只引用JDK自带类库的话， 也可以不用项目结构。在Jdext启动后，直接在任意目录新建Java
+文件，然后就可以保存编译和调试。
   
-   对于已经需要几个jar包的小工程, 也可以新建空目录后, 然后cd到空目录, 运行:InitProject命令来初始
-化项目结构. 这个命令会生成.classpath和 src,lib目录. 然后你可以拷自己的jar包到lib目录, 并自己编辑
-.classpath来更新类路径.
+   对于已经需要几个jar包的小工程， 也可以新建空目录后， 然后cd到空目录， 运行\colorbox{lightgray}{:InitProject}命令来初始
+化项目结构。 这个命令会生成.classpath和 src，lib目录。 然后你可以拷自己的jar包到lib目录， 并自己编辑
+.classpath来更新类路径。
 
 \subsection{启动Jdext}
    有几种方式可以启动Jdext:
     \begin{enumerate}
-      \item 调用:Jdext 启动, 此命令会设置很多的map,比如(保存时自动编译文件等). 同时如果当前目录是
-  在一个项目文件夹下(往上查找到.classpath文件),则Agent程序会在后台缓存类信息, 以加快补全速度.
-      \item 在Shext中运行jde start命令, 功能同上.
+      \item 调用:Jdext 启动， 此命令会设置很多的map，比如(保存时自动编译文件等)。 同时如果当前目录是
+  在一个项目文件夹下(往上查找到.classpath文件)，则Agent程序会在后台缓存类信息， 以加快补全速度。
+      \item 在Shext中运行jde start命令， 功能同上。
     \end{enumerate}
 
 \subsection{补全}
-    Vim-Sztool自定了java类型的omni的补全,编辑 java时， 用 <ctrl-x><ctrl-o> 来进行.
+    Vim-Sztool自定了java类型的omni的补全，编辑 java时， 用 <ctrl-x><ctrl-o> 来进行。
     \begin{mdframed}[style=BestPracticeFrame]
-      最佳实践: 安装SuperTab插件, 可以用tab键来做补全
-      Vim-Sztool会做侦测,如果已经安装SuperTab插件, 则对于java类型的
-      文件,默认的tab补全即是omni补全.
+      最佳实践: 安装SuperTab插件， 可以用tab键来做补全
+      Vim-Sztool会做侦测，如果已经安装SuperTab插件， 则对于java类型的
+      文件，默认的tab补全即是omni补全。
     \end{mdframed}
 
     \begin{enumerate}
       \item 可以补全包名，类名，名量名和对象的成员方法和字段
-      \item 方法和字段补全是 ignore case 的，且可以引用通配符，比如 aa.to*er, 可以匹配成 aa.toLower
-      \item 如果是大写开头的名字，则自动在类路径中查找类名。比如即使没有import FileReader类, 打FileRe 可以补全成FileReader类 
+      \item 方法和字段补全是 ignore case 的，且可以引用通配符，比如 aa.to*er， 可以匹配成 aa.toLower
+      \item 如果是大写开头的名字，则自动在类路径中查找类名。比如即使没有import FileReader类， 打FileRe 可以补全成FileReader类 
     \end{enumerate}
     
 \subsection{编译}
-    保存 java 时自动编译，如果有错误，则会生成 quickfix 列表 <C-N>,<C-p>跳转到前一个或后一个错误 
+    保存 java 时自动编译，如果有错误，则会生成 quickfix 列表 <C-N>，<C-p>跳转到前一个或后一个错误 
+    对于在类路径下的资源文件，如xml或properties文件，　在保存时也会自动复制到项目的编译输出目录。
+    Jdext默认的编译级别，编译encoding，这些在sztools.cfg中设置.
 
 \subsection{运行}
-    使用 :Run 或 ",," 来 运行当前class 
+    使用 :Run 或 "<leader>," 来 运行当前class 
 
-\subsection{其他}
-    对于代码中引用到的类，没在import语句中声明的，可以用 :AutoImport 一次性生成全部import语句 
-    \newline
-    \newline
-    选中要生成 getter,setter的行(可以多行)，<leader>gg 来生成 getter,setter 
-    \newline
-    \newline
-    使用 :InitProject 在当前目录初始化一个 jdext 项目, 如果编辑的文件是eclipse项目下的文件，则不需要再建项目. 
-    \newline
+\subsection{其他功能}
+
+\subsubsection{Import}
+    对于代码中引用到的类，没在import语句中声明的，可以用 :AutoImport 一次性生成全部import语句。 
+这个命令默认的map为<leader>ai。如果import中引用的包在源码中无引用, 则这个命令也会自动清除该import。
+由于此命令基于正则，有时候会出不对的情况。
+
+\subsubsection{生成getter,setter}
+    用visual模式选中类中的属性(可以多行)，<leader>gg 来生成 getter，setter。在内部类中此命令生成的方
+方位置会不对。可以自己拷到正确的位置。
+
+\subsubsection{查看类信息}
+   在编辑Java文件时，如果想快速查看某个类的信息，可以用<leader>dc功能。这个命令会打出类的所有公共方法，
+以及是否抽象方法等。(在继续实现某个类时可以用到)。
+
+\subsubsection{跳转到类定义}
+浏览Java源码时，当光标在某个方法或变量时，可以用<leader>gd 来跳转
+到定义的位置。如果光标位置的调用是一个接口的方法，而这个接口又仅有一个实现时，可以用<leader>gi可以跳转
+到接口方法实现的位置。
+
+\subsubsection{定位本类成员}
+  如果想要快速的跳转到本类的某一个方法，可以用<leader>go。
+  \begin{mdframed}[style=BestPracticeFrame]
+    最佳实践: 推荐安装Tagbar插件。此插件功能类似著名的TagList，但是对面向对象语言有更好的支持。
+    在附录中有此插件的地址。
+  \end{mdframed}
+
+\subsubsection{初始化项目结构}
+使用 :InitProject 在当前目录初始化一个 jdext 项目， 如果编辑的文件是eclipse项目下的文件，则不需要再建项目。 
 
 \section{Jdb}
-    Jdb是插件实现的调试功能(跟jdk里自带的jdb程序没关系), 需要在Jdext启动后再调用. 启动后, 默认会 
-    split两块buffer, 一块是jdb命令buffer, 一块是jdb命令的输出buffer. jdb命令的buffer也是普通buffer, 除了在回车时自动执行命令(类似于shext) 
+    Jdb是插件实现的调试功能(跟jdk里自带的jdb程序没关系)， 需要在Jdext启动后再调用。 启动后， 默认会 
+    split两块buffer， 一块是jdb命令buffer， 一块是jdb命令的输出buffer。 jdb命令的buffer也是普通buffer， 除了在回车时自动执行命令(类似于shext) 
 
-    jdb的大步部份调试功能是在jdb的buffer中用命令实现的, 有个例外是加断点. 只要启动了
-    jde模式, 在编辑java文件的时候, 用<leader>tb来为当前行切换断点.
+    jdb的大步部份调试功能是在jdb的buffer中用命令实现的， 有个例外是加断点。 只要启动了
+    jde模式， 在编辑java文件的时候， 用<leader>tb来为当前行切换断点。
 
   \subsection{运行和附加}
     
-    通过run命令运行Class, 后面为classname和参数, 如classname省略, 则运行当前编辑的Class.
+    通过run命令运行Class， 后面为classname和参数， 如classname省略， 则运行当前编辑的Class。
     \begin{mdframed}[style=SmallFrame]
     \begin{flushleft}
     >run org.fake.test.Main --options args
     \end{flushleft}
     \end{mdframed}
+    \vspace{4mm}
 
-    attach命令运行远程连接到java程序进行调试, 要求已经运行的程序必需要jpda调试模式启动
-    用此命令可以远程连接到比如tomcat之类的应用. port为远程调试端口号, 目前只能连接到本
-    机启动的应用, 其他host暂不支持.
+    attach命令运行远程连接到java程序进行调试， 要求已经运行的程序必需要jpda调试模式启动
+    用此命令可以远程连接到比如tomcat之类的应用。 此命令需要一个port参数为远程调试端口号， 
+    目前只能连接到本机启动的应用， 其他host暂不支持。
     \begin{mdframed}[style=SmallFrame]
     \begin{flushleft}
     >attach 8080              
     \end{flushleft}
     \end{mdframed}
+    \vspace{4mm}
 
-    disconnect命令用于断开attach上去的连接, shutdown用于中止正在调试的程序, hide用于
-    隐藏jdb的窗口, exit退出调试 
+    disconnect命令用于断开attach上去的连接， shutdown用于中止正在调试的程序， hide用于
+    隐藏jdb的窗口， exit退出调试 
     \begin{mdframed}[style=SmallFrame]
      \begin{flushleft}
     >disconnect\newline
@@ -322,10 +350,22 @@
     >exit                      
     \end{flushleft}
     \end{mdframed}
+    \vspace{5mm}
+
+    runtomcat命令用于从jdb从运行tomcat应用。 tomcat的配置在sztools.cfg中进行， 
+    需要配置的三个属性是 tomcat\_version， tomcat\_home， tomcat\_jvmopts， 最后
+    一个参数用来配置tomcat的jvm叁数。 配置中的目录，在windows下的"\textbackslash"
+    需要用"\textbackslash\textbackslash"来进行。 比如
+    \begin{verbatim} D:\\soft\\tomcat6 \end{verbatim}
+    \begin{mdframed}[style=SmallFrame]
+     \begin{flushleft}
+      >runtomcat
+     \end{flushleft}
+    \end{mdframed}
 
   \subsection{检查变量}
-    print(或eval)命令用于打印表达式的值. reftype命令用于打印表达式的类型,
-  inspect命令打印表达式的各个成员的值. locals打印函数内所有本地量的值, fields
+    print(或eval)命令用于打印表达式的值。 reftype命令用于打印表达式的类型，
+  inspect命令打印表达式的各个成员的值。 locals打印函数内所有本地量的值， fields
   用于打印当前对象的各个字段的值
     \begin{mdframed}[style=SmallFrame]
       \begin{flushleft}
@@ -340,8 +380,8 @@
 
   \subsection{跟踪}
 
-    单步进入,单步跳过,单步跳出,恢复. 这个跟eclipse的功能差不多. 快捷键也是一样的,分
-    别是<F5><F6><F7><F8>.
+    单步进入，单步跳过，单步跳出，恢复。 这个跟eclipse的功能差不多。 快捷键也是一样的，分
+    别是<F5><F6><F7><F8>。
     \begin{mdframed}[style=SmallFrame]
       \begin{flushleft}
       >step\_into\newline
@@ -354,9 +394,9 @@
     
 
   \subsection{线程和堆栈}
-  threads列出当前jvm的所有线程, thread命令用于切换当前线程(如果有线程是suspend状态的话),
-  frames列出当前线程的所有调用栈. frame命令用于切换当前的栈桢.(print,eval等命令只能打印当前栈桢的变量值)
-  breakpoints列出当前jvmf所有的断点, bpa添加条件断点, setvalue改变var值
+  threads列出当前jvm的所有线程， thread命令用于切换当前线程(如果有线程是suspend状态的话)，
+  frames列出当前线程的所有调用栈。 frame命令用于切换当前的栈桢。(print，eval等命令只能打印当前栈桢的变量值)
+  breakpoints列出当前jvmf所有的断点， bpa添加条件断点， setvalue改变var值
     \begin{mdframed}[style=SmallFrame]
       \begin{flushleft}
       >threads\newline
@@ -372,28 +412,27 @@
 
 \section{ProjectTree}
 
-  ProjectTree从NerdTree借鉴了相当多的代码, 基本上我写这个东西就是因为
-NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显示), 所以我
-用python又写了一套.
+  ProjectTree从NerdTree借鉴了相当多的代码， 基本上我写这个东西就是因为
+NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显示)， 所以我
+用python又写了一套。
 
   ProjectTree有自己的一些特点:
   \begin{enumerate}
     \item 按树结构显示source jar 
-    \item 打开的节点显示不同的颜色,一目了然看到哪些文件在编辑
-    \item 更方便的文件复制,移动,重命名功能
-    \item 标记多个节点,以进行复制
+    \item 打开的节点显示不同的颜色，一目了然看到哪些文件在编辑
+    \item 更方便的文件复制，移动，重命名功能
+    \item 标记多个节点，以进行复制
     \item 按目录递归关闭正在编辑的文件
   \end{enumerate}
 
-  以下是ProjectTree 可用的功能.
-  \newline
-  打开和关闭节点: 在ProjectTree中打开和关闭节点是最常用的功能. 对于目录节结点来说,
-打开和关闭指的是expand和collapse操作, 而对于文件节点,打开指编辑,关闭指关闭正在编辑的
-文件buffer. \footnote{对于buffer,window在vim中的概念,请参考vim的帮助文档}
+  \subsection{打开和关闭节点}
+  在ProjectTree中打开和关闭节点是最常用的功能。 对于目录节结点来说，
+打开和关闭指的是expand和collapse操作， 而对于文件节点，打开指编辑，关闭指关闭正在编辑的
+文件buffer。 \footnote{对于buffer，window在vim中的概念，请参考vim的帮助文档}
   \newline
   (在Nerdtree中对于文件节点是没有关闭操作的)
   \newline
-  正常情况下,打开文件节点后,节点会以不同的颜色显示.
+  正常情况下，打开文件节点后，节点会以不同的颜色显示。
   \begin{table}[H]
   \centering
       \begin{tabular}{p{40pt}p{220pt}}
@@ -406,18 +445,19 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
           O     &递归打开选中节点\\
           t     &在新tab页中打开选中节点\\
           i     &在新window中打开选中节点\\
-          go    &打开选中节点,光标停留在ProjectTree\\
+          go    &打开选中节点，光标停留在ProjectTree\\
           r     &刷新选中节点\\
           x     &关闭父节点\\
           s     &prompt to filter display node\\
-          z     &关闭正在编辑的文件buffer, 如果当前是目录节点,则关闭目录下所有在编辑中的文件\\
-          Z     &同上, 但是强行关闭文件,即使文件已改动\\
+          z     &关闭正在编辑的文件buffer， 如果当前是目录节点，则关闭目录下所有在编辑中的文件\\
+          Z     &同上， 但是强行关闭文件，即使文件已改动\\
       \bottomrule
       \end{tabular}
   \end{table}
 
-  由于vim本身的巨多的移动功能,在ProjectTree中扩展的移动不是很多. 对于已经打开的文件,
-可以用"<",">"在这些节点之前快速移动.
+  \subsection{移动和标记}
+  由于vim本身的巨多的移动功能，在ProjectTree中扩展的移动不是很多。 对于已经打开的文件，
+可以用"<"，">"在这些节点之前快速移动。
   \begin{table}[H]
   \centering
       \begin{tabular}{p{40pt}p{220pt}}
@@ -432,17 +472,21 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
       \bottomrule
       \end{tabular}
   \end{table}
-  另外在编辑文件的buffer, 可以用ProjectTreeFind命令来定位左侧的
-树结点.\newline 在我自己的vimrc中, 我做了如下映射
+  另外在编辑文件的buffer， 可以用ProjectTreeFind命令来定位左侧的
+树结点。(此命令适用于左侧已经有ProjectTree打开的情况,如果还没有ProjectTree，
+则可以用\colorbox{lightgray}{:ProjectTree}打开，打开时也会自动定位节点)。在我自己的vimrc中， 我
+做了如下映射
   \begin{mdframed}[style=SmallFrame]
     \begin{flushleft}
+      nnoremap <silent> <F9>  :ProjectTree<cr>\newline
       nnoremap <silent> <F12> :ProjectTreeFind<cr>
     \end{flushleft}
   \end{mdframed}
 
-  以下是一些删除剪切复制的功能,注意,这些操作是同步的,即在这些
-粘贴删除实际完成前, 页面将无响应. 所以不要用使用这里的功能来
-操作大的文件和目录,以避免可能的vim崩溃以导致数据丢失.
+  \subsection{文件操作}
+  以下是一些删除剪切复制的功能，注意，这些操作是同步的，即在这些
+粘贴删除实际完成前， 页面将无响应。 所以不要用使用这里的功能来
+操作大的文件和目录，以避免可能的vim崩溃以导致数据丢失。
   \begin{table}[H]
   \caption{删除剪切复制等}
   \centering
@@ -452,7 +496,7 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
         \midrule
           DD    &删除选中目录或文件\\
           Dm    &删除标记的目录或文件\\
-          A     &新增目录或文件(如文件名以/结尾,则为目录)\\
+          A     &新增目录或文件(如文件名以/结尾，则为目录)\\
           ya    &复制节点路径\\
           cc    &重命名当前节点\\
           yy    &复制当前文件或目录\\
@@ -469,29 +513,29 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
 
 \section{Locate}
 
-    Locate 功能有点像command-T插件, 用来快速定位文件的. 但是不同的是,这个功能需
-要先对文件夹进行索引,索引后的 文件名信息存在sqlite的数据库中. 这样无论你的当前目
-录 是在哪里, 都可以快速按文件名定位到已索引的目录中的文件.
+    Locate 功能有点像command-T插件， 用来快速定位文件的。 但是不同的是，这个功能需
+要先对文件夹进行索引，索引后的 文件名信息存在sqlite的数据库中。 这样无论你的当前目
+录 是在哪里， 都可以快速按文件名定位到已索引的目录中的文件。
 
 \subsection{索引建立删除}
   索引管理索引需要在Shext中用locatedb命令管理(建索引时需要先cd到需要索引的目录) 
   \begin{itemize}
-      \item locatedb add name : 建立索引,名称为name, 索引当前文件夹的内容
+      \item locatedb add name : 建立索引，名称为name， 索引当前文件夹的内容
       \item locatedb remove name : 删除索引
       \item locatedb refresh name : 刷新索引
       \item locatedb list : 列出已建立的索引 
   \end{itemize}
 
 \subsection{索引更新}
-    当gvim启动后, 会有一个独立的Agent进程启动, 此进程会自动 
-监视被索引目录的文件的新建和删除,并自动更新索引.如果文件在Agent
-进程未启动条件下新建和删除, 可以手动执行locatedb refresh 命令更新
+    当gvim启动后， 会有一个独立的Agent进程启动， 此进程会自动 
+监视被索引目录的文件的新建和删除，并自动更新索引。如果文件在Agent
+进程未启动条件下新建和删除， 可以手动执行locatedb refresh 命令更新
 
 \subsection{调用}
-   以 <leader>lw 来启动locate模式, 启动后,底下会有一个
- 小的buffer用来显示匹配的文件名. 所有输入的字符都显示
- 在command line上面, 并显示相应的匹配内容. 在匹配列表
- 出来后,可用的功能如下
+   以 <leader>lw 来启动locate模式， 启动后，底下会有一个
+ 小的buffer用来显示匹配的文件名。 所有输入的字符都显示
+ 在command line上面， 并显示相应的匹配内容。 在匹配列表
+ 出来后，可用的功能如下
     \begin{itemize}
         \item <Esc> : 退出locate模式
         \item <CR>  : 打开(编辑)当前光标所在文件 
@@ -507,40 +551,46 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
 \section{Dbext}
 
 这个是vimsf 站点上的 dbext 的山寨版
-使用前先确保安装了 pyodbc, 或 cx\_oracle 把数据库的连接参数写在 sztools home目录的 data目录下的 db.conf文件里
+使用前先确保安装了 pyodbc， 或 cx\_oracle 把数据库的连接参数写在 sztools home目录的 data目录下的 db.conf文件里
 
 \subsection{配置}
-   在使用前先确保在 ~/.sztools 目录下的db.conf中配置了想要连接的数据库.
+   在使用前先确保在 \~/.sztools 目录下的db.conf中配置了想要连接的数据库。
    配置文件格式为
     \begin{mdframed}[style=SmallFrame]
     \begin{flushleft}
-    servertype="mssql",host="127.0.0.1",user="sa",password="test"\newline
-    servertype="mssql",host="127.0.0.1",user="sa",password="test"
+    servertype="mssql"，host="127.0.0.1"，user="sa"，password="test"\newline
+    servertype="mssql"，host="127.0.0.1"，user="sa"，password="test"
     \end{flushleft}
     \end{mdframed}
-    数据库名称不需要配置,在启动Dbext后用 use databasename 来切换.
+    数据库名称不需要配置，在启动Dbext后用 use databasename 来切换。
 
 \subsection{使用}
 功能有限只能 :
 
     选中文本
-    用 ,, 来执行,如果选中语句中有";", 默认会隔分多条来执行
+    用 ，， 来执行，如果选中语句中有";"， 默认会隔分多条来执行
     ld 用来列出所有的数据库
 
-        在sql server连接时,如果不指定库,需要用use dbname来指定使用的库 
+        在sql server连接时，如果不指定库，需要用use dbname来指定使用的库 
 
     lt 显示包含当前选中文本的所有表
     dt 显示表名为当前选中文本的数据表的表结构
-    ,gs 把选中文本作为单条SQL执行, 即使包含";"也不分隔
-    用 <c-x><c-o> 来补全 , 可以补全表名，字段名... (可以用通配符) 
+    ，gs 把选中文本作为单条SQL执行， 即使包含";"也不分隔
+    用 <c-x><c-o> 来补全 ， 可以补全表名，字段名... (可以用通配符) 
 
-   这个跟 dbext 对比 有一个好处是 数据用表格线分隔了， 列对得比较齐,输出如下格式 
+   这个跟 dbext 对比 有一个好处是 数据用表格线分隔了， 列对得比较齐，输出如下格式 
+
+  \begin{figure}[htbp]%位置选项
+  \centering
+  \includegraphics[scale=0.5]{dbext.jpg}
+  \caption{Dbext截图}
+  \end{figure}
 
 \section{杂功能}
   \begin{itemize}
         \item <leader>te  :将选中文档用表格框起来
         \item <leader>rc  :删光java文件的注释
-        \item :Example name  :split出一个buffer,显示示例文件. 示例参见安装目录下share/examples
+        \item :Example name  :split出一个buffer，显示示例文件。 示例参见安装目录下share/examples
   \end{itemize}
     
 
@@ -549,24 +599,59 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
   \newline
 
   \href{http://www.vim.org/scripts/script.php?script\_id=1213}{http://www.vim.org/scripts/script.php?script\_id=1213} 
-  Vjde,Vim插件
+  Vjde，Vim插件
   \newline
 
-  \href{http://eclim.org/}{http://eclim.org/} Eclim, vim插件,使用eclipse作为服务端
+  \href{http://eclim.org/}{http://eclim.org/} Eclim， vim插件，使用eclipse作为服务端
   \newline
 
   \href{http://vrapper.sourceforge.net/home/}{http://vrapper.sourceforge.net/home/}
-  vrapper, clipse插件,免费
+  vrapper， clipse插件，免费
   \newline
 
   \href{http://www.viplugin.com/}{http://www.viplugin.com/}
-  viplugin,eclipse插件,收费
+  viplugin，eclipse插件，收费
   \newline
 
+  推荐的vim插件
+  \newline
+  Supertab
+  \href{http://vim.sourceforge.net/scripts/script.php?script\_id=1643}
+   {http://vim.sourceforge.net/scripts/script.php?script\_id=1643}
+
+  tagbar
+  \href{http://vim.sourceforge.net/scripts/script.php?script\_id=3465}
+   {http://vim.sourceforge.net/scripts/script.php?script\_id=3465}
+
+  pathogen
+  \href{http://vim.sourceforge.net/scripts/script.php?script\_id=2332}
+   {http://vim.sourceforge.net/scripts/script.php?script\_id=2332}
+
+  easymotion
+  \href{http://vim.sourceforge.net/scripts/script.php?script\_id=3526}
+   {http://vim.sourceforge.net/scripts/script.php?script\_id=3526}
+
+  vimwiki
+  \href{http://vim.sourceforge.net/scripts/script.php?script\_id=2226}
+   {http://vim.sourceforge.net/scripts/script.php?script\_id=2226}
+
+
+  bufexplorer
+  \href{http://vim.sourceforge.net/scripts/script.php?script\_id=42}
+   {http://vim.sourceforge.net/scripts/script.php?script\_id=42}
+
+\chapter{已知问题}
+    在 windows下,默认安装的gvim73+python2.7.2 import pyodbc时会出现import error 
+
+    默认不支持64位系统,需要替换64位的swt.jar 
+
+    python的默认编码要和vim的默认编码保持一致，否则会出现乱码 可以分别通过 python安装目录下的
+    site-packages/sitecustomize.py 和 .vimrc中的 encoding 选项来设置 
+
 \chapter{后记}
-    本文档用vim+latex写成. 感谢这两个伟大的工具
+    本文档用vim+latex写成。 感谢这两个伟大的工具
    \newline
-   另外特别感谢Vim草堂的各位群友, 感谢YD的思凡和LE给我们每天带来的快乐
+   另外特别感谢Vim草堂的各位群友， 感谢YD的思凡和LE给我们每天带来的快乐
    
    
 \end{document}
