@@ -85,18 +85,19 @@
 
 \chapter{安装和配置}
   \section{需求}
-  Vim-Sztool是一个用python，java，vim脚本混合编写的插件， 要使此插件能运行，需求如下:\newline
-  软件:
+  Vim-Sztool是一个用python，java，vim脚本混合编写的插件， 要使此插件能运行，需求如下:
+
+  \textbf{软件:}
     \begin{itemize}
       \item vim7.3，只支持gvim版本
       \item Jdk1.6以上
       \item Python2.7 (2.6的也许可以运行)，需安装pyparsing，BeautifulSoup，chardet模块
     \end{itemize}
 
-  人件(好吧，我知道这么说不对):
+  \textbf{使用人群:}
     \begin{itemize}
       \item 熟悉vim，懂一点vim script
-      \item 熟悉python， 会自己安装一些python模块，比如上面提到的pyparsing
+      \item 了解python， 会自己安装一些python模块，比如上面提到的pyparsing
       \item 有用vim写java程序的需求，没需求就别折腾了
     \end{itemize}
 
@@ -109,6 +110,7 @@
       \begin{verbatim} let g:sztool_home="D:\\soft\\vim-sztool\\sztools" \end{verbatim}
       \item 设置环境变量
       JDK\_HOME，path(需要把gvim，python的可执行文件目录加到path中)
+      \item 源码位于https://github.com/shrekwang/vim-sztool,可以git clone此项目，代替下载的安装包(不覆盖到vim默认plugin目录，只设置runtimepath)，这样易于更新和管理。
     \end{enumerate}
    如果安装成功，此时启动gvim，在系统托盘区会有个军刀的图标，这个是Agent程序，
    说明已经安装成功了。
@@ -127,7 +129,7 @@
 
 \chapter{使用}
   \section{Shext}
-  Shext是一个仿shell的东西，启动后， vim会被split成上下两个buffer。 如图
+  Shext是一个仿shell的东西，启动后， vim会被split成上下两个buffer。\footnote{对于buffer，window在vim中的概念，请参考vim的帮助文档}如图
   \begin{figure}[htbp]%位置选项
   \centering
   \includegraphics[scale=0.5]{shext.jpg}
@@ -136,20 +138,7 @@
   
 
   上面一个是命令编辑区， 用于编辑和运行命令。 下面一个是命令输出区，用于显示命令的输出。
-  \newline
-  Shext支持内置实现的一些的命令和系统的命令， 内置命令优先。
-  \newline
-  不支持交互式命令， 如ftp，mysql等 
-  \newline
-  \begin{mdframed}[style=BestPracticeFrame]
-  最佳实践: 由于可能需要经常的切换window， 最好在vimrc中定义下列的map
-    \begin{verbatim}
-      map <C-j> <C-W>j
-      map <C-k> <C-W>k
-      map <C-h> <C-W>h
-      map <C-l> <C-W>l
-    \end{verbatim}
-  \end{mdframed}
+Shext支持内置实现的一些的命令和系统的命令， 内置命令优先。不支持交互式和需要用到终瑞库的命令， 如ftp，mysql,vim,mc等 
 
   Shext启动后， 如果输入"/"，如果对应的参数是目路路径， 则在命令输出buffer会显示
 对应路径的内容作为提示。 比如 
@@ -163,23 +152,42 @@
 如果想编辑其中的第5个文件， 则可以用 "edit \$5;;<cr>" 来实现。 注意这个补全是带状态的，
 在\$5;;后，如果你还要编辑上一个文件，可以用<C-p>， 如果想编辑下一个文件，可以用<C-n>。
 
+  \begin{mdframed}[style=BestPracticeFrame]
+  最佳实践: 由于可能需要经常的切换window， 最好在vimrc中定义下列的map
+    \begin{verbatim}
+      map <C-j> <C-W>j
+      map <C-k> <C-W>k
+      map <C-h> <C-W>h
+      map <C-l> <C-W>l
+    \end{verbatim}
+  \end{mdframed}
+
 
   \subsection{内置命令}
 
-  \begin{verbatim}
-  改变和显示目录:
-    pwd : 显示当前目录
+  \subsubsection{改变和显示目录}
+    \colorbox{lightgray}{pwd},显示当前目录.  \colorbox{lightgray}{cd}, 更改当前目录， 可使用bookmark和通配符。
+    \newline
+    \textbf{举例:}
+    \begin{mdframed}[style=SmallFrame] cd ~/.vim/plugin \end{mdframed}
+    \vspace{0.1mm}
+    到home目录的.vim/plugin目录
 
-    cd [arg] : 改变当前目录， 可使用bookmark和通配符
-    举例
-    cd ~/.vim/plugin
-    cd work/project   --其中work是定义的一个书签，并非子目录
-    cd *doc           --如果当前目录下只有一个doc结尾的子目录，则进入该子目录
+    \begin{mdframed}[style=SmallFrame] cd work/project \end{mdframed}
+    \vspace{0.1mm}
+     其中work是定义的一个书签，并非子目录
+
+    \begin{mdframed}[style=SmallFrame] cd *doc \end{mdframed}
+    \vspace{0.1mm}
+     如果当前目录下只有一个doc结尾的子目录，则进入该子目录
 
     cdlist   : list the cd history。
+    \newline
     cdlist   : 列出cd过的目录历史。
+    \newline
     lsd      : 列出当前目录下的子目录。
 
+  \begin{verbatim}
     ls [ -l | -L ][ -t | -s | -n ] [ --help ] [args] 
     列当前目录内容。 
     -l 表示长格式， 每一行列一个文件
@@ -204,17 +212,8 @@
       cp  [src...][dst]  : 复制文件或目录
       mv  [src...][dst]  : 移动文件或目录
       echo [args]        : 打印文本消息
-      yank [args]        : 复制args表示的文件到"yankbuffer" (清空原"yankbuffer"内容)
-      yankadd [args]     : 追加args表示的文件到"yankbuffer"
-      cut  [args]        : 剪切args表示的文件到"yankbuffer"(清空原"yankbuffer"内容)
-      cutadd [args]      : 剪切追加args表示的文件到"yankbuffer"
-
-      paste              : 粘贴"yankbuffer"中的文件名到当前目录。
-                           如果是cut到"yankbuffer"的，同时删除源文件。
-
-      yankbuffer         : 显示"yankbuffer"中的内容
       merge [src...][dst]: 合并多个文件
-      find [-n name][-t text] [-s size] [-p path] [--help] [args] : find files。
+      find [-n name][-t text] [-s size] [-p path] [--help] [args] : 查找文件
 
   File display & edit :
       cat [arg]      : 显示文件内容
@@ -230,8 +229,9 @@
   \end{verbatim}
 
 \section{Jdext}
-  Jdext 是另一个 java 插件， 不同于流行插件Vjde， Jdext需要一个独立运行的Agent来完成补全，编译等功能。
-这个Agent缓存了一些包名信息，并且采用了eclipse Jdt compiler来编译类，所以编译速度很快。 
+  Jdext包含了java相关的功能，只有在Jdext启动后，本节介绍的功能才可以使用。另外在Jdext启动时，
+会定义很多的map，比如\colorbox{lightgray}{<leader>go}等，如无特别说明，这些都是指normal状态
+下的map。
 
 \subsection{项目结构}
     Jdext使用了和eclipse一样的项目管理方式， 在项目根目中，有一个.classpath和.project文件。 所以建
@@ -242,14 +242,11 @@
   来生成eclipse项目文件。 此种方式生成的.classpath文件，引用的jar包都是以M2\_REPO来开头的， Vim-SzTool
 在默认情况下找不到这个变量相对应的路径。 需要在\~/.sztools/vars.txt配置变量对应的路径。 格式很简单
   \begin{verbatim} M2\_REPO = /usr/maven/repo \end{verbatim}
-所以如果原来用eclipse建立了项目的，那么直接用\colorbox{lightgray}{:Jdext}启动 jdext， 就可以使用补全，编译等功能了
-如果是没用的， 可以启动:Jdext 后中，用\colorbox{lightgray}{:InitProject}在当前目录生成 这两个文件。 类路径的在.classpath 
-中，如果更改了这个文件，需要重启 vim和 Agent。 
 
    对于简单的类，如果只引用JDK自带类库的话， 也可以不用项目结构。在Jdext启动后，直接在任意目录新建Java
 文件，然后就可以保存编译和调试。
   
-   对于已经需要几个jar包的小工程， 也可以新建空目录后， 然后cd到空目录， 运行\colorbox{lightgray}{:InitProject}命令来初始
+   对于需要几个jar包的小工程， 也可以新建空目录后， 然后cd到空目录， 运行\colorbox{lightgray}{:InitProject}命令来初始
 化项目结构。 这个命令会生成.classpath和 src，lib目录。 然后你可以拷自己的jar包到lib目录， 并自己编辑
 .classpath来更新类路径。
 
@@ -278,47 +275,50 @@
 \subsection{编译}
     保存 java 时自动编译，如果有错误，则会生成 quickfix 列表 <C-N>，<C-p>跳转到前一个或后一个错误 
     对于在类路径下的资源文件，如xml或properties文件，　在保存时也会自动复制到项目的编译输出目录。
-    Jdext默认的编译级别，编译encoding，这些在sztools.cfg中设置.
+    Jdext默认的编译级别，编译encoding，这些在sztools.cfg中设置。
 
 \subsection{运行}
-    使用 :Run 或 "<leader>," 来 运行当前class 
+    使用 \colorbox{lightgray}{:Run} 或 \colorbox{lightgray}{<leader>,}\footnote{对于<leader>的含意，请查看vim中的帮助:help <leader>} 来 运行当前的class。
+  注意运行的程序中不能有从终端中读取的功能，否则java程序将不能正常结束。
 
 \subsection{其他功能}
 
 \subsubsection{Import}
-    对于代码中引用到的类，没在import语句中声明的，可以用 :AutoImport 一次性生成全部import语句。 
-这个命令默认的map为<leader>ai。如果import中引用的包在源码中无引用, 则这个命令也会自动清除该import。
+    对于代码中引用到的类，没在import语句中声明的，可以用 \colorbox{lightgray}{:AutoImport} 一次性生成全部import语句。 
+这个命令默认的map为\colorbox{lightgray}{<leader>ai}。如果import中引用的包在源码中无引用, 则这个命令也会自动清除该import。
 由于此命令基于正则，有时候会出不对的情况。
 
 \subsubsection{生成getter,setter}
-    用visual模式选中类中的属性(可以多行)，<leader>gg 来生成 getter，setter。在内部类中此命令生成的方
+    用visual模式选中类中的属性(可以多行)，\colorbox{lightgray}{<leader>gg} 来生成 getter，setter。在内部类中此命令生成的方
 方位置会不对。可以自己拷到正确的位置。
 
 \subsubsection{查看类信息}
-   在编辑Java文件时，如果想快速查看某个类的信息，可以用<leader>dc功能。这个命令会打出类的所有公共方法，
-以及是否抽象方法等。(在继续实现某个类时可以用到)。
+   在编辑Java文件时，如果想快速查看某个类的信息，可以用\colorbox{lightgray}{<leader>dc}功能。这个命令会打出类的所有公共方法，
+以及是否抽象方法等。(在继承实现某个类时可以用到)。
 
 \subsubsection{跳转到类定义}
-浏览Java源码时，当光标在某个方法或变量时，可以用<leader>gd 来跳转
-到定义的位置。如果光标位置的调用是一个接口的方法，而这个接口又仅有一个实现时，可以用<leader>gi可以跳转
+浏览Java源码时，当光标在某个方法或变量时，可以用\colorbox{lightgray}{<leader>gd} 来跳转
+到定义的位置。如果光标位置的调用是一个接口的方法，而这个接口又仅有一个实现时，可以用\colorbox{lightgray}{<leader>gi}可以跳转
 到接口方法实现的位置。
 
 \subsubsection{定位本类成员}
-  如果想要快速的跳转到本类的某一个方法，可以用<leader>go。
+  如果想要快速的跳转到本类的某一个方法，可以用\colorbox{lightgray}{<leader>go}。
+  此功能会弹出一个类似Locate功能的界面，随着按键自动匹配成员名称。匹配到后按回车就可以跳到相
+  应的成员所在的行上。如果想中止查找，可以用\colorbox{lightgray}{Esc}键。
   \begin{mdframed}[style=BestPracticeFrame]
     最佳实践: 推荐安装Tagbar插件。此插件功能类似著名的TagList，但是对面向对象语言有更好的支持。
     在附录中有此插件的地址。
   \end{mdframed}
 
 \subsubsection{初始化项目结构}
-使用 :InitProject 在当前目录初始化一个 jdext 项目， 如果编辑的文件是eclipse项目下的文件，则不需要再建项目。 
+使用 \colorbox{lightgray}{:InitProject} 在当前目录初始化一个 jdext 项目， 如果编辑的文件是eclipse项目下的文件，则不需要再建项目。 
 
 \section{Jdb}
     Jdb是插件实现的调试功能(跟jdk里自带的jdb程序没关系)， 需要在Jdext启动后再调用。 启动后， 默认会 
     split两块buffer， 一块是jdb命令buffer， 一块是jdb命令的输出buffer。 jdb命令的buffer也是普通buffer， 除了在回车时自动执行命令(类似于shext) 
 
     jdb的大步部份调试功能是在jdb的buffer中用命令实现的， 有个例外是加断点。 只要启动了
-    jde模式， 在编辑java文件的时候， 用<leader>tb来为当前行切换断点。
+    jde模式， 在编辑java文件的时候， 用\colorbox{lightgray}{<leader>tb}来为当前行切换断点。
 
   \subsection{运行和附加}
     
@@ -550,8 +550,16 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
 
 \section{Dbext}
 
-这个是vimsf 站点上的 dbext 的山寨版
-使用前先确保安装了 pyodbc， 或 cx\_oracle 把数据库的连接参数写在 sztools home目录的 data目录下的 db.conf文件里
+  这个是vim官方站点上的 dbext的模仿，因为之前我用原来的dbext的时候，感觉
+输出不太友好(对不齐，没有表格线等，不知道新的版本有没有弄好)。然后我用python自己
+实现了一个简单的。就是用pyodbc，或其他数据库驱动来执行sql，把输出结果集用表格
+线排一下就得了。因为没有考虑太多，所以如果你查询大数据量的结果集，比如 
+\begin{verbatim} select * from user \end{verbatim}
+在user表中有几十万几上的数据的话，　很可能把vim搞死（取决于机器性能等原因）。
+
+由于实际执行sql的是python的数据库驱动模块，所以如果想执行各种库上的SQL就要装
+相应的python数据库驱动模块。一般连Ms Sql server就用pyodbc，连oracle的库就用cx\_oracle。
+另外在程序中还写了mysql的驱动模块MySQLdb的支持，不过我自己用的不多，估计会有问题。
 
 \subsection{配置}
    在使用前先确保在 \~/.sztools 目录下的db.conf中配置了想要连接的数据库。
@@ -562,29 +570,38 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
     servertype="mssql"，host="127.0.0.1"，user="sa"，password="test"
     \end{flushleft}
     \end{mdframed}
-    数据库名称不需要配置，在启动Dbext后用 use databasename 来切换。
+    数据库名称不需要配置，在启动Dbext后用 use databasename 来切换。servertype值
+目前支持oracle,mssql,mysql,sqlite。对于sqlite，除了servertype外，另外只要一个file
+属性指出sqlite库的文件位置就行了。
 
-\subsection{使用}
-功能有限只能 :
-
-    选中文本
-    用 ，， 来执行，如果选中语句中有";"， 默认会隔分多条来执行
-    ld 用来列出所有的数据库
-
-        在sql server连接时，如果不指定库，需要用use dbname来指定使用的库 
-
-    lt 显示包含当前选中文本的所有表
-    dt 显示表名为当前选中文本的数据表的表结构
-    ，gs 把选中文本作为单条SQL执行， 即使包含";"也不分隔
-    用 <c-x><c-o> 来补全 ， 可以补全表名，字段名... (可以用通配符) 
-
-   这个跟 dbext 对比 有一个好处是 数据用表格线分隔了， 列对得比较齐，输出如下格式 
+    请在空白的tab页上执行\colorbox{lightgray}{:Dbext}，执行完后，像Shext一样会split
+成两个buffer，上面一个编辑sql和执行，下面一个输出结果。在sql编辑buffer可以用 
+<c-x><c-o> 来补全 ， 可以补全表名，字段名... (可以用通配符) 
 
   \begin{figure}[htbp]%位置选项
   \centering
   \includegraphics[scale=0.5]{dbext.jpg}
   \caption{Dbext截图}
   \end{figure}
+
+\subsection{使用}
+
+\subsubsection{执行查询}
+
+    \begin{itemize} 
+      \item  visual模式，选中SQL文本用 \colorbox{lightgray}{,,} 来执行，如果选中语句中有";"， 默认会隔分多条来执行
+      \item  normal模式和insert模式，\colorbox{lightgray}{,,}执行当前行所在的SQL语句
+      \item  visual模式， \colorbox{lightgray}{,gs} 把选中文本作为单条SQL执行， 即使包含";"也不分隔
+    \end{itemize} 
+
+\subsubsection{查询元数据}
+
+    \begin{itemize} 
+    \item \colorbox{lightgray}{,ld} 用来列出所有的数据库
+    \item \colorbox{lightgray}{,la} 用来列出当前数据库的所有表
+    \item \colorbox{lightgray}{,dt} describe table, 列出表的字段。执行前先要visual选中表的名称
+    \item \colorbox{lightgray}{,lt} 显示名称中包含当前选中文本的所有表。执行前先要visual选中文本
+    \end{itemize} 
 
 \section{杂功能}
   \begin{itemize}
@@ -615,7 +632,7 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
 
   推荐的vim插件
   \newline
-  Supertab
+  supertab
   \href{http://vim.sourceforge.net/scripts/script.php?script\_id=1643}
    {http://vim.sourceforge.net/scripts/script.php?script\_id=1643}
 
