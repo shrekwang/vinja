@@ -115,9 +115,15 @@
    如果安装成功，此时启动gvim，在系统托盘区会有个军刀的图标，这个是Agent程序，
    说明已经安装成功了。
 
+   \begin{figure}[htbp]%位置选项
+      \centering
+      \includegraphics[scale=0.8]{tray.jpg}
+      \caption{托盘区Agent程序截图}
+  \end{figure}
+
   \section{配置}
     Vim-Sztool的默认配置文件位于安装目录的sztools/share/conf目录下，一般不要改动此文件中的内容，
-  而是把文件复制到 \~/.sztools/目录下进行改动。 Vim-Sztool会读取此两个目录下的内容，
+  而是把文件复制到 $\tiny{\sim}$/.sztools/ 目录下进行改动。 Vim-Sztool会读取此两个目录下的内容，
   优先级以home目录下的为高。
   \begin{description}
     \item{sztools.cfg} 主要配置文件，用于配置jde的一些基本设置
@@ -129,7 +135,7 @@
 
 \chapter{使用}
   \section{Shext}
-  Shext是一个仿shell的东西，启动后， vim会被split成上下两个buffer。\footnote{对于buffer，window在vim中的概念，请参考vim的帮助文档}如图
+  Shext是一个仿shell的东西，启动后， vim会被split成上下两个buffer\footnote{对于buffer，window在vim中的概念，请参考vim的帮助文档}。如图
   \begin{figure}[htbp]%位置选项
   \centering
   \includegraphics[scale=0.5]{shext.jpg}
@@ -138,7 +144,7 @@
   
 
   上面一个是命令编辑区， 用于编辑和运行命令。 下面一个是命令输出区，用于显示命令的输出。
-Shext支持内置实现的一些的命令和系统的命令， 内置命令优先。不支持交互式和需要用到终瑞库的命令， 如ftp，mysql,vim,mc等 
+Shext支持内置实现的一些的命令和系统的命令， 内置命令优先。不支持交互式和需要用到终瑞库的命令， 如ftp，mysql,vim,mc等。 
 
   Shext启动后， 如果输入"/"，如果对应的参数是目路路径， 则在命令输出buffer会显示
 对应路径的内容作为提示。 比如 
@@ -240,7 +246,7 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
    对于使用maven的项目来说， 还可以直接用maven命令行建maven项目，然后用
   \begin{verbatim} mvn eclipse:eclipse \end{verbatim}
   来生成eclipse项目文件。 此种方式生成的.classpath文件，引用的jar包都是以M2\_REPO来开头的， Vim-SzTool
-在默认情况下找不到这个变量相对应的路径。 需要在\~/.sztools/vars.txt配置变量对应的路径。 格式很简单
+在默认情况下找不到这个变量相对应的路径。 需要在$\tiny{\sim}$/.sztools/vars.txt配置变量对应的路径。 格式很简单
   \begin{verbatim} M2\_REPO = /usr/maven/repo \end{verbatim}
 
    对于简单的类，如果只引用JDK自带类库的话， 也可以不用项目结构。在Jdext启动后，直接在任意目录新建Java
@@ -276,6 +282,12 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
     保存 java 时自动编译，如果有错误，则会生成 quickfix 列表 <C-N>，<C-p>跳转到前一个或后一个错误 
     对于在类路径下的资源文件，如xml或properties文件，　在保存时也会自动复制到项目的编译输出目录。
     Jdext默认的编译级别，编译encoding，这些在sztools.cfg中设置。
+
+  \begin{figure}[htbp]%位置选项
+  \centering
+  \includegraphics[scale=0.5]{compile.jpg}
+  \caption{Jde保存java文件时截图}
+  \end{figure}
 
 \subsection{运行}
     使用 \colorbox{lightgray}{:Run} 或 \colorbox{lightgray}{<leader>,}\footnote{对于<leader>的含意，请查看vim中的帮助:help <leader>} 来 运行当前的class。
@@ -416,7 +428,13 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
 NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显示)， 所以我
 用python又写了一套。
 
-  ProjectTree有自己的一些特点:
+  \begin{figure}[htbp]%位置选项
+  \centering
+  \includegraphics[scale=0.5]{tree.jpg}
+  \caption{ProjectTree截图}
+  \end{figure}
+
+  ProjectTree的一些特点:
   \begin{enumerate}
     \item 按树结构显示source jar 
     \item 打开的节点显示不同的颜色，一目了然看到哪些文件在编辑
@@ -562,7 +580,7 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
 另外在程序中还写了mysql的驱动模块MySQLdb的支持，不过我自己用的不多，估计会有问题。
 
 \subsection{配置}
-   在使用前先确保在 \~/.sztools 目录下的db.conf中配置了想要连接的数据库。
+   在使用前先确保在 $\tiny{\sim}$/.sztools 目录下的db.conf中配置了想要连接的数据库。
    配置文件格式为
     \begin{mdframed}[style=SmallFrame]
     \begin{flushleft}
