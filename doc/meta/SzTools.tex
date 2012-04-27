@@ -58,13 +58,14 @@
     \large\textbf{工欲善其事，必先利其器}
   \end{center}
 
-  对于开发人员来说，能选好一个工具并用到纯熟，无疑对工作效率有很好的提升。 文本编辑器，编译器，调试
+  对于开发人员来说，选好一个工具并用到纯熟，无疑对工作效率有很好的提升。 文本编辑器，编译器，调试
 器就是开发必不可少的几个工具。  Vim是功能最强大的文本编辑器之一(另一个是Emacs)。 
 但是Vim中可选的java开发类插件并不多， 可能是用Vim做java开发的程序员太少了。 许多Java程序员现在都用的是eclipse，jbuilder之类
 的IDE， 不过eclipse除了其臭名昭著的体积庞大，运行慢等缺点之外， 其编辑功能跟vim比起来，实在连鸡肋都算不上。 
 
-  其实在vim官网已经有一个比较著名的java开发插件，VJDE。 另外eclim直接将eclipse做为后端， 将很多功能
-直接引入了vim。 另外eclipse下也有形形色色的仿vim插件(参见附录)，为什么还要再作一个插件Vim-Sztool呢
+  vim的java开发插件虽不多，但是在vim官网已经有一个比较著名的java开发插件，VJDE。 另外eclim直接
+将eclipse做为后端， 将很多功能直接引入了vim。 eclipse作为一个开发工具平台，上面也有形形色色的仿
+vim插件(参见附录)，在eclipse安装vim插件启用vim模式似乎也是个不错的选择。为什么还要再做一个插件Vim-Sztool呢
   
   \begin{enumerate}
     \item VJDE每次补全都需调用外部java命令用反射来读取类信息，速度比较慢。eclim因为用eclipse作为后端， 速度也是偏慢。
@@ -76,12 +77,19 @@
   \begin{enumerate}
     \item 快速的补全(类相关信息缓存在Agent中)
     \item java程序调试功能，可能是仅有的支持java调试的vim插件
-    \item 扩展的NerdTree树，显示项目树，支持显示项目引用的源码包(source jar)。
+    \item 定制的ProjectTree，项目中引用的源码包(source jar)也按树结点显示。
     \item 快速文件定位，类似于Eclipse中的open resource功能。
     \item 源码跳转，支持跳转到source jar包中的文件。
-    \item 远程调试
+    \item 自带jdb支持java程序调试并支持远程调试
     \item 直接从自带jdb中启动tomcat
   \end{enumerate}
+
+  Vim-Sztool采用了类似eclim的方法，将java类的编译，调试等大部份的功能放
+在服务端执行，然后通过gvim支持的remote-send和netbeans协议在服务端和vim之
+间进行通讯。在eclim里，这个服务端是eclipse的插件，所以用eclim的时候，用
+vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速度的。Vim-Sztool
+自己实现了Agent，功能少，速度还行。这个Agent程序在vim启动时自动运行(如果
+安装没问题的话)。
 
 \chapter{安装和配置}
   \section{需求}
@@ -103,14 +111,15 @@
 
   \section{安装}
     \begin{enumerate}
+      \item 确保已经安装了JDK,python和vim73, 和python的依赖模块
+      \item 设置环境变量: JDK\_HOME，path(需要把gvim，python,java的可执行文件目录加到path中)
       \item 解压安装包， plugin目录覆盖到vim插件路径上，或
       者设置runtimepath， 比如
       \begin{verbatim} set runtimepath+=D:\\soft\\vim-sztool \end{verbatim}
       \item 在vimrc中添加全局变量 g:sztool\_home
       \begin{verbatim} let g:sztool_home="D:\\soft\\vim-sztool\\sztools" \end{verbatim}
-      \item 设置环境变量
-      JDK\_HOME，path(需要把gvim，python的可执行文件目录加到path中)
-      \item 源码位于https://github.com/shrekwang/vim-sztool,可以git clone此项目，代替下载的安装包(不覆盖到vim默认plugin目录，只设置runtimepath)，这样易于更新和管理。
+      \item 源码位于https://github.com/shrekwang/vim-sztool,可以git clone此项目，代替
+      下载的安装包(不覆盖到vim默认plugin目录，只设置runtimepath)，这样易于更新和管理。
     \end{enumerate}
    如果安装成功，此时启动gvim，在系统托盘区会有个军刀的图标，这个是Agent程序，
    说明已经安装成功了。
@@ -240,17 +249,18 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
 下的map。
 
 \subsection{项目结构}
-    Jdext使用了和eclipse一样的项目管理方式， 在项目根目中，有一个.classpath和.project文件。 所以建
+    Jdext读取的是eclipse的项目管理文件， 在项目根目中，有一个.classpath和.project文件。但是即
+使没有在eclipse建项目，只要项目目录中有这两个文件，而且能正确解析的话，也是可以的。一般建
 议用eclipse建立项目，包括设置类路径等。在项目建立完成后， 再在Vim中进行开发。
 
    对于使用maven的项目来说， 还可以直接用maven命令行建maven项目，然后用
   \begin{verbatim} mvn eclipse:eclipse \end{verbatim}
   来生成eclipse项目文件。 此种方式生成的.classpath文件，引用的jar包都是以M2\_REPO来开头的， Vim-SzTool
 在默认情况下找不到这个变量相对应的路径。 需要在$\tiny{\sim}$/.sztools/vars.txt配置变量对应的路径。 格式很简单
-  \begin{verbatim} M2\_REPO = /usr/maven/repo \end{verbatim}
+  \begin{verbatim} M2_REPO = /usr/maven/repo \end{verbatim}
 
    对于简单的类，如果只引用JDK自带类库的话， 也可以不用项目结构。在Jdext启动后，直接在任意目录新建Java
-文件，然后就可以保存编译和调试。
+文件，然后就可以保存编译和调试（对于jdk自带类库的引用，也支持代码补全）。
   
    对于需要几个jar包的小工程， 也可以新建空目录后， 然后cd到空目录， 运行\colorbox{lightgray}{:InitProject}命令来初始
 化项目结构。 这个命令会生成.classpath和 src，lib目录。 然后你可以拷自己的jar包到lib目录， 并自己编辑
@@ -265,17 +275,19 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
     \end{enumerate}
 
 \subsection{补全}
-    Vim-Sztool自定了java类型的omni的补全，编辑 java时， 用 <ctrl-x><ctrl-o> 来进行。
+    Vim-Sztool自定义了java类型的omni\footnote{omni补全为感知上下文的补全，相当于IDE里的智能补全。vim里有多种补全方式，比如关
+    键字补全。vim自带了不少omni的补全功能，比如HTML,CSS等，具体请查看vim帮助。:help new-omni-completion }的补全，编
+    辑java时， 用 <ctrl-x><ctrl-o> 来进行。
     \begin{mdframed}[style=BestPracticeFrame]
-      最佳实践: 安装SuperTab插件， 可以用tab键来做补全
-      Vim-Sztool会做侦测，如果已经安装SuperTab插件， 则对于java类型的
-      文件，默认的tab补全即是omni补全。
+      最佳实践: 安装SuperTab插件， 可以用tab键来做补全。
+      Vim-Sztool会做侦测，如果已经安装SuperTab插件， 则对于java类型的文件，默认的tab补全即是omni补全。
     \end{mdframed}
 
     \begin{enumerate}
       \item 可以补全包名，类名，名量名和对象的成员方法和字段
       \item 方法和字段补全是 ignore case 的，且可以引用通配符，比如 aa.to*er， 可以匹配成 aa.toLower
       \item 如果是大写开头的名字，则自动在类路径中查找类名。比如即使没有import FileReader类， 打FileRe 可以补全成FileReader类 
+      \item 补全类名时，不像eclipse那样能自动补上import语名。类补全完成需再\colorbox{lightgray}{<leader>ai}一下
     \end{enumerate}
     
 \subsection{编译}
@@ -292,6 +304,7 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
 \subsection{运行}
     使用 \colorbox{lightgray}{:Run} 或 \colorbox{lightgray}{<leader>,}\footnote{对于<leader>的含意，请查看vim中的帮助:help <leader>} 来 运行当前的class。
   注意运行的程序中不能有从终端中读取的功能，否则java程序将不能正常结束。
+    此功能暂不支持加arguments。如果需要测试程序参数，可以在Jdb模式启动后用 \colorbox{lightgray}{run}命令进行。
 
 \subsection{其他功能}
 
@@ -319,18 +332,20 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
   应的成员所在的行上。如果想中止查找，可以用\colorbox{lightgray}{Esc}键。
   \begin{mdframed}[style=BestPracticeFrame]
     最佳实践: 推荐安装Tagbar插件。此插件功能类似著名的TagList，但是对面向对象语言有更好的支持。
-    在附录中有此插件的地址。
+    此插件需要ctags程序支持，程序下载后也要放在path搜索目录中。在附录中有此插件的地址。
+    插件安装后最好也自定义下map如:
+      nnoremap <silent> <F10> :TagbarToggle<cr>
   \end{mdframed}
 
 \subsubsection{初始化项目结构}
 使用 \colorbox{lightgray}{:InitProject} 在当前目录初始化一个 jdext 项目， 如果编辑的文件是eclipse项目下的文件，则不需要再建项目。 
 
 \section{Jdb}
-    Jdb是插件实现的调试功能(跟jdk里自带的jdb程序没关系)， 需要在Jdext启动后再调用。 启动后， 默认会 
+    Jdb是插件实现的java程序调试功能(跟jdk里自带的jdb程序没关系)， 需要在Jdext启动后再调用。 启动后， 默认会 
     split两块buffer， 一块是jdb命令buffer， 一块是jdb命令的输出buffer。 jdb命令的buffer也是普通buffer， 除了在回车时自动执行命令(类似于shext) 
 
     jdb的大步部份调试功能是在jdb的buffer中用命令实现的， 有个例外是加断点。 只要启动了
-    jde模式， 在编辑java文件的时候， 用\colorbox{lightgray}{<leader>tb}来为当前行切换断点。
+    jde模式，在编辑java文件的时候，就可以用\colorbox{lightgray}{<leader>tb}来为当前行切换断点。
 
   \subsection{运行和附加}
     
@@ -446,10 +461,9 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
   \subsection{打开和关闭节点}
   在ProjectTree中打开和关闭节点是最常用的功能。 对于目录节结点来说，
 打开和关闭指的是expand和collapse操作， 而对于文件节点，打开指编辑，关闭指关闭正在编辑的
-文件buffer。 \footnote{对于buffer，window在vim中的概念，请参考vim的帮助文档}
-  \newline
-  (在Nerdtree中对于文件节点是没有关闭操作的)
-  \newline
+文件buffer。 \footnote{对于buffer，window在vim中的概念，请参考vim的帮助文档} (在Nerdtree中
+对于文件节点是没有关闭操作的)
+  
   正常情况下，打开文件节点后，节点会以不同的颜色显示。
   \begin{table}[H]
   \centering
@@ -474,7 +488,7 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
   \end{table}
 
   \subsection{移动和标记}
-  由于vim本身的巨多的移动功能，在ProjectTree中扩展的移动不是很多。 对于已经打开的文件，
+  由于vim本身有非常多的移动功能，在ProjectTree中扩展的移动不是很多。 对于已经打开的文件，
 可以用"<"，">"在这些节点之前快速移动。
   \begin{table}[H]
   \centering
@@ -490,7 +504,7 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
       \bottomrule
       \end{tabular}
   \end{table}
-  另外在编辑文件的buffer， 可以用ProjectTreeFind命令来定位左侧的
+  另外在编辑文件的buffer， 可以用\colorbox{lightgray}{ProjectTreeFind}命令来定位左侧的
 树结点。(此命令适用于左侧已经有ProjectTree打开的情况,如果还没有ProjectTree，
 则可以用\colorbox{lightgray}{:ProjectTree}打开，打开时也会自动定位节点)。在我自己的vimrc中， 我
 做了如下映射
@@ -533,7 +547,8 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
 
     Locate 功能有点像command-T插件， 用来快速定位文件的。 但是不同的是，这个功能需
 要先对文件夹进行索引，索引后的 文件名信息存在sqlite的数据库中。 这样无论你的当前目
-录 是在哪里， 都可以快速按文件名定位到已索引的目录中的文件。
+录是在哪里， 都可以快速按文件名定位到已索引的目录中的文件。相当于是eclipse中的Open Resource
+功能。
 
 \subsection{索引建立删除}
   索引管理索引需要在Shext中用locatedb命令管理(建索引时需要先cd到需要索引的目录) 
@@ -545,15 +560,18 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
   \end{itemize}
 
 \subsection{索引更新}
-    当gvim启动后， 会有一个独立的Agent进程启动， 此进程会自动 
+    当gvim启动后，会有一个独立的Agent进程启动，此进程会自动
 监视被索引目录的文件的新建和删除，并自动更新索引。如果文件在Agent
 进程未启动条件下新建和删除， 可以手动执行locatedb refresh 命令更新
 
+   目录监视功能是系统级的，即使在vim外新增删除文件和目录也会更新索引。
+想知道相关实现的可以看http://jnotify.sourceforge.net/
+
 \subsection{调用}
-   以 <leader>lw 来启动locate模式， 启动后，底下会有一个
- 小的buffer用来显示匹配的文件名。 所有输入的字符都显示
- 在command line上面， 并显示相应的匹配内容。 在匹配列表
- 出来后，可用的功能如下
+   以 \colorbox{lightgray}{<leader>lw} 来启动locate模式， 启动后，底下会有一个
+小的buffer用来显示匹配的文件名。 所有输入的字符都显示在command line上面，
+并显示相应的匹配内容。匹配不区分大小写，并支持通配符"*"。在匹配列表出来后，可
+用的功能如下
     \begin{itemize}
         \item <Esc> : 退出locate模式
         \item <CR>  : 打开(编辑)当前光标所在文件 
@@ -649,7 +667,7 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
   \newline
 
   推荐的vim插件
-  \newline
+
   supertab
   \href{http://vim.sourceforge.net/scripts/script.php?script\_id=1643}
    {http://vim.sourceforge.net/scripts/script.php?script\_id=1643}
@@ -676,6 +694,8 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
    {http://vim.sourceforge.net/scripts/script.php?script\_id=42}
 
 \chapter{已知问题}
+
+
     在 windows下,默认安装的gvim73+python2.7.2 import pyodbc时会出现import error 
 
     默认不支持64位系统,需要替换64位的swt.jar 
@@ -684,9 +704,9 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
     site-packages/sitecustomize.py 和 .vimrc中的 encoding 选项来设置 
 
 \chapter{后记}
-    本文档用vim+latex写成。 感谢这两个伟大的工具
-   \newline
-   另外特别感谢Vim草堂的各位群友， 感谢YD的思凡和LE给我们每天带来的快乐
+   本文档用vim+latex写成。 感谢这两个伟大的工具
+
+   另外特别感谢Vim草堂的各位群友，感谢他们对我提出的问题的热心解答。
    
    
 \end{document}
