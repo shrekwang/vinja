@@ -2,6 +2,7 @@
 
   \usepackage{color}
   \usepackage{booktabs}
+  \usepackage{placeins}
   \usepackage{mdframed}
   \usepackage{titlesec}
   \usepackage{float}
@@ -64,8 +65,9 @@
 的IDE， 不过eclipse除了其臭名昭著的体积庞大，运行慢等缺点之外， 其编辑功能跟vim比起来，实在连鸡肋都算不上。 
 
   vim的java开发插件虽不多，但是在vim官网已经有一个比较著名的java开发插件，VJDE。 另外eclim直接
-将eclipse做为后端， 将很多功能直接引入了vim。 eclipse作为一个开发工具平台，上面也有形形色色的仿
-vim插件(参见附录)，在eclipse安装vim插件启用vim模式似乎也是个不错的选择。为什么还要再做一个插件Vim-Sztool呢
+将eclipse做为后端， 将很多功能直接引入了vim。 而eclipse本身作为一个开发工具平台，上面也有形形色色的仿
+vim插件(参见附录)。因此无论是在vim中用java开发类插件或是在eclipse中安装vim插件启用vim模式， 似乎都有不错的选择。
+为什么还要再做一个插件Vim-Sztool呢
   
   \begin{enumerate}
     \item VJDE每次补全都需调用外部java命令用反射来读取类信息，速度比较慢。eclim因为用eclipse作为后端， 速度也是偏慢。
@@ -85,11 +87,35 @@ vim插件(参见附录)，在eclipse安装vim插件启用vim模式似乎也是�
   \end{enumerate}
 
   Vim-Sztool采用了类似eclim的方法，将java类的编译，调试等大部份的功能放
-在服务端执行，然后通过gvim支持的remote-send和netbeans协议在服务端和vim之
+在服务端执行，然后通过gvim支持的remote-expr(或remote-send)功能和netbeans协议在服务端和vim之
 间进行通讯。在eclim里，这个服务端是eclipse的插件，所以用eclim的时候，用
 vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速度的。Vim-Sztool
 自己实现了Agent，功能少，速度还行。这个Agent程序在vim启动时自动运行(如果
 安装没问题的话)。
+
+  Vim-Sztool除了java的编译补全之外，还另外加了些功能。比如Shext，可以执行
+一些简单的shell命令，比如Dbext，用来做一些简单的SQL查询。具体的可以看后面
+的"使用"一章。
+
+  由于Vim-Sztool大量采取了split窗口的方式，对于习惯单窗口操作的vimer可能
+会有点不适应。这个目前也没什么好的办法，有的功能不用split窗口的方式比较
+难以实现。如果要使用此插件的，定义个快速切换窗口和tab页的map是或不错的选择
+我自己在vimrc中做了如下设置:
+
+\begin{mdframed}[style=BestPracticeFrame]
+    \begin{verbatim}
+      map <C-j> <C-W>j
+      map <C-k> <C-W>k
+      map <C-h> <C-W>h
+      map <C-l> <C-W>l
+
+      map <M-h>  gT
+      map <M-l>  gt
+    \end{verbatim}
+\end{mdframed}
+
+这样切换窗口和tab就可以比较快捷一点。推荐大家也使用合适自己的map。
+
 
 \chapter{安装和配置}
   \section{需求}
@@ -106,7 +132,7 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
     \begin{itemize}
       \item 熟悉vim，懂一点vim script
       \item 了解python， 会自己安装一些python模块，比如上面提到的pyparsing
-      \item 有用vim写java程序的需求，没需求就别折腾了
+      \item 有用vim写java程序的需求
     \end{itemize}
 
   \section{安装}
@@ -139,12 +165,16 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
     \item{vars.txt} 配置.classpath文件中引用的变量
     \item{stepfilters.txt} 配置jdb调试时，略过的一些package
     \item{db.conf} 配置Dbext用到的数据库连接
+    \item{shext-bm.txt} 配置书签，参见Shext中的bm相关命令
   \end{description}
   
 
 \chapter{使用}
+  本章讲Sztools的使用。后面的文本可能会有大量的"窗口","buffer","tab页"这些术语，如
+无特殊说明，这些都是指vim中的概念。如果不熟悉这些术语，请查看vim的帮助文档。可以使用:help window。
+
   \section{Shext}
-  Shext是一个仿shell的东西，启动后， vim会被split成上下两个buffer\footnote{对于buffer，window在vim中的概念，请参考vim的帮助文档}。如图
+  Shext是一个仿shell的东西，启动后， vim会被split成上下两个buffer。如图
   \begin{figure}[htbp]%位置选项
   \centering
   \includegraphics[scale=0.5]{shext.jpg}
@@ -152,10 +182,11 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
   \end{figure}
   
 
-  上面一个是命令编辑区， 用于编辑和运行命令。 下面一个是命令输出区，用于显示命令的输出。
-Shext支持内置实现的一些的命令和系统的命令， 内置命令优先。不支持交互式和需要用到终瑞库的命令， 如ftp，mysql,vim,mc等。 
+  用\colorbox{lightgray}{:Shext}启动，启动后，会把当前buffer作为命令编辑区， 用于编辑和运行命令。 split出来的下面buffer
+是命令输出区，用于显示命令的输出。在启动前，确保当前的tab页是空的。否则会把当前编辑的文件作为命令编辑区，一般这
+不会是想要的情况。Shext支持内置实现的一些的命令和系统的命令， 内置命令优先。不支持交互式和需要用到终瑞库的命令， 如ftp，mysql,vim,mc等。 
 
-  Shext启动后， 如果输入"/"，如果对应的参数是目路路径， 则在命令输出buffer会显示
+  在命令编辑buffer， 如果输入"/"，如果对应的参数是目路路径， 则在命令输出buffer会显示
 对应路径的内容作为提示。 比如 
   \begin{verbatim} cd c:/ \end{verbatim}
  在"/"按下后， 会列出c:根目录的内容。(Shext默认在linux和win下都使用"/"作为目录分隔符)
@@ -167,81 +198,105 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
 如果想编辑其中的第5个文件， 则可以用 "edit \$5;;<cr>" 来实现。 注意这个补全是带状态的，
 在\$5;;后，如果你还要编辑上一个文件，可以用<C-p>， 如果想编辑下一个文件，可以用<C-n>。
 
-  \begin{mdframed}[style=BestPracticeFrame]
-  最佳实践: 由于可能需要经常的切换window， 最好在vimrc中定义下列的map
-    \begin{verbatim}
-      map <C-j> <C-W>j
-      map <C-k> <C-W>k
-      map <C-h> <C-W>h
-      map <C-l> <C-W>l
-    \end{verbatim}
-  \end{mdframed}
 
+\subsection{内置命令}
+     内置命令是插件自带的命令，大多数是linux下命令的简化版。本来这些命令直接调用系统命令会更强
+大，但由于我的工作环境主要是windows，另外像ls的带色彩化输出也难以做到，所以才用python和java简化
+实现了一点。ls的输出做了些定制，支持对目录和压缩文件，以及可执行文件以不同的颜色显示。具体的颜色
+可以在$\tiny{\sim}$/.sztools/sztools.cfg文件中配置。
 
-  \subsection{内置命令}
+\subsubsection{改变和显示目录}
 
-  \subsubsection{改变和显示目录}
-    \colorbox{lightgray}{pwd},显示当前目录.  \colorbox{lightgray}{cd}, 更改当前目录， 可使用bookmark和通配符。
-    \newline
-    \textbf{举例:}
-    \begin{mdframed}[style=SmallFrame] cd ~/.vim/plugin \end{mdframed}
-    \vspace{0.1mm}
-    到home目录的.vim/plugin目录
+\begin{verbatim}
+pwd      : 显示当前目录
+cd args  : 更改当前目录，可使用bookmark和通配符。
+cdlist   : 列出cd过的目录历史。
+lsd      : 列出当前目录下的子目录。
+\end{verbatim}
 
-    \begin{mdframed}[style=SmallFrame] cd work/project \end{mdframed}
-    \vspace{0.1mm}
-     其中work是定义的一个书签，并非子目录
+\begin{flushleft}\textbf{举例:}\end{flushleft}
+\begin{mdframed}[style=SmallFrame] cd \~/.vim/plugin \end{mdframed}到home目录的.vim/plugin目录
+\vspace{4mm}
 
-    \begin{mdframed}[style=SmallFrame] cd *doc \end{mdframed}
-    \vspace{0.1mm}
-     如果当前目录下只有一个doc结尾的子目录，则进入该子目录
+\begin{mdframed}[style=SmallFrame] cd work/project \end{mdframed}其中work是定义的一个书签，并非子目录
+\vspace{4mm}
 
-    cdlist   : list the cd history。
-    \newline
-    cdlist   : 列出cd过的目录历史。
-    \newline
-    lsd      : 列出当前目录下的子目录。
+\begin{mdframed}[style=SmallFrame] cd *doc \end{mdframed}如果当前目录下只有一个doc结尾的子目录，则进入该子目录
+\vspace{4mm}
 
-  \begin{verbatim}
-    ls [ -l | -L ][ -t | -s | -n ] [ --help ] [args] 
-    列当前目录内容。 
-    -l 表示长格式， 每一行列一个文件
-    -t 表示按时间排序
-    -s 表示按大小排序
-    -n 表示按名称排序
-    --help 打印ls命令的帮助信息
+\begin{mdframed}[style=SmallFrame] cd ../sr*/net/s*/../../icons/ \end{mdframed}通配符和..可以结合着用
+\vspace{4mm}
 
-    因为实现上的原因， 以"."开头的文件默认是不显示的， 你可以用 "ls ." 来显示所有文件
+\begin{mdframed}[style=SmallFrame] cd - \end{mdframed}回退到cd前的目录
+\vspace{4mm}
 
+\begin{verbatim}
+ls [ -l | -L ][ -t | -s | -n ] [ --help ] [args] 
+列当前目录内容。 
+  -l 表示长格式， 每一行列一个文件
+  -t 表示按时间排序
+  -s 表示按大小排序
+  -n 表示按名称排序
+  --help 打印ls命令的帮助信息
 
-  书签 :
-      bmadd   : 将当前目录加到bookmarks中，能在"cd"命令中引用
-      bmedit  : 编辑"bookmarks"文件
-      bmlist  : 列出所有bookmark。
+因为实现上的原因， 以"."开头的文件默认是不显示的， 你可以用 "ls ." 来显示所有文件
+\end{verbatim}
 
-  文件管理:
-      touch [args]       : 新建文件或者更新文件时间戳
-      rm  [args] [-r]    : 删除文件或目录
-      mkdir [args]       : 新建目录
-      rmdir [args]       : 删除空目录
-      cp  [src...][dst]  : 复制文件或目录
-      mv  [src...][dst]  : 移动文件或目录
-      echo [args]        : 打印文本消息
-      merge [src...][dst]: 合并多个文件
-      find [-n name][-t text] [-s size] [-p path] [--help] [args] : 查找文件
+\subsubsection{书签}
+\begin{verbatim}
+bmadd   : 将当前目录加到bookmarks中，能在"cd"命令中引用
+bmedit  : 编辑"bookmarks"文件
+bmlist  : 列出所有bookmark。
+\end{verbatim}
 
-  File display & edit :
-      cat [arg]      : 显示文件内容
-      head [arg]     : 显示文件前10行
-      edit [args]    : 在打开新tab，并编辑文件
+\begin{flushleft}\textbf{举例:}\end{flushleft}
+\begin{mdframed}[style=SmallFrame] bmadd \end{mdframed}
+如果当前的目录为 /usr/local/tomcat，调用bmadd后，会增加一个名为tomcat的书签。
+这时，随便你在哪一级目录，只要 cd tomcat 就能进到 /usr/local/tomcat。
+书签以文本格式存放在$\tiny{\sim}$/.sztools/shext-bm.txt文件中。可以用bmedit命令编辑
+\vspace{4mm}
 
-  locate命令 :
-      此命令在Locate一节描述
+\subsubsection{文件管理}
+\begin{verbatim}
+touch [args]       : 新建文件或者更新文件时间戳
+rm  [args] [-r]    : 删除文件或目录
+mkdir [args]       : 新建目录
+rmdir [args]       : 删除空目录
+cp  [src...][dst]  : 复制文件或目录
+mv  [src...][dst]  : 移动文件或目录
+echo [args]        : 打印文本消息
+merge [src...][dst]: 合并多个文件
+cat [arg]      : 显示文件内容
+head [arg]     : 显示文件前10行
+edit [args]    : 在打开新tab，并编辑文件
 
-  杂项 :
-      help           : 打印Shext帮助信息
-      exit           : 退出Shext。
-  \end{verbatim}
+find [-n name][-t text] [-s size] [-p path] [--help] [args] 
+查找文件。
+-n name 按文件名查找
+-t text 查找包含文件的文件(非正则)
+-s size 按文件大小查找
+命令默认在当前目录查找，可以在args中指定要查找的目录。
+\end{verbatim}
+
+\subsubsection{Locate命令}
+此命令在Locate一节描述
+
+\subsubsection{杂项}
+\begin{verbatim}
+help           : 打印Shext帮助信息
+exit           : 退出Shext。
+\end{verbatim}
+
+\subsection{系统命令}
+  Shext也支持直接执行系统命令。
+  \FloatBarrier
+  \begin{figure}[H]%位置选项
+  \centering
+  \includegraphics[scale=0.5]{shext-syscmd.jpg}
+  \caption{Shext中执行系统命令截图}
+  \end{figure}
+
+  对于windows系统，可以执行"explorer ."来用资源管理器打开当前目录。
 
 \section{Jdext}
   Jdext包含了java相关的功能，只有在Jdext启动后，本节介绍的功能才可以使用。另外在Jdext启动时，
@@ -291,7 +346,7 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
     \end{enumerate}
     
 \subsection{编译}
-    保存 java 时自动编译，如果有错误，则会生成 quickfix 列表 <C-N>，<C-p>跳转到前一个或后一个错误 
+    保存 java 时自动编译，如果有错误，则会生成 quickfix 列表，可以用:cn，:cp命令转到前一个或后一个错误。
     对于在类路径下的资源文件，如xml或properties文件，　在保存时也会自动复制到项目的编译输出目录。
     Jdext默认的编译级别，编译encoding，这些在sztools.cfg中设置。
 
@@ -301,10 +356,20 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
   \caption{Jde保存java文件时截图}
   \end{figure}
 
+  \begin{mdframed}[style=BestPracticeFrame]
+  \begin{flushleft}
+    最佳实践: 定义如下map，快速在quickfix中移动
+
+    map <C-n> :cn<cr>\newline
+    map <C-p> :cp<cr>
+  \end{flushleft}
+  \end{mdframed}
+
 \subsection{运行}
-    使用 \colorbox{lightgray}{:Run} 或 \colorbox{lightgray}{<leader>,}\footnote{对于<leader>的含意，请查看vim中的帮助:help <leader>} 来 运行当前的class。
-  注意运行的程序中不能有从终端中读取的功能，否则java程序将不能正常结束。
-    此功能暂不支持加arguments。如果需要测试程序参数，可以在Jdb模式启动后用 \colorbox{lightgray}{run}命令进行。
+    使用 \colorbox{lightgray}{:Run} 或 \colorbox{lightgray}{<leader>,}\footnote{对于<leader>的含意，请查看vim中的帮助:help <leader>，在
+默认情况下这个是指按键\textbackslash，但是我一般设置let g:mapleader = "," 。} 来 运行当前的class。
+注意运行的程序中不能有从终端中读取的功能，否则java程序将不能正常结束。
+此功能暂不支持加arguments。如果需要测试程序参数，可以在Jdb模式启动后用 \colorbox{lightgray}{run}命令进行。
 
 \subsection{其他功能}
 
@@ -436,6 +501,27 @@ Shext支持内置实现的一些的命令和系统的命令， 内置命令优�
       \end{flushleft}
     \end{mdframed}
 
+  \subsection{调试实例}
+  新建测试用空目录，启动Jdext。然后新建个两个测试类，在第9行用
+<leader>tb切换断点，接着启动Jdb时行调试。如下图
+  \FloatBarrier
+  \begin{figure}[H]%位置选项
+  \centering
+  \includegraphics[scale=0.5]{jdb-run.jpg}
+  \caption{Jdb运行java类}
+  \end{figure}
+  run命令开始后，会又新增一个"JdeConsole"的buffer以打印java程序的输出。
+  此时按<F5>或在jdb命令buffer中输入step\_info, 则跳转到Business类中。
+  \FloatBarrier
+  \begin{figure}[H]%位置选项
+  \centering
+  \includegraphics[scale=0.5]{jdb-print2.jpg}
+  \caption{Jdb运行java类}
+  \end{figure}
+  执行print语句，jdb输出在"JdbStdout"buffer中显示。此时可以继续调试
+或用frame切换到上一个栈帧去查看Test类中的变量的值。被调试的java类运行
+结束后，会在"JdbStdout"中显示"process terminated."。调试完成后用exit命
+令退出。
 
 \section{ProjectTree}
 
@@ -559,6 +645,11 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
       \item locatedb list : 列出已建立的索引 
   \end{itemize}
 
+  建立索引时，并不是当前文件夹下的所有文件都会索引的。一些文件是编译输出的，或
+者是临时文件的话，则默认不索引。比如.pyc文件，.class文件等默认不索引。具体哪些文件
+不索引，可以通过$\tiny{\sim}$/.sztools/sztools.cfg文件中的default\_exclude\_pattern
+属性值来设置。
+
 \subsection{索引更新}
     当gvim启动后，会有一个独立的Agent进程启动，此进程会自动
 监视被索引目录的文件的新建和删除，并自动更新索引。如果文件在Agent
@@ -639,7 +730,7 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
     \item \colorbox{lightgray}{,lt} 显示名称中包含当前选中文本的所有表。执行前先要visual选中文本
     \end{itemize} 
 
-\section{杂功能}
+\section{杂项功能}
   \begin{itemize}
         \item <leader>te  :将选中文档用表格框起来
         \item <leader>rc  :删光java文件的注释
