@@ -529,6 +529,26 @@ exit           : 退出Shext。
 NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显示)， 所以我
 用python又写了一套。
 
+  ProjectTree启动时，会从当前目录向上查找eclipse项目文件，如果找不到，就
+以当前目录为树的根节点目录。如果找到项目配置.classpath文件，则会以此目录
+做为树的根节点目录，同时会在根节点上增加一个叫"Referenced Libraries"的虚拟
+目录节点，下面对应项目中引用的source jar包。对于没有关联源码的jar包，不会
+在节点中显示。一般至少会有一个节点"src.zip"，对应jdk自带的源码。
+  
+  \begin{mdframed}[style=BestPracticeFrame]
+      最佳实践: 在用mvn eclipse:eclipse生成项目文件之前，可以配置pom文件下载关联的源码
+      \begin{verbatim}
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-eclipse-plugin</artifactId>
+        <configuration>
+          <downloadSources>true</downloadSources>
+          <downloadJavadocs>true</downloadJavadocs>
+        </configuration>
+      </plugin>
+      \end{verbatim}
+    \end{mdframed}
+
   \begin{figure}[htbp]%位置选项
   \centering
   \includegraphics[scale=0.5]{tree.jpg}
@@ -621,13 +641,18 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
           ym    &复制标记的文件或目录\\
           dd    &剪切当前文件或目录\\
           p     &粘贴复制或剪切的文件\\
-          C     &更改树的根节点文件件\\
+          C     &更改树的显示根目录\\
           B     &返回老的根节点\\
           U     &更改树的根节点为父目录\\
           QQ    &关闭ProjectTree\\
         \bottomrule
       \end{tabular}
   \end{table}
+  ProjectTree不同于NerdTree树，它是单实例的。关闭ProjectTree树，不会删除
+它的节点信息，当重新打开时，原来打开的节点或关闭的节点等都保持原来的状态。
+有时候会想要完全关闭ProjectTree(比如当前目录转到其他项目文件夹之后)，这时
+可以先用QQ命令关闭ProjectTree，再重新打开时，就会以当前目录以树结点的根目录了。
+
 
 \section{Locate}
 
