@@ -99,7 +99,7 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
 
   由于Vim-Sztool大量采取了split窗口的方式，对于习惯单窗口操作的vimer可能
 会有点不适应。这个目前也没什么好的办法，有的功能不用split窗口的方式比较
-难以实现。如果要使用此插件的，定义个快速切换窗口和tab页的map是或不错的选择
+难以实现。如果要使用此插件的，定义个快速切换窗口和tab页的map是个不错的选择。
 我自己在vimrc中做了如下设置:
 
 \begin{mdframed}[style=BestPracticeFrame]
@@ -144,8 +144,9 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
       \begin{verbatim} set runtimepath+=D:\\soft\\vim-sztool \end{verbatim}
       \item 在vimrc中添加全局变量 g:sztool\_home
       \begin{verbatim} let g:sztool_home="D:\\soft\\vim-sztool\\sztools" \end{verbatim}
-      \item 源码位于https://github.com/shrekwang/vim-sztool,可以git clone此项目，代替
-      下载的安装包(不覆盖到vim默认plugin目录，只设置runtimepath)，这样易于更新和管理。
+      \item 源码安装。源码位于https://github.com/shrekwang/vim-sztool,可以git clone此项目，代替
+      下载的安装包(不覆盖到vim默认plugin目录，只设置runtimepath)，这样易于更新和管理。clone完后，
+      需用 ant运行sztools/ant/build.xml, 以编译和生成Agent程序的jar包。
     \end{enumerate}
    如果安装成功，此时启动gvim，在系统托盘区会有个军刀的图标，这个是Agent程序，
    说明已经安装成功了。
@@ -184,7 +185,7 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
 
   用\colorbox{lightgray}{:Shext}启动，启动后，会把当前buffer作为命令编辑区， 用于编辑和运行命令。 split出来的下面buffer
 是命令输出区，用于显示命令的输出。在启动前，确保当前的tab页是空的。否则会把当前编辑的文件作为命令编辑区，一般这
-不会是想要的情况。Shext支持内置实现的一些的命令和系统的命令， 内置命令优先。不支持交互式和需要用到终瑞库的命令， 如ftp，mysql,vim,mc等。 
+不会是想要的情况。Shext支持内置实现的的命令和系统的命令， 内置命令优先。不支持交互式和需要用到终瑞库的命令， 如ftp，mysql,vim,mc等。 
 
   在命令编辑buffer， 如果输入"/"，如果对应的参数是目路路径， 则在命令输出buffer会显示
 对应路径的内容作为提示。 比如 
@@ -200,7 +201,7 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
 
 
 \subsection{内置命令}
-     内置命令是插件自带的命令，大多数是linux下命令的简化版。本来这些命令直接调用系统命令会更强
+     内置命令是插件自已实现的命令，大多数是linux下命令的简化版。本来这些命令直接调用系统命令会更强
 大，但由于我的工作环境主要是windows，另外像ls的带色彩化输出也难以做到，所以才用python和java简化
 实现了一点。ls的输出做了些定制，支持对目录和压缩文件，以及可执行文件以不同的颜色显示。具体的颜色
 可以在$\tiny{\sim}$/.sztools/sztools.cfg文件中配置。
@@ -298,9 +299,12 @@ exit           : 退出Shext。
 
   对于windows系统，可以执行"explorer ."来用资源管理器打开当前目录。
 
+  不支持需要交互的命令，比如svn commit -m "asd"是可以的，直接svn commit却不行 ，因为后者需要输入信息
+
 \section{Jdext}
   Jdext包含了java相关的功能，只有在Jdext启动后，本节介绍的功能才可以使用。另外在Jdext启动时，
-会定义很多的map，比如\colorbox{lightgray}{<leader>go}等，如无特别说明，这些都是指normal状态
+会定义很多的map，比如\colorbox{lightgray}{<leader>go}\footnote{对于<leader>的含意，请查看vim中的帮助:help <leader>，在
+默认情况下这个是指按键\textbackslash，但是我一般设置let g:mapleader = "," 。}等，如无特别说明，这些都是指normal状态
 下的map。
 
 \subsection{项目结构}
@@ -313,6 +317,9 @@ exit           : 退出Shext。
   来生成eclipse项目文件。 此种方式生成的.classpath文件，引用的jar包都是以M2\_REPO来开头的， Vim-SzTool
 在默认情况下找不到这个变量相对应的路径。 需要在$\tiny{\sim}$/.sztools/vars.txt配置变量对应的路径。 格式很简单
   \begin{verbatim} M2_REPO = /usr/maven/repo \end{verbatim}
+
+  老的maven项目，在生成.classpath文件后，需要再运行 mvn compile编译项目代码，Jdext启动时需读取
+类信息，以支持代码补全功能。
 
    对于简单的类，如果只引用JDK自带类库的话， 也可以不用项目结构。在Jdext启动后，直接在任意目录新建Java
 文件，然后就可以保存编译和调试（对于jdk自带类库的引用，也支持代码补全）。
@@ -366,8 +373,7 @@ exit           : 退出Shext。
   \end{mdframed}
 
 \subsection{运行}
-    使用 \colorbox{lightgray}{:Run} 或 \colorbox{lightgray}{<leader>,}\footnote{对于<leader>的含意，请查看vim中的帮助:help <leader>，在
-默认情况下这个是指按键\textbackslash，但是我一般设置let g:mapleader = "," 。} 来 运行当前的class。
+    使用 \colorbox{lightgray}{:Run} 或 \colorbox{lightgray}{<leader>,} 来 运行当前的class。
 注意运行的程序中不能有从终端中读取的功能，否则java程序将不能正常结束。
 此功能暂不支持加arguments。如果需要测试程序参数，可以在Jdb模式启动后用 \colorbox{lightgray}{run}命令进行。
 
@@ -518,7 +524,7 @@ exit           : 退出Shext。
   \includegraphics[scale=0.5]{jdb-print2.jpg}
   \caption{Jdb运行java类}
   \end{figure}
-  执行print语句，jdb输出在"JdbStdout"buffer中显示。此时可以继续调试
+  执行print语句，jdb输出在"JdbStdout" buffer中显示。此时可以继续调试
 或用frame切换到上一个栈帧去查看Test类中的变量的值。被调试的java类运行
 结束后，会在"JdbStdout"中显示"process terminated."。调试完成后用exit命
 令退出。
@@ -567,8 +573,7 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
   \subsection{打开和关闭节点}
   在ProjectTree中打开和关闭节点是最常用的功能。 对于目录节结点来说，
 打开和关闭指的是expand和collapse操作， 而对于文件节点，打开指编辑，关闭指关闭正在编辑的
-文件buffer。 \footnote{对于buffer，window在vim中的概念，请参考vim的帮助文档} (在Nerdtree中
-对于文件节点是没有关闭操作的)
+文件buffer。 (在Nerdtree中对于文件节点是没有关闭操作的)
   
   正常情况下，打开文件节点后，节点会以不同的颜色显示。
   \begin{table}[H]
