@@ -99,7 +99,7 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
 
   由于Vim-Sztool大量采取了split窗口的方式，对于习惯单窗口操作的vimer可能
 会有点不适应。这个目前也没什么好的办法，有的功能不用split窗口的方式比较
-难以实现。如果要使用此插件的，定义个快速切换窗口和tab页的map是或不错的选择
+难以实现。如果要使用此插件的，定义快速切换窗口和tab页的map是有必要的。
 我自己在vimrc中做了如下设置:
 
 \begin{mdframed}[style=BestPracticeFrame]
@@ -406,8 +406,11 @@ exit           : 退出Shext。
 使用 \colorbox{lightgray}{:InitProject} 在当前目录初始化一个 jdext 项目， 如果编辑的文件是eclipse项目下的文件，则不需要再建项目。 
 
 \section{Jdb}
-    Jdb是插件实现的java程序调试功能(跟jdk里自带的jdb程序没关系)， 需要在Jdext启动后再调用。 启动后， 默认会 
-    split两块buffer， 一块是jdb命令buffer， 一块是jdb命令的输出buffer。 jdb命令的buffer也是普通buffer， 除了在回车时自动执行命令(类似于shext) 
+    Jdb是插件实现的java程序调试功能(跟jdk里自带的jdb程序没关系)， 需要在Jdext启动后再调用。
+
+    以\colorbox{lightgray}{:Jdb}启动，启动后， 默认会split两块buffer， 一块是jdb命令buffer， 一块
+是jdb命令的输出buffer。 jdb命令的buffer也是普通buffer， 除了在回车时自动执行命令(类似于shext)，
+在jdb命令buffer运行\colorbox{lightgray}{help}命令可以得到jdb命令的简要帮助。
 
     jdb的大步部份调试功能是在jdb的buffer中用命令实现的， 有个例外是加断点。 只要启动了
     jde模式，在编辑java文件的时候，就可以用\colorbox{lightgray}{<leader>tb}来为当前行切换断点。
@@ -502,8 +505,8 @@ exit           : 退出Shext。
     \end{mdframed}
 
   \subsection{调试实例}
-  新建测试用空目录，启动Jdext。然后新建个两个测试类，在第9行用
-<leader>tb切换断点，接着启动Jdb时行调试。如下图
+  新建测试用空目录，启动Jdext。然后新建个两个测试类Test和Business，在Test类
+第9行用<leader>tb切换断点，接着启动Jdb时行调试。如下图
   \FloatBarrier
   \begin{figure}[H]%位置选项
   \centering
@@ -610,6 +613,14 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
       \bottomrule
       \end{tabular}
   \end{table}
+  执行f命令时，会提示输入要在节点中查找的字符串。默认情况下，是进行
+简单匹配的。如果输入的字符串以"/"开始和结束，则除去开头和结尾的"/"的子串，
+会作为正则表达式，并以此在节点中查找。 正则表达式的格式是python格式
+的。参见python的re模块的文档。
+
+  m用来标记当前节点，标记出来的节点按不同颜色显示。在已经标记的节点上再次执行m可以
+取消标记。对于已经标记的多个节点，可以用Dm或ym来删除或复制。
+
   另外在编辑文件的buffer， 可以用\colorbox{lightgray}{ProjectTreeFind}命令来定位左侧的
 树结点。(此命令适用于左侧已经有ProjectTree打开的情况,如果还没有ProjectTree，
 则可以用\colorbox{lightgray}{:ProjectTree}打开，打开时也会自动定位节点)。在我自己的vimrc中， 我
