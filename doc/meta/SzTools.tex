@@ -82,8 +82,7 @@ vim插件(参见附录)。因此无论是在vim中用java开发类插件或是�
     \item 定制的ProjectTree，项目中引用的源码包(source jar)也按树结点显示。
     \item 快速文件定位，类似于Eclipse中的open resource功能。
     \item 源码跳转，支持跳转到source jar包中的文件。
-    \item 自带jdb支持java程序调试并支持远程调试
-    \item 直接从自带jdb中启动tomcat
+    \item 支持java程序调试并支持远程调试
   \end{enumerate}
 
   Vim-Sztool采用了类似eclim的方法，将java类的编译，调试等大部份的功能放
@@ -142,10 +141,11 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
       \item 解压安装包， plugin目录覆盖到vim插件路径上，或
       者设置runtimepath， 比如
       \begin{verbatim} set runtimepath+=D:\\soft\\vim-sztool \end{verbatim}
-      \item 在vimrc中添加全局变量 g:sztool\_home
+      \item 在vimrc中添加全局变量 g:sztool\_home，注意是插件目录下的sztools目录。
       \begin{verbatim} let g:sztool_home="D:\\soft\\vim-sztool\\sztools" \end{verbatim}
-      \item 源码位于https://github.com/shrekwang/vim-sztool,可以git clone此项目，代替
-      下载的安装包(不覆盖到vim默认plugin目录，只设置runtimepath)，这样易于更新和管理。
+      \item 源码安装。源码位于https://github.com/shrekwang/vim-sztool,可以git clone此项目，代替
+      下载的安装包(不覆盖到vim默认plugin目录，只设置runtimepath)，这样易于更新和管理。clone完后，
+      需用 ant运行sztools/ant/build.xml, 以编译和生成Agent程序的jar包。
     \end{enumerate}
    如果安装成功，此时启动gvim，在系统托盘区会有个军刀的图标，这个是Agent程序，
    说明已经安装成功了。
@@ -182,9 +182,9 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
   \end{figure}
   
 
-  用\colorbox{lightgray}{:Shext}启动，启动后，会把当前buffer作为命令编辑区， 用于编辑和运行命令。 split出来的下面buffer
+  用\colorbox{lightgray}{:Shext}启动，启动后，会把当前buffer作为命令编辑区， 用于编辑和运行命令。 split出来的下侧buffer
 是命令输出区，用于显示命令的输出。在启动前，确保当前的tab页是空的。否则会把当前编辑的文件作为命令编辑区，一般这
-不会是想要的情况。Shext支持内置实现的一些的命令和系统的命令， 内置命令优先。不支持交互式和需要用到终瑞库的命令， 如ftp，mysql,vim,mc等。 
+不会是想要的情况。Shext支持内置实现的的命令和系统的命令， 内置命令优先。不支持交互式和需要用到终瑞库的命令， 如ftp，mysql,vim,mc等。 
 
   在命令编辑buffer， 如果输入"/"，如果对应的参数是目路路径， 则在命令输出buffer会显示
 对应路径的内容作为提示。 比如 
@@ -200,9 +200,9 @@ vim编辑个java文件还得开个eclipse作为后端，这个是比较影响速
 
 
 \subsection{内置命令}
-     内置命令是插件自带的命令，大多数是linux下命令的简化版。本来这些命令直接调用系统命令会更强
+     内置命令是插件自已实现的命令，大多数是linux下命令的简化版。本来这些命令直接调用系统命令会更强
 大，但由于我的工作环境主要是windows，另外像ls的带色彩化输出也难以做到，所以才用python和java简化
-实现了一点。ls的输出做了些定制，支持对目录和压缩文件，以及可执行文件以不同的颜色显示。具体的颜色
+实现了一点。ls的输出做了些定制，支持对目录和压缩文件，以及可执行文件用不同的颜色显示。具体的颜色
 可以在$\tiny{\sim}$/.sztools/sztools.cfg文件中配置。
 
 \subsubsection{改变和显示目录}
@@ -279,12 +279,15 @@ find [-n name][-t text] [-s size] [-p path] [--help] [args]
 \end{verbatim}
 
 \subsubsection{Locate命令}
+\begin{verbatim}
 此命令在Locate一节描述
+\end{verbatim}
 
 \subsubsection{杂项}
 \begin{verbatim}
 help           : 打印Shext帮助信息
 exit           : 退出Shext。
+jde            : jde相关命令，目前实现了 jde start(参见后面的启动Jde一节)和jde help。
 \end{verbatim}
 
 \subsection{系统命令}
@@ -298,9 +301,12 @@ exit           : 退出Shext。
 
   对于windows系统，可以执行"explorer ."来用资源管理器打开当前目录。
 
+  不支持需要交互的命令，比如svn commit -m "asd"是可以的，直接svn commit却不行 ，因为后者需要从标准输入读入信息。
+
 \section{Jdext}
   Jdext包含了java相关的功能，只有在Jdext启动后，本节介绍的功能才可以使用。另外在Jdext启动时，
-会定义很多的map，比如\colorbox{lightgray}{<leader>go}等，如无特别说明，这些都是指normal状态
+会定义很多的map，比如\colorbox{lightgray}{<leader>go}\footnote{对于<leader>的含意，请查看vim中的帮助:help <leader>，在
+默认情况下这个是指按键\textbackslash，但是我一般设置let g:mapleader = "," 。}等，如无特别说明，这些都是指normal状态
 下的map。
 
 \subsection{项目结构}
@@ -314,6 +320,9 @@ exit           : 退出Shext。
 在默认情况下找不到这个变量相对应的路径。 需要在$\tiny{\sim}$/.sztools/vars.txt配置变量对应的路径。 格式很简单
   \begin{verbatim} M2_REPO = /usr/maven/repo \end{verbatim}
 
+  老的maven项目，在生成.classpath文件后，需要再运行 mvn compile编译项目代码，Jdext启动时需读取
+类信息，以支持代码补全功能。
+
    对于简单的类，如果只引用JDK自带类库的话， 也可以不用项目结构。在Jdext启动后，直接在任意目录新建Java
 文件，然后就可以保存编译和调试（对于jdk自带类库的引用，也支持代码补全）。
   
@@ -324,9 +333,10 @@ exit           : 退出Shext。
 \subsection{启动Jdext}
    有几种方式可以启动Jdext:
     \begin{enumerate}
-      \item 调用:Jdext 启动， 此命令会设置很多的map，比如(保存时自动编译文件等)。 同时如果当前目录是
-  在一个项目文件夹下(往上查找到.classpath文件)，则Agent程序会在后台缓存类信息， 以加快补全速度。
-      \item 在Shext中运行jde start命令， 功能同上。
+      \item 调用:Jdext 启动， 此命令会设置很多的map，比如\colorbox{lightgray}{<leader>go}。 一般需要
+        在一个项目文件夹下运行此命令(能在当前目录中查找到.classpath文件)，则Agent程序会在后台缓
+        存类信息， 以加快补全速度。
+      \item 在Shext中先cd到项目目录，然后运行jde start命令， 功能同上。
     \end{enumerate}
 
 \subsection{补全}
@@ -350,6 +360,10 @@ exit           : 退出Shext。
     对于在类路径下的资源文件，如xml或properties文件，　在保存时也会自动复制到项目的编译输出目录。
     Jdext默认的编译级别，编译encoding，这些在sztools.cfg中设置。
 
+    想要针对对于当前的项目单独设置，可以在项目根目录中增加.jde文件，用于配置编译级别和encoding。文件
+内容样例参见share/examples/jde.xml文件。
+
+
   \begin{figure}[htbp]%位置选项
   \centering
   \includegraphics[scale=0.5]{compile.jpg}
@@ -366,8 +380,7 @@ exit           : 退出Shext。
   \end{mdframed}
 
 \subsection{运行}
-    使用 \colorbox{lightgray}{:Run} 或 \colorbox{lightgray}{<leader>,}\footnote{对于<leader>的含意，请查看vim中的帮助:help <leader>，在
-默认情况下这个是指按键\textbackslash，但是我一般设置let g:mapleader = "," 。} 来 运行当前的class。
+    使用 \colorbox{lightgray}{:Run} 或 \colorbox{lightgray}{<leader>,} 来 运行当前的class。
 注意运行的程序中不能有从终端中读取的功能，否则java程序将不能正常结束。
 此功能暂不支持加arguments。如果需要测试程序参数，可以在Jdb模式启动后用 \colorbox{lightgray}{run}命令进行。
 
@@ -379,8 +392,7 @@ exit           : 退出Shext。
 由于此命令基于正则，有时候会出不对的情况。
 
 \subsubsection{生成getter,setter}
-    用visual模式选中类中的属性(可以多行)，\colorbox{lightgray}{<leader>gg} 来生成 getter，setter。在内部类中此命令生成的方
-方位置会不对。可以自己拷到正确的位置。
+    用visual模式选中类中的属性(可以多行)，\colorbox{lightgray}{<leader>gg} 来生成 getter，setter。在内部类中此命令生成的方法位置会不对。可以自己拷到正确的位置。
 
 \subsubsection{查看类信息}
    在编辑Java文件时，如果想快速查看某个类的信息，可以用\colorbox{lightgray}{<leader>dc}功能。这个命令会打出类的所有公共方法，
@@ -476,7 +488,7 @@ exit           : 退出Shext。
   \subsection{跟踪}
 
     单步进入，单步跳过，单步跳出，恢复。 这个跟eclipse的功能差不多。 快捷键也是一样的，分
-    别是<F5><F6><F7><F8>。
+    别是<F5><F6><F7><F8>。注意这些快捷键也只能在jdb命令buffer使用，在其他buffer中是无效的。
     \begin{mdframed}[style=SmallFrame]
       \begin{flushleft}
       >step\_into\newline
@@ -521,7 +533,7 @@ exit           : 退出Shext。
   \includegraphics[scale=0.5]{jdb-print2.jpg}
   \caption{Jdb运行java类}
   \end{figure}
-  执行print语句，jdb输出在"JdbStdout"buffer中显示。此时可以继续调试
+  执行print语句，jdb输出在"JdbStdout" buffer中显示。此时可以继续调试
 或用frame切换到上一个栈帧去查看Test类中的变量的值。被调试的java类运行
 结束后，会在"JdbStdout"中显示"process terminated."。调试完成后用exit命
 令退出。
@@ -563,15 +575,14 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
     \item 按树结构显示source jar 
     \item 打开的节点显示不同的颜色，一目了然看到哪些文件在编辑
     \item 更方便的文件复制，移动，重命名功能
-    \item 标记多个节点，以进行复制
+    \item 标记多个节点，以进行多个节点的复制，删除等操作
     \item 按目录递归关闭正在编辑的文件
   \end{enumerate}
 
   \subsection{打开和关闭节点}
   在ProjectTree中打开和关闭节点是最常用的功能。 对于目录节结点来说，
 打开和关闭指的是expand和collapse操作， 而对于文件节点，打开指编辑，关闭指关闭正在编辑的
-文件buffer。 \footnote{对于buffer，window在vim中的概念，请参考vim的帮助文档} (在Nerdtree中
-对于文件节点是没有关闭操作的)
+文件buffer。 (在Nerdtree中对于文件节点是没有关闭操作的)
   
   正常情况下，打开文件节点后，节点会以不同的颜色显示。
   \begin{table}[H]
@@ -595,6 +606,9 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
       \bottomrule
       \end{tabular}
   \end{table}
+
+    s命令用过过滤节点，执行此命令后，会提示输入要显示的节点名称，以","分隔，不在此列表中
+的节点会在显示时被过滤掉。
 
   \subsection{移动和标记}
   由于vim本身有非常多的移动功能，在ProjectTree中扩展的移动不是很多。 对于已经打开的文件，
@@ -738,7 +752,7 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
 属性指出sqlite库的文件位置就行了。
 
     请在空白的tab页上执行\colorbox{lightgray}{:Dbext}，执行完后，像Shext一样会split
-成两个buffer，上面一个编辑sql和执行，下面一个输出结果。在sql编辑buffer可以用 
+成两个buffer，上侧buffer编辑sql和执行，下侧buffer输出结果。在sql编辑buffer可以用 
 <c-x><c-o> 来补全 ， 可以补全表名，字段名... (可以用通配符) 
 
   \begin{figure}[htbp]%位置选项
@@ -833,7 +847,9 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
 \chapter{后记}
    本文档用vim+latex写成。 感谢这两个伟大的工具
 
-   另外特别感谢Vim草堂的各位群友，感谢他们对我提出的问题的热心解答。
-   
+   此插件虽然可以预见的不会有很多使用者，不过如果能收到大家的反馈，不论是bug提交，需求建议，或
+是仅仅告诉我此插件对你有帮助(或插件写得太烂)，我都会很感谢大家。我的联系方式已写在此文档的第一
+页 :) 。
+
    
 \end{document}
