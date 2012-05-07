@@ -1,6 +1,7 @@
 import zipfile, os  
 import shutil
 import logging
+import chardet
 from common import ZipUtil,FileUtil 
 from xml.etree.ElementTree import *
 from jde import ProjectManager,EditUtil
@@ -268,7 +269,16 @@ class NormalDirNode(TreeNode):
 class NormalFileNode(TreeNode):
 
     def get_content(self):
-        filecontent = open(self.realpath).readlines()
+        file_object = open(self.realpath,"r")
+        try:
+            all_the_text = file_object.read()
+        finally:
+            file_object.close()
+
+        file_encoding = chardet.detect(all_the_text).get("encoding")
+        if file_encoding != None :
+            all_the_text = all_the_text.decode(file_encoding, "ignore")
+        filecontent = all_the_text.split("\n")
         return filecontent
 
     def get_uri_path(self):

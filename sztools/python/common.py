@@ -35,10 +35,6 @@ class ZipUtil(object):
         inner_path = path.split("!")[1]
         vim.command("silent doau BufReadPre " + inner_path)
         content = ZipUtil.read_zip_entry(path)
-        content = "\n".join(content)
-        file_encoding = chardet.detect(content).get("encoding")
-        if file_encoding != None :
-            content = content.decode(file_encoding, "ignore")
         output(content)
         vim.command("silent doau BufReadPost " + inner_path)
         vim.command("silent doau BufWinEnter " + inner_path)
@@ -48,8 +44,15 @@ class ZipUtil(object):
     def read_zip_entry(path):
         zip_file_path, inner_path = ZipUtil.split_zip_scheme(path)
         zipFile = zipfile.ZipFile(zip_file_path)  
-        content = [line.rstrip() for line in zipFile.open(inner_path).readlines()]
-        zipFile.close()
+        try:
+            all_the_text = zipFile.open(inner_path).read()
+        finally:
+            zipFile.close()
+        
+        file_encoding = chardet.detect(all_the_text).get("encoding")
+        if file_encoding != None :
+            all_the_text = all_the_text.decode(file_encoding, "ignore")
+        content = [line.rstrip() for line in all_the_text.split("\n")]
         return content
 
     @staticmethod
