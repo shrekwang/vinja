@@ -313,13 +313,26 @@ class ZipRootNode(TreeNode):
 
     def __init__(self, name, realpath, isDirectory, isOpen = False, isLoaded = False):
         TreeNode.__init__(self,name,realpath, isDirectory,isOpen, isLoaded)
-        zipFile = zipfile.ZipFile(self.realpath)  
         self.isDirectory = True
         self.isOpen = False
-        for name in zipFile.namelist() :
-            self.add_tree_entry(name)
-        zipFile.close()
+        self.isLoaded = False
+
+    def load_childrend(self):
+        zipFile = None
+        try :
+            zipFile = zipfile.ZipFile(self.realpath)  
+            for name in zipFile.namelist() :
+                self.add_tree_entry(name)
+            zipFile.close()
+        except Exception as e :
+            if zipFile != None :
+                zipFile.close()
         self.isLoaded = True
+
+    def get_children(self):
+        if not self.isLoaded : 
+            self.load_childrend()
+        return self._children
 
     def add_tree_entry(self,line):
         sections = line.strip().split("/")
@@ -958,6 +971,8 @@ class ProjectTree(object):
             lib_node.isOpen = True
             zip_file_node = lib_node.get_child(zip_base_name)
             zip_file_node.isOpen = True
+            if not zip_file_node.isLoaded : 
+                zip_file_node.load_childrend()
             return self.open_path(inner_path, zip_file_node, False)
         else :
             if abpath :
