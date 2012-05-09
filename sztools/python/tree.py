@@ -122,13 +122,16 @@ class TreeNode(object):
         else :
             self.isMarked = True
 
+    def plainText(self):
+        return False
+
     def set_edit_flag(self, flag) :
         self.isEdited = flag
 
     def set_error_flag(self, flag):
         self.isError = flag
 
-    def get_content(self):
+    def get_content(self,encoding=None):
         return ""
 
 class NormalDirNode(TreeNode):
@@ -268,18 +271,26 @@ class NormalDirNode(TreeNode):
 
 class NormalFileNode(TreeNode):
 
-    def get_content(self):
+    def get_content(self,file_encoding=None):
+
         file_object = open(self.realpath,"r")
         try:
             all_the_text = file_object.read()
         finally:
             file_object.close()
-
-        file_encoding = chardet.detect(all_the_text).get("encoding")
+        if file_encoding == None :
+            file_encoding = chardet.detect(all_the_text).get("encoding")
         if file_encoding != None :
             all_the_text = all_the_text.decode(file_encoding, "ignore")
+
         filecontent = all_the_text.split("\n")
         return filecontent
+
+    def plainText(self):
+        ext = os.path.splitext(self.realpath)[1]
+        if ext in [".jar",".zip",".war",".rar",".jpg",".png",".gif",".class"] :
+            return False
+        return True
 
     def get_uri_path(self):
         return self.realpath
@@ -302,10 +313,13 @@ class NormalFileNode(TreeNode):
 
 class ZipFileItemNode(TreeNode):
 
+    def plainText(self):
+        return True
+
     def set_zip_file(self,zip_file_path) :
         self.zip_file_path = zip_file_path
 
-    def get_content(self):
+    def get_content(self,encoding=None):
         scheme_path = "jar://"+self.zip_file_path+"!"+ self.realpath
         content = ZipUtil.read_zip_entry(scheme_path)
         return content
@@ -483,6 +497,21 @@ class ProjectTree(object):
         self._load_project_workset()
         self.root = ProjectRootNode(self.root_dir,self)
         self.root_map = {}
+        self.project_encoding = self._get_project_encoding()
+
+    def _get_project_encoding(self):
+        jde_file = os.path.join(self.root_dir, ".jde")
+        if not os.path.exists(jde_file) :
+            return "utf-8"
+
+        tree = ElementTree()
+        tree.parse(jde_file)
+        entries = tree.findall("property")
+        for entry in  entries :
+             prop_name =entry.get("name")
+             if prop_name == "encoding" :
+                 return entry.get("value")
+        return "utf-8"
 
     def _load_project_workset(self):
         if not os.path.exists(self.workset_config_path):
@@ -585,8 +614,8 @@ class ProjectTree(object):
 
         re_type = type(re.compile(""))
         def _search_node(node,text) :
-            if not node.isDirectory :
-                content = node.get_content()
+            if not node.isDirectory and node.plainText() :
+                content = node.get_content(self.project_encoding)
                 file_path = node.get_uri_path()
                 for index,line in enumerate(content) :
                     if (isinstance(text,str) and line.find(text) > -1 ) \
@@ -605,7 +634,12 @@ class ProjectTree(object):
             #since vim use single quote string as literal string, the escape char will not
             #been handled, so repr the dict in a double quoted string
             qflist_str = "[" + ",".join([EditUtil.reprDictInDoubleQuote(item) for item in qflist])+"]" 
-            vim.command("call setqflist(%s)" % qflist_str)
+            vim_encoding= vim.eval("&encoding")
+            if vim_encoding :
+                vim.command("call setqflist(%s)" % qflist_str.encode(vim_encoding))
+            else :
+                vim.command("call setqflist(%s)" % qflist_str)
+
             vim.command("cwindow")
             vim.command("exec 'wincmd w'")
         else :

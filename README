@@ -9,3 +9,5 @@
     locate 用来快速定位文件, 类似于Commant-T
     dbext sql执行和结果显示
     scratch 随手写些python代码,不保存就即可用<leader>,执行 
+
+用户手册见doc目录下的pdf文档
