@@ -228,23 +228,35 @@ class NormalDirNode(TreeNode):
         return True
 
     def paste(self, nodes , remove_orignal = False ):
-        node_paths = [node.realpath for node in nodes]
+        if not isinstance(nodes[0],str) :
+            node_paths = [node.realpath for node in nodes]
+        else :
+            node_paths = nodes
         commonprefix = os.path.commonprefix(node_paths)
 
         added_nodes = []
         for node in nodes :
-            file_abpath = node.realpath
-            basename = os.path.basename(file_abpath)
-            #keep the original direcotry structure
-            relpath = os.path.relpath(file_abpath, commonprefix)
-            rel_dir = os.path.dirname(relpath)
+            if node == "" :
+                continue
+            if isinstance(node,str) :
+                file_abpath = node
+                basename = os.path.basename(file_abpath)
+                rel_dir = ""
+            else :
+                file_abpath = node.realpath
+                basename = os.path.basename(file_abpath)
+                #keep the original direcotry structure
+                relpath = os.path.relpath(file_abpath, commonprefix)
+                rel_dir = os.path.dirname(relpath)
+
             dst_dir = os.path.join(self.realpath, rel_dir)
             if not os.path.exists(dst_dir):
                 os.makedirs(dst_dir)
 
             if remove_orignal :
                 FileUtil.fileOrDirMv(file_abpath,dst_dir)
-                node.parent.remove_child(node)
+                if not isinstance(node,str) :
+                    node.parent.remove_child(node)
             else :
                 FileUtil.fileOrDirCp(file_abpath,dst_dir)
 
@@ -861,14 +873,26 @@ class ProjectTree(object):
         _get_marked_nodes(self._get_render_root())
         return nodes
 
-    def paste(self):
+    def _do_paste(self, files, remove_orignal):
         node = self.get_selected_node()
-        added_nodes = node.paste(self.yank_buffer, self.remove_orignal)
+        added_nodes = node.paste(files, remove_orignal)
         if added_nodes :
             node.isOpen = True
             self.render_tree()
             last_sub_node = added_nodes[-1]
             self.select_node(last_sub_node)
+
+    def paste(self):
+        self._do_paste(self.yank_buffer,self.remove_orignal)
+
+    def paste_from_clipBoard(self):
+        files = BasicTalker.getClipbordContent().split(";")
+        self._do_paste(files,False)
+
+    def copy_to_clipBoard(self):
+        file_path = self.get_selected_node().realpath
+        files = BasicTalker.setClipbordContent(file_path)
+        print "files had been copied to system clipboard. "
 
     def print_help(self):
         help_file = os.path.join(SzToolsConfig.getShareHome(),"doc/tree.help")

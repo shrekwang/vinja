@@ -398,6 +398,8 @@ function ProjectTree(...)
   map <silent><buffer> ym    :python projectTree.yank_marked_node(False)<cr>
   map <silent><buffer> dm    :python projectTree.yank_marked_node(True)<cr>
   map <silent><buffer> p     :python projectTree.paste()<cr>
+  map <silent><buffer> P     :python projectTree.paste_from_clipBoard()<cr>
+  map <silent><buffer> YY    :python projectTree.copy_to_clipBoard()<cr>
 
   map <silent><buffer> ?     :python projectTree.print_help()<cr>
   map <silent><buffer> C     :python projectTree.change_root()<cr>
@@ -628,6 +630,7 @@ vmap <silent><leader>zf  :python MiscUtil.simpleFormatSQL()<cr>
 vmap <silent><leader>zm  :python MiscUtil.markVisual()<cr>
 vmap <silent><leader>te  :python MiscUtil.tabulate()<cr>
 nmap <silent><leader>rc  :python MiscUtil.remove_comment()<cr>
+nmap <silent><leader>ya  :python MiscUtil.copy_buffer_path()<cr>
 
 nmap <silent><leader>zs  :python MiscUtil.startfile()<cr>
 nmap <silent><leader>zv  <C-Q>

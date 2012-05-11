@@ -663,9 +663,11 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
           ya    &复制节点路径\\
           cc    &重命名当前节点\\
           yy    &复制当前文件或目录\\
+          YY    &复制当前文件或目录到系统剪贴板\\
           ym    &复制标记的文件或目录\\
           dd    &剪切当前文件或目录\\
           p     &粘贴复制或剪切的文件\\
+          P     &粘贴系统剪贴板中的文件\\
           C     &更改树的显示根目录\\
           B     &返回老的根节点\\
           U     &更改树的根节点为父目录\\
@@ -783,7 +785,9 @@ NerdTree有些地方还难以适合做java的项目树(比如源包jar包的显�
 \section{杂项功能}
   \begin{itemize}
         \item <leader>te  :将选中文档用表格框起来
-        \item <leader>rc  :删光java文件的注释
+        \item <leader>rc  :清除java文件的注释
+        \item <leader>ya  :复制当前正在编辑的文件路径到默认寄存器
+        \item <leader>zc  :split一块buffer，可以编辑python脚本，不必保存，按",,"就可以执行
         \item :Example name  :split出一个buffer，显示示例文件。 示例参见安装目录下share/examples
   \end{itemize}
     

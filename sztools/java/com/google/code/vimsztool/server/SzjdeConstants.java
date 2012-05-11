@@ -24,6 +24,7 @@ public class SzjdeConstants {
 	public final static String CMD_LOCATE_SOURCE="locateSource";
 	public final static String CMD_SEARCH_REF="searchRef";
 	public final static String CMD_QUIT="quit";
+	public final static String CMD_CLIPBOARD="clipboard";
 	
 	public final static String PARAM_CLASSPATHXML="classPathXml";
 	public final static String PARAM_SOURCEFILE="sourceFile";
@@ -48,6 +49,7 @@ public class SzjdeConstants {
 	public final static String PARAM_HOTSWAP_ENABLED="hotSwapEnabled";
 	public final static String PARAM_HOTSWAP_PORT="hotSwapPort";
 	public final static String PARAM_SOURCE_TYPE="sourceType";
+	public final static String PARAM_OPNAME="opname";
 	
 	public final static String CPT_TYPE_PACKAGE="package";
 	public final static String CPT_TYPE_CLASS="class";

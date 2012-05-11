@@ -122,6 +122,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeLoadJarMetaInfoCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_SEARCH_REF)) {
 		   szjdeCommand = new SzjdeSearchReferenceCommand();
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_CLIPBOARD)) {
+		   szjdeCommand = new SzjdeClipboardCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_QUIT)) {
 		   Display.getDefault().syncExec(new Runnable() {
 				public void run() {

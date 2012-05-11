@@ -50,6 +50,10 @@ public class JdtUI {
 	public JdtUI(String sztoolHome) {
 		pref.init(sztoolHome);
 	}
+	
+	public Display getDisplay() {
+		return display;
+	}
 
 	public void run() {
 		display = new Display();

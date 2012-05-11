@@ -364,6 +364,11 @@ class MiscUtil(object):
             vim.command('call append(%s,"%s")' %(str(startLine-1),line))
 
     @staticmethod
+    def copy_buffer_path():
+        buffer_name=vim.current.buffer.name
+        vim.command("let @\" = '%s' " % buffer_name)
+
+    @staticmethod
     def initHightLightScheme():
         vim.command("highlight def MarkWord1  ctermbg=Cyan     ctermfg=Black  guibg=#8CCBEA    guifg=Black")
         vim.command("highlight def MarkWord2  ctermbg=Green    ctermfg=Black  guibg=#A4E57E    guifg=Black")
@@ -634,6 +639,25 @@ class BasicTalker(object):
     def stopAgent():
         params = dict()
         params["cmd"]="quit"
+        data = BasicTalker.send(params)
+        return data
+
+    @staticmethod
+    def getClipbordContent():
+        "get copied file from system clipboard"
+        params = dict()
+        params["cmd"]="clipboard"
+        params["opname"]="get"
+        data = BasicTalker.send(params)
+        return data
+
+    @staticmethod
+    def setClipbordContent(files):
+        "set system clipboard of copied files, 'files' is ';' seperated file path list"
+        params = dict()
+        params["cmd"]="clipboard"
+        params["opname"]="set"
+        params["value"]=files
         data = BasicTalker.send(params)
         return data
 
