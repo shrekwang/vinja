@@ -2037,12 +2037,14 @@ class Jdb(object):
             vim.command("setlocal statusline=\ Jdb")
 
     def handleSuspend(self,abs_path,lineNum,className):
+        """
         tab_count = int(vim.eval("tabpagenr('$')"))
         for i in range(1,tab_count+1):
             jdbvar = vim.eval('gettabvar('+str(i)+',"jdb_tab")')
             if jdbvar == "true" :
                 vim.command("tabn %s" % str(i)) 
                 break
+        """
 
         self.switchSourceBuffer()
         

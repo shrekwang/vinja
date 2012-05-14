@@ -87,7 +87,7 @@ public class VjdeUtil {
 			String[] vimRemoteCmdArray = new String[] {"vim","--servername",serverName,"--remote-expr",sb.toString()};
 			Runtime.getRuntime().exec(vimRemoteCmdArray);
 			//prevent call vim command in multi thread simultaneously
-			Thread.sleep(100);
+			Thread.sleep(20);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
