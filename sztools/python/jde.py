@@ -1953,6 +1953,7 @@ class Jdb(object):
         self.cmd_buf_list = []
         self.out_buf_list = []
         self.ivp = InspectorVarParser()
+        self.quick_step = False
 
     def show(self):
         self.display = True
@@ -1981,7 +1982,7 @@ class Jdb(object):
         
         vim.current.window.cursor = (cur_row,cur_col)
         #vim.command("startinsert")
-        vim.command("imap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>")
+        vim.command("inoremap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>")
         vim.command("nnoremap <buffer><silent><cr>   :python jdb.executeCmd(insertMode=False)<cr>")
         vim.command("nnoremap <buffer><silent>o      :python jdb.appendPrompt()<cr>")
 
@@ -2018,6 +2019,22 @@ class Jdb(object):
                     or bufname.endswith(".temp_src") \
                     or bufname.endswith(".java") :
                 break
+
+    def toggleQuickStep(self):
+        if not self.quick_step :
+            self.quick_step = True
+            vim.command("nnoremap <buffer><silent>l   :python jdb.stepCmd('step_into')<cr>")
+            vim.command("nnoremap <buffer><silent>j   :python jdb.stepCmd('step_over')<cr>")
+            vim.command("nnoremap <buffer><silent>h   :python jdb.stepCmd('step_return')<cr>")
+            vim.command("nnoremap <buffer><silent>k   :python jdb.stepCmd('resume')<cr>")
+            vim.command("setlocal statusline=\ Jdb\ QuickStep")
+        else :
+            self.quick_step = False
+            vim.command("nunmap <buffer><silent>l")
+            vim.command("nunmap <buffer><silent>j")
+            vim.command("nunmap <buffer><silent>h")
+            vim.command("nunmap <buffer><silent>k")
+            vim.command("setlocal statusline=\ Jdb")
 
     def handleSuspend(self,abs_path,lineNum,className):
         tab_count = int(vim.eval("tabpagenr('$')"))
