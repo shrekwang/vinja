@@ -613,8 +613,18 @@ class ProjectTree(object):
             self.render_tree()
             self.select_node(node)
 
-    def recursive_search(self):
-        text = VimUtil.getInput("enter string to be searched: ")
+    def recursive_search2(self):
+        search_str = vim.eval("@/")
+        search_str = search_str.replace("\<", r"\b")
+        search_str = search_str.replace("\>", r"\b")
+        search_str = "/" + search_str + "/"
+        self.recursive_search(search_str)
+
+    def recursive_search(self, default_str = None):
+        if default_str != None :
+            text = VimUtil.getInput("enter string to be searched: ", default_str)
+        else :
+            text = VimUtil.getInput("enter string to be searched: ")
         if not text :
             return
         if text.startswith("/"):

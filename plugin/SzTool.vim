@@ -383,6 +383,7 @@ function ProjectTree(...)
   map <silent><buffer> u     :python projectTree.up_one_level()<cr>
   map <silent><buffer> m     :python projectTree.mark_selected_node()<cr>
   map <silent><buffer> f     :python projectTree.recursive_search()<cr>
+  map <silent><buffer> F     :python projectTree.recursive_search2()<cr>
   map <silent><buffer> <     :python projectTree.get_prev_open_node()<cr>
   map <silent><buffer> >     :python projectTree.get_next_open_node()<cr>
 
