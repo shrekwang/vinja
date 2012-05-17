@@ -44,6 +44,11 @@ class QuickLocater(object) :
         if isinstance(self.content_manager,EditHistoryManager):
             self.content_manager.cursor_current_buf()
 
+        work_buffer = vim.current.buffer
+        win = vim.current.window
+        row,col = win.cursor
+        width = len(work_buffer[row -1]) + 3
+        self.highCurrentlightLine(row,width)
 
     def save_env(self):
         self.timeoutlen = vim.eval("&timeoutlen")
@@ -115,7 +120,7 @@ class QuickLocater(object) :
         vim.command("setlocal nobuflisted")
         vim.command("setlocal textwidth=0")
         vim.command("setlocal noreadonly")
-        vim.command("setlocal cursorline")
+        #vim.command("setlocal cursorline")
 
         vim.command("set timeoutlen=0")
         vim.command("set noinsertmode")
@@ -126,9 +131,10 @@ class QuickLocater(object) :
         vim.command("set sidescrolloff=0")
 
         vim.command("set guicursor+=a:blinkon0")
-        bg = vim.eval("""synIDattr(synIDtrans(hlID("Normal")), "bg")""")
-        if bg :
-            vim.command("highlight Cursor guifg=black guibg=%s" % (bg))
+        #bg = vim.eval("""synIDattr(synIDtrans(hlID("Normal")), "bg")""")
+        #if bg :
+        #    vim.command("highlight Cursor guifg=black guibg=%s" % (bg))
+        vim.command("highlight Cursor ctermbg=Cyan ctermfg=Black  guibg=#8CCBEA    guifg=Black")
         
 
         printables = """/!"#$%&'()*+,-.0123456789:<=>?#@"ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{}~"""
@@ -164,6 +170,17 @@ class QuickLocater(object) :
             if row > 1 : win.cursor = ( row-1 , col)
         else :
             if row < len(work_buffer) : win.cursor = ( row+1 , col)
+        row,col = win.cursor
+        width = len(work_buffer[row -1]) + 3
+        self.highCurrentlightLine(row,width)
+
+    def highCurrentlightLine(self, row, width):
+        vim.command("syntax clear")
+        vim.command("highlight def MarkCurrentLine  ctermbg=Cyan ctermfg=Black  guibg=#8CCBEA    guifg=Black")
+        valueTuple=(row,0,width)
+        colorInfo="""syn match MarkCurrentLine "\%%%sl\%%>%sc.\%%<%sc" """ % valueTuple
+        vim.command(colorInfo)
+        vim.command("highlight Cursor ctermbg=Cyan ctermfg=Black  guibg=#8CCBEA    guifg=Black")
 
     def yank_content(self):
         work_buffer=vim.current.buffer
