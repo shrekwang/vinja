@@ -555,9 +555,14 @@ class ProjectTree(object):
     def node_visible(self, abs_path):
         if len(self.work_path_set) == 0 :
             return True
+        curdir_workset =[]
         for work_path in self.work_path_set :
-            if work_path == abs_path or work_path.startswith(abs_path) \
-                    or abs_path.startswith(work_path) :
+            if os.path.dirname(abs_path) == os.path.dirname(work_path) :
+                curdir_workset.append(work_path)
+        if len(curdir_workset) == 0 :
+            return True
+        for work_path in curdir_workset :
+            if fnmatch.fnmatch(abs_path, work_path) :
                 return True
         return False
 
@@ -669,11 +674,20 @@ class ProjectTree(object):
 
     def filter_display_node(self):
         node = self.get_selected_node()
+        relpath = os.path.relpath(node.realpath, self.root.realpath)
+        #the node is root node
+        if relpath == "." :
+            relpath = ""
+        curdir_workset = []
+        if os.path.exists(self.workset_config_path):
+            lines = [line.strip() for line in file(self.workset_config_path) ]
+            curdir_workset =[os.path.basename(line) for line in lines if os.path.dirname(line) == relpath ]
+
         if not node.isDirectory :
             return 
         if len(node.hidden_nodes) > 0 :
             hidden_item_str = "hidden items: " + ",".join(node.hidden_nodes) +"\n"
-            displayd_items = ",".join([item.name for item in node.get_children()])
+            displayd_items = ",".join(curdir_workset)
         else :
             hidden_item_str = ""
             displayd_items = ""
@@ -725,7 +739,6 @@ class ProjectTree(object):
 
     def _save_display_info(self, parent_node, file_names):
         
-        workset = []
         if os.path.exists(self.workset_config_path):
             workset = open(self.workset_config_path,"r").readlines()
         parent_relpath = os.path.relpath(parent_node.realpath, self.root.realpath)
@@ -733,18 +746,21 @@ class ProjectTree(object):
             and os.path.dirname(path) != parent_relpath
         workset = [ line.strip() for line in workset if not_parent_filter(line.strip()) ]
 
+        workset = []
+        relpath = os.path.relpath(parent_node.realpath, self.root.realpath)
+        if relpath == "." :
+            relpath = ""
+        if os.path.exists(self.workset_config_path):
+            lines = [line.strip() for line in file(self.workset_config_path) ]
+            workset =[line for line in lines if os.path.dirname(line) != relpath ]
+
         for file_name in file_names :
-            if file_name.strip() == "*" : 
-                file_name = ""
+            file_name = file_name.strip()
+            if file_name == "*" or file_name == "" : 
+                continue
             abpath = os.path.join(parent_node.realpath, file_name)
             relpath = os.path.relpath(abpath, self.root.realpath)
-            exits_deeper_filter = False
-            for old_item in workset :
-                if old_item.startswith(relpath) :
-                    exits_deeper_filter = True
-                    break
-            if not exits_deeper_filter :
-                workset.append(relpath)
+            workset.append(relpath)
         workset_file = open(self.workset_config_path,"w") 
         for item in workset :
             workset_file.write(item)
