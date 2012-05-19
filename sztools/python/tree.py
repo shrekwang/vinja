@@ -739,12 +739,14 @@ class ProjectTree(object):
 
     def _save_display_info(self, parent_node, file_names):
         
+        """
         if os.path.exists(self.workset_config_path):
             workset = open(self.workset_config_path,"r").readlines()
         parent_relpath = os.path.relpath(parent_node.realpath, self.root.realpath)
         not_parent_filter = lambda path : not parent_relpath.startswith(path) \
             and os.path.dirname(path) != parent_relpath
         workset = [ line.strip() for line in workset if not_parent_filter(line.strip()) ]
+        """
 
         workset = []
         relpath = os.path.relpath(parent_node.realpath, self.root.realpath)
