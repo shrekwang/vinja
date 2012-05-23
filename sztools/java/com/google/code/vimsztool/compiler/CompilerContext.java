@@ -41,6 +41,7 @@ public class CompilerContext {
 	private String projectRoot;
 	private ReflectAbleClassLoader loader;
 	private List<String> srcLocations=new ArrayList<String>();
+	private List<String> extSrcLocations=new ArrayList<String>();
 	private List<String> libSrcLocations = new ArrayList<String>();
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	private Preference pref = Preference.getInstance();
@@ -186,7 +187,12 @@ public class CompilerContext {
 					libSrcLocations.add(entry.sourcepath);
 				}
 			} else if (entry.kind.equals("src")) {
-				srcLocations.add(entryAbsPath);
+				//if path startswith "/", it's another eclipse project 
+				if (entry.path.startsWith("/")) {
+					parseDependProjectClassXml(entry.path.substring(1));
+				} else {
+					srcLocations.add(entryAbsPath);
+				}
 			} else if (entry.kind.equals("output")) {
 				File libFile = new File(entryAbsPath);
 				//output path should be searched first in classpath
@@ -231,8 +237,27 @@ public class CompilerContext {
 				}
 			}
 		}
-		
 	} 
+	
+	private void parseDependProjectClassXml(String projectName) {
+		String extProjectPath = ProjectLocationConf.getProjectLocation(projectName);
+		String classPathXml = FilenameUtils.concat(extProjectPath, ".classpath");
+		List<ClassPathEntry> classPathEntries=parseClassPathXmlFile(classPathXml);
+
+		for (ClassPathEntry entry : classPathEntries) {
+			String entryAbsPath = FilenameUtils.concat(extProjectPath, entry.path);
+			if (entry.kind.equals("src")) {
+				if (! entry.path.startsWith("/")) {
+					extSrcLocations.add(entryAbsPath);
+				}
+			} else if (entry.kind.equals("output")) {
+				File libFile = new File(entryAbsPath);
+				//add external project output dir to second search place in class path
+				try { classPathUrls.add(1, libFile.toURL()); } catch (Exception e) {}
+			} 
+		}
+	}
+	
 	private void initClassLoader() {
 		URL urlsA[] = new URL[classPathUrls.size()];
 		classPathUrls.toArray(urlsA);
@@ -394,6 +419,11 @@ public class CompilerContext {
 
 	}
 	
+	/**
+	 * only search in source dir of current project
+	 * @param rtlPathName
+	 * @return
+	 */
 	public String findSourceFileInSrcPath(String rtlPathName) {
 		rtlPathName = rtlPathName.replace("\\", "/");
 		for (String srcLoc : srcLocations) {
@@ -420,6 +450,11 @@ public class CompilerContext {
 		return findSourceFile(rtlPathName);
 	}
 	
+	/**
+	 * search in source dir and jar file and other locations .
+	 * @param rtlPathName
+	 * @return
+	 */
 	public String findSourceFile(String rtlPathName) {
 		
 		rtlPathName = rtlPathName.replace("\\", "/");
@@ -440,6 +475,16 @@ public class CompilerContext {
 		String tmpPath =FilenameUtils.concat(tmpDirPath,className+".class");
 		
 		for (String srcLoc : srcLocations) {
+			String absPath = FilenameUtils.concat(srcLoc, rtlPathName);
+			File file = new File(absPath) ;
+			if (file.exists()) {
+				lastSearchResult = absPath;
+				return absPath;
+			}
+		}
+		
+		//also search in dependent project's source location
+		for (String srcLoc : extSrcLocations ) {
 			String absPath = FilenameUtils.concat(srcLoc, rtlPathName);
 			File file = new File(absPath) ;
 			if (file.exists()) {
