@@ -41,8 +41,11 @@ public class CompilerContext {
 	private String projectRoot;
 	private ReflectAbleClassLoader loader;
 	private List<String> srcLocations=new ArrayList<String>();
-	private List<String> extSrcLocations=new ArrayList<String>();
 	private List<String> libSrcLocations = new ArrayList<String>();
+	
+	private List<String> extSrcLocations=new ArrayList<String>();
+	private List<String> extOutputDirs = new ArrayList<String>();
+	
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	private Preference pref = Preference.getInstance();
 	private PackageInfo packageInfo = new PackageInfo();
@@ -57,7 +60,6 @@ public class CompilerContext {
 		return new CompilerContext(classPathXml);
 	}
 	
-	@SuppressWarnings("deprecation")
 	public CompilerContext(String classPathXml) {
 		
 		encoding = pref.getValue(Preference.JDE_COMPILE_ENCODING);
@@ -79,7 +81,7 @@ public class CompilerContext {
 			this.projectRoot = abpath;
 			this.outputDir = abpath;
 			this.srcLocations.add(abpath);
-			try { classPathUrls.add(file.toURL()); } catch (Exception e) {}
+			try { classPathUrls.add(file.toURI().toURL()); } catch (Exception e) {}
 		}
 		this.classMetaInfoManager = new ClassMetaInfoManager(this);
 		initClassLoader();
@@ -149,7 +151,6 @@ public class CompilerContext {
 			
 	}
 	
-	@SuppressWarnings("deprecation")
 	private void addUserLib(String entryPath) {
 		int userLibIndex = entryPath.indexOf("USER_LIBRARY");
 		if (userLibIndex > -1 ) {
@@ -158,7 +159,7 @@ public class CompilerContext {
 			if (jarPaths == null ) return;
 			for (String path : jarPaths) {
 				File libFile = new File(path);
-				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {
+				try { classPathUrls.add(libFile.toURI().toURL()); } catch (Exception e) {
 					String errorMsg = VjdeUtil.getExceptionValue(e);
 		    		log.info(errorMsg);
 				}
@@ -166,7 +167,6 @@ public class CompilerContext {
 		}
 	}
 	
-	@SuppressWarnings("deprecation")
 	private void initClassPath(String classPathXml) {
 		List<ClassPathEntry> classPathEntries=parseClassPathXmlFile(classPathXml);
 		
@@ -182,7 +182,7 @@ public class CompilerContext {
 			String entryAbsPath = FilenameUtils.concat(projectRoot, entry.path);
 			if (entry.kind.equals("lib")) {
 				File libFile = new File(entryAbsPath);
-				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {}
+				try { classPathUrls.add(libFile.toURI().toURL()); } catch (Exception e) {}
 				if (entry.sourcepath !=null) {
 					libSrcLocations.add(entry.sourcepath);
 				}
@@ -196,7 +196,7 @@ public class CompilerContext {
 			} else if (entry.kind.equals("output")) {
 				File libFile = new File(entryAbsPath);
 				//output path should be searched first in classpath
-				try { classPathUrls.add(0, libFile.toURL()); } catch (Exception e) {}
+				try { classPathUrls.add(0, libFile.toURI().toURL()); } catch (Exception e) {}
 				if (entryAbsPath.endsWith("/") || entryAbsPath.endsWith("\\")) {
 					entryAbsPath = entryAbsPath.substring(0, entryAbsPath.length()-1);
 				}
@@ -231,7 +231,7 @@ public class CompilerContext {
 					log.info(entryPath + " in classpath not exists.");
 					continue;
 				}
-				try { classPathUrls.add(libFile.toURL()); } catch (Exception e) {}
+				try { classPathUrls.add(libFile.toURI().toURL()); } catch (Exception e) {}
 				if (sourcePath !=null && !sourcePath.equals("")) {
 					libSrcLocations.add(sourcePath);
 				}
@@ -241,7 +241,12 @@ public class CompilerContext {
 	
 	private void parseDependProjectClassXml(String projectName) {
 		String extProjectPath = ProjectLocationConf.getProjectLocation(projectName);
+		if (extProjectPath == null ) return;
+		
 		String classPathXml = FilenameUtils.concat(extProjectPath, ".classpath");
+		File file = new File(classPathXml);
+		if (! file.exists()) return;
+		
 		List<ClassPathEntry> classPathEntries=parseClassPathXmlFile(classPathXml);
 
 		for (ClassPathEntry entry : classPathEntries) {
@@ -253,7 +258,8 @@ public class CompilerContext {
 			} else if (entry.kind.equals("output")) {
 				File libFile = new File(entryAbsPath);
 				//add external project output dir to second search place in class path
-				try { classPathUrls.add(1, libFile.toURL()); } catch (Exception e) {}
+				try { classPathUrls.add(1, libFile.toURI().toURL()); } catch (Exception e) {}
+				extOutputDirs.add(entryAbsPath);
 			} 
 		}
 	}
@@ -284,6 +290,9 @@ public class CompilerContext {
 			}
 		}
 		packageInfo.cacheClassNameInDist(outputDir,true);
+		for (String dirPath : extOutputDirs) {
+			packageInfo.cacheClassNameInDist(dirPath,true);
+		}
 	}
 	
 	private Map<String,String> parseJdeXmlFile(String jdeXmlPath ) {

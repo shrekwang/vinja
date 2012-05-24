@@ -24,7 +24,14 @@ import com.google.code.vimsztool.compiler.CompilerContext;
 
 public class PackageInfo {
 	
+	/**
+	 * cache key is package name, the content is className list under that package 
+	 */
 	private Map<String,Set<String>> cache = new HashMap<String,Set<String>>();
+	
+	/**
+	 * cachekey is jar file path, value is "true" or "false". 
+	 */
 	private Map<String, String> cachedPath = new HashMap<String,String>();
 	
 	private Set<String> dstClassNames = new HashSet<String>();
@@ -38,7 +45,7 @@ public class PackageInfo {
 		dstClassNames.add(className);
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	public List<Class> findSubClass(CompilerContext ctx, String searchClassName) {
 		ClassLoader classLoader = ctx.getClassLoader();
 		List<Class> resultList = new ArrayList<Class>();
@@ -101,6 +108,9 @@ public class PackageInfo {
 		String className = splits[1];
 		Pattern pattern = getPattern(className, ignoreCase);
 		Set<String> classNames = cache.get(pkgName);
+		if (classNames == null) {
+			return new ArrayList<String>();
+		}
 		return getMatchedClassName(classNames, className, pattern, pkgName);
 	}
 	
@@ -168,7 +178,7 @@ public class PackageInfo {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	public void cacheClassNameInDist(String outputDir,boolean recursive) {
 		File dir = new File(outputDir) ;
 		if (!dir.exists()) {
