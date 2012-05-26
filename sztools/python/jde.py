@@ -267,11 +267,11 @@ class Talker(BasicTalker):
         return data
 
     @staticmethod
-    def autoImport(xmlPath,varNames,pkgName):
+    def autoImport(xmlPath,tmpFilePath,pkgName):
         params = dict()
         params["cmd"]="autoimport"
         params["classPathXml"] = xmlPath
-        params["varNames"] = varNames
+        params["tmpFilePath"] = tmpFilePath
         params["pkgName"] = pkgName
         data = Talker.send(params)
         return data
@@ -1249,25 +1249,12 @@ class AutoImport(object):
             currentPackage = ""
 
         searchText = "\n".join(vim_buffer)
-        #remove comments
-        commentPat = re.compile(r"(\/\*.*?\*\/)|((\/\/.*?)(?=\n))", re.DOTALL)
-        searchText = commentPat.sub("",searchText)
+        tmp_path = os.path.join(SzToolsConfig.getDataHome(),"autoimp.tmp")
+        tmp_src_file = open(tmp_path,"w")
+        tmp_src_file.write(searchText)
+        tmp_src_file.close()
 
-        strliteralPat = re.compile(r'"(\\"|[^"])*"')
-        searchText = strliteralPat.sub("",searchText)
-
-        dclClassNamePat = re.compile(r"(?<=class)\b\W\w+\b")
-        dclClassNames =[item.strip() for item in  dclClassNamePat.findall(searchText)]
-
-        # upercase words except preceded by "."
-        classNamePat = re.compile(r"\b(?<!\.)[A-Z]\w+\b")
-        var_type_set=set(classNamePat.findall(searchText))
-
-        for clsName in dclClassNames :
-            var_type_set.discard(clsName)
-
-        varNames=",".join(var_type_set)
-        resultText = Talker.autoImport(classPathXml,varNames,currentPackage)
+        resultText = Talker.autoImport(classPathXml,tmp_path,currentPackage)
         lines = resultText.split("\n")
         for line in lines :
             AutoImport.addImportDef(line)

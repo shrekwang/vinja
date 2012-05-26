@@ -14,8 +14,10 @@ Z     :like above , but close the file even if it had been changed.
 u     :move cursor to upper dir
 m     :mark current node (for copy, delete , move etc.)
 f     :search node content for prompted string.
+F     :search node content for content in the vim search register.
 >     :jump to next editing file
 <     :jump to prev editing file
+@     :goto bookmark
 
 DD    :delete select dir or file
 Dm    :delete marked dir or file
@@ -24,9 +26,12 @@ A     :prompt to add a dir or a file
 ya    :yank select node path to vim register
 cc    :rename current file or dir
 yy    :yank current file or dir
-ym    :yank marked file or dir
 dd    :cut current file or dir
+ym    :yank marked file or dir
+dm    :cut marked file or dir
 p     :paste yanked or cut file or dir under selected dir node
+P     :paste file from system clipboar
+YY    :yank current file or dir to system clipboar
 
 C     :change root to select node
 B     :change root back

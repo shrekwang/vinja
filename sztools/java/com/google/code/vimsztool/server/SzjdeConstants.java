@@ -31,6 +31,7 @@ public class SzjdeConstants {
 	public final static String PARAM_CPT_TYPE="completionType";
 	public final static String PARAM_DUMP_CLASS="dumpClassNames";
 	public final static String PARAM_VAR_NAMES="varNames";
+	public final static String PARAM_TMP_FILE_PATH="tmpFilePath";
 	public final static String PARAM_EXP_TOKENS="expTokens";
 	public final static String PARAM_CLASS_NAME="className";
 	public final static String PARAM_IGNORE_CASE="ignoreCase";
