@@ -208,15 +208,30 @@ class QuickLocater(object) :
 
 class FileContentManager(object):
     def __init__(self):
+
+        self.bound_chars = """/\?%*:|"<>(), \t\n"""
         shext_locatedb_path = os.path.join(SzToolsConfig.getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
         self.show_on_open = False
 
     def get_init_prompt(self):
-        name = vim.eval("expand('<cword>')")
-        if name == None :
-            name = ""
-        return name
+        buf = vim.current.buffer
+        row, col = vim.current.window.cursor
+        line = buf[row-1]
+        if line.strip() == "" :
+            return ""
+        result = []
+        for i in range(col,-1,-1):
+            char = line[i]
+            if char in self.bound_chars :
+                break
+            result.insert(0,char)
+        for i in range(col+1,len(line)):
+            char = line[i]
+            if char in self.bound_chars :
+                break
+            result.append(char)
+        return "".join(result)
 
     def search_content(self,search_pat):
 
