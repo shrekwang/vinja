@@ -246,11 +246,17 @@ class MiscUtil(object):
         return sql.strip()
 
     @staticmethod
+    def initIncValue():
+        global incValue
+        incValue = 0
+
+    @staticmethod
     def transform(value, method):
         global incValue
         global digit_len
         global search_pat
 
+        tr_result = ""
         if method == "setter" :
             tr_result = "set%s();" % value.capitalize()
 

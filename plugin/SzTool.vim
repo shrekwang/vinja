@@ -339,8 +339,10 @@ function CustomSub(exp,method)
 	return g:sztransform_result
 endfunction
 
-function Transform(method)
-  %s//\=CustomSub(submatch(0),a:method)/gc
+function Transform(method) range
+  let g:sztransform_result=0
+  python MiscUtil.initIncValue()
+  execute a:firstline.",".a:lastline.'s//\=CustomSub(submatch(0),a:method)/gc'
 endfunction
 
 function SearchDict(word)
@@ -606,7 +608,7 @@ command! -nargs=0 LoadDtd      :call LoadDtd()
 command! -nargs=0 SzSudoku    :call SzSudoku()
 command! -nargs=0 SzMineSweeper  :call SzMineSweeper()
 
-command! -nargs=1 Transform    :call Transform('<args>')
+command! -nargs=1 -range=% Transform :<line1>,<line2>call Transform('<args>')
 
 command! -nargs=0 StartAgent  :python SztoolAgent.startAgent()
 command! -nargs=0 StopAgent   :python SztoolAgent.stopAgent()
