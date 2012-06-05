@@ -2194,9 +2194,8 @@ class Jdb(object):
 
         change_suspend_cmds = ["step_into","step_over","step_return","resume",
                 "exit","shutdown","frame","disconnect","until"]
-        for cmd_name in change_suspend_cmds :
-            if cmdLine.strip().split(" ")[0] in change_suspend_cmds :
-                self.resumeSuspend()
+        if cmdLine.strip().split(" ")[0] in change_suspend_cmds :
+            self.resumeSuspend()
 
         if cmdLine.startswith("help"):
             self.printHelp()
@@ -2222,7 +2221,8 @@ class Jdb(object):
             #clear buffer content
             vim.current.buffer[:] = None
 
-        if cmdLine.startswith("until"):
+        need_clsname_cmds = ["until","watch","unwatch"]
+        if cmdLine.strip().split(" ")[0] in need_clsname_cmds :
             self.switchSourceBuffer()
             mainClassName = Parser.getMainClass()
             cmdLine = cmdLine  +" " + mainClassName

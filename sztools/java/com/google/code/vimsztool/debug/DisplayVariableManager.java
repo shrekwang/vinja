@@ -6,15 +6,15 @@ import java.util.List;
 import com.google.code.vimsztool.debug.eval.ExpEval;
 import com.google.code.vimsztool.exception.ExpressionEvalException;
 
-public class WatchVariableManager {
+public class DisplayVariableManager {
 	
 	private List<String> allExps = new ArrayList<String>();
-	private static WatchVariableManager instance = new WatchVariableManager();
+	private static DisplayVariableManager instance = new DisplayVariableManager();
 
-	private WatchVariableManager() {
+	private DisplayVariableManager() {
 	}
 
-	public static WatchVariableManager getInstance() {
+	public static DisplayVariableManager getInstance() {
 		return instance;
 	}
 	

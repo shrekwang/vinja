@@ -1,7 +1,5 @@
 package com.google.code.vimsztool.debug;
 
-import java.util.List;
-
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.debug.eval.ExpEval;
 import com.google.code.vimsztool.util.VjdeUtil;
@@ -21,6 +19,7 @@ import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.event.VMDisconnectEvent;
 import com.sun.jdi.event.VMStartEvent;
+import com.sun.jdi.event.WatchpointEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.EventRequestManager;
 
@@ -69,6 +68,8 @@ public class EventHandler extends Thread {
 					handleExceptionEvent((ExceptionEvent)event);
 				} else if (event instanceof StepEvent) {
 					handleStepEvent((StepEvent)event);
+				} else if (event instanceof WatchpointEvent) {
+					handleWatchpointEvent((WatchpointEvent)event);
 				} else {
 					eventSet.resume();
 				}
@@ -154,6 +155,10 @@ public class EventHandler extends Thread {
 	}
  
 	private void handleStepEvent(StepEvent event) {
+		handleSuspendLocatableEvent(event);
+	}
+	
+	private void handleWatchpointEvent(WatchpointEvent event) {
 		handleSuspendLocatableEvent(event);
 	}
 	

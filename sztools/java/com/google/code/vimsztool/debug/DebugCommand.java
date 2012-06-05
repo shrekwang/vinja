@@ -11,14 +11,14 @@ public class DebugCommand  extends SzjdeCommand {
 	
 	private Debugger debugger = Debugger.getInstance();
 	private BreakpointManager bpMgr = BreakpointManager.getInstance();
-	private WatchVariableManager wvMgr = WatchVariableManager.getInstance();
+	private DisplayVariableManager dvMgr = DisplayVariableManager.getInstance();
 	private ExceptionPointManager ecpm  = ExceptionPointManager.getInstance();
 	
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
-		"bpa","setvalue","runtomcat","fetchJdbResult","until"
+		"bpa","setvalue","runtomcat","fetchJdbResult","until","display","undisplay","show_display"
 		};
 	
 	public String execute() {
@@ -55,6 +55,14 @@ public class DebugCommand  extends SzjdeCommand {
 			int lineNum = Integer.parseInt(args[2]);
 			//String mainClass = ctx.buildClassName(fileName);	
 			actionResult = bpMgr.addBreakpoint(mainClass, lineNum,null);
+		} else if (debugCmd.equals("watch")) {
+			String fieldName = args[1];
+			String mainClass = args[2];
+			actionResult = bpMgr.addWatchpoint(mainClass, fieldName, Breakpoint.ACCESS_READ);
+		} else if (debugCmd.equals("unwatch")) {
+			String fieldName = args[1];
+			String mainClass = args[2];
+			actionResult = bpMgr.removeWatchpoint(mainClass, fieldName);
 		} else if (debugCmd.equals("breakpoint_remove")) {
 			String mainClass = args[1];
 			//String mainClass = ctx.buildClassName(fileName);
@@ -75,14 +83,14 @@ public class DebugCommand  extends SzjdeCommand {
 				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
 				|| debugCmd.equals("fields") || debugCmd.equals("reftype")) {
 			actionResult =  ExpEval.executeEvalCmd(debugCmd, debugCmdArgs);
-		} else if (debugCmd.equals("watch")) {
+		} else if (debugCmd.equals("display")) {
 			String exp = debugCmdArgs.substring(debugCmd.length()+1);
-			actionResult =  wvMgr.addWatchExpression(exp);
-		} else if (debugCmd.equals("unwatch")) {
+			actionResult =  dvMgr.addWatchExpression(exp);
+		} else if (debugCmd.equals("undisplay")) {
 			String exp = debugCmdArgs.substring(debugCmd.length()+1);
-			actionResult =  wvMgr.removeWatchVariables(exp);
-		} else if (debugCmd.equals("show_watch")) {
-			actionResult =  wvMgr.evalWatchVariables();
+			actionResult =  dvMgr.removeWatchVariables(exp);
+		} else if (debugCmd.equals("show_display")) {
+			actionResult =  dvMgr.evalWatchVariables();
 		} else if (debugCmd.equals("breakpoints")) {
 			actionResult = debugger.listBreakpoints();
 		} else if (debugCmd.equals("frames")) {

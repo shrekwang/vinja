@@ -8,6 +8,7 @@ import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.omni.ClassInfo;
 import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.Field;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ThreadReference;
@@ -16,6 +17,7 @@ import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.EventRequestManager;
+import com.sun.jdi.request.WatchpointRequest;
 
 public class BreakpointManager {
 
@@ -84,6 +86,20 @@ public class BreakpointManager {
 		return "success";
 	}
 	
+	public String addWatchpoint(String mainClass, String fieldName, int accessMode) {
+		Debugger debugger = Debugger.getInstance();
+		CompilerContext ctx = debugger.getCompilerContext();
+		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
+		
+		ClassInfo metaInfo = cmm.getMetaInfo(mainClass);
+		if (metaInfo == null) return "failure";
+		Breakpoint breakpoint = null;
+		breakpoint = new Breakpoint(mainClass, fieldName);
+		allBreakpoints.add(breakpoint);
+		tryCreateRequest(breakpoint);
+		return "success";
+	}
+	
 	public String addBreakpoint(String mainClass, int lineNum,String conExp) {
 		return this.addBreakpoint(mainClass, lineNum, conExp,false);
 	}
@@ -114,7 +130,7 @@ public class BreakpointManager {
 		
 		
 		allBreakpoints.add(breakpoint);
-		tryCreateBreakpointRequest(breakpoint);
+		tryCreateRequest(breakpoint);
 		return "success";
 	}
 
@@ -122,17 +138,34 @@ public class BreakpointManager {
 
 		Breakpoint breakpoint = null;
 		for (Breakpoint bp : allBreakpoints) {
+			if (bp.getKind() == Breakpoint.Kind.WATCH_POINT) continue;
 			if (bp.getMainClass().equals(mainClass) && bp.getLineNum() == lineNum) {
 				breakpoint = bp;
 				break;
 			}
 		}
 		if (breakpoint != null) {
-			tryRemoveBreakpointRequest(breakpoint);
+			tryRemoveRequest(breakpoint);
 			allBreakpoints.remove(breakpoint);
 		}
 		return "success";
 
+	}
+	
+	public String removeWatchpoint(String mainClass, String field) {
+		Breakpoint breakpoint = null;
+		for (Breakpoint bp : allBreakpoints) {
+			if (bp.getKind() == Breakpoint.Kind.BREAK_POINT) continue;
+			if (bp.getMainClass().equals(mainClass) && bp.getField().equals(field)) {
+				breakpoint = bp;
+				break;
+			}
+		}
+		if (breakpoint != null) {
+			tryRemoveRequest(breakpoint);
+			allBreakpoints.remove(breakpoint);
+		}
+		return "success";
 	}
 
 	public void tryCreatePrepareRequest() {
@@ -161,16 +194,16 @@ public class BreakpointManager {
 
 	}
 
-	public void tryRemoveBreakpointRequest(Breakpoint breakpoint) {
+	public void tryRemoveRequest(Breakpoint breakpoint) {
 		
 		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
 		if (vm == null)
 			return;
-		List<BreakpointRequest> requests = breakpoint.getRequests();
+		List<EventRequest> requests = breakpoint.getRequests();
 		if (requests == null || requests.size() == 0)
 			return;
-		for (BreakpointRequest bp : requests) {
+		for (EventRequest bp : requests) {
 			try {
 				vm.eventRequestManager().deleteEventRequest(bp);
 			} catch (Exception e) {
@@ -182,15 +215,15 @@ public class BreakpointManager {
 	
 	public void tryCreateBreakpointRequest() {
 		for (Breakpoint bp : allBreakpoints) {
-			tryCreateBreakpointRequest(bp);
+			tryCreateRequest(bp);
 		}
 	}
 	
 	public void tryResetBreakpointRequest(String className) {
 		for (Breakpoint bp : allBreakpoints) {
 			if (bp.getMainClass().equals(className)) {
-				tryRemoveBreakpointRequest(bp);
-				tryCreateBreakpointRequest(bp);
+				tryRemoveRequest(bp);
+				tryCreateRequest(bp);
 			}
 		}
 		
@@ -201,13 +234,22 @@ public class BreakpointManager {
 		for (Breakpoint bp : allBreakpoints) {
 			if (bp.getMainClass().equals(className)
 					|| (bp.getInnerClass()!=null && bp.getInnerClass().equals(className))) {
-				tryCreateBreakpointRequest(bp);
+				tryCreateRequest(bp);
 			}
 			
 		}
 	}
+	
+	public void tryCreateRequest(Breakpoint breakpoint) {
+		if (breakpoint.getKind() == Breakpoint.Kind.WATCH_POINT) {
+			_tryCreateWatchpointRequest(breakpoint);
+		} else {
+			_tryCreateBreakpointRequest(breakpoint);
+		}
+		
+	}
 
-	public void tryCreateBreakpointRequest(Breakpoint breakpoint) {
+	private void _tryCreateBreakpointRequest(Breakpoint breakpoint) {
 
 		String className = breakpoint.getMainClass();
 		if (breakpoint.getInnerClass() !=null) {
@@ -245,6 +287,43 @@ public class BreakpointManager {
 			} catch (AbsentInformationException e) {
 				e.printStackTrace();
 			}
+		}
+
+	}
+	
+	private void _tryCreateWatchpointRequest(Breakpoint breakpoint) {
+
+		String className = breakpoint.getMainClass();
+		if (breakpoint.getInnerClass() !=null) {
+			className = breakpoint.getInnerClass();
+		}
+		
+		String fieldName = breakpoint.getField();
+		
+		Debugger debugger = Debugger.getInstance();
+		VirtualMachine vm = debugger.getVm();
+		if (vm == null)
+			return;
+		List<ReferenceType> refTypes = vm.classesByName(className);
+		if (refTypes == null)
+			return;
+
+		for (int i = 0; i < refTypes.size(); i++) {
+			ReferenceType rt = refTypes.get(i);
+			if (!rt.isPrepared()) {
+				continue;
+			}
+
+			Field field =rt.fieldByName(fieldName);
+			if (field == null ) {
+				continue;
+			}
+			//WatchpointRequest request = vm.eventRequestManager().createAccessWatchpointRequest(field);
+			WatchpointRequest request = vm.eventRequestManager().createModificationWatchpointRequest(field);
+			request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+			request.setEnabled(true);
+			request.putProperty("breakpointObj", breakpoint);
+			breakpoint.addRequest(request);
 		}
 
 	}

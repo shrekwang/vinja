@@ -138,8 +138,13 @@ public class Debugger {
 			if (className.indexOf(".") > -1 ) {
 				className = className.substring(className.lastIndexOf(".")+1);
 			}
-			sb.append(className).append(" [line: ");
-			sb.append(bp.getLineNum()).append("] - ");
+			if (bp.getKind() == Breakpoint.Kind.BREAK_POINT) {
+				sb.append(className).append(" [line: ");
+				sb.append(bp.getLineNum()).append("] - ");
+			} else {
+				sb.append(className).append(" [field: ");
+				sb.append(bp.getField()).append("] - ");
+			}
 			sb.append("\n");
 		}
 		
