@@ -21,6 +21,7 @@ import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.event.VMDeathEvent;
 import com.sun.jdi.event.VMDisconnectEvent;
 import com.sun.jdi.event.VMStartEvent;
+import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.EventRequestManager;
 
 public class EventHandler extends Thread {
@@ -118,19 +119,24 @@ public class EventHandler extends Thread {
 		threadStack.setCurThreadRef(threadRef);
 		
 		BreakpointManager bpm = BreakpointManager.getInstance();
-		List<Breakpoint> allBreakpoints = bpm.getAllBreakpoints();
 		Breakpoint breakpoint = null;
 		
+		/*
+		List<Breakpoint> allBreakpoints = bpm.getAllBreakpoints();
 		Location loc = event.location();
 		String className = loc.declaringType().name();
 		int lineNum = loc.lineNumber();
-
 		for (Breakpoint bp : allBreakpoints) {
 			if (bp.getMainClass().equals(className) && bp.getLineNum() == lineNum) {
 				breakpoint = bp;
 				break;
 			}
 		}
+		*/
+		
+		Object tmp = ((BreakpointRequest)event.request()).getProperty("breakpointObj");
+		if (tmp != null) breakpoint = (Breakpoint)tmp;
+		
 		if (breakpoint !=null && breakpoint.getConExp() != null) {
 			Object obj =ExpEval.eval(breakpoint.getConExp());
 			if (obj ==null || !obj.equals("true")) {
@@ -140,6 +146,11 @@ public class EventHandler extends Thread {
 			
 		}
 		handleSuspendLocatableEvent(event);
+		
+		//remove temporary breakpoint
+		if (breakpoint !=null && breakpoint.isTemp() == true) {
+			bpm.removeBreakpoint(breakpoint.getMainClass(), breakpoint.getLineNum());
+		}
 	}
  
 	private void handleStepEvent(StepEvent event) {

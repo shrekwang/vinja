@@ -1994,6 +1994,8 @@ class Jdb(object):
             row = len(buffer)
             vim.current.window.cursor = (row, 0)
             vim.command("call SwitchToSzToolView('Jdb')")
+            if "process terminated" in args[1] and self.quick_step :
+                self.toggleQuickStep()
             vim.command("redraw")
 
     def switchSourceBuffer(self):
@@ -2011,9 +2013,10 @@ class Jdb(object):
         if not self.quick_step :
             self.quick_step = True
             vim.command("nnoremap <buffer><silent>l   :python jdb.stepCmd('step_into')<cr>")
-            vim.command("nnoremap <buffer><silent>j   :python jdb.stepCmd('step_over')<cr>")
+            vim.command("nnoremap <buffer><silent>j   :<C-U>python jdb.stepCmd('step_over')<cr>")
             vim.command("nnoremap <buffer><silent>h   :python jdb.stepCmd('step_return')<cr>")
             vim.command("nnoremap <buffer><silent>k   :python jdb.stepCmd('resume')<cr>")
+            vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
             vim.command("setlocal statusline=\ Jdb\ QuickStep")
         else :
             self.quick_step = False
@@ -2021,6 +2024,7 @@ class Jdb(object):
             vim.command("nunmap <buffer><silent>j")
             vim.command("nunmap <buffer><silent>h")
             vim.command("nunmap <buffer><silent>k")
+            vim.command("nunmap <buffer><silent>G")
             vim.command("setlocal statusline=\ Jdb")
 
     def handleSuspend(self,abs_path,lineNum,className):
@@ -2126,7 +2130,16 @@ class Jdb(object):
         vim.current.window.cursor = (row, col)
         vim.command("startinsert")
 
-    def stepCmd(self, cmd):
+    def stepCmd(self, cmd ):
+        self.resumeSuspend()
+        cmd = cmd +" " + vim.eval("v:count1")
+        data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
+
+    def untilCmd(self):
+        self.switchSourceBuffer()
+        mainClassName = Parser.getMainClass()
+        vim.command("call SwitchToSzToolView('Jdb')")
+        cmd = "until %s %s" %(vim.eval("v:count1") ,mainClassName)
         self.resumeSuspend()
         data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
 
@@ -2179,7 +2192,8 @@ class Jdb(object):
         if cmdLine == "run" and self.defaultClassName :
             cmdLine = "run " + self.defaultClassName
 
-        change_suspend_cmds = ["step_into","step_over","step_return","resume","exit","shutdown","frame","disconnect"]
+        change_suspend_cmds = ["step_into","step_over","step_return","resume",
+                "exit","shutdown","frame","disconnect","until"]
         for cmd_name in change_suspend_cmds :
             if cmdLine.strip().split(" ")[0] in change_suspend_cmds :
                 self.resumeSuspend()
@@ -2208,6 +2222,10 @@ class Jdb(object):
             #clear buffer content
             vim.current.buffer[:] = None
 
+        if cmdLine.startswith("until"):
+            self.switchSourceBuffer()
+            mainClassName = Parser.getMainClass()
+            cmdLine = cmdLine  +" " + mainClassName
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 

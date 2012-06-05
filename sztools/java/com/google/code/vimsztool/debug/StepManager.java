@@ -10,7 +10,7 @@ import com.sun.jdi.request.StepRequest;
 
 public class StepManager {
 
-	public static String step(int stepDepth) {
+	public static String step(int stepDepth, int count) {
 		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
@@ -32,7 +32,7 @@ public class StepManager {
 		for (String filter : excludeFilters) {
 			request.addClassExclusionFilter(filter);
 		}
-		request.addCountFilter(1);
+		request.addCountFilter(count);
 		request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 		request.enable();
 		

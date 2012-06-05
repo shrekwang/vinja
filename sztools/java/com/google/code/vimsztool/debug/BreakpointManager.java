@@ -10,6 +10,7 @@ import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
@@ -70,8 +71,24 @@ public class BreakpointManager {
 		}
 		return false;
 	}
-
+	
+	public String addTempBreakpoint(String mainClass, int lineNum) {
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		ThreadReference threadRef = threadStack.getCurThreadRef();
+		if (threadRef == null ) {
+			return "no suspended thread";
+		}
+		String result =this.addBreakpoint(mainClass, lineNum, null,true);
+		if (!result.equals("success")) return result;
+		threadRef.resume();
+		return "success";
+	}
+	
 	public String addBreakpoint(String mainClass, int lineNum,String conExp) {
+		return this.addBreakpoint(mainClass, lineNum, conExp,false);
+	}
+
+	public String addBreakpoint(String mainClass, int lineNum,String conExp,boolean temp) {
 		Debugger debugger = Debugger.getInstance();
 		CompilerContext ctx = debugger.getCompilerContext();
 		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
@@ -93,6 +110,7 @@ public class BreakpointManager {
 		
 		if (breakpoint == null) return "failure";
 		breakpoint.setConExp(conExp);
+		breakpoint.setTemp(temp);
 		
 		
 		allBreakpoints.add(breakpoint);
@@ -222,6 +240,7 @@ public class BreakpointManager {
 				BreakpointRequest request = vm.eventRequestManager().createBreakpointRequest(loc);
 				request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 				request.setEnabled(true);
+				request.putProperty("breakpointObj", breakpoint);
 				breakpoint.addRequest(request);
 			} catch (AbsentInformationException e) {
 				e.printStackTrace();

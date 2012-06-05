@@ -18,7 +18,7 @@ public class DebugCommand  extends SzjdeCommand {
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
-		"bpa","setvalue","runtomcat","fetchJdbResult"
+		"bpa","setvalue","runtomcat","fetchJdbResult","until"
 		};
 	
 	public String execute() {
@@ -65,11 +65,12 @@ public class DebugCommand  extends SzjdeCommand {
 			int lineNum = Integer.parseInt(args[2]);
 			actionResult = bpMgr.removeBreakpoint(mainClass, lineNum);
 		} else if (debugCmd.equals("step_into")) {
-			actionResult = StepManager.step(StepRequest.STEP_INTO);
+			actionResult = StepManager.step(StepRequest.STEP_INTO, 1);
 		} else if (debugCmd.equals("step_over")) {
-			actionResult = StepManager.step(StepRequest.STEP_OVER);
+			int count = Integer.parseInt(args[1]);
+			actionResult = StepManager.step(StepRequest.STEP_OVER, count);
 		} else if (debugCmd.equals("step_return")) {
-			actionResult = StepManager.step(StepRequest.STEP_OUT);
+			actionResult = StepManager.step(StepRequest.STEP_OUT,1);
 		} else if (debugCmd.equals("eval") || debugCmd.equals("print")
 				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
 				|| debugCmd.equals("fields") || debugCmd.equals("reftype")) {
@@ -115,6 +116,10 @@ public class DebugCommand  extends SzjdeCommand {
 			int lineNum = Integer.parseInt(args[2]);
 			String conExp = debugCmdArgs.substring( debugCmdArgs.indexOf(args[2]) + args[2].length());
 			actionResult = bpMgr.addBreakpoint(mainClass, lineNum,conExp);
+		} else if (debugCmd.equals("until")) {
+			int lineNum = Integer.parseInt(args[1]);
+			String mainClass = args[2];
+			actionResult = bpMgr.addTempBreakpoint(mainClass, lineNum);
 		} else if (debugCmd.equals("setvalue")) {
 			String name = args[1];
 			String value = args[2];

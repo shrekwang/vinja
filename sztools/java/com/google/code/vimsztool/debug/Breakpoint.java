@@ -12,6 +12,7 @@ public class Breakpoint {
 	private int lineNum;
 	
 	private String conExp;
+	private boolean temp;
 	
 	public String getConExp() {
 		return conExp;
@@ -50,6 +51,14 @@ public class Breakpoint {
 	}
 	public List<BreakpointRequest> getRequests() {
 		return requests;
+	}
+
+	public boolean isTemp() {
+		return temp;
+	}
+
+	public void setTemp(boolean temp) {
+		this.temp = temp;
 	}
 	
 

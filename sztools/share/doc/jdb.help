@@ -24,6 +24,7 @@ step_into         --step into method , key <F5>
 step_over         --step over one line, key <F6>
 step_return       --step return , key <F7>
 resume            --resume current thread, key <F8>
+until line        --run to line
 
 catch  exception-class    --create exception request
 ignore exception-class    --remove exception request
