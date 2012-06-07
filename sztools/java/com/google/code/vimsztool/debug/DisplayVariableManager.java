@@ -9,6 +9,7 @@ import com.google.code.vimsztool.exception.ExpressionEvalException;
 public class DisplayVariableManager {
 	
 	private List<String> allExps = new ArrayList<String>();
+	private List<String> inspectExps = new ArrayList<String>();
 	private static DisplayVariableManager instance = new DisplayVariableManager();
 
 	private DisplayVariableManager() {
@@ -25,10 +26,20 @@ public class DisplayVariableManager {
 		return "success";
 	}
 	
+	public String addInspectExpression(String exp) {
+		if (!inspectExps.contains(exp)) {
+			inspectExps.add(exp);
+		}
+		return "success";
+	}
+	
 	public String removeWatchVariables(String exp) {
 		
 		if (allExps.contains(exp)) {
 			allExps.remove(exp);
+		}
+		if (inspectExps.contains(exp)) {
+			inspectExps.remove(exp);
 		}
 		return "success";
 	}
@@ -38,13 +49,29 @@ public class DisplayVariableManager {
 	}
 	
 	public String evalWatchVariables() {
-		if (allExps.size() < 1 ) return "";
-		try {
-			String result = ExpEval.eval(allExps);
-			return result;
-		} catch (ExpressionEvalException e) {
-			return e.getMessage();
+		StringBuilder sb = new StringBuilder();
+		if (allExps.size() > 0 ) {
+			try {
+				String result = ExpEval.eval(allExps);
+				sb.append(result);
+				sb.append("================\n\n");
+			} catch (ExpressionEvalException e) {
+				sb.append(e.getMessage()).append("\n");
+			}
 		}
+		if (inspectExps.size() > 0 ) {
+			for (String exp : inspectExps) {
+				try {
+					sb.append(ExpEval.inspect(exp)).append("\n");
+					sb.append("================\n");
+				} catch (ExpressionEvalException e) {
+					sb.append(e.getMessage()).append("\n");
+				}
+			}
+		}
+		return sb.toString();
+		
+		
 	}
 
 }

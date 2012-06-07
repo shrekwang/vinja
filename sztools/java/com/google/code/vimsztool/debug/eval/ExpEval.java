@@ -233,7 +233,7 @@ public class ExpEval {
 				Object value = eval(exp);
 				sb.append(getPrettyPrintStr(value)).append("\n");
 			} catch (ExpressionEvalException e) {
-				sb.append("exception in calc the value");
+				sb.append("exception in calc the value\n");
 			}
 		}
 		return sb.toString();

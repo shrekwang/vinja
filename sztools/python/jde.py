@@ -2074,7 +2074,7 @@ class Jdb(object):
         else :
             vim.command("call SwitchToSzToolView('Jdb')")
 
-        data = JdbTalker.submit("show_watch",self.class_path_xml,self.serverName)
+        data = JdbTalker.submit("show_display",self.class_path_xml,self.serverName)
         if data : 
             self.stdout(data)
         vim.command("call foreground()")
@@ -2103,6 +2103,7 @@ class Jdb(object):
     def stdout(self,msg):
         buffer = VimUtil.getSzToolBuffer("JdbStdOut")
         output(msg,buffer,False)
+        vim.command("redraw")
 
     def editBufOut(self,msg):
         buffer = VimUtil.getSzToolBuffer("Jdb")
@@ -2220,10 +2221,14 @@ class Jdb(object):
 
         if cmdLine.startswith("list") :
             self.listCmd(cmdLine)
+            if insertMode :
+                self.appendPrompt()
             return
 
         if cmdLine.startswith("breakpoint"):
             self.breakCmd(cmdLine)
+            if insertMode :
+                self.appendPrompt()
             return
 
         if cmdLine == "wow":
