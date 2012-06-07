@@ -51,9 +51,8 @@ public class DebugCommand  extends SzjdeCommand {
 			String port = args[1];
 			actionResult = debugger.attach(port);
 		} else if (debugCmd.equals("breakpoint_add")) {
-			String mainClass = args[1];
-			int lineNum = Integer.parseInt(args[2]);
-			//String mainClass = ctx.buildClassName(fileName);	
+			String mainClass = args[2];
+			int lineNum = Integer.parseInt(args[1]);
 			actionResult = bpMgr.addBreakpoint(mainClass, lineNum,null);
 		} else if (debugCmd.equals("watch")) {
 			String fieldName = args[1];
@@ -64,21 +63,18 @@ public class DebugCommand  extends SzjdeCommand {
 			String mainClass = args[2];
 			actionResult = bpMgr.removeWatchpoint(mainClass, fieldName);
 		} else if (debugCmd.equals("breakpoint_remove")) {
-			String mainClass = args[1];
-			//String mainClass = ctx.buildClassName(fileName);
-			int lineNum = Integer.parseInt(args[2]);
-			actionResult = bpMgr.removeBreakpoint(mainClass, lineNum);
-		} else if (debugCmd.equals("clear")) {
-			String mainClass = args[1];
-			int lineNum = Integer.parseInt(args[2]);
+			String mainClass = args[2];
+			int lineNum = Integer.parseInt(args[1]);
 			actionResult = bpMgr.removeBreakpoint(mainClass, lineNum);
 		} else if (debugCmd.equals("step_into")) {
-			actionResult = StepManager.step(StepRequest.STEP_INTO, 1);
+			int count = this.getStepCount(args);
+			actionResult = StepManager.step(StepRequest.STEP_INTO, count);
 		} else if (debugCmd.equals("step_over")) {
-			int count = Integer.parseInt(args[1]);
+			int count = this.getStepCount(args);
 			actionResult = StepManager.step(StepRequest.STEP_OVER, count);
 		} else if (debugCmd.equals("step_return")) {
-			actionResult = StepManager.step(StepRequest.STEP_OUT,1);
+			int count = this.getStepCount(args);
+			actionResult = StepManager.step(StepRequest.STEP_OUT, count);
 		} else if (debugCmd.equals("eval") || debugCmd.equals("print")
 				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
 				|| debugCmd.equals("fields") || debugCmd.equals("reftype")) {
@@ -138,6 +134,16 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = debugger.fetchResult();
 		}
 		return actionResult;
+	}
+	
+	private int getStepCount(String[] args) {
+		if (args == null || args.length < 2 ) return 1;
+		try {
+			int count = Integer.parseInt(args[1]);
+			return count;
+		} catch (Exception e) {
+			return 1;
+		}
 	}
 	
 	public boolean isAvailCmd(String cmd) {

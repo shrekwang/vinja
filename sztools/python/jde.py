@@ -764,7 +764,7 @@ class EditUtil(object):
         bufnr=str(vim.eval("bufnr('%')"))
 
         if row in bp_set :
-            cmdline = "breakpoint_remove %s %s" % (mainClassName,row)
+            cmdline = "breakpoint_remove %s %s" % (row,mainClassName)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
             if data == "success" :
                 bp_set.remove(row)
@@ -772,7 +772,7 @@ class EditUtil(object):
             else :
                 print "remove breakpoint error : msgs "+data
         else :
-            cmdline = "breakpoint_add %s %s" % (mainClassName,row)
+            cmdline = "breakpoint_add %s %s" % (row,mainClassName)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
             if data == "success" :
                 HighlightManager.addSign(file_name,row, "B")
@@ -1941,6 +1941,8 @@ class Jdb(object):
         self.out_buf_list = []
         self.ivp = InspectorVarParser()
         self.quick_step = False
+        alias_text = file(os.path.join(SzToolsConfig.getShareHome(),"conf/jdb_alias.cfg")).read()
+        self.alias_table = [item.split() for item in alias_text.split("\n") if item.strip() != "" ]
 
     def show(self):
         self.display = True
@@ -2135,6 +2137,34 @@ class Jdb(object):
         cmd = cmd +" " + vim.eval("v:count1")
         data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
 
+    def breakCmd(self, cmdLine):
+        global bp_data
+        cmd, row = cmdLine.strip().split()
+        row = int(row.strip())
+        self.switchSourceBuffer()
+        mainClassName = Parser.getMainClass()
+
+        file_name = vim.current.buffer.name
+        bp_set = bp_data.get(file_name)
+        if bp_set == None :
+            bp_set = set()
+
+        cmdline = "%s %s %s" % (cmd, row,mainClassName)
+        data = JdbTalker.submit(cmdline,self.class_path_xml,self.serverName)
+
+        if data == "success" :
+            if cmd == "breakpoint_add" :
+                bp_set.add(row)
+                bp_data[file_name] = bp_set
+                HighlightManager.addSign(file_name,row, "B")
+            else :
+                if row in bp_set: 
+                    bp_set.remove(row)
+                HighlightManager.removeSign(file_name,row,"B")
+        else :
+            self.stdout(data)
+        vim.command("call SwitchToSzToolView('Jdb')")
+
     def untilCmd(self):
         self.switchSourceBuffer()
         mainClassName = Parser.getMainClass()
@@ -2142,6 +2172,21 @@ class Jdb(object):
         cmd = "until %s %s" %(vim.eval("v:count1") ,mainClassName)
         self.resumeSuspend()
         data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
+
+    def listCmd(self,cmdLine):
+        args = cmdLine.split()
+        self.switchSourceBuffer()
+        if len(args) > 1 :
+            lineNum = args[1]
+            if lineNum =="0" :
+                lineNum = "1"
+        else :
+            winEndRow = int(vim.eval("line('w$')"))
+            lineNum = int(winEndRow) - 2
+        vim.command("normal %sG" % str(lineNum))
+        vim.command("normal zt")
+        vim.command("redraw")
+        vim.command("call SwitchToSzToolView('Jdb')")
 
     def removeDuplicate(self):
         curBuf = vim.current.buffer
@@ -2171,26 +2216,26 @@ class Jdb(object):
         #remove duplicate line 
         self.removeDuplicate()
 
+        cmdLine = self.replaceAlias(cmdLine)
+
+        if cmdLine.startswith("list") :
+            self.listCmd(cmdLine)
+            return
+
+        if cmdLine.startswith("breakpoint"):
+            self.breakCmd(cmdLine)
+            return
+
         if cmdLine == "wow":
             self.stdout(self)
             self.appendPrompt()
             return 
 
-        if cmdLine.startswith("print") :
-            cmdLine = "eval " + cmdLine[5:]
-
-        """
-        need_gen_ast_cmds = ["eval","reftype","watch","unwatch","inspect"]
-        for cmd_name in need_gen_ast_cmds :
-            if cmdLine.startswith(cmd_name) :
-                arg = cmdLine[ cmdLine.find(" ")+1 : ]
-                ast = self.ivp.generate(arg)
-                cmd = cmdLine[ 0 : cmdLine.find(" ") ]
-                cmdLine = cmd + " " + ast
-        """
-
-        if cmdLine == "run" and self.defaultClassName :
-            cmdLine = "run " + self.defaultClassName
+        if cmdLine == "run" :
+            #cmdLine = "run " + self.defaultClassName
+            self.switchSourceBuffer()
+            mainClassName = Parser.getMainClass()
+            cmdLine = cmdLine  +" " + mainClassName
 
         change_suspend_cmds = ["step_into","step_over","step_return","resume",
                 "exit","shutdown","frame","disconnect","until"]
@@ -2259,6 +2304,22 @@ class Jdb(object):
             return 
         lines = resultText.split("\n")
         VimUtil.writeToSzToolBuffer("JdeConsole",lines,append=True)
+
+    def replaceAlias(self, cmdLine):
+        alias = ""
+        restOfLine = ""
+        if " " not in cmdLine :
+            alias = cmdLine
+            restOfLine = ""
+        else :
+            alias = cmdLine[0: cmdLine.find(" ")]
+            restOfLine = cmdLine[cmdLine.find(" ")+1 : ]
+
+        for row in self.alias_table :
+            if alias in row :
+                cmdLine = row[0] + " " + restOfLine
+                break
+        return cmdLine.strip()
 
 class InspectorVarParser():
 
