@@ -122,19 +122,6 @@ public class EventHandler extends Thread {
 		BreakpointManager bpm = BreakpointManager.getInstance();
 		Breakpoint breakpoint = null;
 		
-		/*
-		List<Breakpoint> allBreakpoints = bpm.getAllBreakpoints();
-		Location loc = event.location();
-		String className = loc.declaringType().name();
-		int lineNum = loc.lineNumber();
-		for (Breakpoint bp : allBreakpoints) {
-			if (bp.getMainClass().equals(className) && bp.getLineNum() == lineNum) {
-				breakpoint = bp;
-				break;
-			}
-		}
-		*/
-		
 		Object tmp = ((BreakpointRequest)event.request()).getProperty("breakpointObj");
 		if (tmp != null) breakpoint = (Breakpoint)tmp;
 		
@@ -181,8 +168,15 @@ public class EventHandler extends Thread {
 		} catch (Throwable e) {
 		}
 		
+		String appendOperate  = "null";
+		if (event.request() instanceof BreakpointRequest) {
+			Object tmp = ((BreakpointRequest)event.request()).getProperty("breakpointObj");
+			if (tmp != null && ((Breakpoint)tmp).isTemp() )  {
+				appendOperate = "remove_breakpoint";
+			}
+		}
 		String funcName = "HandleJdiEvent";
-		String[] args = {"suspend", abPath, String.valueOf(lineNum), className };
+		String[] args = {"suspend", abPath, String.valueOf(lineNum), className,appendOperate };
 		VjdeUtil.callVimFunc(debugger.getVimServerName(), funcName, args);
 	}
 

@@ -1984,7 +1984,7 @@ class Jdb(object):
 
     def handleJdiEvent(self,args):
         if args[0] == "suspend" :
-            self.handleSuspend(args[1],args[2],args[3])
+            self.handleSuspend(args[1],args[2],args[3],args[4])
         elif args[0] == "msg" :
             buffer = VimUtil.getSzToolBuffer("JdbStdOut", createNew = False )
             if (buffer == None ) :
@@ -2029,7 +2029,7 @@ class Jdb(object):
             vim.command("nunmap <buffer><silent>G")
             vim.command("setlocal statusline=\ Jdb")
 
-    def handleSuspend(self,abs_path,lineNum,className):
+    def handleSuspend(self,abs_path,lineNum,className,appendOperate):
         """
         tab_count = int(vim.eval("tabpagenr('$')"))
         for i in range(1,tab_count+1):
@@ -2051,6 +2051,8 @@ class Jdb(object):
                 vim.command(signcmd)
             
             HighlightManager.addSign(vim.current.buffer.name,lineNum,"S")
+            if appendOperate == "remove_breakpoint" :
+                HighlightManager.removeSign(vim.current.buffer.name,lineNum,"B")
             self.suspendRow = lineNum
             self.suspendBufnr = bufnr
             self.suspendBufName = vim.current.buffer.name
@@ -2154,7 +2156,7 @@ class Jdb(object):
         data = JdbTalker.submit(cmdline,self.class_path_xml,self.serverName)
 
         if data == "success" :
-            if cmd == "breakpoint_add" :
+            if cmd == "breakpoint_add" or cmd == "tbreak" :
                 bp_set.add(row)
                 bp_data[file_name] = bp_set
                 HighlightManager.addSign(file_name,row, "B")
@@ -2225,7 +2227,7 @@ class Jdb(object):
                 self.appendPrompt()
             return
 
-        if cmdLine.startswith("breakpoint"):
+        if cmdLine.startswith("breakpoint") or cmdLine.startswith("tbreak"):
             self.breakCmd(cmdLine)
             if insertMode :
                 self.appendPrompt()

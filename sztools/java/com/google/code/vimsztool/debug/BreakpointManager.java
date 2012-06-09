@@ -74,15 +74,20 @@ public class BreakpointManager {
 		return false;
 	}
 	
-	public String addTempBreakpoint(String mainClass, int lineNum) {
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		ThreadReference threadRef = threadStack.getCurThreadRef();
-		if (threadRef == null ) {
-			return "no suspended thread";
+	public String addTempBreakpoint(String mainClass, int lineNum,boolean resumeThread) {
+		ThreadReference threadRef = null;
+		if (resumeThread ) {
+			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			threadRef = threadStack.getCurThreadRef();
+			if (threadRef == null ) {
+				return "no suspended thread";
+			}
 		}
+		
 		String result =this.addBreakpoint(mainClass, lineNum, null,true);
 		if (!result.equals("success")) return result;
-		threadRef.resume();
+		
+		if (resumeThread ) threadRef.resume();
 		return "success";
 	}
 	

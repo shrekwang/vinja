@@ -18,7 +18,8 @@ public class DebugCommand  extends SzjdeCommand {
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
-		"bpa","setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay","show_display"
+		"bpa","setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay",
+		"show_display","tbreak"
 		};
 	
 	public String execute() {
@@ -54,6 +55,14 @@ public class DebugCommand  extends SzjdeCommand {
 			String mainClass = args[2];
 			int lineNum = Integer.parseInt(args[1]);
 			actionResult = bpMgr.addBreakpoint(mainClass, lineNum,null);
+		} else if (debugCmd.equals("until")) {
+			int lineNum = Integer.parseInt(args[1]);
+			String mainClass = args[2];
+			actionResult = bpMgr.addTempBreakpoint(mainClass, lineNum,true);
+		} else if (debugCmd.equals("tbreak")) {
+			int lineNum = Integer.parseInt(args[1]);
+			String mainClass = args[2];
+			actionResult = bpMgr.addTempBreakpoint(mainClass, lineNum,false);
 		} else if (debugCmd.equals("watch")) {
 			String fieldName = args[1];
 			String mainClass = args[2];
@@ -123,10 +132,7 @@ public class DebugCommand  extends SzjdeCommand {
 			int lineNum = Integer.parseInt(args[2]);
 			String conExp = debugCmdArgs.substring( debugCmdArgs.indexOf(args[2]) + args[2].length());
 			actionResult = bpMgr.addBreakpoint(mainClass, lineNum,conExp);
-		} else if (debugCmd.equals("until")) {
-			int lineNum = Integer.parseInt(args[1]);
-			String mainClass = args[2];
-			actionResult = bpMgr.addTempBreakpoint(mainClass, lineNum);
+		
 		} else if (debugCmd.equals("setvalue")) {
 			String name = args[1];
 			String value = args[2];
