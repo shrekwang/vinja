@@ -8,8 +8,8 @@ import com.sun.jdi.request.EventRequest;
 public class Breakpoint {
 	
 	public static enum Kind { BREAK_POINT, WATCH_POINT };
-	public static int ACCESS_READ = 1;
-	public static int ACCESS_WRITE = 2;
+	public static final int ACCESS_READ = 1;
+	public static final int ACCESS_WRITE = 2;
 	
 	private String mainClass;
 	private String innerClass;

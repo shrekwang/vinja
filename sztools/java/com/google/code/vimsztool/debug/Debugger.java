@@ -144,6 +144,14 @@ public class Debugger {
 			} else {
 				sb.append(className).append(" [field: ");
 				sb.append(bp.getField()).append("] - ");
+				
+				if (bp.getAccessMode() == Breakpoint.ACCESS_READ) {
+					sb.append("Read");
+				} else if (bp.getAccessMode() == Breakpoint.ACCESS_WRITE) {
+					sb.append("Write");
+				} else {
+					sb.append("Read|Write");
+				}
 			}
 			sb.append("\n");
 		}

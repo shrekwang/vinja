@@ -2016,8 +2016,8 @@ class Jdb(object):
             self.quick_step = True
             vim.command("nnoremap <buffer><silent>l   :python jdb.stepCmd('step_into')<cr>")
             vim.command("nnoremap <buffer><silent>j   :<C-U>python jdb.stepCmd('step_over')<cr>")
-            vim.command("nnoremap <buffer><silent>h   :python jdb.stepCmd('step_return')<cr>")
-            vim.command("nnoremap <buffer><silent>k   :python jdb.stepCmd('resume')<cr>")
+            vim.command("nnoremap <buffer><silent>h   :<C-U>python jdb.stepCmd('step_return')<cr>")
+            vim.command("nnoremap <buffer><silent>c   :python jdb.stepCmd('resume')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
             vim.command("setlocal statusline=\ Jdb\ QuickStep")
         else :
@@ -2025,7 +2025,7 @@ class Jdb(object):
             vim.command("nunmap <buffer><silent>l")
             vim.command("nunmap <buffer><silent>j")
             vim.command("nunmap <buffer><silent>h")
-            vim.command("nunmap <buffer><silent>k")
+            vim.command("nunmap <buffer><silent>c")
             vim.command("nunmap <buffer><silent>G")
             vim.command("setlocal statusline=\ Jdb")
 
@@ -2227,7 +2227,7 @@ class Jdb(object):
                 self.appendPrompt()
             return
 
-        if cmdLine.startswith("breakpoint") or cmdLine.startswith("tbreak"):
+        if cmdLine.startswith("breakpoint_") or cmdLine.startswith("tbreak"):
             self.breakCmd(cmdLine)
             if insertMode :
                 self.appendPrompt()
@@ -2273,7 +2273,7 @@ class Jdb(object):
             #clear buffer content
             vim.current.buffer[:] = None
 
-        need_clsname_cmds = ["until","watch","unwatch"]
+        need_clsname_cmds = ["until","watch","unwatch","rwatch","awatch"]
         if cmdLine.strip().split(" ")[0] in need_clsname_cmds :
             self.switchSourceBuffer()
             mainClassName = Parser.getMainClass()

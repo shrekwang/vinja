@@ -98,8 +98,18 @@ public class BreakpointManager {
 		
 		ClassInfo metaInfo = cmm.getMetaInfo(mainClass);
 		if (metaInfo == null) return "failure";
-		Breakpoint breakpoint = null;
-		breakpoint = new Breakpoint(mainClass, fieldName);
+		for (Breakpoint bp : allBreakpoints) {
+			if (bp.getKind() == Breakpoint.Kind.WATCH_POINT
+					&& bp.getMainClass().equals(mainClass) 
+					&& bp.getField().equals(fieldName)
+					&& bp.getAccessMode() == accessMode) {
+				//already exits
+				return "success";
+			}
+		}
+		
+		Breakpoint breakpoint = new Breakpoint(mainClass, fieldName);
+		breakpoint.setAccessMode(accessMode);
 		allBreakpoints.add(breakpoint);
 		tryCreateRequest(breakpoint);
 		return "success";
@@ -323,12 +333,20 @@ public class BreakpointManager {
 			if (field == null ) {
 				continue;
 			}
-			//WatchpointRequest request = vm.eventRequestManager().createAccessWatchpointRequest(field);
-			WatchpointRequest request = vm.eventRequestManager().createModificationWatchpointRequest(field);
-			request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-			request.setEnabled(true);
-			request.putProperty("breakpointObj", breakpoint);
-			breakpoint.addRequest(request);
+			if ( (breakpoint.getAccessMode() & Breakpoint.ACCESS_READ) ==  Breakpoint.ACCESS_READ ) {
+				WatchpointRequest request = vm.eventRequestManager().createAccessWatchpointRequest(field);
+				request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+				request.setEnabled(true);
+				request.putProperty("breakpointObj", breakpoint);
+				breakpoint.addRequest(request);
+			}
+			if ( (breakpoint.getAccessMode() & Breakpoint.ACCESS_WRITE) ==  Breakpoint.ACCESS_WRITE ) {
+				WatchpointRequest request = vm.eventRequestManager().createModificationWatchpointRequest(field);
+				request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+				request.setEnabled(true);
+				request.putProperty("breakpointObj", breakpoint);
+				breakpoint.addRequest(request);
+			}
 		}
 
 	}

@@ -16,10 +16,10 @@ public class DebugCommand  extends SzjdeCommand {
 	
 	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
-		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", "watch","show_watch",
+		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", 
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
 		"bpa","setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay",
-		"show_display","tbreak"
+		"show_display","tbreak", "watch","rwatch","awatch"
 		};
 	
 	public String execute() {
@@ -66,7 +66,15 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("watch")) {
 			String fieldName = args[1];
 			String mainClass = args[2];
+			actionResult = bpMgr.addWatchpoint(mainClass, fieldName, Breakpoint.ACCESS_WRITE);
+		} else if (debugCmd.equals("rwatch")) {
+			String fieldName = args[1];
+			String mainClass = args[2];
 			actionResult = bpMgr.addWatchpoint(mainClass, fieldName, Breakpoint.ACCESS_READ);
+		} else if (debugCmd.equals("awatch")) {
+			String fieldName = args[1];
+			String mainClass = args[2];
+			actionResult = bpMgr.addWatchpoint(mainClass, fieldName, Breakpoint.ACCESS_READ | Breakpoint.ACCESS_WRITE);
 		} else if (debugCmd.equals("unwatch")) {
 			String fieldName = args[1];
 			String mainClass = args[2];
