@@ -434,8 +434,8 @@ jde            : jde相关命令，目前实现了 jde start(参见后面的启�
 是jdb命令的输出buffer。 jdb命令的buffer也是普通buffer， 除了在回车时自动执行命令(类似于shext)，
 在jdb命令buffer运行\colorbox{lightgray}{help}命令可以得到jdb命令的简要帮助。
 
-    jdb的大步部份调试功能是在jdb的buffer中用命令实现的， 有个例外是加断点。 只要启动了
-    jde模式，在编辑java文件的时候，就可以用\colorbox{lightgray}{<leader>tb}来为当前行切换断点。
+    %jdb的大步部份调试功能是在jdb的buffer中用命令实现的， 有个例外是加断点。 只要启动了
+    %jde模式，在编辑java文件的时候，就可以用\colorbox{lightgray}{<leader>tb}来为当前行切换断点。
 
   \subsection{运行和附加}
     
@@ -471,8 +471,8 @@ jde            : jde相关命令，目前实现了 jde start(参见后面的启�
 
     runtomcat命令用于从jdb从运行tomcat应用。 tomcat的配置在sztools.cfg中进行， 
     需要配置的三个属性是 tomcat\_version， tomcat\_home， tomcat\_jvmopts， 最后
-    一个参数用来配置tomcat的jvm叁数。 配置中的目录，在windows下的"\textbackslash"
-    需要用"\textbackslash\textbackslash"来进行。 比如
+    一个参数用来配置tomcat的jvm叁数。 配置中的目录分隔符，在windows下的"\textbackslash"
+    需要用"\textbackslash\textbackslash"。 比如
     \begin{verbatim} D:\\soft\\tomcat6 \end{verbatim}
     \begin{mdframed}[style=SmallFrame]
      \begin{flushleft}
@@ -480,10 +480,37 @@ jde            : jde相关命令，目前实现了 jde start(参见后面的启�
      \end{flushleft}
     \end{mdframed}
 
+  \subsection{断点}
+  以下命令中使用的行号或字段名总是针对当前正在编辑的类文件。\newline\newline
+  break用于新增断点，n为类文件的行号。\newline
+  tbreak用于新增临时断点，此断点在一次暂停之后会自动移除 \newline
+  clear用于删除断点，n为行号。此命令对break和tbreak新增的断点都适用。\newline
+  watch增加watchpoint，当字段被更改时暂停程序。 \newline
+  rwatch增加watchpoint，当字段被读取时暂停程序。 \newline
+  awatch增加watchpoint，当字段被读取或更改时暂停程序。 \newline
+  breakpoints用于列出断点，包括普通按行号建立的断点和watchpoint。 \newline\newline
+  break可用别名b\newline
+  tbreak可用别名tb\newline
+  clear可用别名cl\newline
+  \begin{mdframed}[style=SmallFrame]
+      \begin{flushleft}
+      >break n\newline
+      >tbreak n\newline
+      >clear n\newline
+      >breakpoints\newline                      
+      >watch fieldname\newline                      
+      >rwatch fieldname\newline                      
+      >awatch fieldname\newline                      
+      >unwatch fieldname\newline
+      \end{flushleft}
+    \end{mdframed}
+
   \subsection{检查变量}
-    print(或eval)命令用于打印表达式的值。 reftype命令用于打印表达式的类型，
-  inspect命令打印表达式的各个成员的值。 locals打印函数内所有本地量的值， fields
-  用于打印当前对象的各个字段的值
+    print命令用于打印表达式的值。 reftype命令用于打印表达式的类型，
+  inspect命令打印表达式的各个成员的值。 locals打印函数内所有本地变量的值， fields
+  用于打印当前对象的各个字段的值。
+
+   print的别名p或eval，inspect的别名i。
     \begin{mdframed}[style=SmallFrame]
       \begin{flushleft}
       >print expression\newline
@@ -497,21 +524,37 @@ jde            : jde相关命令，目前实现了 jde start(参见后面的启�
 
   \subsection{跟踪}
 
-    单步进入，单步跳过，单步跳出，恢复。 这个跟eclipse的功能差不多。 快捷键也是一样的，分
-    别是<F5><F6><F7><F8>。注意这些快捷键也只能在jdb命令buffer使用，在其他buffer中是无效的。
+    单步进入，单步跳过，单步跳出，恢复运行，运行到指定行。 这个跟eclipse的功能差不多。 快捷键也基本一样，分
+    别是<F5><F6><F7><F8>。注意这些快捷键也只能在jdb命令buffer使用，在其他buffer中无效。\newline\newline
+    step\_into可用别名step,s\newline
+    step\_over可用别名next,n\newline
+    step\_return可用别名finish\newline
+    resume可用别名continue,c\newline
+    until可用别名u\newline
     \begin{mdframed}[style=SmallFrame]
       \begin{flushleft}
       >step\_into\newline
       >step\_over\newline
       >step\_return\newline
-      >resume           
+      >resume\newline          
+      >until n\newline
       \end{flushleft}
     \end{mdframed}
 
-    
+    在Jdb中还有一个QuickStep模式，当在jdb命令窗口按两次<C-[>时可以切换QuickStep模式。
+  此模式对对一些键做了映射，用于更快地进行程序跟踪。具体映射如下:\newline
+    j --> step\_over\newline
+    h --> step\_return\newline
+    l --> step\_into\newline
+    c --> resume(continue)\newline
+    G --> until\newline
+
+    对上面的映射，可以先按数字键，以指定命令执行的次数(对于G命令数字是必须的)，比如: 3j在当
+  前暂停的线程中继续单步运行3行后暂停。25G则把程序运行到第25行处暂停，2h则做两次的step\_return后
+  暂停。
 
   \subsection{线程和堆栈}
-  threads列出当前jvm的所有线程， thread命令用于切换当前线程(如果有线程是suspend状态的话)，
+  threads列出当前jvm的所有线程， thread命令用于切换当前线程(如果有线程是暂停状态的话)，
   frames列出当前线程的所有调用栈。 frame命令用于切换当前的栈桢。(print，eval等命令只能打印当前栈桢的变量值)
   breakpoints列出当前jvmf所有的断点， bpa添加条件断点， setvalue改变var值
     \begin{mdframed}[style=SmallFrame]
