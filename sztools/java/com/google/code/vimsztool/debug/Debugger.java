@@ -300,7 +300,7 @@ public class Debugger {
 		} catch (Throwable e) {
 		}
 		String funcName = "HandleJdiEvent";
-		String[] args = {"suspend", abPath, String.valueOf(lineNum), className };
+		String[] args = {"suspend", abPath, String.valueOf(lineNum), className,"null"};
 		VjdeUtil.callVimFunc(getVimServerName(), funcName, args);
 	}
 	
