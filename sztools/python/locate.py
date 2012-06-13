@@ -144,6 +144,7 @@ class QuickLocater(object) :
         vim.command("%s  <Esc>    :python quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "ESC"))
         vim.command("%s  <C-j>    :python quickLocater.on_cursor_move('down')<cr>" %(mapcmd ))
         vim.command("%s  <C-k>    :python quickLocater.on_cursor_move('up')<cr>" %(mapcmd ))
+        vim.command("%s  <C-d>    :python quickLocater.on_remove_content()<cr>" %(mapcmd ))
         vim.command("%s  <C-B>    :python quickLocater.open_content('buffer')<cr>" %(mapcmd ))
         vim.command("%s  <C-T>    :python quickLocater.open_content('tab')<cr>" %(mapcmd ))
         vim.command("%s  <C-Y>    :python quickLocater.yank_content()<cr>" %(mapcmd ))
@@ -164,6 +165,10 @@ class QuickLocater(object) :
             if row > 1 : win.cursor = ( row-1 , col)
         else :
             if row < len(work_buffer) : win.cursor = ( row+1 , col)
+
+    def on_remove_content(self):
+        if isinstance(self.content_manager,EditHistoryManager):
+            self.content_manager.on_remove_content()
 
     def yank_content(self):
         work_buffer=vim.current.buffer
@@ -406,5 +411,16 @@ class EditHistoryManager(object):
         cur_name = self.cur_buf.replace("\\","/")
         if cur_name in self.matched_item :
             vim.current.window.cursor = ( self.matched_item.index(cur_name)+1, 0)
+
+    def on_remove_content(self):
+        work_buffer=vim.current.buffer
+        row,col = vim.current.window.cursor
+        line = work_buffer[row-1].strip()
+        basename,path = re.split("\s+",line)
+        bufnr = vim.eval("bufnr('%s')" % path)    
+        if bufnr != "-1" :
+            vim.command('Bclose %s' % bufnr)
+            del work_buffer[row-1]
+            vim.command("resize %d" % len(work_buffer))
 
 
