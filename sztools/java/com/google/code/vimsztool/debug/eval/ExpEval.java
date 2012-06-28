@@ -52,6 +52,8 @@ import com.sun.jdi.VirtualMachine;
 
 public class ExpEval {
 	
+	public static final String SEP_ROW_TXT="=========================\n";
+	
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
 		"short", "int", "long", "float", "double" };
 	
@@ -224,17 +226,9 @@ public class ExpEval {
 	public static String eval(List<String> exps) {
 		if (exps ==null || exps.size() == 0) return "";
 		StringBuilder sb = new StringBuilder();
-		int count = 0;
-		int maxLen = getMaxLength(exps)+2;
-		for (String exp :exps) {
-			count ++;
-			sb.append(padStr(maxLen,exp)).append(":");
-			try {
-				Object value = eval(exp);
-				sb.append(getPrettyPrintStr(value)).append("\n");
-			} catch (ExpressionEvalException e) {
-				sb.append("exception in calc the value\n");
-			}
+		for (String exp : exps) {
+			sb.append(eval(exp));
+			sb.append(ExpEval.SEP_ROW_TXT);
 		}
 		return sb.toString();
 	}
@@ -245,10 +239,30 @@ public class ExpEval {
 		if (result.hasError()) {
 			return result.getErrorMsg();
 		}
+		StringBuilder sb = new StringBuilder();
+		List<String> exps = result.getExpList();
+		int maxLen = getMaxLength(exps)+2;
 		
-		Object value = evalTreeNode(result.getTree());
+		for (int i=0; i< exps.size(); i++) {
+			String basicExp = exps.get(i);
+			sb.append(padStr(maxLen,basicExp)).append(":");
+			try {
+				CommonTree node = result.getTreeList().get(i);
+				sb.append(evalTreeNodeToStr(node));
+				sb.append("\n");
+			} catch (ExpressionEvalException e) {
+				sb.append("exception in calc the value\n");
+			}
+		}
+		return sb.toString();
+	}
+	
+	private static String evalTreeNodeToStr(CommonTree node) {
+		Object value = evalTreeNode(node);
 		return getPrettyPrintStr(value);
 	}
+	
+	
 
 
 	public static Object evalTreeNode(CommonTree node) {

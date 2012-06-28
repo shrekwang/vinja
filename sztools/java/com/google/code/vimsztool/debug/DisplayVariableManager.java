@@ -54,7 +54,6 @@ public class DisplayVariableManager {
 			try {
 				String result = ExpEval.eval(allExps);
 				sb.append(result);
-				sb.append("================\n\n");
 			} catch (ExpressionEvalException e) {
 				sb.append(e.getMessage()).append("\n");
 			}
@@ -63,7 +62,7 @@ public class DisplayVariableManager {
 			for (String exp : inspectExps) {
 				try {
 					sb.append(ExpEval.inspect(exp)).append("\n");
-					sb.append("================\n");
+					sb.append(ExpEval.SEP_ROW_TXT);
 				} catch (ExpressionEvalException e) {
 					sb.append(e.getMessage()).append("\n");
 				}
