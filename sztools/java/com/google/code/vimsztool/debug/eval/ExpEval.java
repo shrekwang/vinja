@@ -104,10 +104,11 @@ public class ExpEval {
 				Field field = refType.fieldByName(name);
 				thisObj.setValue(field, value);
 			}
+			return Debugger.CMD_SUCCESS + ": set \""+name + "\" to value " + value.toString();
 		} catch (Throwable e) {
 			return e.getMessage();
 		}
-		return "success";
+
 	}
 
 	public static String executeEvalCmd(String debugCmd,String debugCmdArgs) {

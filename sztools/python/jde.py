@@ -774,7 +774,7 @@ class EditUtil(object):
         else :
             cmdline = "breakpoint_add %s %s" % (row,mainClassName)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
-            if data == "success" :
+            if "success" in data :
                 HighlightManager.addSign(file_name,row, "B")
                 bp_set.add(row)
                 bp_data[file_name] = bp_set
@@ -2160,7 +2160,7 @@ class Jdb(object):
         cmdline = "%s %s %s" % (cmd, row,mainClassName)
         data = JdbTalker.submit(cmdline,self.class_path_xml,self.serverName)
 
-        if data == "success" :
+        if "success" in data :
             if cmd == "breakpoint_add" or cmd == "tbreak" :
                 bp_set.add(row)
                 bp_data[file_name] = bp_set
@@ -2169,8 +2169,7 @@ class Jdb(object):
                 if row in bp_set: 
                     bp_set.remove(row)
                 HighlightManager.removeSign(file_name,row,"B")
-        else :
-            self.stdout(data)
+        self.stdout(data)
         vim.command("call SwitchToSzToolView('Jdb')")
 
     def untilCmd(self):

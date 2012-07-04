@@ -77,18 +77,18 @@ public class BreakpointManager {
 	public String addTempBreakpoint(String mainClass, int lineNum,boolean resumeThread) {
 		ThreadReference threadRef = null;
 		if (resumeThread ) {
+			Debugger debugger = Debugger.getInstance();
+			debugger.checkVm();
+			debugger.checkSuspendThread();
 			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 			threadRef = threadStack.getCurThreadRef();
-			if (threadRef == null ) {
-				return "no suspended thread";
-			}
 		}
 		
 		String result =this.addBreakpoint(mainClass, lineNum, null,true);
-		if (!result.equals("success")) return result;
+		if (result.indexOf(Debugger.CMD_SUCCESS) < 0 ) return result;
 		
 		if (resumeThread ) threadRef.resume();
-		return "success";
+		return Debugger.CMD_SUCCESS + ":add temp breakpoint at class \"" + mainClass + "\", line " + lineNum ;
 	}
 	
 	public String addWatchpoint(String mainClass, String fieldName, int accessMode) {
@@ -103,8 +103,8 @@ public class BreakpointManager {
 					&& bp.getMainClass().equals(mainClass) 
 					&& bp.getField().equals(fieldName)
 					&& bp.getAccessMode() == accessMode) {
-				//already exits
-				return "success";
+				
+				return "watchpoint at class \"" + mainClass + "\", field " + fieldName+ "already exists";
 			}
 		}
 		
@@ -112,7 +112,8 @@ public class BreakpointManager {
 		breakpoint.setAccessMode(accessMode);
 		allBreakpoints.add(breakpoint);
 		tryCreateRequest(breakpoint);
-		return "success";
+		return Debugger.CMD_SUCCESS + ": add watchpoint at class \"" + mainClass + "\", field " + fieldName;
+		
 	}
 	
 	public String addBreakpoint(String mainClass, int lineNum,String conExp) {
@@ -139,14 +140,16 @@ public class BreakpointManager {
 			breakpoint = new Breakpoint(mainClass, lineNum);
 		}
 		
-		if (breakpoint == null) return "failure";
+		if (breakpoint == null) {
+			return "no source line " + lineNum +" in class \"" + mainClass+"\"";
+		}
 		breakpoint.setConExp(conExp);
 		breakpoint.setTemp(temp);
 		
 		
 		allBreakpoints.add(breakpoint);
 		tryCreateRequest(breakpoint);
-		return "success";
+		return Debugger.CMD_SUCCESS + ": add breakpoint at class \"" + mainClass + "\", line " + lineNum;
 	}
 
 	public String removeBreakpoint(String mainClass, int lineNum) {
@@ -162,9 +165,10 @@ public class BreakpointManager {
 		if (breakpoint != null) {
 			tryRemoveRequest(breakpoint);
 			allBreakpoints.remove(breakpoint);
+			return Debugger.CMD_SUCCESS + ": remove breakpoint at class \"" + mainClass + "\", line " + lineNum;
 		}
-		return "success";
 
+		return Debugger.CMD_SUCCESS + ": breakpoint at class \"" + mainClass + "\", line " + lineNum + " not exists.";
 	}
 	
 	public String removeWatchpoint(String mainClass, String field) {
@@ -179,8 +183,9 @@ public class BreakpointManager {
 		if (breakpoint != null) {
 			tryRemoveRequest(breakpoint);
 			allBreakpoints.remove(breakpoint);
+			return Debugger.CMD_SUCCESS + ": remove watchpoint at class \"" + mainClass + "\", field " + field;
 		}
-		return "success";
+		return Debugger.CMD_SUCCESS + ": watchpoint at class \"" + mainClass + "\", field " + field + " not exists.";
 	}
 
 	public void tryCreatePrepareRequest() {

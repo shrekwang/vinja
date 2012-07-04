@@ -7,6 +7,7 @@ hide                      --hide jdb buffer
 exit                      --exit jdb
 
 break  n                  --create breakpoint on line n(alias b)
+tbreak n                  --temp breakpoint on line n(alias tb)
 clear  n                  --remove breakpoint on line n(alias cl)
 breakpoints               --list breakpoints,including watchpoints
 watch fieldname           --add watch field, suspended program when the field been written
@@ -14,9 +15,9 @@ rwatch fieldname          --add watch field, suspended program when the field be
 awatch fieldname          --add watch field, suspended program when the field been written or field been read
 unwatch fieldname         --remove watch field
 
-print expression          --eval the value of the expression(alias:p,eval)
-reftype expression        --print the type of the expression
-inspect expression        --print the field value of the inspect expression(alias:i)
+print expression          --eval the value of the expression(alias p,eval)
+reftype expression        --print the type of the expression(alias whatis)
+inspect expression        --print the field value of the inspect expression(alias i)
 locals                    --list stack frame local variables
 fields                    --list fields 
 
@@ -37,7 +38,8 @@ until line        --run to line(alias:u)
 catch  exception-class    --create exception request
 ignore exception-class    --remove exception request
 
-display expression          --add display variable(when program is suspended)
+display expression          --add display variable(when program is suspended,alias di)
+displayi expression         --add inspect variable(when program is suspended,alias dii)
 show_display                --list current watched variables
 undisplay expression        --remove displayed variable
 

@@ -5,6 +5,8 @@ import com.google.code.vimsztool.compiler.CompilerContextManager;
 import com.google.code.vimsztool.server.SzjdeCommand;
 import com.google.code.vimsztool.server.SzjdeConstants;
 import com.google.code.vimsztool.debug.eval.ExpEval;
+import com.google.code.vimsztool.exception.NoConnectedVmException;
+import com.google.code.vimsztool.exception.NoSuspendThreadException;
 import com.sun.jdi.request.StepRequest;
 
 public class DebugCommand  extends SzjdeCommand {
@@ -23,6 +25,17 @@ public class DebugCommand  extends SzjdeCommand {
 		};
 	
 	public String execute() {
+		try {
+			String actionResult = executeInternal();
+			return actionResult;
+		} catch (NoConnectedVmException e) {
+			return "no virtual machine connected.";
+		} catch (NoSuspendThreadException e) {
+			return "no suspend thread.";
+		}
+	}
+	
+	public String executeInternal() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
 		String debugCmdArgs = params.get("debugCmdArgs");
 		
@@ -42,7 +55,7 @@ public class DebugCommand  extends SzjdeCommand {
 		String actionResult = "";
 		
 		if (!isAvailCmd(debugCmd)) {
-			return "not a valid command";
+			return "not a valid command, try \"help\".";
 		}
 		
 		if (debugCmd.equals("run")) {

@@ -23,25 +23,32 @@ public class DisplayVariableManager {
 		if (!allExps.contains(exp)) {
 			allExps.add(exp);
 		}
-		return "success";
+		return Debugger.CMD_SUCCESS + ": add displayed expression \"" + exp +"\"";
 	}
 	
 	public String addInspectExpression(String exp) {
 		if (!inspectExps.contains(exp)) {
 			inspectExps.add(exp);
 		}
-		return "success";
+		return Debugger.CMD_SUCCESS + ": add inspected expression \"" + exp +"\"";
 	}
 	
 	public String removeWatchVariables(String exp) {
 		
+		boolean foundExp = false;
 		if (allExps.contains(exp)) {
+			foundExp = true;
 			allExps.remove(exp);
 		}
 		if (inspectExps.contains(exp)) {
+			foundExp = true;
 			inspectExps.remove(exp);
 		}
-		return "success";
+		if (foundExp) {
+			return Debugger.CMD_SUCCESS + ": remove displayed(inspected) expression \"" + exp +"\"";
+		} else {
+			return "expression \"" + exp + "\" not exists in displayed expression list.";
+		}
 	}
 	
 	public List<String> getWatchVariables() {
