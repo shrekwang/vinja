@@ -4,8 +4,11 @@ import re
 import sys
 import logging
 import difflib
+from string import maketrans
 
 conn_pool = {}
+
+MAX_ROW_COUNT = 2000
 
 class QueryUtil(object):
 
@@ -326,7 +329,7 @@ class Dbext(object):
         elif server_type == "mysql":
             import MySQLdb
             conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
-                passwd = profile["password"] )
+                passwd = profile["password"], charset = "utf8", use_unicode = True )
         elif server_type == "sqlite":
             import sqlite3 as sqlite
             conn = sqlite.connect(profile["file"])
@@ -361,7 +364,7 @@ class Dbext(object):
         if cur.description:
             for column in cur.description:
                 columns.append(column[0])
-            result = cur.fetchall()
+            result = cur.fetchmany(MAX_ROW_COUNT)
         else :
             result.append("affected " + str(cur.rowcount) + " rows.")
 
@@ -375,10 +378,23 @@ class Dbext(object):
         for column in columns :
             maxlens.append(0)
 
+
+        codepage = sys.getdefaultencoding()
+        #translate some control characters
+        intab = "\x00\x01\x0d\x0a\x09"
+        outtab = "01   "
+        trantab = maketrans(intab, outtab)
+
+        def convert(value):
+            if isinstance(value,unicode) :
+                value = value.encode(codepage)
+            value = str(value).rstrip().translate(trantab)
+            return value
+
         resultset = [columns]
         for row in rows :
+            row = [convert(field) for field in row]
             for index,field in enumerate(row):
-                field = str(field).rstrip()
                 if (len(field)>maxlens[index]):
                     maxlens[index] = len(field)
             resultset.append(row)
@@ -395,7 +411,6 @@ class Dbext(object):
         for rowindex,row in enumerate(resultset):
             line = ""
             for index,field in enumerate(row):
-                field = str(field).rstrip().replace("\n","")
                 line = line+ "| " + field.ljust(maxlens[index] + 1)
             if rowindex<2: result.append(headline)
             result.append(line + "|")
