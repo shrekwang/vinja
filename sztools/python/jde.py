@@ -766,7 +766,7 @@ class EditUtil(object):
         if row in bp_set :
             cmdline = "breakpoint_remove %s %s" % (row,mainClassName)
             data = JdbTalker.submit(cmdline,class_path_xml,serverName)
-            if data == "success" :
+            if "success" in data :
                 bp_set.remove(row)
                 HighlightManager.removeSign(file_name,row,"B")
             else :
