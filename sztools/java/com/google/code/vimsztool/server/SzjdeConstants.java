@@ -26,6 +26,8 @@ public class SzjdeConstants {
 	public final static String CMD_QUIT="quit";
 	public final static String CMD_CLIPBOARD="clipboard";
 	
+	public final static String CMD_SEARCH_DEF_LOC="searchDefLocation";
+	
 	public final static String PARAM_CLASSPATHXML="classPathXml";
 	public final static String PARAM_SOURCEFILE="sourceFile";
 	public final static String PARAM_CPT_TYPE="completionType";

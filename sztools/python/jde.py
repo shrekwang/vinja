@@ -421,6 +421,20 @@ class EditUtil(object):
         VimUtil.writeToSzToolBuffer("JdeConsole",resultText)
 
     @staticmethod
+    def locateDefinition_new():
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        line = vim_buffer[row-1]
+        current_file_name = vim_buffer.name
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+        source_info = Talker.locateSource(className, classPathXml,sourceType)
+        abs_path, row,col = source_info.split(";")
+
+        if not PathUtil.same_path(abs_path, vim.current.buffer.name):
+            vim.command("edit %s" % abs_path)
+        vim.current.window.cursor = (row,col)
+
+    @staticmethod
     def locateDefinition(sourceType):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
