@@ -1,9 +1,11 @@
 package com.google.code.vimsztool.parser;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.ANTLRInputStream;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.tree.CommonTree;
@@ -13,6 +15,7 @@ import com.google.code.vimsztool.util.LRUCache;
 public class AstTreeFactory {
 	
 	public static LRUCache<String, ParseResult> expCache = new LRUCache<String,ParseResult>(120);
+	private static final String DEFAULT_ENCODING="utf-8";
 	
 	public static ParseResult getExpressionAst(String exp) {
 		ParseResult result = expCache.get(exp);
@@ -75,11 +78,14 @@ public class AstTreeFactory {
         }
         return start;
     }
-	
 	public static ParseResult getJavaSourceAst(String fileName) {
+		return getJavaSourceAst(fileName,DEFAULT_ENCODING);
+	}
+	
+	public static ParseResult getJavaSourceAst(String fileName,String encoding) {
 		ParseResult result = new ParseResult();
 		try {
-			JavaLexer lex = new JavaLexer(new ANTLRFileStream(fileName));
+			JavaLexer lex = new JavaLexer(new ANTLRFileStream(fileName,encoding));
 			CommonTokenStream tokens = new CommonTokenStream(lex);
 			JavaParser parser = new JavaParser(tokens);
 			CommonTree tree = (CommonTree) parser.javaSource().getTree();
@@ -92,6 +98,21 @@ public class AstTreeFactory {
 		return result;
 	}
 	
+	public static ParseResult getJavaSourceAst(InputStream is,String encoding) {
+		ParseResult result = new ParseResult();
+		try {
+			JavaLexer lex = new JavaLexer(new ANTLRInputStream(is, encoding));
+			CommonTokenStream tokens = new CommonTokenStream(lex);
+			JavaParser parser = new JavaParser(tokens);
+			CommonTree tree = (CommonTree) parser.javaSource().getTree();
+			result.setTree(tree);
+			result.setError(false);
+		} catch (Throwable e) {
+			result.setError(true);
+			result.setErrorMsg(e.getMessage());
+		}
+		return result;
+	}
 	
 
 }

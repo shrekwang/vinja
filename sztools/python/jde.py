@@ -447,8 +447,9 @@ class EditUtil(object):
         row = int(row)
         col = int(col)
 
+        vim.command("normal m'")
         if not PathUtil.same_path(abs_path, vim.current.buffer.name):
-            vim.command("edit %s" % abs_path)
+            vim.command("keepjumps edit %s" % abs_path)
         vim.current.window.cursor = (row,col)
 
     @staticmethod

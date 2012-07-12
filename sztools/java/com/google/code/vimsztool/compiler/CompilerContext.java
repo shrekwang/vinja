@@ -583,6 +583,7 @@ public class CompilerContext {
 		return srcVM;
 	}
 
+	
 	public void setSrcVM(String srcVM) {
 		this.srcVM = srcVM;
 	}

@@ -7,6 +7,8 @@ import java.util.List;
 import org.antlr.runtime.tree.CommonTree;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.omni.ClassInfoUtil;
+import com.google.code.vimsztool.omni.JavaExpUtil;
 
 public class JavaSourceSearcher {
     
@@ -32,7 +34,7 @@ public class JavaSourceSearcher {
     	this.ctx = ctx;
     	this.currentFileName = filename;
     	
-        parseResult = AstTreeFactory.getJavaSourceAst(filename);
+        parseResult = AstTreeFactory.getJavaSourceAst(filename,ctx.getEncoding());
         CommonTree tree = parseResult.getTree();
         readClassInfo(tree);
         
@@ -103,8 +105,10 @@ public class JavaSourceSearcher {
                 if (pparent.getType() == JavaParser.METHOD_CALL) {
                     List<String> typenameList = parseArgumentTypenameList((CommonTree)pparent.getChild(1));
                     MemberInfo memberInfo = findMatchedMethod(rightNode.getText(), typenameList,leftClassMembers);
-                    info.setLine(memberInfo.getLineNum());
-                    info.setCol(memberInfo.getColumn());
+                    if (memberInfo != null ) {
+	                    info.setLine(memberInfo.getLineNum());
+	                    info.setCol(memberInfo.getColumn());
+                    }
                 } else {
                     MemberInfo memberInfo = findMatchedField(rightNode.getText(), leftClassMembers);
                     info.setLine(memberInfo.getLineNum());
@@ -116,6 +120,7 @@ public class JavaSourceSearcher {
             	//1: 本地变量  (done)
             	//2: 父类变量
             	//3: 导入的类名
+            	//4: 相同包下的类名
             	boolean found = false;
                 for (LocalVariableInfo var : visibleVars) {
                     if (var.getName().equals(node.getText())) {
@@ -133,9 +138,23 @@ public class JavaSourceSearcher {
                 			info.setFilePath(this.getClassFilePath(importedName));
                 			info.setLine(1);
                 			info.setCol(1);
+                			found = true ;
+                			break;
                 		}
                 	}
-                }
+               }
+               if (!found) {
+        	   String classFullName  = ctx.buildClassName(this.currentFileName);
+       	    	if (classFullName.lastIndexOf(".") > -1 ) {
+       	    		String packageName = classFullName.substring(0,classFullName.lastIndexOf("."));
+       	    		String path = ctx.findSourceClass(packageName+"."+node.getText());
+       	    		if (!path.equals("None")) {
+       	    			info.setFilePath(path);
+       	    			info.setLine(1);
+       	    			info.setCol(1);
+       	    		}
+       	    	} 
+               }
             }
         }
         return info;
@@ -156,7 +175,10 @@ public class JavaSourceSearcher {
                     } else if (child.getType() == JavaParser.VAR_DECLARATION) {
                         info = parseFieldDecl(child); 
                     }
-                    this.memberInfos.add(info);
+                    if (info.getName() !=null) {
+                    	this.memberInfos.add(info);
+                    }
+                    
                 }
             }
             if (t.getType() ==  JavaParser.IMPORT) {
@@ -185,6 +207,7 @@ public class JavaSourceSearcher {
         List<String> typenameList = new ArrayList<String>();
         for (int i=0; i<tree.getChildCount(); i++) {
             CommonTree arguNode = (CommonTree) tree.getChild(i);
+            //TODO 解析 new File表达式的值
             String typeName = parseNodeTypeName(arguNode);
             typenameList.add(typeName);
         }
@@ -195,6 +218,7 @@ public class JavaSourceSearcher {
         if (node.getType() == JavaParser.EXPR) {
             node = (CommonTree)node.getChild(0);
         }
+       
         String typename = "";
 
         switch (node.getType()) {
@@ -231,6 +255,10 @@ public class JavaSourceSearcher {
             case JavaParser.NULL:
                 typename = NULL_TYPE;
                 break;
+            case JavaParser.QUALIFIED_TYPE_IDENT:
+            case JavaParser.CLASS_CONSTRUCTOR_CALL:
+            	typename = parseNodeTypeName((CommonTree)node.getChild(0));
+            	break;
             default :
                 typename = "unknown";
         }
@@ -263,11 +291,14 @@ public class JavaSourceSearcher {
 
     private MemberInfo findMatchedMethod(String methodName, List<String> argTypes, 
             List<MemberInfo> memberInfos) {
+    	List<MemberInfo> paramCountMatchedList = new ArrayList<MemberInfo>();
+    	
         for (MemberInfo member: memberInfos) { 
             if (member.getName().equals(methodName) 
                     && member.getParamList() != null 
                     && member.getParamList().size() == argTypes.size()) {
                 List<String[]> memberParamList = member.getParamList();
+                paramCountMatchedList.add(member);
                 boolean noMatch = false;
                 for (int i=0; i<argTypes.size(); i++) {
                     String actTypeName = argTypes.get(i);
@@ -280,12 +311,21 @@ public class JavaSourceSearcher {
                 if (! noMatch) return member;
             }
         }
+        if (paramCountMatchedList.size() > 0) {
+        	return paramCountMatchedList.get(0);
+        }
         return null;
     }
 
     private boolean arguMatch(String defTypeName, String actTypeName) {
         if (defTypeName.equals(actTypeName)) return true;
-        if (actTypeName.equals(NULL_TYPE)) return true;
+        if (actTypeName.equals(NULL_TYPE)) {
+        	//null should not match primitive type
+        	String t =String.valueOf(defTypeName.charAt(0)).toUpperCase()+defTypeName.substring(1);
+        	if (t.equals(defTypeName)){
+        		return true;
+        	}
+        }
         return false;
     }
 
