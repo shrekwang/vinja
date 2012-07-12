@@ -1,14 +1,15 @@
 package com.google.code.vimsztool.parser;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 import org.antlr.runtime.tree.CommonTree;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
-import com.google.code.vimsztool.omni.ClassInfoUtil;
-import com.google.code.vimsztool.omni.JavaExpUtil;
 
 public class JavaSourceSearcher {
     
@@ -19,6 +20,7 @@ public class JavaSourceSearcher {
     private ParseResult parseResult = null;
     private CompilerContext ctx  = null;
     private String currentFileName;
+    private String curFullClassName ;
     
     private List<String> importedNames = new ArrayList<String>();
     private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
@@ -30,14 +32,39 @@ public class JavaSourceSearcher {
     	return this.importedNames;
     }
 
-    public JavaSourceSearcher(String filename, CompilerContext ctx) {
-    	this.ctx = ctx;
-    	this.currentFileName = filename;
+	public JavaSourceSearcher(String filename, CompilerContext ctx) {
+		this.ctx = ctx;
+		this.currentFileName = filename;
+		this.curFullClassName = ctx.buildClassName(filename);
+
+		//filename could be a jar entry path like below
+		// jar://C:\Java\jdk1.6.0_29\src.zip!java/lang/String.java
+		if (filename.startsWith("jar:")) {
+			JarFile jarFile = null;
+			try {
+				String jarPath = filename.substring(6,filename.lastIndexOf("!"));
+				jarFile = new JarFile(jarPath);
+				ZipEntry zipEntry = jarFile.getEntry(filename
+						.substring(filename.lastIndexOf("!") + 1));
+				
+				InputStream is = jarFile.getInputStream(zipEntry);
+				parseResult = AstTreeFactory.getJavaSourceAst(is,
+						ctx.getEncoding());
+			} catch (Exception e) {
+
+			} finally {
+				if (jarFile != null) try {jarFile.close(); } catch (Exception e) {}
+			}
+		} else {
+			parseResult = AstTreeFactory.getJavaSourceAst(filename);
+		}
+		CommonTree tree = parseResult.getTree();
+		readClassInfo(tree);
+
+	}
+   
+    public void aa() {
     	
-        parseResult = AstTreeFactory.getJavaSourceAst(filename,ctx.getEncoding());
-        CommonTree tree = parseResult.getTree();
-        readClassInfo(tree);
-        
     }
     
     
@@ -175,10 +202,7 @@ public class JavaSourceSearcher {
                     } else if (child.getType() == JavaParser.VAR_DECLARATION) {
                         info = parseFieldDecl(child); 
                     }
-                    if (info.getName() !=null) {
-                    	this.memberInfos.add(info);
-                    }
-                    
+                    this.memberInfos.add(info);
                 }
             }
             if (t.getType() ==  JavaParser.IMPORT) {
@@ -258,7 +282,6 @@ public class JavaSourceSearcher {
             case JavaParser.QUALIFIED_TYPE_IDENT:
             case JavaParser.CLASS_CONSTRUCTOR_CALL:
             	typename = parseNodeTypeName((CommonTree)node.getChild(0));
-            	break;
             default :
                 typename = "unknown";
         }
@@ -319,13 +342,7 @@ public class JavaSourceSearcher {
 
     private boolean arguMatch(String defTypeName, String actTypeName) {
         if (defTypeName.equals(actTypeName)) return true;
-        if (actTypeName.equals(NULL_TYPE)) {
-        	//null should not match primitive type
-        	String t =String.valueOf(defTypeName.charAt(0)).toUpperCase()+defTypeName.substring(1);
-        	if (t.equals(defTypeName)){
-        		return true;
-        	}
-        }
+        if (actTypeName.equals(NULL_TYPE)) return true;
         return false;
     }
 
@@ -465,6 +482,13 @@ public class JavaSourceSearcher {
         MemberInfo info = new MemberInfo();
         info.setLineNum(t.getLine());
         info.setMemberType(memberType);
+        if (memberType == MemberType.CONSTRUCTOR) {
+        	String className = curFullClassName;
+        	if (curFullClassName.lastIndexOf(".")> -1) {
+        		className = curFullClassName.substring(curFullClassName.lastIndexOf(".")+1);
+        	}
+        	info.setName(className);
+        }
 
         for (int i=0; i< t.getChildCount(); i++) {
             CommonTree c = (CommonTree)t.getChild(i);
