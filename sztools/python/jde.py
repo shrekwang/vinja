@@ -164,6 +164,18 @@ class Talker(BasicTalker):
         data = Talker.send(params)
         return data
 
+
+    @staticmethod
+    def locateDefinition(sourceFile, xmlPath,row,col):
+        params = dict()
+        params["cmd"]="locateDefinition"
+        params["sourceFile"] = sourceFile
+        params["classPathXml"] = xmlPath
+        params["row"] = row
+        params["col"] = col
+        data = Talker.send(params)
+        return data
+
     @staticmethod
     def getMemberList(args):
         params = dict()
@@ -424,11 +436,16 @@ class EditUtil(object):
     def locateDefinition_new():
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
-        line = vim_buffer[row-1]
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
-        source_info = Talker.locateSource(className, classPathXml,sourceType)
+
+        source_info = Talker.locateDefinition(current_file_name, classPathXml,row,col)
+        if source_info.strip() == "" :
+            print "can't find definition location"
+            return 
         abs_path, row,col = source_info.split(";")
+        row = int(row)
+        col = int(col)
 
         if not PathUtil.same_path(abs_path, vim.current.buffer.name):
             vim.command("edit %s" % abs_path)

@@ -13,18 +13,33 @@ public class JavaSourceSearcher {
     public static final String NULL_TYPE = "NULL";
 
     private boolean hasFound = false;
-    private List<LocalVariableInfo> vars = null;
-    private List<MemberInfo> memberInfos = null;
+    private List<LocalVariableInfo> visibleVars = null;
     private ParseResult parseResult = null;
     private CompilerContext ctx  = null;
+    private String currentFileName;
+    
+    private List<String> importedNames = new ArrayList<String>();
+    private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
+    
+    public List<MemberInfo> getMemberInfos() {
+    	return this.memberInfos;
+    }
+    public List<String> getImportedNames() {
+    	return this.importedNames;
+    }
 
     public JavaSourceSearcher(String filename, CompilerContext ctx) {
     	this.ctx = ctx;
+    	this.currentFileName = filename;
+    	
         parseResult = AstTreeFactory.getJavaSourceAst(filename);
         CommonTree tree = parseResult.getTree();
-        memberInfos = new ArrayList<MemberInfo>();
-        findClassLevelMembers(tree,memberInfos);
+        readClassInfo(tree);
+        
     }
+    
+    
+   
 
     public LocationInfo searchDefLocation(int line, int col) {
         CommonTree tree = parseResult.getTree();
@@ -33,13 +48,28 @@ public class JavaSourceSearcher {
             System.out.println("can't find node here");
             return null;
         }
-        vars = parseAllVisibleVar(node);
+        visibleVars = parseAllVisibleVar(node);
         LocationInfo info = searchNodeDefLocation(node);
         return info;
     }
 
     private String getClassFilePath(String className) {
     	String path = ctx.findSourceClass(className);
+    	
+    	//try same package class
+    	if (path.equals("None")) {
+	    	String classFullName  = ctx.buildClassName(this.currentFileName);
+	    	if (classFullName.lastIndexOf(".") > -1 ) {
+	    		String packageName = classFullName.substring(0,classFullName.lastIndexOf("."));
+	    		path = ctx.findSourceClass(packageName+"."+className);
+	    	}
+    	}
+    	
+    	//try class under the java.lang package
+    	if (path.equals("None")) {
+    		className = "java.lang." + className;
+    		path = ctx.findSourceClass(className);
+    	}
         return path;
     }
 
@@ -57,55 +87,61 @@ public class JavaSourceSearcher {
 
                 info.setLine(memberInfo.getLineNum());
                 info.setCol(memberInfo.getColumn());
+                info.setFilePath(currentFileName);
                 
             } else if (parent.getType() == JavaParser.DOT) {
-                System.out.println("member");
                 CommonTree leftNode = (CommonTree)parent.getChild(0);
                 String leftNodeTypeName = parseNodeTypeName(leftNode);
                 String leftNodeFilePath = getClassFilePath(leftNodeTypeName);
+                info.setFilePath(leftNodeFilePath);
 
-                parseResult = AstTreeFactory.getJavaSourceAst(leftNodeFilePath);
-                CommonTree tree = parseResult.getTree();
-                memberInfos = new ArrayList<MemberInfo>();
-                findClassLevelMembers(tree,memberInfos);
-
-                System.out.println("leftNodetypename is " + leftNodeTypeName);
+                JavaSourceSearcher searcher = new JavaSourceSearcher(leftNodeFilePath, ctx);
+                List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
+                
                 CommonTree rightNode = (CommonTree)parent.getChild(1);
-                System.out.println("right node is " + rightNode);
-
                 CommonTree pparent = (CommonTree)parent.getParent();
                 if (pparent.getType() == JavaParser.METHOD_CALL) {
                     List<String> typenameList = parseArgumentTypenameList((CommonTree)pparent.getChild(1));
-                    for (String typename : typenameList) {
-                        System.out.print(typename+",");
-                    }
-                    System.out.print("\n");
-                    MemberInfo memberInfo = findMatchedMethod(rightNode.getText(), typenameList,memberInfos);
+                    MemberInfo memberInfo = findMatchedMethod(rightNode.getText(), typenameList,leftClassMembers);
                     info.setLine(memberInfo.getLineNum());
                     info.setCol(memberInfo.getColumn());
                 } else {
-                    System.out.println("this is else");
-                    MemberInfo memberInfo = findMatchedField(rightNode.getText(), memberInfos);
+                    MemberInfo memberInfo = findMatchedField(rightNode.getText(), leftClassMembers);
                     info.setLine(memberInfo.getLineNum());
                     info.setCol(memberInfo.getColumn());
                 }
 
             } else {
-                for (LocalVariableInfo var : vars) {
+            	//todo 查找变量的顺序
+            	//1: 本地变量  (done)
+            	//2: 父类变量
+            	//3: 导入的类名
+            	boolean found = false;
+                for (LocalVariableInfo var : visibleVars) {
                     if (var.getName().equals(node.getText())) {
                         info.setCol(var.getCol());
                         info.setLine(var.getLine());
-                        System.out.println("var name : " + node.getText());
-                        System.out.println("var type : " + var.getType());
+		                info.setFilePath(currentFileName);
+		                found = true;
                         break;
                     }
+                }
+                if (!found ) {
+                	for (String importedName: this.importedNames) {
+                		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
+                		if (node.getText().equals(lastName)) {
+                			info.setFilePath(this.getClassFilePath(importedName));
+                			info.setLine(1);
+                			info.setCol(1);
+                		}
+                	}
                 }
             }
         }
         return info;
     }
 
-    public void findClassLevelMembers(CommonTree t, List<MemberInfo> infoList) {
+    public void readClassInfo(CommonTree t) {
         if ( t != null ) {
             if (t.getType() == JavaParser.CLASS_TOP_LEVEL_SCOPE) {
                 int count = t.getChildCount();
@@ -120,15 +156,30 @@ public class JavaSourceSearcher {
                     } else if (child.getType() == JavaParser.VAR_DECLARATION) {
                         info = parseFieldDecl(child); 
                     }
-                    infoList.add(info);
+                    this.memberInfos.add(info);
                 }
             }
+            if (t.getType() ==  JavaParser.IMPORT) {
+                StringBuilder sb = new StringBuilder();
+                buildImportStr((CommonTree)t.getChild(0),sb);
+                sb.deleteCharAt(0);
+                importedNames.add(sb.toString());
+	    	}
             for ( int i = 0; i < t.getChildCount(); i++ ) {
-                findClassLevelMembers((CommonTree)t.getChild(i),infoList);
+            	readClassInfo((CommonTree)t.getChild(i));
             }
         }
     }
     
+    private void buildImportStr(CommonTree t, StringBuilder b) {
+        if (t.getType() == JavaParser.IDENT) {
+            b.append(".").append(t.getText());
+        } else if (t.getType() == JavaParser.DOT) {
+            for (int i=0; i<t.getChildCount(); i++) {
+                buildImportStr((CommonTree)t.getChild(i), b);
+            }
+        }
+    }
 
     private List<String> parseArgumentTypenameList(CommonTree tree) {
         List<String> typenameList = new ArrayList<String>();
@@ -183,9 +234,22 @@ public class JavaSourceSearcher {
             default :
                 typename = "unknown";
         }
-        return typename;
+        return convertTypeName(typename);
 
 
+    }
+    
+    private String convertTypeName(String typeName) {
+    	if (typeName.equals("this")) {
+    		return ctx.buildClassName(this.currentFileName);
+    	} 
+    	for (String importedName: this.importedNames) {
+    		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
+    		if (typeName.equals(lastName)) {
+    			return importedName;
+    		}
+    	}
+    	return typeName;
     }
 
     private MemberInfo findMatchedField(String fieldName,  List<MemberInfo> memberInfos) {
@@ -227,7 +291,7 @@ public class JavaSourceSearcher {
 
     private String findvarType(String varName ) {
         //TODO : search in super class
-        for (LocalVariableInfo var : vars) {
+        for (LocalVariableInfo var : visibleVars) {
             if (var.getName().equals(varName)) {
                 return var.getType();
             }
@@ -365,6 +429,7 @@ public class JavaSourceSearcher {
         for (int i=0; i< t.getChildCount(); i++) {
             CommonTree c = (CommonTree)t.getChild(i);
             if (c.getType() == JavaParser.IDENT) {
+            	info.setColumn(c.getCharPositionInLine());
                 info.setName(c.getText());
             } else if (c.getType() == JavaParser.MODIFIER_LIST) {
                 info.setModifierList( parseModifierList(c));
@@ -389,7 +454,7 @@ public class JavaSourceSearcher {
                 sb.append(c.getText());
             }
         }
-        return sb.toString();
+        return convertTypeName(sb.toString());
     }
     
     private String parseArrayDeclaratorList(CommonTree t) {

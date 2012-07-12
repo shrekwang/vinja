@@ -49,6 +49,7 @@ public class SzjdeServer extends Thread {
              pw.flush();
 
          }catch (Throwable e) {
+        	e.printStackTrace();
     		String errorMsg = VjdeUtil.getExceptionValue(e);
     		log.info(errorMsg);
         	if (pw != null ) {
@@ -124,6 +125,9 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeSearchReferenceCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_CLIPBOARD)) {
 		   szjdeCommand = new SzjdeClipboardCommand();
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_SEARCH_DEF_LOC)) {
+		   szjdeCommand = new SzjdeSearchDefLocation();
+		   
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_QUIT)) {
 		   Display.getDefault().syncExec(new Runnable() {
 				public void run() {
