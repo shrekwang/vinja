@@ -10,6 +10,9 @@ import java.util.zip.ZipEntry;
 import org.antlr.runtime.tree.CommonTree;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.omni.ClassInfoUtil;
+import com.google.code.vimsztool.omni.JavaExpUtil;
+import com.google.code.vimsztool.util.ModifierFilter;
 
 public class JavaSourceSearcher {
     
@@ -141,6 +144,25 @@ public class JavaSourceSearcher {
                     info.setLine(memberInfo.getLineNum());
                     info.setCol(memberInfo.getColumn());
                 }
+                
+            } else if (parent.getType() == JavaParser.QUALIFIED_TYPE_IDENT) { 
+            	if (parent.getParent().getType() == JavaParser.CLASS_CONSTRUCTOR_CALL) {
+            		String className = convertTypeName(node.getText());
+	                String classPath = getClassFilePath(className);
+	                info.setFilePath(classPath);
+	                
+	                List<String> typenameList = parseArgumentTypenameList((CommonTree)parent.getParent().getChild(1));
+	                
+	                JavaSourceSearcher searcher = new JavaSourceSearcher(classPath, ctx);
+	                List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
+                    MemberInfo memberInfo = findMatchedMethod(className, typenameList,leftClassMembers);
+                    if (memberInfo != null ) {
+	                    info.setLine(memberInfo.getLineNum());
+	                    info.setCol(memberInfo.getColumn());
+                    }
+	                
+            		
+            	}
 
             } else {
             	//todo 查找变量的顺序
@@ -314,6 +336,8 @@ public class JavaSourceSearcher {
 
     private MemberInfo findMatchedMethod(String methodName, List<String> argTypes, 
             List<MemberInfo> memberInfos) {
+    	
+    	//TODO : search in super class 
     	List<MemberInfo> paramCountMatchedList = new ArrayList<MemberInfo>();
     	
         for (MemberInfo member: memberInfos) { 
@@ -347,12 +371,24 @@ public class JavaSourceSearcher {
     }
 
     private String findvarType(String varName ) {
-        //TODO : search in super class
+ 
         for (LocalVariableInfo var : visibleVars) {
             if (var.getName().equals(varName)) {
                 return var.getType();
             }
         }
+        
+    	Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{this.curFullClassName}, this.currentFileName);
+    	if (aClass != null) {
+			ModifierFilter filter = new ModifierFilter(false,true);
+			String memberType = "field";
+			aClass = JavaExpUtil.searchMemberInHierarchy(aClass, varName ,memberType ,filter,false);
+			if (aClass != null) {
+				String className = aClass.getCanonicalName();
+				return className;
+			}
+    	}
+		
         char s = varName.charAt(0);
         if ( s >= 'A' && s <= 'Z' ) {
             return varName;

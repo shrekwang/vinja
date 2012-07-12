@@ -251,6 +251,11 @@ public class ClassInfoUtil {
 	public static Class getExistedClass(String classPathXml , String[] classNameList,String sourceFile) {
 		CompilerContextManager ccm = CompilerContextManager.getInstnace();
 		CompilerContext ctx = ccm.getCompilerContext(classPathXml);
+		return getExistedClass(ctx, classNameList, sourceFile);
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public static Class getExistedClass(CompilerContext ctx , String[] classNameList,String sourceFile) {
 		ReflectAbleClassLoader classLoader = ctx.getClassLoader();
 		Class aClass = null;
 		
@@ -274,8 +279,6 @@ public class ClassInfoUtil {
 		}
 		return aClass;
 	}
-	
-	
 	
 
 }
