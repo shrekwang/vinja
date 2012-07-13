@@ -11,9 +11,11 @@ import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.io.FilenameUtils;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.exception.LocationNotFoundException;
 import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.JavaExpUtil;
 import com.google.code.vimsztool.util.ModifierFilter;
+
 
 public class JavaSourceSearcher {
     
@@ -52,9 +54,8 @@ public class JavaSourceSearcher {
 			try {
 				String jarPath = filename.substring(6,filename.lastIndexOf("!"));
 				jarFile = new JarFile(jarPath);
-				ZipEntry zipEntry = jarFile.getEntry(filename
-						.substring(filename.lastIndexOf("!") + 1));
-				
+				String entryName = filename .substring(filename.lastIndexOf("!") + 1);
+				ZipEntry zipEntry = jarFile.getEntry(entryName);
 				InputStream is = jarFile.getInputStream(zipEntry);
 				parseResult = AstTreeFactory.getJavaSourceAst(is,
 						ctx.getEncoding());
@@ -71,11 +72,6 @@ public class JavaSourceSearcher {
 
 	}
    
-    public void aa() {
-    	
-    }
-    
-    
    
 
     public LocationInfo searchDefLocation(int line, int col) {
@@ -86,8 +82,12 @@ public class JavaSourceSearcher {
             return null;
         }
         visibleVars = parseAllVisibleVar(node);
-        LocationInfo info = searchNodeDefLocation(node);
-        return info;
+        try {
+	        LocationInfo info = searchNodeDefLocation(node);
+	        return info;
+        } catch (LocationNotFoundException e) {
+        	return null;
+        }
     }
 
     private String getClassFilePath(String className) {
@@ -131,6 +131,8 @@ public class JavaSourceSearcher {
                 String leftNodeTypeName = parseNodeTypeName(leftNode);
                 String leftNodeFilePath = getClassFilePath(leftNodeTypeName);
                 
+                if (leftNodeFilePath == null || leftNodeFilePath.equals("None" )) throw new LocationNotFoundException();
+                
                 info.setFilePath(leftNodeFilePath);
                 JavaSourceSearcher searcher = new JavaSourceSearcher(leftNodeFilePath, ctx);
                 
@@ -153,7 +155,18 @@ public class JavaSourceSearcher {
 	                    info.setCol(memberInfo.getColumn());
 	                }
                 } else {
-                	info.setLine(searcher.getClassScopeLine());
+                	if (leftNode.getType() == JavaParser.IDENT) {
+                		  for (LocalVariableInfo var : visibleVars) {
+                              if (var.getName().equals(node.getText())) {
+                                  info.setCol(var.getCol());
+                                  info.setLine(var.getLine());
+	          		              info.setFilePath(currentFileName);
+                                  break;
+                              }
+                          }
+                	} else {
+	                	info.setLine(searcher.getClassScopeLine());
+                	}
                 }
                 
             } else if (parent.getType() == JavaParser.QUALIFIED_TYPE_IDENT
@@ -224,7 +237,8 @@ public class JavaSourceSearcher {
 
     public void readClassInfo(CommonTree t) {
         if ( t != null ) {
-            if (t.getType() == JavaParser.CLASS_TOP_LEVEL_SCOPE) {
+            if (t.getType() == JavaParser.CLASS_TOP_LEVEL_SCOPE
+            		|| t.getType() == JavaParser.INTERFACE_TOP_LEVEL_SCOPE ) {
             	if (classScopeLine == 1) {
             		classScopeLine = t.getLine();
             	}
@@ -304,15 +318,45 @@ public class JavaSourceSearcher {
                 typename = "float";
                 break;
             case JavaParser.METHOD_CALL:
-                String methodName = node.getChild(0).getText();
-                List<String> typenameList = parseArgumentTypenameList((CommonTree)node.getChild(1));
-                MemberInfo memberInfo = findMatchedMethod(methodName, typenameList,this.memberInfos);
-                if (memberInfo != null )  {
-                    typename = memberInfo.getRtnType();
-                } else {
-                    typename = "unknow";
-                }
+            	CommonTree subNode0 = (CommonTree)node.getChild(0);
+            	if ( subNode0.getType() == JavaParser.IDENT) {
+	                String methodName = node.getChild(0).getText();
+	                List<String> typenameList = parseArgumentTypenameList((CommonTree)node.getChild(1));
+	                MemberInfo memberInfo = findMatchedMethod(methodName, typenameList,this.memberInfos);
+	                if (memberInfo != null )  {
+	                    typename = memberInfo.getRtnType();
+	                } else {
+	                    typename = "unknow";
+	                }
+            	} else if (subNode0.getType() == JavaParser.DOT) {
+            		typename = parseNodeTypeName((CommonTree)subNode0.getChild(0));
+            		String methodName = subNode0.getChild(1).getText();
+            		Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{typename}, null);
+                	if (aClass != null) {
+            			ModifierFilter filter = new ModifierFilter(false,true);
+            			String memberType = "member";
+            			aClass = JavaExpUtil.searchMemberInHierarchy(aClass, methodName ,memberType ,filter,false);
+            			if (aClass != null) {
+            				typename = aClass.getCanonicalName();
+            			}
+                	}
+            	}
                 break;
+            case JavaParser.DOT:
+            	String className=parseNodeTypeName((CommonTree)node.getChild(0));
+            	if (className.equals("this")) className = this.curFullClassName;
+            	String memberName = node.getChild(1).getText();
+            	   
+            	Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{className}, null);
+            	if (aClass != null) {
+        			ModifierFilter filter = new ModifierFilter(false,true);
+        			String memberType = "field";
+        			aClass = JavaExpUtil.searchMemberInHierarchy(aClass, memberName ,memberType ,filter,false);
+        			if (aClass != null) {
+        				typename = aClass.getCanonicalName();
+        			}
+            	}
+            	break;
             case JavaParser.THIS:
                 typename = "this";
                 break;
@@ -521,8 +565,6 @@ public class JavaSourceSearcher {
                 info.setName(variableDeclaratorId.getText());
             } else if (c.getType() == JavaParser.MODIFIER_LIST) {
                 info.setModifierList( parseModifierList(c));
-            //} else if (c.getType() == JavaParser.FORMAL_PARAM_LIST) {
-            //    info.setParamList(parseFormalParamList(c));
             } else if (c.getType() == JavaParser.TYPE) {
                 info.setRtnType(parseType(c));
             }
@@ -553,6 +595,7 @@ public class JavaSourceSearcher {
             if (c.getType() == JavaParser.IDENT) {
             	info.setColumn(c.getCharPositionInLine());
                 info.setName(c.getText());
+                info.setLineNum(c.getLine());
             } else if (c.getType() == JavaParser.MODIFIER_LIST) {
                 info.setModifierList( parseModifierList(c));
             } else if (c.getType() == JavaParser.FORMAL_PARAM_LIST) {
