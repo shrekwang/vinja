@@ -225,10 +225,22 @@ public class JavaSourceSearcher {
        	    		String path = ctx.findSourceClass(packageName+"."+node.getText());
        	    		if (!path.equals("None")) {
        	    			info.setFilePath(path);
-       	    			info.setLine(1);
+                        JavaSourceSearcher searcher = new JavaSourceSearcher(info.getFilePath(), ctx);
+            			info.setLine(searcher.getClassScopeLine());
        	    			info.setCol(1);
+       	    			found = true;
        	    		}
        	    	} 
+               }
+               if (!found) {
+            	   String path = ctx.findSourceClass("java.lang."+node.getText());
+       	    		if (!path.equals("None")) {
+       	    			info.setFilePath(path);
+                        JavaSourceSearcher searcher = new JavaSourceSearcher(info.getFilePath(), ctx);
+            			info.setLine(searcher.getClassScopeLine());
+       	    			info.setCol(1);
+       	    			found = true;
+       	    		}
                }
             }
         }
@@ -475,7 +487,8 @@ public class JavaSourceSearcher {
 
     private void searchNodeAtLine(CommonTree t, LinkedList<CommonTree> list, int line) {
         if (t.getLine() == line)  {
-            if (t.getChildCount() == 0 ) {
+            if (t.getChildCount() == 0 
+            		|| t.getChild(0).getType() == JavaParser.GENERIC_TYPE_ARG_LIST) {
             	//FIXME : getChildCount equals to zero is not always right
                 list.add(0,t);
             }
@@ -505,6 +518,21 @@ public class JavaSourceSearcher {
     	while (true) {
 	    	parent = (CommonTree)parent.getParent();
 	    	if (parent == null) break;
+	    	if (parent.getType() == JavaParser.FOR_EACH) {
+                LocalVariableInfo info = new LocalVariableInfo();
+	    		 for (int i=0; i<parent.getChildCount(); i++) {
+    	            CommonTree c = (CommonTree) parent.getChild(i);
+    	            if (c.getType() == JavaParser.LOCAL_MODIFIER_LIST) continue;
+    	            if (c.getType() == JavaParser.TYPE) {
+    	                info.setType(parseType(c));
+    	            } else if (c.getType() == JavaParser.IDENT){
+    	            	info.setName(c.getText());
+    	            	info.setLine(c.getLine());
+    	            	info.setCol(c.getCharPositionInLine());
+    	            }
+    	        }
+	    		infoList.add(info);
+	    	}
 	    	for (int i=0; i < parent.getChildCount(); i++) {
 	    		CommonTree child = (CommonTree) parent.getChild(i);
 	    		if (child.getType() == JavaParser.VAR_DECLARATION) {
@@ -519,6 +547,10 @@ public class JavaSourceSearcher {
                 if (child.getType() == JavaParser.FORMAL_PARAM_LIST) {
                     infoList.addAll(parseParamlist(child));
                 }
+                if (child.getType() == JavaParser.CATCH) { 
+                    infoList.addAll(parseParamlist(child));
+                }
+                
 	    	}
     	}
         return infoList;
