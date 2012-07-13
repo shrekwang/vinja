@@ -443,6 +443,11 @@ class EditUtil(object):
         if source_info.strip() == "" :
             print "can't find definition location"
             return 
+
+        if not ";" in source_info :
+            print source_info
+            return 
+
         abs_path, row,col = source_info.split(";")
         row = int(row)
         col = int(col)

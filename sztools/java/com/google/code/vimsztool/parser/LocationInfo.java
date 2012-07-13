@@ -4,8 +4,8 @@ package com.google.code.vimsztool.parser;
 public class LocationInfo {
 
     private String filePath;
-    private int line;
-    private int col;
+    private int line=1;
+    private int col=0;
     
     public void setFilePath(String filePath) {
         this.filePath=filePath;

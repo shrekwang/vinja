@@ -20,7 +20,7 @@ public class SzjdeSearchDefLocation extends SzjdeCommand {
 		JavaSourceSearcher searcher = new JavaSourceSearcher(sourceFile,ctx);
 		LocationInfo info = searcher.searchDefLocation(row,col);
 		//can't find the location
-		if (info.getFilePath() == null) {
+		if (info == null || info.getFilePath() == null) {
 			return "";
 		}
 		StringBuilder sb = new StringBuilder();

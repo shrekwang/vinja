@@ -398,7 +398,7 @@ public class CompilerContext {
 			packageName = source.substring(locatedSrcRoot.length()+1);
 		}
 		
-		String[] parts = packageName.split(Pattern.quote(File.separator));
+		String[] parts = packageName.split("\\\\|/");
 		StringBuilder fullQualifiedName=new StringBuilder();
 		for (int i=0; i<parts.length; i++) {
 			if (i == parts.length-1) {
