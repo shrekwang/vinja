@@ -119,12 +119,8 @@ public class JavaSourceSearcher {
             if (parent.getType() == JavaParser.METHOD_CALL) {
                 String methodName = parent.getChild(0).getText();
                 List<String> typenameList = parseArgumentTypenameList((CommonTree)parent.getChild(1));
-                StringBuilder sb = new StringBuilder(methodName);
-                MemberInfo memberInfo = findMatchedMethod(methodName, typenameList,this.memberInfos); 
-
-                info.setLine(memberInfo.getLineNum());
-                info.setCol(memberInfo.getColumn());
-                info.setFilePath(currentFileName);
+                MemberType memberType = MemberType.METHOD;
+                searchMemberInHierachy(this.curFullClassName, memberType, methodName, typenameList,info);
                 
             } else if (parent.getType() == JavaParser.DOT) {
                 CommonTree leftNode = (CommonTree)parent.getChild(0);
@@ -138,22 +134,19 @@ public class JavaSourceSearcher {
                 
                 //if cursor is under the left node , only locate to class level, no need to locate the member of the class
                 if (node.getCharPositionInLine() > parent.getCharPositionInLine()) {
-	                List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
-	                
+                	
 	                CommonTree rightNode = (CommonTree)parent.getChild(1);
 	                CommonTree pparent = (CommonTree)parent.getParent();
+	                MemberType memberType = MemberType.FIELD;
+	                String memberName = rightNode.getText();
+                    List<String> typenameList = null;
+	                
 	                if (pparent.getType() == JavaParser.METHOD_CALL) {
-	                    List<String> typenameList = parseArgumentTypenameList((CommonTree)pparent.getChild(1));
-	                    MemberInfo memberInfo = findMatchedMethod(rightNode.getText(), typenameList,leftClassMembers);
-	                    if (memberInfo != null ) {
-		                    info.setLine(memberInfo.getLineNum());
-		                    info.setCol(memberInfo.getColumn());
-	                    }
-	                } else {
-	                    MemberInfo memberInfo = findMatchedField(rightNode.getText(), leftClassMembers);
-	                    info.setLine(memberInfo.getLineNum());
-	                    info.setCol(memberInfo.getColumn());
+		                memberType = MemberType.METHOD;
+	                    typenameList = parseArgumentTypenameList((CommonTree)pparent.getChild(1));
 	                }
+	            	searchMemberInHierachy(leftNodeTypeName, memberType, memberName, typenameList,info);
+	            	
                 } else {
                 	if (leftNode.getType() == JavaParser.IDENT) {
                 		  for (LocalVariableInfo var : visibleVars) {
@@ -242,10 +235,59 @@ public class JavaSourceSearcher {
        	    			found = true;
        	    		}
                }
+               if (!found) {
+            	   MemberType memberType = MemberType.FIELD;
+                   searchMemberInHierachy(this.curFullClassName, memberType, node.getText(), null,info);
+               }
             }
         }
         return info;
     }
+    
+	@SuppressWarnings("rawtypes")
+	public void searchMemberInHierachy(String className,
+			MemberType memberType, String memberName, 
+			List<String> typenameList,LocationInfo info) {
+
+		String superClassName = className;
+
+		while (true) {
+
+			String classFilePath = getClassFilePath(superClassName);
+			if (classFilePath == null || classFilePath.equals("None"))
+				throw new LocationNotFoundException();
+
+			JavaSourceSearcher searcher = new JavaSourceSearcher(classFilePath, ctx);
+			List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
+
+			if (!(memberType == MemberType.FIELD)) {
+				MemberInfo memberInfo = findMatchedMethod(memberName, typenameList, leftClassMembers);
+				if (memberInfo != null) {
+					info.setLine(memberInfo.getLineNum());
+					info.setCol(memberInfo.getColumn());
+					info.setFilePath(classFilePath);
+					break;
+				}
+			} else {
+				MemberInfo memberInfo = findMatchedField(memberName, leftClassMembers);
+				if (memberInfo != null) {
+					info.setLine(memberInfo.getLineNum());
+					info.setCol(memberInfo.getColumn());
+					info.setFilePath(classFilePath);
+					break;
+				}
+			}
+			
+			//if can't find, search the super class
+		 	Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{superClassName},null);
+		 	aClass = aClass.getSuperclass();
+			if (aClass == null || aClass.getName().equals("java.lang.Object")) {
+				break;
+			}
+			
+		 	superClassName = aClass.getCanonicalName();
+		}
+	}
 
     public void readClassInfo(CommonTree t) {
         if ( t != null ) {

@@ -448,7 +448,7 @@ public class CompilerContext {
 	public String findSourceClass(String className) {
 		ClassInfo classInfo = classMetaInfoManager.getMetaInfo(className);
 		String rtlPathName = className.replace(".", "/") + ".java";
-		if (classInfo!=null) {
+		if (classInfo!=null && classInfo.getSourceName() !=null ) {
 			int dotIndex = className.lastIndexOf(".");
 			String packagePath = "";
 			if (dotIndex > -1) {
