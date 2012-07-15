@@ -13,6 +13,9 @@ public class MemberInfo {
 
     private List<String[]> paramList;
     private List<String> modifierList;
+    
+    //for inner enum,class etc.
+    private List<MemberInfo> subMemberList;
 
     public void setName(String name) {
         this.name=name;
@@ -94,5 +97,11 @@ public class MemberInfo {
     public int getColumn() {
         return this.column;
     }
+	public List<MemberInfo> getSubMemberList() {
+		return subMemberList;
+	}
+	public void setSubMemberList(List<MemberInfo> subMemberList) {
+		this.subMemberList = subMemberList;
+	}
 
 }

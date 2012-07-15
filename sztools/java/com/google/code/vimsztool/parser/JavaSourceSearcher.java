@@ -68,7 +68,7 @@ public class JavaSourceSearcher {
 			parseResult = AstTreeFactory.getJavaSourceAst(filename);
 		}
 		CommonTree tree = parseResult.getTree();
-		readClassInfo(tree);
+		readClassInfo(tree,this.memberInfos);
 
 	}
    
@@ -101,7 +101,20 @@ public class JavaSourceSearcher {
 	    		path = ctx.findSourceClass(packageName+"."+className);
 	    	}
     	}
-    	
+    	// try inner class
+    	if (path.equals("None")) {
+	    	String classFullName  = ctx.buildClassName(this.currentFileName);
+	    	while (true) {
+	    		Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{classFullName}, null);
+		    	classFullName = classFullName +"$"+className;
+	    		path = ctx.findSourceClass(classFullName);
+	    		if (!path.equals("None")) break;
+	    		aClass = aClass.getSuperclass();
+	    		if (aClass == null || aClass.equals("java.lang.Object")) break;
+	    		classFullName = aClass.getCanonicalName();
+	    	}
+    	}
+	    	
     	//try class under the java.lang package
     	if (path.equals("None")) {
     		className = "java.lang." + className;
@@ -259,6 +272,20 @@ public class JavaSourceSearcher {
 
 			JavaSourceSearcher searcher = new JavaSourceSearcher(classFilePath, ctx);
 			List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
+			
+			//if classname not equals to filename, find member in subclass or inner enum .
+			if (!FilenameUtils.getBaseName(classFilePath).equals(superClassName)) {
+				for (MemberInfo classMember : leftClassMembers) {
+					if ((classMember.getMemberType() == MemberType.ENUM
+							|| classMember.getMemberType() == MemberType.SUBCLASS)
+							&& classMember.getName().equals(superClassName)){
+						leftClassMembers = classMember.getSubMemberList();
+						break;
+					}
+					
+				}
+				
+			}
 
 			if (!(memberType == MemberType.FIELD)) {
 				MemberInfo memberInfo = findMatchedMethod(memberName, typenameList, leftClassMembers);
@@ -280,16 +307,15 @@ public class JavaSourceSearcher {
 			
 			//if can't find, search the super class
 		 	Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{superClassName},null);
-		 	aClass = aClass.getSuperclass();
 			if (aClass == null || aClass.getName().equals("java.lang.Object")) {
 				break;
 			}
-			
+		 	aClass = aClass.getSuperclass();
 		 	superClassName = aClass.getCanonicalName();
 		}
 	}
 
-    public void readClassInfo(CommonTree t) {
+    public void readClassInfo(CommonTree t,List<MemberInfo> memberInfos) {
         if ( t != null ) {
             if (t.getType() == JavaParser.CLASS_TOP_LEVEL_SCOPE
             		|| t.getType() == JavaParser.INTERFACE_TOP_LEVEL_SCOPE ) {
@@ -307,12 +333,46 @@ public class JavaSourceSearcher {
                         info = parseFuncDecl(child,MemberType.CONSTRUCTOR); 
                     } else if (child.getType() == JavaParser.VAR_DECLARATION) {
                         info = parseFieldDecl(child); 
+                    } else if (child.getType() == JavaParser.ENUM) {
+                    	info = parseEnumDecl(child);
+                    } else if (child.getType() == JavaParser.CLASS) {
+                    	info = new MemberInfo();
+                    	for (int j=0; j<child.getChildCount(); j++) {
+                    		CommonTree subChild = (CommonTree)child.getChild(j);
+                    		if (subChild.getType() == JavaParser.IDENT) {
+                    			info.setName(subChild.getText());
+                    			info.setLineNum(subChild.getLine());
+                    			info.setColumn(child.getCharPositionInLine());
+                    		}
+                    	}
+                    	List<MemberInfo> subMemberInfos = new ArrayList<MemberInfo>();
+                    	readClassInfo(child, subMemberInfos);
+                    	info.setSubMemberList(subMemberInfos);
                     }
+                    	
                     if (info !=null) {
-	                    this.memberInfos.add(info);
+	                    memberInfos.add(info);
                     }
                 }
             }
+            if (t.getType() == JavaParser.ENUM) {
+            	for (int i=0; i<t.getChildCount(); i++) {
+            		CommonTree child = (CommonTree)t.getChild(i);
+            		 if (child.getType() == JavaParser.ENUM_TOP_LEVEL_SCOPE) {
+            			for (int j=0; j<child.getChildCount(); j++) {
+            				CommonTree enumChild = (CommonTree)child.getChild(j);
+            				if (enumChild.getType() == JavaParser.IDENT) {
+            					MemberInfo enumItem = new MemberInfo();
+            					enumItem.setName(enumChild.getText());
+            					enumItem.setLineNum(enumChild.getLine());
+            					enumItem.setColumn(enumChild.getCharPositionInLine());
+            					memberInfos.add(enumItem);
+            				}
+            			}
+            		}
+            	}
+            }
+            	
             if (t.getType() ==  JavaParser.IMPORT) {
                 StringBuilder sb = new StringBuilder();
                 buildImportStr((CommonTree)t.getChild(0),sb);
@@ -320,10 +380,44 @@ public class JavaSourceSearcher {
                 importedNames.add(sb.toString());
 	    	}
             for ( int i = 0; i < t.getChildCount(); i++ ) {
-            	readClassInfo((CommonTree)t.getChild(i));
+            	readClassInfo((CommonTree)t.getChild(i),memberInfos);
             }
         }
     }
+    
+    private MemberInfo parseEnumDecl(CommonTree t) {
+    	MemberInfo info = new MemberInfo();
+    	info.setLineNum(t.getLine());
+    	info.setMemberType(MemberType.ENUM);
+    	List<MemberInfo> list = new ArrayList<MemberInfo>();
+    	for (int i=0; i<t.getChildCount(); i++) {
+    		CommonTree child = (CommonTree)t.getChild(i);
+    		if (child.getType() == JavaParser.IDENT) {
+    			info.setName(child.getText());
+    			info.setColumn(child.getCharPositionInLine());
+    			
+    		} else if (child.getType() == JavaParser.ENUM_TOP_LEVEL_SCOPE) {
+    			for (int j=0; j<child.getChildCount(); j++) {
+    				CommonTree enumChild = (CommonTree)child.getChild(j);
+    				if (enumChild.getType() == JavaParser.IDENT) {
+    					MemberInfo enumItem = new MemberInfo();
+    					enumItem.setName(enumChild.getText());
+    					enumItem.setLineNum(enumChild.getLine());
+    					enumItem.setColumn(enumChild.getCharPositionInLine());
+    					list.add(enumItem);
+    				}
+    				
+    			}
+    		}
+    	}
+    
+    	info.setSubMemberList(list);
+    	return info;
+    }
+    
+   
+    
+   
     
     private void buildImportStr(CommonTree t, StringBuilder b) {
         if (t.getType() == JavaParser.IDENT) {
@@ -339,7 +433,7 @@ public class JavaSourceSearcher {
         List<String> typenameList = new ArrayList<String>();
         for (int i=0; i<tree.getChildCount(); i++) {
             CommonTree arguNode = (CommonTree) tree.getChild(i);
-            //TODO 解析 new File表达式的值
+          
             String typeName = parseNodeTypeName(arguNode);
             typenameList.add(typeName);
         }
