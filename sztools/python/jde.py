@@ -166,13 +166,14 @@ class Talker(BasicTalker):
 
 
     @staticmethod
-    def locateDefinition(sourceFile, xmlPath,row,col):
+    def locateDefinition(sourceFile, xmlPath,row,col,sourceType):
         params = dict()
         params["cmd"]="locateDefinition"
         params["sourceFile"] = sourceFile
         params["classPathXml"] = xmlPath
         params["row"] = row
         params["col"] = col
+        params["sourceType"] = sourceType
         data = Talker.send(params)
         return data
 
@@ -433,13 +434,13 @@ class EditUtil(object):
         VimUtil.writeToSzToolBuffer("JdeConsole",resultText)
 
     @staticmethod
-    def locateDefinition_new():
+    def locateDefinition(sourceType):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
 
-        source_info = Talker.locateDefinition(current_file_name, classPathXml,row,col)
+        source_info = Talker.locateDefinition(current_file_name, classPathXml,row,col,sourceType)
         if source_info.strip() == "" :
             print "can't find definition location"
             return 
@@ -458,7 +459,7 @@ class EditUtil(object):
         vim.current.window.cursor = (row,col)
 
     @staticmethod
-    def locateDefinition(sourceType):
+    def locateDefinition_old(sourceType):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]

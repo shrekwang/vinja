@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -12,7 +13,9 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.exception.LocationNotFoundException;
+import com.google.code.vimsztool.omni.ClassInfo;
 import com.google.code.vimsztool.omni.ClassInfoUtil;
+import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.omni.JavaExpUtil;
 import com.google.code.vimsztool.util.ModifierFilter;
 
@@ -27,6 +30,7 @@ public class JavaSourceSearcher {
     private CompilerContext ctx  = null;
     private String currentFileName;
     private String curFullClassName ;
+    private String sourceType = "";
     
     private List<String> importedNames = new ArrayList<String>();
     private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
@@ -74,7 +78,8 @@ public class JavaSourceSearcher {
    
    
 
-    public LocationInfo searchDefLocation(int line, int col) {
+    public LocationInfo searchDefLocation(int line, int col,String sourceType) {
+    	
         CommonTree tree = parseResult.getTree();
         CommonTree node = searchMatchedNode(tree,line,col);
         if (node == null ) {
@@ -83,7 +88,7 @@ public class JavaSourceSearcher {
         }
         visibleVars = parseAllVisibleVar(node);
         try {
-	        LocationInfo info = searchNodeDefLocation(node);
+	        LocationInfo info = searchNodeDefLocation(node,sourceType);
 	        return info;
         } catch (LocationNotFoundException e) {
         	return null;
@@ -124,7 +129,7 @@ public class JavaSourceSearcher {
     }
 
 
-    public LocationInfo searchNodeDefLocation(CommonTree node) {
+    public LocationInfo searchNodeDefLocation(CommonTree node,String sourceType) {
         LocationInfo info = new LocationInfo();
 
         if (node.getType() == JavaParser.IDENT) {
@@ -158,6 +163,18 @@ public class JavaSourceSearcher {
 		                memberType = MemberType.METHOD;
 	                    typenameList = parseArgumentTypenameList((CommonTree)pparent.getChild(1));
 	                }
+	                
+	                if (sourceType != null && sourceType.equals("impl")) {
+	        			ClassMetaInfoManager cmm = this.ctx.getClassMetaInfoManager();
+	        			ClassInfo classInfo = cmm.getMetaInfo(leftNodeTypeName);
+	        			if (classInfo != null ) {
+	        				Set<String> subNames = classInfo.getSubNames();
+	        				if (subNames.size() == 1) {
+	        					leftNodeTypeName = subNames.toArray(new String[]{})[0];
+	        				}
+	        			}
+	        		}
+
 	            	searchMemberInHierachy(leftNodeTypeName, memberType, memberName, typenameList,info);
 	            	
                 } else {
@@ -307,10 +324,9 @@ public class JavaSourceSearcher {
 			
 			//if can't find, search the super class
 		 	Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{superClassName},null);
-			if (aClass == null || aClass.getName().equals("java.lang.Object")) {
-				break;
-			}
+			if (aClass == null || aClass.getName().equals("java.lang.Object")) { break; }
 		 	aClass = aClass.getSuperclass();
+			if (aClass == null || aClass.getName().equals("java.lang.Object")) { break; }
 		 	superClassName = aClass.getCanonicalName();
 		}
 	}
@@ -376,8 +392,10 @@ public class JavaSourceSearcher {
             if (t.getType() ==  JavaParser.IMPORT) {
                 StringBuilder sb = new StringBuilder();
                 buildImportStr((CommonTree)t.getChild(0),sb);
-                sb.deleteCharAt(0);
-                importedNames.add(sb.toString());
+                if (sb.length()> 0) {
+	                sb.deleteCharAt(0);
+	                importedNames.add(sb.toString());
+                }
 	    	}
             for ( int i = 0; i < t.getChildCount(); i++ ) {
             	readClassInfo((CommonTree)t.getChild(i),memberInfos);

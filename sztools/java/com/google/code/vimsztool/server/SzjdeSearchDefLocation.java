@@ -13,12 +13,15 @@ public class SzjdeSearchDefLocation extends SzjdeCommand {
 		String classPathXml = params.get(PARAM_CLASSPATHXML);
 		
 	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
+	    String sourceType = params.get(SzjdeConstants.PARAM_SOURCE_TYPE);
+	    
 		int row = Integer.parseInt(params.get("row"));
 		int col = Integer.parseInt(params.get("col"));
 		
 		CompilerContext ctx = getCompilerContext(classPathXml);
 		JavaSourceSearcher searcher = new JavaSourceSearcher(sourceFile,ctx);
-		LocationInfo info = searcher.searchDefLocation(row,col);
+		LocationInfo info = searcher.searchDefLocation(row,col,sourceType);
+		
 		//can't find the location
 		if (info == null || info.getFilePath() == null) {
 			return "";
