@@ -845,7 +845,7 @@ public class ExpEval {
     private static ReferenceType loadClass(ThreadReference threadRef,
     		ClassLoaderReference classLoaderRef, String className) {
     	
-    	//classLoaderRef = (ClassLoaderReference)invoke( (ObjectReference) classLoaderRef,"getSystemClassLoader" , new ArrayList() );
+    	classLoaderRef = (ClassLoaderReference)invoke( (ObjectReference) classLoaderRef,"getSystemClassLoader" , new ArrayList() );
     	
     	ReferenceType refType= classLoaderRef.referenceType();
 		List<Method> aa = refType.methodsByName("loadClass");
@@ -862,7 +862,7 @@ public class ExpEval {
 		args.add(vm.mirrorOf(true));
 		try {
 			ClassObjectReference v =(ClassObjectReference)classLoaderRef.invokeMethod(threadRef, matchedMethod, args, ObjectReference.INVOKE_SINGLE_THREADED);
-			Thread.sleep(100);
+	    	invoke( (ObjectReference)v,"newInstance" , new ArrayList() ); //force to initialize the static field, don't otherwise can do it.
 			ReferenceType v2 = v.reflectedType();
 			return v2;
 		} catch (Exception e) {
