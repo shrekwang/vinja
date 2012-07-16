@@ -26,7 +26,9 @@ import com.sun.jdi.ArrayType;
 import com.sun.jdi.BooleanType;
 import com.sun.jdi.ByteType;
 import com.sun.jdi.CharType;
+import com.sun.jdi.ClassLoaderReference;
 import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.ClassObjectReference;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.DoubleType;
 import com.sun.jdi.Field;
@@ -819,20 +821,54 @@ public class ExpEval {
 				} 
 			}
 			br.close();
-			if (qualifiedClass == null && !packageName.equals("")) {
-				qualifiedClass = packageName + "." + className;
-			} else {
-				qualifiedClass = className;
+			if (qualifiedClass == null ){
+				if (packageName.equals("")) {
+					qualifiedClass = className;
+				} else {
+					qualifiedClass = packageName + "." + className;
+				}
 			}
+			
 			refTypes = vm.classesByName(qualifiedClass);
 			if (refTypes !=null && refTypes.size() >0 ) {
 				return refTypes.get(0);
 			}
+			ClassLoaderReference classLoaderRef = stackFrame.location().declaringType().classLoader();
+			return loadClass(threadRef, classLoaderRef,qualifiedClass);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
+    
+    private static ReferenceType loadClass(ThreadReference threadRef,
+    		ClassLoaderReference classLoaderRef, String className) {
+    	
+    	//classLoaderRef = (ClassLoaderReference)invoke( (ObjectReference) classLoaderRef,"getSystemClassLoader" , new ArrayList() );
+    	
+    	ReferenceType refType= classLoaderRef.referenceType();
+		List<Method> aa = refType.methodsByName("loadClass");
+		Method matchedMethod = null;
+		for (Method method : aa) {
+			if (method.argumentTypeNames().size() == 2 ) {
+				matchedMethod = method;
+			}
+		}
+		VirtualMachine vm = refType.virtualMachine();
+		Value value = vm.mirrorOf(className);
+		List<Value> args = new ArrayList<Value>();
+		args.add(value);
+		args.add(vm.mirrorOf(true));
+		try {
+			ClassObjectReference v =(ClassObjectReference)classLoaderRef.invokeMethod(threadRef, matchedMethod, args, ObjectReference.INVOKE_SINGLE_THREADED);
+			Thread.sleep(100);
+			ReferenceType v2 = v.reflectedType();
+			return v2;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+    }
 	
 }
