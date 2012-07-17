@@ -61,12 +61,13 @@ public class JavaSourceSearcher {
 				String jarPath = filename.substring(6,filename.lastIndexOf("!"));
 				jarFile = new JarFile(jarPath);
 				String entryName = filename .substring(filename.lastIndexOf("!") + 1);
+				entryName = entryName.replace("\\", "/");
 				ZipEntry zipEntry = jarFile.getEntry(entryName);
 				InputStream is = jarFile.getInputStream(zipEntry);
 				parseResult = AstTreeFactory.getJavaSourceAst(is,
 						ctx.getEncoding());
 			} catch (Exception e) {
-
+				e.printStackTrace();
 			} finally {
 				if (jarFile != null) try {jarFile.close(); } catch (Exception e) {}
 			}

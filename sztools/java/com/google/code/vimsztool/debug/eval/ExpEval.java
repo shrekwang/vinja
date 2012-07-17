@@ -442,9 +442,43 @@ public class ExpEval {
 			}
 			return null;
 		} else {
-			String methodName = firstNode.getText();
-			ObjectReference thisObj = (ObjectReference)evalThisObject();
-			return invoke(thisObj,methodName,arguments);
+			try {
+				String methodName = firstNode.getText();
+				
+				ThreadReference threadRef = checkAndGetCurrentThread();
+				SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+				StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+				ReferenceType refType = stackFrame.location().declaringType();
+				
+				ObjectReference thisObj = (ObjectReference)evalThisObject();
+				Object invoker = thisObj;
+				if (thisObj == null) {
+					invoker = refType;
+				}
+				List<Method> methods = refType.methodsByName(methodName);
+				Method matchedMethod = null;
+				
+				if (methods != null && methods.size() > 0) {
+					if (methods.size() == 1) {
+						matchedMethod = methods.get(0);
+					} else {
+						matchedMethod = findMatchedMethod(methods, arguments);
+					}
+				}
+				
+				//if no match method, search to see if it is the static imported method
+				if (matchedMethod == null) {
+					String javaSourcePath = stackFrame.location().sourcePath();
+					String staticImportedClass = findStaticImported(javaSourcePath, methodName);
+					if (staticImportedClass != null) {
+						invoker = getClassType(staticImportedClass);
+					}
+				}
+				
+				return invoke(invoker,methodName,arguments);
+			} catch (Exception e) {
+				throw new ExpressionEvalException(e.getMessage());
+			}
 		}
 	}
 	
@@ -511,6 +545,8 @@ public class ExpEval {
 		
 	}
 	
+	
+	
 	private static Value evalJdiArray(CommonTree node) {
 		CommonTree arrayNode = (CommonTree)node.getChild(0);
 		CommonTree indexExpNode = (CommonTree)node.getChild(1);
@@ -562,6 +598,14 @@ public class ExpEval {
 			}
 			Field field = refType.fieldByName(name);
 			if (field == null ) {
+				String javaSourcePath = stackFrame.location().sourcePath();
+				String staticImportedClass = findStaticImported(javaSourcePath, name);
+				if (staticImportedClass != null) {
+					refType = getClassType(staticImportedClass);
+					field = refType.fieldByName(name);
+					value = refType.getValue(field);
+					return value;
+				} 
 				throw new VariableOrFieldNotFoundException("eval expression error, field '" + name +"' can't be found."); 
 			}
 			if (thisObj != null) {
@@ -569,12 +613,42 @@ public class ExpEval {
 			} else {
 				value = refType.getValue(field);
 			}
+			
 		} catch (IncompatibleThreadStateException e) {
 			throw new ExpressionEvalException("eval expression error, caused by:" + e.getMessage());
 		} catch (AbsentInformationException e) {
 			throw new ExpressionEvalException("eval expression error, caused by:" + e.getMessage());
 		}
 		return value;
+	}
+	
+	private static String findStaticImported(String javaSourcePath, String memberName) {
+		
+		BufferedReader br = null;
+		try {
+			Debugger debugger = Debugger.getInstance();
+			CompilerContext ctx = debugger.getCompilerContext();
+			String abPath = ctx.findSourceFile(javaSourcePath);
+			br = new BufferedReader(new FileReader(abPath));
+			Pattern pat = Pattern.compile("import\\s+static\\s+(.*)\\."+ memberName + "\\s*;\\s*$");
+			String qualifiedClass = null;
+			
+			while (true) {
+				String tmp = br.readLine();
+				if (tmp == null) break;
+				tmp = tmp.trim();
+				Matcher matcher = pat.matcher(tmp);
+				if (matcher.matches()) {
+					qualifiedClass = matcher.group(1);
+					break;
+				} 
+			}
+			br.close();
+			return qualifiedClass;
+		} catch (Exception e) {
+			if (br!= null) try { br.close(); } catch (Exception e1) {}
+		}
+		return null;
 	}
 	
 	public static Value invoke(Object invoker, String methodName, List args) {
