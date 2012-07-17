@@ -254,7 +254,7 @@ public class ExpEval {
 				sb.append(evalTreeNodeToStr(node));
 				sb.append("\n");
 			} catch (ExpressionEvalException e) {
-				sb.append("exception in calc the value\n");
+				sb.append(e.getMessage());
 			}
 		}
 		return sb.toString();

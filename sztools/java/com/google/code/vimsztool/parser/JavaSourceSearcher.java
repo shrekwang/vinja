@@ -34,6 +34,8 @@ public class JavaSourceSearcher {
     
     private List<String> importedNames = new ArrayList<String>();
     private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
+    private List<String> staticImportedNames = new ArrayList<String>();
+    
     private int classScopeLine = 1;
     
     public List<MemberInfo> getMemberInfos() {
@@ -137,9 +139,7 @@ public class JavaSourceSearcher {
             if (parent.getType() == JavaParser.METHOD_CALL) {
                 String methodName = parent.getChild(0).getText();
                 List<String> typenameList = parseArgumentTypenameList((CommonTree)parent.getChild(1));
-                MemberType memberType = MemberType.METHOD;
-                searchMemberInHierachy(this.curFullClassName, memberType, methodName, typenameList,info);
-                
+                searchMethod(methodName, typenameList, info);
             } else if (parent.getType() == JavaParser.DOT) {
                 CommonTree leftNode = (CommonTree)parent.getChild(0);
                 String leftNodeTypeName = parseNodeTypeName(leftNode);
@@ -218,6 +218,7 @@ public class JavaSourceSearcher {
             	//2: 父类变量
             	//3: 导入的类名
             	//4: 相同包下的类名
+            	//5: 静态导入包名
             	boolean found = false;
                 for (LocalVariableInfo var : visibleVars) {
                     if (var.getName().equals(node.getText())) {
@@ -266,12 +267,46 @@ public class JavaSourceSearcher {
        	    		}
                }
                if (!found) {
+            	   for (String importedName: this.staticImportedNames) {
+               		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
+               		if (node.getText().equals(lastName)) {
+               			importedName = importedName.substring(0, importedName.lastIndexOf("."));
+               			info.setFilePath(this.getClassFilePath(importedName));
+                        JavaSourceSearcher searcher = new JavaSourceSearcher(info.getFilePath(), ctx);
+                        MemberInfo memberInfo = findMatchedField(node.getText(), searcher.getMemberInfos());
+        				if (memberInfo != null) {
+        					info.setLine(memberInfo.getLineNum());
+        					info.setCol(memberInfo.getColumn());
+        					found = true;
+        					break;
+        				}
+               		}
+               	}
+               }
+               if (!found) {
             	   MemberType memberType = MemberType.FIELD;
                    searchMemberInHierachy(this.curFullClassName, memberType, node.getText(), null,info);
                }
             }
         }
         return info;
+    }
+    
+    public void searchMethod(String methodName,List<String> typenameList, LocationInfo info) {
+        boolean isStaticImported = false;
+        for (String importedName: this.staticImportedNames) {
+       		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
+       		if (methodName.equals(lastName)) {
+       			isStaticImported = true;
+       			importedName = importedName.substring(0, importedName.lastIndexOf("."));
+       			info.setFilePath(this.getClassFilePath(importedName));
+       			searchMemberInHierachy(importedName, MemberType.METHOD, methodName, typenameList, info);
+       		}
+        }
+        if (!isStaticImported) {
+            MemberType memberType = MemberType.METHOD;
+            searchMemberInHierachy(this.curFullClassName, memberType, methodName, typenameList,info);
+        }
     }
     
 	@SuppressWarnings("rawtypes")
@@ -310,7 +345,8 @@ public class JavaSourceSearcher {
 					info.setLine(memberInfo.getLineNum());
 					info.setCol(memberInfo.getColumn());
 					info.setFilePath(classFilePath);
-					break;
+					info.setMemberInfo(memberInfo);
+					return;
 				}
 			} else {
 				MemberInfo memberInfo = findMatchedField(memberName, leftClassMembers);
@@ -318,7 +354,8 @@ public class JavaSourceSearcher {
 					info.setLine(memberInfo.getLineNum());
 					info.setCol(memberInfo.getColumn());
 					info.setFilePath(classFilePath);
-					break;
+					info.setMemberInfo(memberInfo);
+					return;
 				}
 			}
 			
@@ -390,12 +427,21 @@ public class JavaSourceSearcher {
             }
             	
             if (t.getType() ==  JavaParser.IMPORT) {
-                StringBuilder sb = new StringBuilder();
-                buildImportStr((CommonTree)t.getChild(0),sb);
-                if (sb.length()> 0) {
-	                sb.deleteCharAt(0);
-	                importedNames.add(sb.toString());
-                }
+            	if (t.getChild(0).getText().equals("static")) {
+            		StringBuilder sb = new StringBuilder();
+	                buildImportStr((CommonTree)t.getChild(1),sb);
+	                if (sb.length()> 0) {
+		                sb.deleteCharAt(0);
+		                staticImportedNames.add(sb.toString());
+	                }
+            	} else {
+	                StringBuilder sb = new StringBuilder();
+	                buildImportStr((CommonTree)t.getChild(0),sb);
+	                if (sb.length()> 0) {
+		                sb.deleteCharAt(0);
+		                importedNames.add(sb.toString());
+	                }
+            	}
 	    	}
             for ( int i = 0; i < t.getChildCount(); i++ ) {
             	readClassInfo((CommonTree)t.getChild(i),memberInfos);
@@ -488,7 +534,9 @@ public class JavaSourceSearcher {
             	if ( subNode0.getType() == JavaParser.IDENT) {
 	                String methodName = node.getChild(0).getText();
 	                List<String> typenameList = parseArgumentTypenameList((CommonTree)node.getChild(1));
-	                MemberInfo memberInfo = findMatchedMethod(methodName, typenameList,this.memberInfos);
+	                LocationInfo info = new LocationInfo();
+	                searchMethod(methodName, typenameList, info);
+	                MemberInfo memberInfo = info.getMemberInfo();
 	                if (memberInfo != null )  {
 	                    typename = memberInfo.getRtnType();
 	                } else {
@@ -500,7 +548,7 @@ public class JavaSourceSearcher {
             		Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{typename}, null);
                 	if (aClass != null) {
             			ModifierFilter filter = new ModifierFilter(false,true);
-            			String memberType = "member";
+            			String memberType = "method";
             			aClass = JavaExpUtil.searchMemberInHierarchy(aClass, methodName ,memberType ,filter,false);
             			if (aClass != null) {
             				typename = aClass.getCanonicalName();
@@ -526,6 +574,9 @@ public class JavaSourceSearcher {
             case JavaParser.THIS:
                 typename = "this";
                 break;
+            case JavaParser.SUPER:
+                typename = "super";
+                break;
             case JavaParser.NULL:
                 typename = NULL_TYPE;
                 break;
@@ -541,10 +592,15 @@ public class JavaSourceSearcher {
 
     }
     
-    private String convertTypeName(String typeName) {
+    @SuppressWarnings("rawtypes")
+	private String convertTypeName(String typeName) {
     	if (typeName.equals("this")) {
     		return ctx.buildClassName(this.currentFileName);
     	} 
+    	if (typeName.equals("super")) {
+    		Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{this.curFullClassName}, null);
+    		return aClass.getSuperclass().getCanonicalName();
+    	}
     	for (String importedName: this.importedNames) {
     		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
     		if (typeName.equals(lastName)) {
@@ -617,12 +673,18 @@ public class JavaSourceSearcher {
 				return className;
 			}
     	}
-		
-        char s = varName.charAt(0);
-        if ( s >= 'A' && s <= 'Z' ) {
-            return varName;
-        }
-        return "unknown";
+    	
+		for (String importedName : this.staticImportedNames) {
+			String lastName = importedName.substring(importedName .lastIndexOf(".") + 1);
+   			importedName = importedName.substring(0, importedName.lastIndexOf("."));
+			if (varName.equals(lastName)) {
+				String filePath = this.getClassFilePath(importedName);
+				JavaSourceSearcher searcher = new JavaSourceSearcher(filePath, ctx);
+				MemberInfo memberInfo = findMatchedField(varName, searcher.getMemberInfos());
+				return memberInfo.getRtnType();
+			}
+		}
+		return varName;
     }
 
     private CommonTree searchMatchedNode(CommonTree tree, int line, int col) {

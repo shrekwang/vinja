@@ -7,6 +7,8 @@ public class LocationInfo {
     private int line=1;
     private int col=0;
     
+    private MemberInfo memberInfo;
+    
     public void setFilePath(String filePath) {
         this.filePath=filePath;
     }
@@ -28,5 +30,11 @@ public class LocationInfo {
     public int getLine() {
         return this.line;
     }
+	public MemberInfo getMemberInfo() {
+		return memberInfo;
+	}
+	public void setMemberInfo(MemberInfo memberInfo) {
+		this.memberInfo = memberInfo;
+	}
 
 }
