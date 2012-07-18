@@ -608,6 +608,13 @@ public class JavaSourceSearcher {
     			return importedName;
     		}
     	}
+    	if (typeName.indexOf(".") < 0) {
+    		String packageName = curFullClassName.substring(0,curFullClassName.lastIndexOf("."));
+    		Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{packageName+"."+typeName},null);
+    		if (aClass != null) { 
+    			return aClass.getCanonicalName(); 
+			}
+    	}
     	return typeName;
     }
 

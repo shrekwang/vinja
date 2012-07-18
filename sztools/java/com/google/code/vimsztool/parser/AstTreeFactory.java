@@ -15,7 +15,13 @@ import com.google.code.vimsztool.util.LRUCache;
 public class AstTreeFactory {
 	
 	public static LRUCache<String, ParseResult> expCache = new LRUCache<String,ParseResult>(120);
+	public static LRUCache<String, ParseResult> javaSourceCache = new LRUCache<String,ParseResult>(50);
+	
 	private static final String DEFAULT_ENCODING="utf-8";
+	
+	public static void removeCachedAst(String filename) {
+		javaSourceCache.remove(filename);
+	}
 	
 	public static ParseResult getExpressionAst(String exp) {
 		ParseResult result = expCache.get(exp);
@@ -78,7 +84,17 @@ public class AstTreeFactory {
         }
         return start;
     }
+	
 	public static ParseResult getJavaSourceAst(String fileName) {
+		ParseResult result = javaSourceCache.get(fileName);
+		if (result == null) {
+			result = getJavaSourceAstInternal(fileName);
+			javaSourceCache.put(fileName, result);
+		}
+		return result;
+	}
+	
+	public static ParseResult getJavaSourceAstInternal(String fileName) {
 		return getJavaSourceAst(fileName,DEFAULT_ENCODING);
 	}
 	

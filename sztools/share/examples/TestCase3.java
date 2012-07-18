@@ -6,9 +6,14 @@ public class MyTestCase extends TestCase {
        junit.textui.TestRunner.run(MyTestCase.class);
    }
 
-   protected void setUp() {
-       //do some startup stuff here
+   public void setUp() {
+       //TODO
    }
+
+   public void tearDown() {
+       //TODO
+   }
+   
 
    public void testSomething() {
        String username = "lisa";
