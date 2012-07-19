@@ -12,6 +12,7 @@ import com.google.code.vimsztool.debug.BreakpointManager;
 import com.google.code.vimsztool.debug.Debugger;
 import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.parser.AstTreeFactory;
+import com.google.code.vimsztool.parser.JavaSourceSearcher;
 import com.google.code.vimsztool.util.HotSwapUtil;
 import com.google.code.vimsztool.util.JdeLogger;
 
@@ -45,7 +46,7 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		}
 		
 		for (String srcFileName : allSrcFiles) {
-			AstTreeFactory.removeCachedAst(srcFileName);
+			JavaSourceSearcher.clearSearcher(srcFileName);
 		}
 		
 		CompileResultInfo resultInfo =compiler.generateClass(allSrcFiles);

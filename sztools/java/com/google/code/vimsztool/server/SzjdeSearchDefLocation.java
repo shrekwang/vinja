@@ -19,7 +19,7 @@ public class SzjdeSearchDefLocation extends SzjdeCommand {
 		int col = Integer.parseInt(params.get("col"));
 		
 		CompilerContext ctx = getCompilerContext(classPathXml);
-		JavaSourceSearcher searcher = new JavaSourceSearcher(sourceFile,ctx);
+		JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(sourceFile,ctx);
 		LocationInfo info = searcher.searchDefLocation(row,col,sourceType);
 		
 		//can't find the location

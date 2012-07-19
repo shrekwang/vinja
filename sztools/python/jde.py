@@ -2229,7 +2229,7 @@ class Jdb(object):
             winEndRow = int(vim.eval("line('w$')"))
             lineNum = int(winEndRow) - 2
         vim.command("normal %sG" % str(lineNum))
-        vim.command("normal zt")
+        vim.command("normal z.")
         vim.command("redraw")
         vim.command("call SwitchToSzToolView('Jdb')")
 

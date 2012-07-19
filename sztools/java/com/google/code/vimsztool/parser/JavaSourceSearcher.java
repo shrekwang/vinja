@@ -17,6 +17,7 @@ import com.google.code.vimsztool.omni.ClassInfo;
 import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.omni.JavaExpUtil;
+import com.google.code.vimsztool.util.LRUCache;
 import com.google.code.vimsztool.util.ModifierFilter;
 
 
@@ -30,11 +31,11 @@ public class JavaSourceSearcher {
     private CompilerContext ctx  = null;
     private String currentFileName;
     private String curFullClassName ;
-    private String sourceType = "";
     
     private List<String> importedNames = new ArrayList<String>();
     private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
     private List<String> staticImportedNames = new ArrayList<String>();
+    public static LRUCache<String, JavaSourceSearcher> cache = new LRUCache<String,JavaSourceSearcher>(100);
     
     private int classScopeLine = 1;
     
@@ -47,8 +48,21 @@ public class JavaSourceSearcher {
     public int getClassScopeLine() {
     	return classScopeLine;
     }
+    
+    public static JavaSourceSearcher createSearcher(String filename, CompilerContext ctx) {
+    	JavaSourceSearcher result = cache.get(filename);
+		if (result == null) {
+			result = new JavaSourceSearcher(filename,ctx);
+			cache.put(filename, result);
+		}
+		return result;
+    }
+    
+    public static void clearSearcher(String filename) {
+    	cache.remove(filename);
+    }
 
-	public JavaSourceSearcher(String filename, CompilerContext ctx) {
+	private JavaSourceSearcher(String filename, CompilerContext ctx) {
 		this.ctx = ctx;
 		this.currentFileName = filename;
 		this.curFullClassName = ctx.buildClassName(filename);
@@ -149,7 +163,7 @@ public class JavaSourceSearcher {
                 if (leftNodeFilePath == null || leftNodeFilePath.equals("None" )) throw new LocationNotFoundException();
                 
                 info.setFilePath(leftNodeFilePath);
-                JavaSourceSearcher searcher = new JavaSourceSearcher(leftNodeFilePath, ctx);
+                JavaSourceSearcher searcher = createSearcher(leftNodeFilePath, ctx);
                 
                 //if cursor is under the left node , only locate to class level, no need to locate the member of the class
                 if (node.getCharPositionInLine() > parent.getCharPositionInLine()) {
@@ -205,7 +219,7 @@ public class JavaSourceSearcher {
 	                if (className.indexOf(".") > -1 ) {
 	                	constructName = className.substring(className.lastIndexOf(".")+1);
 	                }
-	                JavaSourceSearcher searcher = new JavaSourceSearcher(classPath, ctx);
+	                JavaSourceSearcher searcher = createSearcher(classPath, ctx);
 	                List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
                     MemberInfo memberInfo = findMatchedMethod(constructName, typenameList,leftClassMembers);
                     if (memberInfo != null ) {
@@ -235,7 +249,7 @@ public class JavaSourceSearcher {
                 		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
                 		if (node.getText().equals(lastName)) {
                 			info.setFilePath(this.getClassFilePath(importedName));
-                            JavaSourceSearcher searcher = new JavaSourceSearcher(info.getFilePath(), ctx);
+                            JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
                 			info.setLine(searcher.getClassScopeLine());
                 			info.setCol(1);
                 			found = true ;
@@ -250,7 +264,7 @@ public class JavaSourceSearcher {
        	    		String path = ctx.findSourceClass(packageName+"."+node.getText());
        	    		if (!path.equals("None")) {
        	    			info.setFilePath(path);
-                        JavaSourceSearcher searcher = new JavaSourceSearcher(info.getFilePath(), ctx);
+                        JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
             			info.setLine(searcher.getClassScopeLine());
        	    			info.setCol(1);
        	    			found = true;
@@ -261,7 +275,7 @@ public class JavaSourceSearcher {
             	   String path = ctx.findSourceClass("java.lang."+node.getText());
        	    		if (!path.equals("None")) {
        	    			info.setFilePath(path);
-                        JavaSourceSearcher searcher = new JavaSourceSearcher(info.getFilePath(), ctx);
+                        JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
             			info.setLine(searcher.getClassScopeLine());
        	    			info.setCol(1);
        	    			found = true;
@@ -273,7 +287,7 @@ public class JavaSourceSearcher {
                		if (node.getText().equals(lastName)) {
                			importedName = importedName.substring(0, importedName.lastIndexOf("."));
                			info.setFilePath(this.getClassFilePath(importedName));
-                        JavaSourceSearcher searcher = new JavaSourceSearcher(info.getFilePath(), ctx);
+                        JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
                         MemberInfo memberInfo = findMatchedField(node.getText(), searcher.getMemberInfos());
         				if (memberInfo != null) {
         					info.setLine(memberInfo.getLineNum());
@@ -323,7 +337,7 @@ public class JavaSourceSearcher {
 			if (classFilePath == null || classFilePath.equals("None"))
 				throw new LocationNotFoundException();
 
-			JavaSourceSearcher searcher = new JavaSourceSearcher(classFilePath, ctx);
+			JavaSourceSearcher searcher = createSearcher(classFilePath, ctx);
 			List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
 			
 			//if classname not equals to filename, find member in subclass or inner enum .
@@ -609,7 +623,10 @@ public class JavaSourceSearcher {
     		}
     	}
     	if (typeName.indexOf(".") < 0) {
-    		String packageName = curFullClassName.substring(0,curFullClassName.lastIndexOf("."));
+    		String packageName = "";
+    		if (curFullClassName.indexOf(".")> 0) {
+	    		packageName = curFullClassName.substring(0,curFullClassName.lastIndexOf("."));
+    		}
     		Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{packageName+"."+typeName},null);
     		if (aClass != null) { 
     			return aClass.getCanonicalName(); 
@@ -658,6 +675,7 @@ public class JavaSourceSearcher {
     }
 
     private boolean arguMatch(String defTypeName, String actTypeName) {
+    	if (defTypeName == null) return true;
         if (defTypeName.equals(actTypeName)) return true;
         if (actTypeName.equals(NULL_TYPE)) return true;
         return false;
@@ -687,7 +705,7 @@ public class JavaSourceSearcher {
    			importedName = importedName.substring(0, importedName.lastIndexOf("."));
 			if (varName.equals(lastName)) {
 				String filePath = this.getClassFilePath(importedName);
-				JavaSourceSearcher searcher = new JavaSourceSearcher(filePath, ctx);
+				JavaSourceSearcher searcher = createSearcher(filePath, ctx);
 				MemberInfo memberInfo = findMatchedField(varName, searcher.getMemberInfos());
 				return memberInfo.getRtnType();
 			}
@@ -915,6 +933,9 @@ public class JavaSourceSearcher {
             CommonTree c = (CommonTree) t.getChild(i);
             String[] param = new String[2];
             if (c.getType() == JavaParser.FORMAL_PARAM_STD_DECL) {
+                param = parseFormalParamStdDecl(c);
+            }
+            if (c.getType() == JavaParser.FORMAL_PARAM_VARARG_DECL) {
                 param = parseFormalParamStdDecl(c);
             }
             paramList.add(param);
