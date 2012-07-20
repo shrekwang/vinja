@@ -622,7 +622,7 @@ public class JavaSourceSearcher {
     			return importedName;
     		}
     	}
-    	if (typeName.indexOf(".") < 0) {
+    	if (typeName.indexOf(".") < 0 && curFullClassName != null ) {
     		String packageName = "";
     		if (curFullClassName.indexOf(".")> 0) {
 	    		packageName = curFullClassName.substring(0,curFullClassName.lastIndexOf("."));
