@@ -517,7 +517,7 @@ public class ExpEval {
 			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			ObjectReference thisObj = stackFrame.thisObject();
-			Value value = findValueInFrame(threadRef, name, thisObj);
+			Value value = findValueInFrame(threadRef, name, thisObj, true);
 			return value;
 		} catch (IncompatibleThreadStateException e) {
 			throw new ExpressionEvalException("eval expression error, caused by : " + e.getMessage());
@@ -534,7 +534,7 @@ public class ExpEval {
 		
 		try {
 			thisObj = (ObjectReference)evalTreeNode(objNode);
-			Value value = findValueInFrame(threadRef, memberName, thisObj);
+			Value value = findValueInFrame(threadRef, memberName, thisObj, false);
 			return value;
 		} catch (VariableOrFieldNotFoundException e) {
 			ReferenceType refType = getClassType(objNode.getText());
@@ -579,17 +579,19 @@ public class ExpEval {
 	
 
 	public static Value findValueInFrame(ThreadReference threadRef, String name,
-			ObjectReference thisObj)  {
+			ObjectReference thisObj, boolean searchLocalVar)  {
 		
 		Value value = null;
 		try {
 			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			
-			LocalVariable localVariable;
-			localVariable = stackFrame.visibleVariableByName(name);
-			if (localVariable != null) {
-				return stackFrame.getValue(localVariable);
+			if (searchLocalVar) {
+				LocalVariable localVariable;
+				localVariable = stackFrame.visibleVariableByName(name);
+				if (localVariable != null) {
+					return stackFrame.getValue(localVariable);
+				}
 			}
 			
 			ReferenceType refType = stackFrame.location().declaringType();
