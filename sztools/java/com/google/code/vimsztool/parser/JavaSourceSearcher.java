@@ -25,7 +25,6 @@ public class JavaSourceSearcher {
     
     public static final String NULL_TYPE = "NULL";
 
-    private boolean hasFound = false;
     private List<LocalVariableInfo> visibleVars = null;
     private ParseResult parseResult = null;
     private CompilerContext ctx  = null;
@@ -35,7 +34,7 @@ public class JavaSourceSearcher {
     private List<String> importedNames = new ArrayList<String>();
     private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
     private List<String> staticImportedNames = new ArrayList<String>();
-    public static LRUCache<String, JavaSourceSearcher> cache = new LRUCache<String,JavaSourceSearcher>(100);
+    public static LRUCache<String, JavaSourceSearcher> cache = new LRUCache<String,JavaSourceSearcher>(70);
     
     private int classScopeLine = 1;
     
@@ -88,8 +87,10 @@ public class JavaSourceSearcher {
 		} else {
 			parseResult = AstTreeFactory.getJavaSourceAst(filename);
 		}
-		CommonTree tree = parseResult.getTree();
-		readClassInfo(tree,this.memberInfos);
+		if (!parseResult.hasError()) {
+			CommonTree tree = parseResult.getTree();
+			readClassInfo(tree,this.memberInfos);
+		}
 
 	}
    
@@ -118,7 +119,7 @@ public class JavaSourceSearcher {
     	//try same package class
     	if (path.equals("None")) {
 	    	String classFullName  = ctx.buildClassName(this.currentFileName);
-	    	if (classFullName.lastIndexOf(".") > -1 ) {
+	    	if (classFullName !=null && classFullName.lastIndexOf(".") > -1 ) {
 	    		String packageName = classFullName.substring(0,classFullName.lastIndexOf("."));
 	    		path = ctx.findSourceClass(packageName+"."+className);
 	    	}
@@ -131,6 +132,7 @@ public class JavaSourceSearcher {
 		    	classFullName = classFullName +"$"+className;
 	    		path = ctx.findSourceClass(classFullName);
 	    		if (!path.equals("None")) break;
+	    		if (aClass == null || aClass.equals("java.lang.Object")) break;
 	    		aClass = aClass.getSuperclass();
 	    		if (aClass == null || aClass.equals("java.lang.Object")) break;
 	    		classFullName = aClass.getCanonicalName();
@@ -163,11 +165,8 @@ public class JavaSourceSearcher {
                 if (leftNodeFilePath == null || leftNodeFilePath.equals("None" )) throw new LocationNotFoundException();
                 
                 info.setFilePath(leftNodeFilePath);
-                JavaSourceSearcher searcher = createSearcher(leftNodeFilePath, ctx);
                 
-                //if cursor is under the left node , only locate to class level, no need to locate the member of the class
                 if (node.getCharPositionInLine() > parent.getCharPositionInLine()) {
-                	
 	                CommonTree rightNode = (CommonTree)parent.getChild(1);
 	                CommonTree pparent = (CommonTree)parent.getParent();
 	                MemberType memberType = MemberType.FIELD;
@@ -193,118 +192,123 @@ public class JavaSourceSearcher {
 	            	searchMemberInHierachy(leftNodeTypeName, memberType, memberName, typenameList,info);
 	            	
                 } else {
-                	if (leftNode.getType() == JavaParser.IDENT) {
-                		  for (LocalVariableInfo var : visibleVars) {
-                              if (var.getName().equals(node.getText())) {
-                                  info.setCol(var.getCol());
-                                  info.setLine(var.getLine());
-	          		              info.setFilePath(currentFileName);
-                                  break;
-                              }
-                          }
-                	} else {
-	                	info.setLine(searcher.getClassScopeLine());
-                	}
+	                //if cursor is under the left node , only locate to class level, no need to locate the member of the class
+	            	info = searchIdentDefLocation(node);
                 }
                 
             } else if (parent.getType() == JavaParser.QUALIFIED_TYPE_IDENT
             		&& parent.getParent().getType() == JavaParser.CLASS_CONSTRUCTOR_CALL ) {
-            		String className = convertTypeName(node.getText());
-	                String classPath = getClassFilePath(className);
-	                info.setFilePath(classPath);
-	                
-	                List<String> typenameList = parseArgumentTypenameList((CommonTree)parent.getParent().getChild(1));
-	                
-	                String constructName = className;
-	                if (className.indexOf(".") > -1 ) {
-	                	constructName = className.substring(className.lastIndexOf(".")+1);
-	                }
-	                JavaSourceSearcher searcher = createSearcher(classPath, ctx);
-	                List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
-                    MemberInfo memberInfo = findMatchedMethod(constructName, typenameList,leftClassMembers);
-                    if (memberInfo != null ) {
-	                    info.setLine(memberInfo.getLineNum());
-	                    info.setCol(memberInfo.getColumn());
-                    }
-
+            	info = searchConstructorDefLocation(node); 	
             } else {
-            	//todo 查找变量的顺序
-            	//1: 本地变量  (done)
-            	//2: 父类变量
-            	//3: 导入的类名
-            	//4: 相同包下的类名
-            	//5: 静态导入包名
-            	boolean found = false;
-                for (LocalVariableInfo var : visibleVars) {
-                    if (var.getName().equals(node.getText())) {
-                        info.setCol(var.getCol());
-                        info.setLine(var.getLine());
-		                info.setFilePath(currentFileName);
-		                found = true;
-                        break;
-                    }
-                }
-                if (!found ) {
-                	for (String importedName: this.importedNames) {
-                		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
-                		if (node.getText().equals(lastName)) {
-                			info.setFilePath(this.getClassFilePath(importedName));
-                            JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
-                			info.setLine(searcher.getClassScopeLine());
-                			info.setCol(1);
-                			found = true ;
-                			break;
-                		}
-                	}
-               }
-               if (!found) {
-        	   String classFullName  = ctx.buildClassName(this.currentFileName);
-       	    	if (classFullName.lastIndexOf(".") > -1 ) {
-       	    		String packageName = classFullName.substring(0,classFullName.lastIndexOf("."));
-       	    		String path = ctx.findSourceClass(packageName+"."+node.getText());
-       	    		if (!path.equals("None")) {
-       	    			info.setFilePath(path);
-                        JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
-            			info.setLine(searcher.getClassScopeLine());
-       	    			info.setCol(1);
-       	    			found = true;
-       	    		}
-       	    	} 
-               }
-               if (!found) {
-            	   String path = ctx.findSourceClass("java.lang."+node.getText());
-       	    		if (!path.equals("None")) {
-       	    			info.setFilePath(path);
-                        JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
-            			info.setLine(searcher.getClassScopeLine());
-       	    			info.setCol(1);
-       	    			found = true;
-       	    		}
-               }
-               if (!found) {
-            	   for (String importedName: this.staticImportedNames) {
-               		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
-               		if (node.getText().equals(lastName)) {
-               			importedName = importedName.substring(0, importedName.lastIndexOf("."));
-               			info.setFilePath(this.getClassFilePath(importedName));
-                        JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
-                        MemberInfo memberInfo = findMatchedField(node.getText(), searcher.getMemberInfos());
-        				if (memberInfo != null) {
-        					info.setLine(memberInfo.getLineNum());
-        					info.setCol(memberInfo.getColumn());
-        					found = true;
-        					break;
-        				}
-               		}
-               	}
-               }
-               if (!found) {
-            	   MemberType memberType = MemberType.FIELD;
-                   searchMemberInHierachy(this.curFullClassName, memberType, node.getText(), null,info);
-               }
+            	info = searchIdentDefLocation(node);
             }
         }
         return info;
+    }
+    
+    public LocationInfo searchConstructorDefLocation(CommonTree node) {
+    	LocationInfo info = new LocationInfo();
+    	String className = convertTypeName(node.getText());
+        String classPath = getClassFilePath(className);
+        info.setFilePath(classPath);
+        CommonTree parent = (CommonTree)node.getParent(); 
+        List<String> typenameList = parseArgumentTypenameList((CommonTree)parent.getParent().getChild(1));
+        
+        String constructName = className;
+        if (className.indexOf(".") > -1 ) {
+        	constructName = className.substring(className.lastIndexOf(".")+1);
+        }
+        JavaSourceSearcher searcher = createSearcher(classPath, ctx);
+        List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
+        MemberInfo memberInfo = findMatchedMethod(constructName, typenameList,leftClassMembers);
+        if (memberInfo != null ) {
+            info.setLine(memberInfo.getLineNum());
+            info.setCol(memberInfo.getColumn());
+        }
+        return info;
+    }
+    
+    public LocationInfo searchIdentDefLocation(CommonTree node) {
+    	LocationInfo info = new LocationInfo();
+    	//todo 查找变量的顺序
+    	//1: 本地变量  (done)
+    	//2: 父类变量
+    	//3: 导入的类名
+    	//4: 相同包下的类名
+    	//5: 静态导入包名
+    	boolean found = false;
+        for (LocalVariableInfo var : visibleVars) {
+            if (var.getName().equals(node.getText())) {
+                info.setCol(var.getCol());
+                info.setLine(var.getLine());
+                info.setFilePath(currentFileName);
+                found = true;
+                break;
+            }
+        }
+        if (!found ) {
+        	for (String importedName: this.importedNames) {
+        		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
+        		if (node.getText().equals(lastName)) {
+        			String path = this.getClassFilePath(importedName);
+        			if (path != null && !path.equals("None")) {
+	        			info.setFilePath(this.getClassFilePath(importedName));
+	                    JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
+	        			info.setLine(searcher.getClassScopeLine());
+	        			info.setCol(1);
+	        			found = true ;
+	        			break;
+        			}
+        		}
+        	}
+       }
+       if (!found) {
+	   String classFullName  = ctx.buildClassName(this.currentFileName);
+	    	if (classFullName.lastIndexOf(".") > -1 ) {
+	    		String packageName = classFullName.substring(0,classFullName.lastIndexOf("."));
+	    		String path = ctx.findSourceClass(packageName+"."+node.getText());
+	    		if (!path.equals("None")) {
+	    			info.setFilePath(path);
+	                JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
+	    			info.setLine(searcher.getClassScopeLine());
+	    			info.setCol(1);
+	    			found = true;
+	    		}
+	    	} 
+       }
+       if (!found) {
+    	   String path = ctx.findSourceClass("java.lang."+node.getText());
+	    		if (!path.equals("None")) {
+	    			info.setFilePath(path);
+	                JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
+	    			info.setLine(searcher.getClassScopeLine());
+	    			info.setCol(1);
+	    			found = true;
+	    		}
+       }
+       if (!found) {
+    	   for (String importedName: this.staticImportedNames) {
+       		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
+       		if (node.getText().equals(lastName)) {
+       			importedName = importedName.substring(0, importedName.lastIndexOf("."));
+       			info.setFilePath(this.getClassFilePath(importedName));
+                JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
+                MemberInfo memberInfo = findMatchedField(node.getText(), searcher.getMemberInfos());
+				if (memberInfo != null) {
+					info.setLine(memberInfo.getLineNum());
+					info.setCol(memberInfo.getColumn());
+					found = true;
+					break;
+				}
+       		}
+       	}
+       }
+       if (!found) {
+    	   MemberType memberType = MemberType.FIELD;
+           searchMemberInHierachy(this.curFullClassName, memberType, node.getText(), null,info);
+       }
+       return info;
+    
     }
     
     public void searchMethod(String methodName,List<String> typenameList, LocationInfo info) {
@@ -371,6 +375,15 @@ public class JavaSourceSearcher {
 					info.setFilePath(classFilePath);
 					info.setMemberInfo(memberInfo);
 					return;
+				} else {
+					LocationInfo tmpInfo = findFiledDefInItf(superClassName,memberName);
+					if (tmpInfo !=null) {
+						info.setFilePath(tmpInfo.getFilePath());
+						info.setLine(tmpInfo.getLine());
+						info.setCol(tmpInfo.getCol());
+						info.setMemberInfo(tmpInfo.getMemberInfo());
+						return;
+					}
 				}
 			}
 			
@@ -381,6 +394,34 @@ public class JavaSourceSearcher {
 			if (aClass == null || aClass.getName().equals("java.lang.Object")) { break; }
 		 	superClassName = aClass.getCanonicalName();
 		}
+		
+		if (! (memberType == MemberType.FIELD) ) return;
+		
+	
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public LocationInfo findFiledDefInItf(String className,String fieldName) {
+		Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{className},null);
+		if (aClass != null ) {
+			Class[] interfaces = aClass.getInterfaces();
+			for (Class itfClazz : interfaces) {
+				String itfName = itfClazz.getCanonicalName();
+				String classFilePath = getClassFilePath(itfName);
+				JavaSourceSearcher searcher = createSearcher(classFilePath, ctx);
+				List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
+				MemberInfo memberInfo = findMatchedField(fieldName, leftClassMembers);
+				if (memberInfo != null) {
+					LocationInfo info = new LocationInfo();
+					info.setLine(memberInfo.getLineNum());
+					info.setCol(memberInfo.getColumn());
+					info.setFilePath(classFilePath);
+					info.setMemberInfo(memberInfo);
+					return info;
+				}
+			}
+		}
+		return null;
 	}
 
     public void readClassInfo(CommonTree t,List<MemberInfo> memberInfos) {
@@ -741,17 +782,7 @@ public class JavaSourceSearcher {
         }
     }
     
-    private void searchTreeForVar(CommonTree t, int line,List<MemberInfo> memberList) {
-    	if (hasFound) return;
-        if (t.getLine() == line) {
-        	parseAllVisibleVar(t);
-        	hasFound = true;
-        }
-        for (int i=0; i<t.getChildCount(); i++) {
-            CommonTree c = (CommonTree)t.getChild(i);
-            searchTreeForVar(c,line,memberList);
-        }
-    }
+  
 
     
     private List<LocalVariableInfo> parseAllVisibleVar(CommonTree t) {

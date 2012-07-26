@@ -446,6 +446,7 @@ public class CompilerContext {
 	}
 	
 	public String findSourceClass(String className) {
+		if (className == null) return "None";
 		ClassInfo classInfo = classMetaInfoManager.getMetaInfo(className);
 		String rtlPathName = className.replace(".", "/") + ".java";
 		if (classInfo!=null && classInfo.getSourceName() !=null ) {

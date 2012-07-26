@@ -260,6 +260,7 @@ public class ClassInfoUtil {
 		Class aClass = null;
 		
 		for (String className : classNameList) {
+			if (className == null) continue;
 			if (className.equals("this") && sourceFile !=null ) {
 				className = ctx.buildClassName(sourceFile);
 			}
