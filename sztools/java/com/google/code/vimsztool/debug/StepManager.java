@@ -27,6 +27,11 @@ public class StepManager {
 			}
 		}
 
+		if (threadRef == null) {
+			return "";
+		}
+		threadStack.clean();
+		
 		StepRequest request = mgr.createStepRequest(threadRef, StepRequest.STEP_LINE, stepDepth);
 		List<String> excludeFilters = StepFilterConfiger.getDefaultFilter(); 
 		for (String filter : excludeFilters) {
@@ -37,7 +42,6 @@ public class StepManager {
 		request.enable();
 		
 		threadRef.resume();
-		threadStack.clean();
 		return "";
 	}
 

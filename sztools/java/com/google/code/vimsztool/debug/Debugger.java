@@ -359,6 +359,8 @@ public class Debugger {
 		if (this.exec != null) {
 			exec.shutdown();
 		}
+		//do last buffer check
+		new BufferChecker().run();
 	}
 	
 	public VirtualMachine getVm() {
