@@ -370,45 +370,47 @@ endfunction
 
 function ProjectTree(...) 
   python ProjectTree.runApp()
-  nnoremap <silent><buffer> <2-leftmouse> :python projectTree.open_selected_node()<cr>
-  map <silent><buffer> <cr>  :python projectTree.open_selected_node()<cr>
-  map <silent><buffer> o     :python projectTree.open_selected_node()<cr>
-  map <silent><buffer> O     :python projectTree.recursive_open_node()<cr>
-  map <silent><buffer> t     :python projectTree.open_selected_node("tabnew")<cr>
-  map <silent><buffer> i     :python projectTree.open_selected_node("split")<cr>
-  map <silent><buffer> go    :python projectTree.preview_selected_node()<cr>
-  map <silent><buffer> r     :python projectTree.refresh_selected_node()<cr>
-  map <silent><buffer> x     :python projectTree.close_parent_node()<cr>
-  map <silent><buffer> s     :python projectTree.filter_display_node()<cr>
-  map <silent><buffer> z     :python projectTree.close_opened_file(False)<cr>
-  map <silent><buffer> Z     :python projectTree.close_opened_file(True)<cr>
-  map <silent><buffer> u     :python projectTree.up_one_level()<cr>
-  map <silent><buffer> m     :python projectTree.mark_selected_node()<cr>
-  map <silent><buffer> f     :python projectTree.recursive_search()<cr>
-  map <silent><buffer> F     :python projectTree.recursive_search2()<cr>
-  map <silent><buffer> <     :python projectTree.get_prev_open_node()<cr>
-  map <silent><buffer> >     :python projectTree.get_next_open_node()<cr>
+  if bufname('%') =~ 'SzTool.*ProjectTree.*$'
+    nnoremap <silent><buffer> <2-leftmouse> :python projectTree.open_selected_node()<cr>
+    map <silent><buffer> <cr>  :python projectTree.open_selected_node()<cr>
+    map <silent><buffer> o     :python projectTree.open_selected_node()<cr>
+    map <silent><buffer> O     :python projectTree.recursive_open_node()<cr>
+    map <silent><buffer> t     :python projectTree.open_selected_node("tabnew")<cr>
+    map <silent><buffer> i     :python projectTree.open_selected_node("split")<cr>
+    map <silent><buffer> go    :python projectTree.preview_selected_node()<cr>
+    map <silent><buffer> r     :python projectTree.refresh_selected_node()<cr>
+    map <silent><buffer> x     :python projectTree.close_parent_node()<cr>
+    map <silent><buffer> s     :python projectTree.filter_display_node()<cr>
+    map <silent><buffer> z     :python projectTree.close_opened_file(False)<cr>
+    map <silent><buffer> Z     :python projectTree.close_opened_file(True)<cr>
+    map <silent><buffer> u     :python projectTree.up_one_level()<cr>
+    map <silent><buffer> m     :python projectTree.mark_selected_node()<cr>
+    map <silent><buffer> f     :python projectTree.recursive_search()<cr>
+    map <silent><buffer> F     :python projectTree.recursive_search2()<cr>
+    map <silent><buffer> <     :python projectTree.get_prev_open_node()<cr>
+    map <silent><buffer> >     :python projectTree.get_next_open_node()<cr>
 
-  map <silent><buffer> @     :python projectTree.gotoBookmark()<cr>
-  map <silent><buffer> DD    :python projectTree.delete_node()<cr>
-  map <silent><buffer> Dm    :python projectTree.delete_marked_node()<cr>
-  map <silent><buffer> A     :python projectTree.add_node()<cr>
+    map <silent><buffer> @     :python projectTree.gotoBookmark()<cr>
+    map <silent><buffer> DD    :python projectTree.delete_node()<cr>
+    map <silent><buffer> Dm    :python projectTree.delete_marked_node()<cr>
+    map <silent><buffer> A     :python projectTree.add_node()<cr>
 
-  map <silent><buffer> ya    :python projectTree.yank_node_path()<cr>
-  map <silent><buffer> cc    :python projectTree.rename_node()<cr>
-  map <silent><buffer> yy    :python projectTree.yank_selected_node(False)<cr>
-  map <silent><buffer> dd    :python projectTree.yank_selected_node(True)<cr>
-  map <silent><buffer> ym    :python projectTree.yank_marked_node(False)<cr>
-  map <silent><buffer> dm    :python projectTree.yank_marked_node(True)<cr>
-  map <silent><buffer> p     :python projectTree.paste()<cr>
-  map <silent><buffer> P     :python projectTree.paste_from_clipBoard()<cr>
-  map <silent><buffer> YY    :python projectTree.copy_to_clipBoard()<cr>
+    map <silent><buffer> ya    :python projectTree.yank_node_path()<cr>
+    map <silent><buffer> cc    :python projectTree.rename_node()<cr>
+    map <silent><buffer> yy    :python projectTree.yank_selected_node(False)<cr>
+    map <silent><buffer> dd    :python projectTree.yank_selected_node(True)<cr>
+    map <silent><buffer> ym    :python projectTree.yank_marked_node(False)<cr>
+    map <silent><buffer> dm    :python projectTree.yank_marked_node(True)<cr>
+    map <silent><buffer> p     :python projectTree.paste()<cr>
+    map <silent><buffer> P     :python projectTree.paste_from_clipBoard()<cr>
+    map <silent><buffer> YY    :python projectTree.copy_to_clipBoard()<cr>
 
-  map <silent><buffer> ?     :python projectTree.print_help()<cr>
-  map <silent><buffer> C     :python projectTree.change_root()<cr>
-  map <silent><buffer> B     :python projectTree.change_back()<cr>
-  map <silent><buffer> U     :python projectTree.change_root_upper()<cr>
-  map <silent><buffer> QQ    :python projectTree.dispose_tree()<cr>
+    map <silent><buffer> ?     :python projectTree.print_help()<cr>
+    map <silent><buffer> C     :python projectTree.change_root()<cr>
+    map <silent><buffer> B     :python projectTree.change_back()<cr>
+    map <silent><buffer> U     :python projectTree.change_root_upper()<cr>
+    map <silent><buffer> QQ    :python projectTree.dispose_tree()<cr>
+	endif
 endfunction
 
 function PlayDict(word)
