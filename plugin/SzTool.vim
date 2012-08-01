@@ -581,7 +581,7 @@ function! Jdext()
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F6>     :python jdb.stepCmd('step_over')<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F7>     :python jdb.stepCmd('step_return')<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F8>     :python jdb.stepCmd('resume')<cr>
-  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><c-[><c-[> :python jdb.toggleQuickStep()<cr>
+  "autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><c-[><c-[> :python jdb.toggleQuickStep()<cr>
 
   autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F5>     <c-o>:python jdb.stepCmd('step_into')<cr>
   autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F6>     <c-o>:python jdb.stepCmd('step_over')<cr>
