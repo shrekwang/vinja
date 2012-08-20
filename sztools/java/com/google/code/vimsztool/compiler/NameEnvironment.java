@@ -2,10 +2,13 @@
 package com.google.code.vimsztool.compiler;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 
+import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
 import org.eclipse.jdt.internal.compiler.env.INameEnvironment;
@@ -14,12 +17,10 @@ import org.eclipse.jdt.internal.compiler.env.NameEnvironmentAnswer;
 public class NameEnvironment implements INameEnvironment {
 
 	
-	private String[] sourceFiles;
 	private HashMap<String,String> targetClassNames= new HashMap<String,String>();
 	private CompilerContext ctx;
 	
 	public NameEnvironment(String sourceFiles[], CompilerContext ctx) {
-		this.sourceFiles=sourceFiles;
 		this.ctx=ctx;
 		for (int i=0; i<sourceFiles.length; i++) {
 			targetClassNames.put(ctx.buildClassName(sourceFiles[i]), sourceFiles[i]);
@@ -50,6 +51,17 @@ public class NameEnvironment implements INameEnvironment {
             return findType(result);
     }
     
+    private boolean isValidResource(URL url) throws IOException {
+    	if (url == null) return true;
+    	if (!url.getProtocol().equals("file")) return true;
+    	File file = new File(url.getFile());
+    	if (!file.exists()) return false;
+    	String name1 = FilenameUtils.getBaseName(file.getAbsolutePath());
+    	String name2 = FilenameUtils.getBaseName(file.getCanonicalPath());
+    	return name1.equals(name2);
+    }
+    
+    
     private NameEnvironmentAnswer findType(String className) {
 
         InputStream is = null;
@@ -65,7 +77,7 @@ public class NameEnvironment implements INameEnvironment {
                 className.replace('.', '/') + ".class";
             ClassLoader classLoader=ctx.getClassLoader();
             is = classLoader.getResourceAsStream(resourceName);
-            if (is != null) {
+            if (is != null && isValidResource(classLoader.getResource(resourceName))) {
                 byte[] classBytes;
                 byte[] buf = new byte[8192];
                 ByteArrayOutputStream baos = 
@@ -107,7 +119,10 @@ public class NameEnvironment implements INameEnvironment {
         try {
 	        ClassLoader classLoader=ctx.getClassLoader();
 	        InputStream is = classLoader.getResourceAsStream(resourceName);
-	        return is == null;
+            if (is != null && isValidResource(classLoader.getResource(resourceName))) {
+            	return false;
+            }
+	        return true;
         } catch (Exception e) {
         }
         return false;

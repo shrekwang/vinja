@@ -25,7 +25,6 @@ public class JDTCompiler  {
 	}
 	
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
 	public CompileResultInfo generateClass( final String[] sourceFiles ) {
         
         String[] fileNames = sourceFiles;
@@ -41,17 +40,12 @@ public class JDTCompiler  {
         final IErrorHandlingPolicy policy = 
             DefaultErrorHandlingPolicies.proceedWithAllProblems();
 
-        final Map settings = new HashMap();
-        settings.put(CompilerOptions.OPTION_PreserveUnusedLocal, 
-        		CompilerOptions.PRESERVE);
-        settings.put(CompilerOptions.OPTION_LineNumberAttribute,
-                     CompilerOptions.GENERATE);
-        settings.put(CompilerOptions.OPTION_SourceFileAttribute,
-                     CompilerOptions.GENERATE);
-        settings.put(CompilerOptions.OPTION_LocalVariableAttribute, 
-	        		CompilerOptions.GENERATE);
-        settings.put(CompilerOptions.OPTION_ReportDeprecation,
-                     CompilerOptions.IGNORE);
+        final Map<String,String> settings = new HashMap<String,String>();
+        settings.put(CompilerOptions.OPTION_PreserveUnusedLocal, CompilerOptions.PRESERVE);
+        settings.put(CompilerOptions.OPTION_LineNumberAttribute, CompilerOptions.GENERATE);
+        settings.put(CompilerOptions.OPTION_SourceFileAttribute, CompilerOptions.GENERATE);
+        settings.put(CompilerOptions.OPTION_LocalVariableAttribute, CompilerOptions.GENERATE);
+        settings.put(CompilerOptions.OPTION_ReportDeprecation, CompilerOptions.GENERATE);
         if (ctx.getEncoding() != null) {
             settings.put(CompilerOptions.OPTION_Encoding, ctx.getEncoding());
         }
@@ -86,7 +80,8 @@ public class JDTCompiler  {
             String className = classNames[i];
             compilationUnits[i] = new CompilationUnit(fileNames[i], className,ctx.getEncoding());
         }
-        Compiler compiler = new Compiler(env, policy, settings, requestor, problemFactory, true);
+        CompilerOptions options = new CompilerOptions(settings);
+        Compiler compiler = new Compiler(env, policy, options, requestor, problemFactory);
         compiler.compile(compilationUnits);
         
        
