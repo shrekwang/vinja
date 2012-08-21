@@ -1587,6 +1587,11 @@ class Parser(object):
         pkgName = Parser.getPackage()
         clsPat = re.compile(r"\s*public\s+(\w+\s+)?class\s(?P<className>\w+)\b")
         className = Parser.searchPattern(clsPat,"className")
+
+        if className == None :
+            clsPat = re.compile(r"\s*(\w+\s+)?\bclass\b\s+(?P<className>\w+)\b")
+            className = Parser.searchPattern(clsPat,"className")
+
         if pkgName :
             className = pkgName + "." + className
         return className
