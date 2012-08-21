@@ -597,6 +597,9 @@ public class ExpEval {
 			ReferenceType refType = stackFrame.location().declaringType();
 			if (thisObj != null ) {
 				refType = thisObj.referenceType();
+				if ( thisObj instanceof ArrayReference && name.equals("length")) {
+					return getMirrorValue(((ArrayReference)thisObj).length());
+				}
 			}
 			Field field = refType.fieldByName(name);
 			if (field == null ) {
