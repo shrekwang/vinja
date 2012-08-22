@@ -177,12 +177,24 @@ public class Debugger {
 				if (i == threadStack.getCurFrame()) {
 					frameInfo = frameInfo + "  (current frame) ";
 				}
-				result.add(frameInfo);
+				String num = padStr(3,"#"+i);
+				result.add( num +":  " + frameInfo );
 			}
 		} catch (Throwable e) {
 		}
 		return result;
 	}
+	
+	private static String padStr(int maxLen, String origStr) {
+		if (origStr  == null) return "";
+		int len = origStr.length();
+		if (len >= maxLen ) return origStr;
+		for (int i=0; i< (maxLen-len); i++) {
+			origStr = origStr + " ";
+		}
+		return origStr;
+	}
+	
 	
 	private String getIndentStr(int level) {
 		StringBuilder sb = new StringBuilder();
@@ -298,6 +310,23 @@ public class Debugger {
 			return "error:" + e.getMessage();
 		}
 	}
+	
+	public String currentFrameUp() {
+		checkVm();
+		checkSuspendThread();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		int curFrame = threadStack.getCurFrame();
+		return changeCurrentFrame(curFrame-1);
+	}
+	
+	public String currentFrameDown() {
+		checkVm();
+		checkSuspendThread();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		int curFrame = threadStack.getCurFrame();
+		return changeCurrentFrame(curFrame+1);
+	}
+	
 	
 	public String changeCurrentFrame(int frameNum) {
 		checkVm();

@@ -21,7 +21,7 @@ public class DebugCommand  extends SzjdeCommand {
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", 
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
 		"bpa","setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay",
-		"show_display","tbreak", "watch","rwatch","awatch"
+		"show_display","tbreak", "watch","rwatch","awatch","up","down"
 		};
 	
 	public String execute() {
@@ -132,6 +132,19 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("frame") ) {
 			int frameNum = Integer.parseInt(args[1]);
 			actionResult = debugger.changeCurrentFrame(frameNum);
+			if (actionResult!=null && actionResult.equals("success")){
+				actionResult = debugger.listFrames();
+			}
+		} else if (debugCmd.equals("up") ) {
+			actionResult = debugger.currentFrameUp();
+			if (actionResult!=null && actionResult.equals("success")){
+				actionResult = debugger.listFrames();
+			}
+		} else if (debugCmd.equals("down") ) {
+			actionResult = debugger.currentFrameDown();
+			if (actionResult!=null && actionResult.equals("success")){
+				actionResult = debugger.listFrames();
+			}
 		} else if (debugCmd.equals("catch")) {
 			String className = args[1];
 			actionResult = ecpm.addExceptionPoint(className);

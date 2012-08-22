@@ -2119,6 +2119,8 @@ class Jdb(object):
             vim.current.buffer.append("the source code can't be found")
             vim.current.buffer.append("class name is " + className)
             vim.current.buffer.append("the current line is " + lineNum)
+            vim.command("redraw")
+
         if (self.display == False ) :
             self.show()
         else :
