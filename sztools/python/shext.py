@@ -1121,16 +1121,23 @@ class Shext(object):
         if self.enoughArguments(cmd) :
             self.dispatchCmd(cmd,cmdLine)
 
-        #diff command, like "svn diff", "hg diff"
-        if len(cmd)> 1 and cmd[1] == "diff" :
+        resultFileType = self.findCmdFileType(cmd)
+        if resultFileType != None :
             vim.command("call SwitchToSzToolView('shext')" )
-            vim.command("set filetype=diff")
+            vim.command("set filetype=%s" % resultFileType )
             listwinnr = str(vim.eval("winnr('#')"))
             vim.command("exec '"+listwinnr+" wincmd w'")
 
         if cmd[0] not in self.special_cmds and not batchMode and insertMode :
             vim.command("normal o")
             vim.command("startinsert")
+
+    def findCmdFileType(self, cmd):
+        if len(cmd)> 1 and cmd[1] == "diff" :
+            return "diff"
+        if len(cmd)> 1 and cmd[0] == "xxd" :
+            return "xxd"
+        return None
 
     def dispatchCmd(self, cmd,cmdLine) :
         if cmd[0] == "cd" and len(cmd) > 1 :
