@@ -18,6 +18,7 @@ function MyTabLine()
   endfor
   " after the last tab fill with TabLineFill and reset tab page nr
   let s .= '%#TabLineFill#%T'
+	let &titlestring = MyTitleString()
   return s
 endfunction
 
@@ -54,6 +55,13 @@ function MyTabLabel(n)
   endif
   let label .= modified_part . name
   return label
+endfunction
+
+function MyTitleString()
+	let v = MyTabLabel(tabpagenr()) 
+	let idx = stridx(v, " ")
+	let v1 = strpart(v, idx + 1)
+	return v1
 endfunction
 
 function SetTabPageName(name)
@@ -371,6 +379,7 @@ endfunction
 function ProjectTree(...) 
   python ProjectTree.runApp()
   if bufname('%') =~ 'SzTool.*ProjectTree.*$'
+		call SetTabPageName("ProjectExplorer")
     nnoremap <silent><buffer> <2-leftmouse> :python projectTree.open_selected_node()<cr>
     map <silent><buffer> <cr>  :python projectTree.open_selected_node()<cr>
     map <silent><buffer> o     :python projectTree.open_selected_node()<cr>
@@ -468,6 +477,7 @@ call RunSzPyfile("tree.py")
 
 set completefunc=FuzzyCompletion
 set tabline=%!MyTabLine()
+autocmd BufEnter * let &titlestring = MyTitleString()
 
 function! SzJdeCompletion(findstart, base)
   python SzJdeCompletion.completion(vim.eval("a:findstart"),vim.eval("a:base"))
