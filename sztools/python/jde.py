@@ -2133,8 +2133,21 @@ class Jdb(object):
 
     def resumeSuspend(self):
         if self.suspendRow == -1 :
-            return
-        HighlightManager.removeSign(self.suspendBufName,self.suspendRow,"S",bufnr=self.suspendBufnr)
+            return 
+        pat = re.compile(r".*=(?P<line>\d+)\s+id=(?P<id>\d+)\s.*=(?P<name>.+)\b\s*$")
+        vim.command("redir => g:current_signplace")
+        vim.command("silent sign place buffer=%s" % self.suspendBufnr )
+        vim.command("redir END")
+        output = vim.eval("g:current_signplace")
+        lines = output.split("\n")
+        for line in lines :
+            result = pat.search(line)
+            if result :
+                name = result.group("name")
+                if name == "SuspendLine" or name == "SuspendLineBP":
+                    #print result.group("line"), result.group("id"),result.group("name")
+                    row = int(result.group("line"))
+                    HighlightManager.removeSign(self.suspendBufName,row,"S",bufnr=self.suspendBufnr)
         self.suspendRow = -1
 
     @staticmethod
@@ -2294,7 +2307,7 @@ class Jdb(object):
             cmdLine = cmdLine  +" " + mainClassName
 
         change_suspend_cmds = ["step_into","step_over","step_return","resume",
-                "exit","shutdown","frame","disconnect","until"]
+                "exit","shutdown","frame","disconnect","until","up","down"]
         if cmdLine.strip().split(" ")[0] in change_suspend_cmds :
             self.resumeSuspend()
 
