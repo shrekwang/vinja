@@ -1977,6 +1977,7 @@ class Jdb(object):
         self.class_path_xml = ProjectManager.getClassPathXml(fake_path)
         self.serverName = vim.eval("v:servername")
         self.suspendRow = -1
+        self.lastRunClass = None
         self.suspendBufnr = -1
         self.suspendBufName = ""
         self.display = True
@@ -1989,7 +1990,6 @@ class Jdb(object):
 
     def show(self):
         self.display = True
-        self.defaultClassName = Parser.getMainClass()
         # 30% height
         height = vim.eval("winheight(0) / 10 * 3")
         #vim.command("call SwitchToSzToolView('JdeConsole','belowright','%s')" % height)
@@ -2301,10 +2301,16 @@ class Jdb(object):
             return 
 
         if cmdLine == "run" :
-            #cmdLine = "run " + self.defaultClassName
             self.switchSourceBuffer()
             mainClassName = Parser.getMainClass()
+            self.lastRunClass = mainClassName
             cmdLine = cmdLine  +" " + mainClassName
+
+        if cmdLine == "runlast":
+            if self.lastRunClass == None :
+                self.stdout("please execute 'run' first.")
+                return
+            cmdLine = "run"  +" " + self.lastRunClass
 
         change_suspend_cmds = ["step_into","step_over","step_return","resume",
                 "exit","shutdown","frame","disconnect","until","up","down"]
