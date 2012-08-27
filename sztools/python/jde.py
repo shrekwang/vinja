@@ -2061,6 +2061,8 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>j   :<C-U>python jdb.stepCmd('step_over')<cr>")
             vim.command("nnoremap <buffer><silent>h   :<C-U>python jdb.stepCmd('step_return')<cr>")
             vim.command("nnoremap <buffer><silent>c   :python jdb.stepCmd('resume')<cr>")
+            vim.command("nnoremap <buffer><silent>v   :python jdb.executeCmd(insertMode=False,cmdLine='>locals')<cr>")
+            vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
             vim.command("setlocal statusline=\ Jdb\ QuickStep")
         else :
@@ -2069,6 +2071,8 @@ class Jdb(object):
             vim.command("nunmap <buffer><silent>j")
             vim.command("nunmap <buffer><silent>h")
             vim.command("nunmap <buffer><silent>c")
+            vim.command("nunmap <buffer><silent>v")
+            vim.command("nunmap <buffer><silent>w")
             vim.command("nunmap <buffer><silent>G")
             vim.command("setlocal statusline=\ Jdb")
 
@@ -2267,11 +2271,12 @@ class Jdb(object):
                 lineset.add(curBuf[rowNum-1])
             rowNum = rowNum -1
 
-    def executeCmd(self, insertMode = True):
+    def executeCmd(self, insertMode = True, cmdLine = None):
         
         #if self.project_root == None or not os.path.exists(self.project_root) :
         #    return 
-        cmdLine = self.getCmdLine()
+        if cmdLine == None:
+            cmdLine = self.getCmdLine()
 
         if cmdLine.strip() == "" :
             self.appendPrompt()

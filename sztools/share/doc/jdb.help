@@ -26,6 +26,8 @@ threads                                       --list threads state
 thread threadId                               --change current thread(the threadId can been obtain in threads command's output)
 frames                                        --list frame info in current stack(alias:where,backtrace,bt)
 frame n                                       --change current frame to n-th frame in current stack, start with 0
+up                                            --change current frame to current frame -1
+down                                          --change current frame to current frame +1
 bpa classname lineNum condition-expression    --add conditional break point
 setvalue  varname value-expression            --set varname's value to result of value-expression
 
