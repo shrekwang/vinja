@@ -59,6 +59,9 @@ public class SzjdeAutoImportCommand extends SzjdeCommand  {
 	        if (t.getType() ==  JavaParser.QUALIFIED_TYPE_IDENT) {
 	        	names.add(t.getChild(0).getText().trim());
 	    	}
+	        if (t.getType() == JavaParser.AT) {
+	        	names.add(t.getChild(0).getText().trim());
+	        }
 	        if (t.getType() == JavaParser.THROWS_CLAUSE) {
 		        for ( int i = 0; i < t.getChildCount(); i++ ) {
 		        	names.add(t.getChild(i).getText().trim());
