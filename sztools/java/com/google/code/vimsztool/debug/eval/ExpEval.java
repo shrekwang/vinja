@@ -387,11 +387,9 @@ public class ExpEval {
 		case JavaParser.LOGICAL_OR:
 			return LogicalOr.operate(leftOp, rightOp);
 		case JavaParser.AND:
-			result = ((Integer) leftValue) & ((Integer) rightValue);
-			break;
+			return BitAnd.operate(leftOp, rightOp);
 		case JavaParser.OR:
-			result = ((Integer) leftValue) | ((Integer) rightValue);
-			break;
+			return BitOr.operate(leftOp, rightOp);
 		}
 		return result;
 	}
