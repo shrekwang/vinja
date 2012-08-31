@@ -66,6 +66,7 @@ public class BreakpointManager {
 	
 	public boolean classContainsLineNum(ClassMetaInfoManager cmm, String className, int lineNum) {
 		ClassInfo metaInfo = cmm.getMetaInfo(className);
+		if (metaInfo == null) return false;
 		if (metaInfo.getLineNums().contains(lineNum)) return true;
 		for (String innerClassName : metaInfo.getInnerClasses()) {
 			ClassInfo innerClass = cmm.getMetaInfo(innerClassName);

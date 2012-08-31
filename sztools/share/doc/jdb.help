@@ -17,9 +17,11 @@ unwatch fieldname         --remove watch field
 
 print expression          --eval the value of the expression(alias p,eval)
 reftype expression        --print the type of the expression(alias whatis)
-inspect expression        --print the field value of the inspect expression(alias i)
+inspect expression        --print the non-static field value of the inspect expression(alias i)
+sinspect expression       --print the static field value of the inspect expression
 locals                    --list stack frame local variables
-fields                    --list fields 
+fields                    --list fields (only non-static)
+sfields                   --list fields (only static)
 
 list n                                        --scroll source code to line n, if n is omitted, scroll to next page(alias:l)
 threads                                       --list threads state

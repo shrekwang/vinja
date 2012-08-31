@@ -68,7 +68,7 @@ public class DisplayVariableManager {
 		if (inspectExps.size() > 0 ) {
 			for (String exp : inspectExps) {
 				try {
-					sb.append(ExpEval.inspect(exp)).append("\n");
+					sb.append(ExpEval.inspect(exp,false)).append("\n");
 					sb.append(ExpEval.SEP_ROW_TXT);
 				} catch (ExpressionEvalException e) {
 					sb.append(e.getMessage()).append("\n");

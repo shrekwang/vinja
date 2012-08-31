@@ -121,11 +121,16 @@ public class ExpEval {
 				actionResult =  eval(exp);
 			} else if (debugCmd.equals("inspect")) {
 				String exp = debugCmdArgs.substring(debugCmd.length()+1);
-				actionResult =  inspect(exp);
+				actionResult =  inspect(exp,false);
+			} else if (debugCmd.equals("sinspect")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult =  inspect(exp,true);
 			} else if (debugCmd.equals("locals")) {
 				actionResult = variables();
 			} else if (debugCmd.equals("fields")) {
-				actionResult = fields();
+				actionResult = fields(false);
+			} else if (debugCmd.equals("sfields")) {
+				actionResult = fields(true);
 			} else if (debugCmd.equals("reftype")) {
 				String exp = debugCmdArgs.substring(debugCmd.length()+1);
 				actionResult = reftype(exp);
@@ -136,24 +141,30 @@ public class ExpEval {
 		}
 	}
 	
-	public static String fields() {
+	public static String fields(boolean staticField ) {
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		StringBuilder sb = new StringBuilder();
 		try {
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			ObjectReference thisObj = stackFrame.thisObject();
+			if (thisObj == null) {
+				throw new ExpressionEvalException("eval expression error, there's no 'this' object yet");
+			}
 			Map<Field, Value> values = thisObj.getValues(thisObj.referenceType().visibleFields());
 			List<String> fieldNames = new ArrayList<String>();
 			for (Field field : values.keySet()) {
-				fieldNames.add(field.name());
+				if (field.isStatic() == staticField) {
+					fieldNames.add(field.name());
+				}
 			}
 			int maxLen = getMaxLength(fieldNames)+2;
 			for (Field field : values.keySet()) {
-				sb.append(padStr(maxLen,field.name())).append(":");
-				sb.append(getPrettyPrintStr(values.get(field)));
-				sb.append("\n");
-				//stackFrame = threadRef.frame(0);
+				if (field.isStatic() == staticField) {
+					sb.append(padStr(maxLen,field.name())).append(":");
+					sb.append(getPrettyPrintStr(values.get(field)));
+					sb.append("\n");
+				}
 			}
 		} catch (IncompatibleThreadStateException e) {
 		}
@@ -196,7 +207,7 @@ public class ExpEval {
 		return value.type().name();
 	}
 
-	public static String inspect(String exp) {
+	public static String inspect(String exp,boolean staticField) {
 		ParseResult result = AstTreeFactory.getExpressionAst(exp);
 		if (result.hasError()) {
 			return result.getErrorMsg();
@@ -212,15 +223,18 @@ public class ExpEval {
 			Map<Field, Value> values = objRef.getValues(objRef.referenceType().visibleFields());
 			List<String> fieldNames = new ArrayList<String>();
 			for (Field field : values.keySet()) {
-				if (field.isStatic()) continue;
-				fieldNames.add(field.name());
+				if (field.isStatic() == staticField) {
+					fieldNames.add(field.name());
+				}
 			}
 			int maxLen = getMaxLength(fieldNames)+2;
 			for (Field field : values.keySet()) {
-				sb.append("    ");
-				sb.append(padStr(maxLen,field.name())).append(":");
-				sb.append(getPrettyPrintStr(values.get(field)));
-				sb.append("\n");
+				if (field.isStatic() == staticField) {
+					sb.append("    ");
+					sb.append(padStr(maxLen,field.name())).append(":");
+					sb.append(getPrettyPrintStr(values.get(field)));
+					sb.append("\n");
+				}
 			}
 		}
 		return sb.toString();
