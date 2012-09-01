@@ -2130,7 +2130,7 @@ class Jdb(object):
         else :
             vim.command("call SwitchToSzToolView('Jdb')")
 
-        data = JdbTalker.submit("show_display",self.class_path_xml,self.serverName)
+        data = JdbTalker.submit("eval_display",self.class_path_xml,self.serverName)
         if data : 
             self.stdout(data)
         vim.command("call foreground()")

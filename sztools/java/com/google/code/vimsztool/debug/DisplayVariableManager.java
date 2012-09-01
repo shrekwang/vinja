@@ -51,8 +51,14 @@ public class DisplayVariableManager {
 		}
 	}
 	
-	public List<String> getWatchVariables() {
-		return this.allExps;
+	public String showWatchVariables() {
+		if (this.allExps.size() == 0) return "there's no display expression yet.";
+		StringBuilder sb = new StringBuilder();
+		for (String exp : allExps) {
+			sb.append(exp).append(",");
+		}
+		sb.deleteCharAt(sb.length()-1);
+		return sb.toString();
 	}
 	
 	public String evalWatchVariables() {

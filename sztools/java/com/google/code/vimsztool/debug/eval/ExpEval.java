@@ -269,6 +269,7 @@ public class ExpEval {
 				sb.append("\n");
 			} catch (ExpressionEvalException e) {
 				sb.append(e.getMessage());
+				if (sb.charAt(sb.length()-1) != '\n') sb.append("\n");
 			}
 		}
 		return sb.toString();

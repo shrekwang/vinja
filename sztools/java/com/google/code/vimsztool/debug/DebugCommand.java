@@ -21,7 +21,7 @@ public class DebugCommand  extends SzjdeCommand {
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", 
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
 		"bpa","setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay",
-		"show_display","tbreak", "watch","rwatch","awatch","up","down","sfields","sinspect"
+		"show_display","eval_display","tbreak", "watch","rwatch","awatch","up","down","sfields","sinspect"
 		};
 	
 	public String execute() {
@@ -120,6 +120,8 @@ public class DebugCommand  extends SzjdeCommand {
 			String exp = debugCmdArgs.substring(debugCmd.length()+1);
 			actionResult =  dvMgr.removeWatchVariables(exp);
 		} else if (debugCmd.equals("show_display")) {
+			actionResult =  dvMgr.showWatchVariables();
+		} else if (debugCmd.equals("eval_display")) {
 			actionResult =  dvMgr.evalWatchVariables();
 		} else if (debugCmd.equals("breakpoints")) {
 			actionResult = debugger.listBreakpoints();
