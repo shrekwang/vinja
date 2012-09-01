@@ -379,7 +379,7 @@ endfunction
 function ProjectTree(...) 
   python ProjectTree.runApp()
   if bufname('%') =~ 'SzTool.*ProjectTree.*$'
-		call SetTabPageName("ProjectExplorer")
+		"call SetTabPageName("ProjectExplorer")
     nnoremap <silent><buffer> <2-leftmouse> :python projectTree.open_selected_node()<cr>
     map <silent><buffer> <cr>  :python projectTree.open_selected_node()<cr>
     map <silent><buffer> o     :python projectTree.open_selected_node()<cr>
