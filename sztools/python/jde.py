@@ -1996,6 +1996,8 @@ class Jdb(object):
         #vim.command("call SwitchToSzToolView('Jdb','aboveleft','7')")
         vim.command("call SwitchToSzToolView('Jdb','belowright','%s')" % height)
         vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
+        vim.command("set filetype=jdb")
+
         if self.out_buf_list :
             output(self.out_buf_list)
         vim.command("call SwitchToSzToolView('Jdb')")
@@ -2373,6 +2375,18 @@ class Jdb(object):
                 if vim.eval("&buftype") == "" :
                     break
             EditUtil.syncBreakpointInfo()
+
+        #make sure "current frame" line is visible
+        if cmdLine.startswith("frame") or cmdLine == "up" or cmdLine == "down":
+            lines = data.split("\n")
+            matchedRow = -1
+            for rowNum,line in enumerate(lines) :
+                if "current frame" in line :
+                    matchedRow = rowNum + 1
+                    break
+            if matchedRow > 0 :
+                callback = lambda : VimUtil.scrollTo(matchedRow)
+                VimUtil.doCommandInSzToolBuffer("JdbStdOut",callback)
 
         vim.command("call SwitchToSzToolView('Jdb')")
         if insertMode :

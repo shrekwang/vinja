@@ -230,12 +230,12 @@ public class JavaSourceSearcher {
     
     public LocationInfo searchIdentDefLocation(CommonTree node) {
     	LocationInfo info = new LocationInfo();
-    	//todo 查找变量的顺序
-    	//1: 本地变量  (done)
-    	//2: 父类变量
-    	//3: 导入的类名
-    	//4: 相同包下的类名
-    	//5: 静态导入包名
+        //searching order
+    	//1: local variable and fields (done)
+    	//2: fields in parent class
+    	//3: imported class
+    	//4: class name under the same package
+    	//5: static imported name
     	boolean found = false;
         for (LocalVariableInfo var : visibleVars) {
             if (var.getName().equals(node.getText())) {
