@@ -279,8 +279,9 @@ public class Debugger {
 		checkSuspendThread();
 		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
-		threadRef.resume();
 		threadStack.clean();
+		
+		threadRef.resume();
 		return "";
 	}
 	
