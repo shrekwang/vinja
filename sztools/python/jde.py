@@ -2307,7 +2307,7 @@ class Jdb(object):
             self.appendPrompt()
             return 
 
-        if cmdLine == "run" :
+        if cmdLine == "run" or cmdLine == "runtest" :
             self.switchSourceBuffer()
             mainClassName = Parser.getMainClass()
             self.lastRunClass = mainClassName
@@ -2339,7 +2339,7 @@ class Jdb(object):
             self.closeBuffer()
             return 
 
-        # run or runtomcat command.
+        # run or runtomcat or runtest command.
         if cmdLine.startswith("run"):
             self.switchSourceBuffer()
             # 30% height

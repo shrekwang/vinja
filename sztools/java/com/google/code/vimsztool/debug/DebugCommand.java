@@ -16,7 +16,7 @@ public class DebugCommand  extends SzjdeCommand {
 	private DisplayVariableManager dvMgr = DisplayVariableManager.getInstance();
 	private ExceptionPointManager ecpm  = ExceptionPointManager.getInstance();
 	
-	private static String[] availCmds = { "run", "exit", "print", "eval","inspect",
+	private static String[] availCmds = { "run", "runtest","exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
 		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", 
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
@@ -60,7 +60,10 @@ public class DebugCommand  extends SzjdeCommand {
 		
 		if (debugCmd.equals("run")) {
 			String cmdLine = debugCmdArgs.substring(4).trim();
-			actionResult = debugger.launch(classPathXml, cmdLine);
+			actionResult = debugger.launch(classPathXml, cmdLine,false);
+		} else if (debugCmd.equals("runtest")) {
+			String cmdLine = debugCmdArgs.substring(8).trim();
+			actionResult = debugger.launch(classPathXml, cmdLine,true);
 		} else if (debugCmd.equals("attach")) {
 			String port = args[1];
 			actionResult = debugger.attach(port);

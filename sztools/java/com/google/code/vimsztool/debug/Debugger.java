@@ -86,7 +86,7 @@ public class Debugger {
 		}
 	}
 	
-	public String launch(String classPathXml, String cmdLine) {
+	public String launch(String classPathXml, String cmdLine,boolean runAsTest) {
         String[] bb = cmdLine.split("\\s+");
         List<String> opts = new ArrayList<String>();
         List<String> args = new ArrayList<String>();
@@ -108,7 +108,9 @@ public class Debugger {
         }
 		if (vm != null) 
 			return "VirtualMachine is not null";
-		vm = launch(className,classPathXml,opts,args);
+		
+		vm = launch(className,classPathXml,opts,args,runAsTest);
+	
 		startProcess();
 		return "run class: " + className;
 		
@@ -505,7 +507,7 @@ public class Debugger {
 	}
 	
 	public VirtualMachine launch(String mainClass, String classPathXml,
-			List<String> opts,List<String> args) {
+			List<String> opts,List<String> args,boolean runAsTest) {
 		
 		
 		String port = String.valueOf(getAvailPort());
@@ -517,6 +519,9 @@ public class Debugger {
 			for (String opt : opts ) {
 				cmd.append(opt).append(" ");
 			}
+		}
+		if (runAsTest) {
+			cmd.append("org.junit.runner.JUnitCore").append(" ");
 		}
 		cmd.append(mainClass).append(" ");
 		
