@@ -832,6 +832,30 @@ class VimUtil(object):
         array_str = "['" + "','".join([item.replace("'","''") for item in lines]) + "']"
         vim.command("call setline(1,%s)" % str(array_str))
 
+    @staticmethod
+    def getOpenedBufList(jarfile = None):
+        bufname_pat = re.compile('"[^"]*"')
+        vim.command("redir => g:jde_buf_list")
+        vim.command("silent ls")
+        vim.command("redir END")
+        buf_lines = vim.eval("g:jde_buf_list").split("\n")
+        result = []
+        for line in buf_lines :
+            bufnames = bufname_pat.findall(line)
+            if len(bufnames) > 0 :
+                result.append(bufnames[0][1:-1])
+        if jarfile != None :
+            newresult = []
+            for buf_name in  result :
+                if buf_name.startswith("jar:"):
+                    zip_file_path, inner_path = ZipUtil.split_zip_scheme(buf_name)
+                    if PathUtil.same_path(zip_file_path, jarfile):
+                        newresult.append(buf_name)
+            result = newresult
+        return result
+
+
+
 class EditHistory(object):
     def __init__(self):
         self.history = {}
