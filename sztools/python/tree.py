@@ -2,7 +2,7 @@ import zipfile, os
 import shutil
 import logging
 import chardet
-from common import ZipUtil,FileUtil 
+from common import ZipUtil,FileUtil,VimUtil,PathUtil
 from xml.etree.ElementTree import *
 from jde import ProjectManager,EditUtil
 
@@ -356,11 +356,19 @@ class ZipRootNode(TreeNode):
     def load_childrend(self):
         zipFile = None
         try :
+            opened_buf_list = VimUtil.getOpenedBufList(self.realpath)
             zipFile = zipfile.ZipFile(self.realpath)  
             for name in zipFile.namelist() :
-                self.add_tree_entry(name)
+                edited = False
+                for opened_buf in  opened_buf_list :
+                    zip_file_path, inner_path = ZipUtil.split_zip_scheme(opened_buf)
+                    if PathUtil.same_path(inner_path,name):
+                        edited = True
+                        break
+                self.add_tree_entry(name,edited)
             zipFile.close()
         except Exception as e :
+            logging.debug("load jar childrend faied : %s" % str(e))
             if zipFile != None :
                 zipFile.close()
         self.isLoaded = True
@@ -370,7 +378,7 @@ class ZipRootNode(TreeNode):
             self.load_childrend()
         return self._children
 
-    def add_tree_entry(self,line):
+    def add_tree_entry(self,line, edited):
         sections = line.strip().split("/")
         parentNode = self
 
@@ -386,7 +394,9 @@ class ZipRootNode(TreeNode):
                     node = TreeNode(item,line,isDirectory,isOpen=False,isLoaded=True)
                     parentNode.insert_child(node)
                 else :
-                    node = ZipFileItemNode(item,line,isDirectory,isOpen=False)
+                    node = ZipFileItemNode(item,line,isDirectory,isOpen=False )
+                    if edited :
+                        node.set_edit_flag(True)
                     node.set_zip_file(self.realpath)
                     parentNode.add_child(node)
                 parentNode = node
