@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,6 +20,7 @@ import com.google.code.vimsztool.exception.ExpressionEvalException;
 import com.google.code.vimsztool.exception.VariableOrFieldNotFoundException;
 import com.google.code.vimsztool.parser.AstTreeFactory;
 import com.google.code.vimsztool.parser.JavaParser;
+import com.google.code.vimsztool.parser.JavaSourceSearcher;
 import com.google.code.vimsztool.parser.ParseResult;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
@@ -40,6 +42,7 @@ import com.sun.jdi.InterfaceType;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
 import com.sun.jdi.LocalVariable;
+import com.sun.jdi.Location;
 import com.sun.jdi.LongType;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
@@ -66,6 +69,43 @@ public class ExpEval {
 		}
 		System.out.println(result.getTree());
 		
+	}
+	
+	public static String quickEval() {
+		Debugger debugger = Debugger.getInstance();
+		ThreadReference threadRef = checkAndGetCurrentThread();
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		
+		CompilerContext ctx = debugger.getCompilerContext();
+		try {
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			Location loc = stackFrame.location();
+		    String abPath = ctx.findSourceFile(loc.sourcePath());
+		    JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(abPath,ctx);
+			StringBuilder sb = new StringBuilder();
+			
+		    for (int i=1; i>=0; i-- ) {
+		    	boolean currentLine = false;
+		    	if (i==0) currentLine = true;
+				Set<String> exps = searcher.searchNearByExps(loc.lineNumber()-i, currentLine);
+				if (exps ==null || exps.size() == 0) continue;
+				for (String exp : exps) {
+					if (exp ==null || exp.trim().equals("")) continue;
+					ParseResult result = AstTreeFactory.getExpressionAst(exp);
+					if (result.hasError()) continue; 
+					try {
+						sb.append(eval(exp));
+					} catch (Exception e) {
+						sb.append("parse :"+exp+" error, msg is :" +e.getMessage());
+					}
+				}
+				sb.append(ExpEval.SEP_ROW_TXT);
+		    }
+			return sb.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return e.getMessage();
+		}
 	}
 	
 	public static String setFieldValue(String name, String exp) {
@@ -134,6 +174,8 @@ public class ExpEval {
 			} else if (debugCmd.equals("reftype")) {
 				String exp = debugCmdArgs.substring(debugCmd.length()+1);
 				actionResult = reftype(exp);
+			} else if (debugCmd.equals("qeval")) {
+				actionResult = quickEval();
 			}
 			return actionResult;
 		} catch (ExpressionEvalException e) {

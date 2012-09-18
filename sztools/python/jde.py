@@ -2209,6 +2209,11 @@ class Jdb(object):
         cmd = cmd +" " + vim.eval("v:count1")
         data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
 
+    def qevalCmd(self):
+        data = JdbTalker.submit("qeval",self.class_path_xml,self.serverName)
+        if data : 
+            self.stdout(data)
+
     def breakCmd(self, cmdLine):
         global bp_data
         cmd, row = cmdLine.strip().split()

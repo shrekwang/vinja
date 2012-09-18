@@ -1,7 +1,11 @@
 package com.google.code.vimsztool.parser;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +34,8 @@ public class JavaSourceSearcher {
     private CompilerContext ctx  = null;
     private String currentFileName;
     private String curFullClassName ;
+    
+    private List<String> sourceLines = null;
     
     private List<String> importedNames = new ArrayList<String>();
     private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
@@ -93,9 +99,169 @@ public class JavaSourceSearcher {
 		}
 
 	}
-   
-   
+	
 
+	public Set<String> searchNearByExps(int lineNum, boolean currentLine) {
+		CommonTree tree = parseResult.getTree();
+		
+		LinkedList<CommonTree> nodes =  new LinkedList<CommonTree>();
+		Set<String> exps = new LinkedHashSet<String>();
+		
+		searchAllNodeAtLine(tree,nodes,lineNum);
+		for (CommonTree node : nodes) {
+			searchNearByExps(exps, node,currentLine,lineNum);
+		}
+		return exps;
+	}
+	
+	private void searchNearByExps(Set<String> exps,CommonTree node, boolean currentLine,int lineNum) {
+		
+		CommonTree tmpNode = null;
+		if (node.getType() == JavaParser.ASSIGN) {
+			
+			if (currentLine ) {
+				tmpNode = (CommonTree)node.getChild(1);
+				exps.addAll(getNodeText(tmpNode));
+			} else {
+				tmpNode = (CommonTree)node.getChild(0);
+				exps.addAll(getNodeText(tmpNode));
+			}
+		} else if (node.getType() == JavaParser.METHOD_CALL) {
+			tmpNode = (CommonTree)node.getChild(1);
+			exps.addAll(getNodeText(tmpNode));
+		} else if (node.getType() == JavaParser.RETURN) {
+			tmpNode = (CommonTree)node.getChild(0);
+			exps.addAll(getNodeText(tmpNode));
+		} else if (node.getType() == JavaParser.VAR_DECLARATOR) {
+			tmpNode = (CommonTree)node.getChild(0);
+			exps.addAll(getNodeText(tmpNode));
+			
+			tmpNode = (CommonTree)node.getChild(1);
+			exps.addAll(getNodeText(tmpNode));
+			
+		} else if (node.getType() ==  JavaParser.NOT_EQUAL
+				|| node.getType()== JavaParser.EQUAL
+				|| node.getType() == JavaParser.GREATER_THAN
+				|| node.getType() == JavaParser.GREATER_OR_EQUAL
+				|| node.getType() == JavaParser.LESS_THAN
+				|| node.getType() == JavaParser.LESS_OR_EQUAL) {
+			
+			tmpNode = (CommonTree)node.getChild(0);
+			exps.addAll(getNodeText(tmpNode));
+			
+			tmpNode = (CommonTree)node.getChild(1);
+			exps.addAll(getNodeText(tmpNode));
+		}
+		for (int i=0; i<node.getChildCount(); i++) {
+			CommonTree subNode = (CommonTree) node.getChild(i);
+			if (subNode.getLine() == lineNum) {
+				searchNearByExps(exps,subNode,currentLine,lineNum );
+			}
+		}
+	}
+	
+	private List<String> getNodeText(CommonTree node) {
+		List<String> result = new ArrayList<String>();
+		if (node == null ) return result;
+		if (node.getType() == JavaParser.ARGUMENT_LIST) {
+			for (int i=0; i<node.getChildCount(); i++) {
+				CommonTree subNode = (CommonTree)node.getChild(i);
+				result.addAll(getNodeText(subNode));
+			}
+		} else if (node.getType() == JavaParser.METHOD_CALL){
+			StringBuilder sb = new StringBuilder();
+			CommonTree dotNode = (CommonTree) node.getChild(0);
+			CommonTree argNode = (CommonTree) node.getChild(1);
+			String p1 = getNodeText(dotNode).get(0);
+			List<String> p2 = getNodeText(argNode);
+			sb.append(p1);
+			sb.append("(");
+			int count = 0;
+			for (String t: p2) {
+				count++;
+				if (t ==null || t.trim().equals("")) continue;
+				sb.append(t);
+				if (count < p2.size()-1) { sb.append(","); }
+			}
+			sb.append(")");
+			result.add(sb.toString());
+		} else if (node.getType() == JavaParser.ARRAY_ELEMENT_ACCESS) {
+			StringBuilder sb = new StringBuilder();
+			CommonTree objNode = (CommonTree) node.getChild(0);
+			CommonTree eleNode = (CommonTree) node.getChild(1);
+			String p1 = getNodeText(objNode).get(0);
+			String p2 = getNodeText(eleNode).get(0);
+			sb.append(p1);
+			sb.append("[");
+			sb.append(p2);
+			sb.append("]");
+			result.add(sb.toString());
+		} else if (node.getType() == JavaParser.DOT ) {
+			CommonTree objNode = (CommonTree) node.getChild(0);
+			CommonTree memberNode = (CommonTree) node.getChild(1);
+			String p1 = getNodeText(objNode).get(0);
+			String p2 = getNodeText(memberNode).get(0);
+			result.add(p1+"."+p2);
+		} else if (node.getType() == JavaParser.EXPR) {
+			StringBuilder sb = new StringBuilder();
+			for (int i=0; i<node.getChildCount(); i++) {
+				CommonTree subNode = (CommonTree) node.getChild(i);
+				List<String> subTexts = getNodeText(subNode);
+				result.addAll(subTexts);
+				result.add(sb.toString());
+			}
+		} else if (
+				node.getType() == JavaParser.PLUS
+				|| node.getType() == JavaParser.MINUS
+				|| node.getType() == JavaParser.PLUS
+				|| node.getType() == JavaParser.MINUS
+				|| node.getType() == JavaParser.STAR
+				|| node.getType() == JavaParser.DIV
+				|| node.getType() == JavaParser.MOD
+				|| node.getType()== JavaParser.NOT_EQUAL
+				|| node.getType()== JavaParser.GREATER_THAN
+				|| node.getType() == JavaParser.GREATER_OR_EQUAL
+				|| node.getType() == JavaParser.LESS_THAN
+				|| node.getType() == JavaParser.LESS_OR_EQUAL
+				|| node.getType() == JavaParser.LOGICAL_AND
+				|| node.getType() == JavaParser.LOGICAL_OR
+				|| node.getType() == JavaParser.AND
+				|| node.getType() == JavaParser.OR ) {
+			StringBuilder sb = new StringBuilder();
+			CommonTree opNode1 = (CommonTree) node.getChild(0);
+			CommonTree opNode2 = (CommonTree) node.getChild(1);
+			String p1 = getNodeText(opNode1).get(0);
+			String p2 = getNodeText(opNode2).get(0);
+			sb.append(p1);
+			sb.append(node.getText());
+			sb.append(p2);
+			result.add(sb.toString());
+		} else {
+			/*
+			if (!( node.getType() ==  JavaParser.NOT_EQUAL
+						|| node.getType()== JavaParser.EQUAL
+						|| node.getType() == JavaParser.GREATER_THAN
+						|| node.getType() == JavaParser.GREATER_OR_EQUAL
+						|| node.getType() == JavaParser.LESS_THAN
+						|| node.getType() == JavaParser.LESS_OR_EQUAL
+						|| node.getType() == JavaParser.STRING_LITERAL
+						|| node.getType() == JavaParser.CHARACTER_LITERAL
+						|| node.getType() == JavaParser.DECIMAL_LITERAL
+						|| node.getType() == JavaParser.HEX_LITERAL
+						|| node.getType() == JavaParser.OCTAL_LITERAL
+						|| node.getType() == JavaParser.FLOATING_POINT_LITERAL
+						|| node.getType() == JavaParser.NULL
+						|| node.getType() == JavaParser.STATIC_ARRAY_CREATOR
+						|| node.getType() == JavaParser.POST_DEC
+						|| node.getType() == JavaParser.POST_INC
+						|| node.getType() == JavaParser.UNARY_MINUS
+						)) {
+						*/
+			result.add(node.getText().trim());
+		}
+		return result;
+	}
+	
     public LocationInfo searchDefLocation(int line, int col,String sourceType) {
     	
         CommonTree tree = parseResult.getTree();
@@ -782,7 +948,16 @@ public class JavaSourceSearcher {
         }
     }
     
-  
+
+    private void searchAllNodeAtLine(CommonTree t, LinkedList<CommonTree> list, int line) {
+    	 if (t.getLine() == line)  {
+             list.add(0,t);
+         }
+         for (int i=0; i<t.getChildCount(); i++) {
+             CommonTree c = (CommonTree)t.getChild(i);
+             searchAllNodeAtLine(c,list,line);
+         }
+    }
 
     
     private List<LocalVariableInfo> parseAllVisibleVar(CommonTree t) {
