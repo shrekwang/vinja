@@ -3,13 +3,17 @@ package com.google.code.vimsztool.debug.eval;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
 
 import org.antlr.runtime.tree.CommonTree;
 
@@ -96,7 +100,8 @@ public class ExpEval {
 					try {
 						sb.append(eval(exp));
 					} catch (Exception e) {
-						sb.append("parse :"+exp+" error, msg is :" +e.getMessage());
+						sb.append(exp+": eval error," +e.getMessage());
+						if (sb.charAt(sb.length()-1) != '\n') sb.append("\n");
 					}
 				}
 				sb.append(ExpEval.SEP_ROW_TXT);
@@ -820,6 +825,9 @@ public class ExpEval {
 		if (fromType instanceof DoubleType && toType instanceof DoubleType) return true;
 		if (fromType instanceof ShortType && toType instanceof ShortType) return true;
 
+		if (fromType instanceof ByteType && toType instanceof IntegerType) return true;
+		if (fromType instanceof CharType && toType instanceof IntegerType) return true;
+		
 		if (fromType instanceof ArrayType) {
 			return isArrayAssignableTo((ArrayType) fromType, toType);
 		}
@@ -907,8 +915,7 @@ public class ExpEval {
 			sb.append("]");
 			return sb.toString();
 		} else if (var instanceof ObjectReference) {
-			Value strValue = invoke((ObjectReference) var, "toString",
-					new ArrayList());
+			Value strValue = invoke((ObjectReference) var, "toString", new ArrayList());
 			return strValue.toString();
 		} else if (var instanceof String) {
 			return "\"" + (String)var + "\"";
@@ -934,7 +941,7 @@ public class ExpEval {
 			}
 			String locSourcePath = stackFrame.location().sourcePath();
 			String abPath = ctx.findSourceFile(locSourcePath);
-			BufferedReader br = new BufferedReader(new FileReader(abPath));
+			List<String> lines = getResourceLines(abPath);
 			Pattern pat = Pattern.compile("import\\s+(.*\\."+className+")\\s*;\\s*$");
 			String qualifiedClass = null;
 			
@@ -944,9 +951,7 @@ public class ExpEval {
 				packageName = locSourcePath.substring(0,pkgIndex).replace(File.separator, ".");
 			}
 			
-			while (true) {
-				String tmp = br.readLine();
-				if (tmp == null) break;
+			for (String tmp : lines) {
 				tmp = tmp.trim();
 				Matcher matcher = pat.matcher(tmp);
 				if (matcher.matches()) {
@@ -954,7 +959,6 @@ public class ExpEval {
 					break;
 				} 
 			}
-			br.close();
 			if (qualifiedClass == null ){
 				if (packageName.equals("")) {
 					qualifiedClass = className;
@@ -975,6 +979,47 @@ public class ExpEval {
 		}
 		return null;
 	}
+    
+    private static List<String> getResourceLines(String filename) {
+    	List<String> result = new ArrayList<String>();
+		BufferedReader br = null;
+    	if (filename.startsWith("jar:")) {
+			JarFile jarFile = null;
+			try {
+				String jarPath = filename.substring(6,filename.lastIndexOf("!"));
+				jarFile = new JarFile(jarPath);
+				String entryName = filename .substring(filename.lastIndexOf("!") + 1);
+				entryName = entryName.replace("\\", "/");
+				ZipEntry zipEntry = jarFile.getEntry(entryName);
+				InputStream is = jarFile.getInputStream(zipEntry);
+				br = new BufferedReader(new InputStreamReader(is));
+				while (true) {
+					String tmp = br.readLine();
+					if (tmp == null) break;
+					result.add(tmp);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				if (br != null) try {br.close(); } catch (Exception e) {}
+				if (jarFile != null) try {jarFile.close(); } catch (Exception e) {}
+			}
+		} else {
+			try {
+				br = new BufferedReader(new FileReader(filename));
+				while (true) {
+					String tmp = br.readLine();
+					if (tmp == null) break;
+					result.add(tmp);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				if (br != null) try {br.close(); } catch (Exception e) {}
+			} 
+		}
+		return result;
+    }
     
     private static ReferenceType loadClass(ThreadReference threadRef,
     		ClassLoaderReference classLoaderRef, String className) {

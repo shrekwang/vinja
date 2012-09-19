@@ -121,23 +121,35 @@ public class JavaSourceSearcher {
 			
 			if (currentLine ) {
 				tmpNode = (CommonTree)node.getChild(1);
-				exps.addAll(getNodeText(tmpNode));
+				exps.addAll(getNodeText(tmpNode,false));
 			} else {
 				tmpNode = (CommonTree)node.getChild(0);
-				exps.addAll(getNodeText(tmpNode));
+				exps.addAll(getNodeText(tmpNode,false));
 			}
 		} else if (node.getType() == JavaParser.METHOD_CALL) {
+			
+			//invoke obj
+			tmpNode = (CommonTree)node.getChild(0);
+			if (tmpNode.getType() == JavaParser.DOT) {
+				tmpNode = (CommonTree)tmpNode.getChild(0);
+				exps.addAll(getNodeText(tmpNode,false));
+			}
+			
+			//arg list
 			tmpNode = (CommonTree)node.getChild(1);
-			exps.addAll(getNodeText(tmpNode));
+			exps.addAll(getNodeText(tmpNode,false));
 		} else if (node.getType() == JavaParser.RETURN) {
 			tmpNode = (CommonTree)node.getChild(0);
 			exps.addAll(getNodeText(tmpNode));
 		} else if (node.getType() == JavaParser.VAR_DECLARATOR) {
-			tmpNode = (CommonTree)node.getChild(0);
-			exps.addAll(getNodeText(tmpNode));
 			
-			tmpNode = (CommonTree)node.getChild(1);
-			exps.addAll(getNodeText(tmpNode));
+			if (currentLine ) {
+				tmpNode = (CommonTree)node.getChild(1);
+				exps.addAll(getNodeText(tmpNode,false));
+			} else {
+				tmpNode = (CommonTree)node.getChild(0);
+				exps.addAll(getNodeText(tmpNode,false));
+			}
 			
 		} else if (node.getType() ==  JavaParser.NOT_EQUAL
 				|| node.getType()== JavaParser.EQUAL
@@ -150,7 +162,7 @@ public class JavaSourceSearcher {
 			exps.addAll(getNodeText(tmpNode));
 			
 			tmpNode = (CommonTree)node.getChild(1);
-			exps.addAll(getNodeText(tmpNode));
+			exps.addAll(getNodeText(tmpNode,false));
 		}
 		for (int i=0; i<node.getChildCount(); i++) {
 			CommonTree subNode = (CommonTree) node.getChild(i);
@@ -159,14 +171,17 @@ public class JavaSourceSearcher {
 			}
 		}
 	}
-	
 	private List<String> getNodeText(CommonTree node) {
+		return getNodeText(node,true);
+	}
+	
+	private List<String> getNodeText(CommonTree node,boolean allNode) {
 		List<String> result = new ArrayList<String>();
 		if (node == null ) return result;
 		if (node.getType() == JavaParser.ARGUMENT_LIST) {
 			for (int i=0; i<node.getChildCount(); i++) {
 				CommonTree subNode = (CommonTree)node.getChild(i);
-				result.addAll(getNodeText(subNode));
+				result.addAll(getNodeText(subNode,allNode));
 			}
 		} else if (node.getType() == JavaParser.METHOD_CALL){
 			StringBuilder sb = new StringBuilder();
@@ -206,7 +221,7 @@ public class JavaSourceSearcher {
 			StringBuilder sb = new StringBuilder();
 			for (int i=0; i<node.getChildCount(); i++) {
 				CommonTree subNode = (CommonTree) node.getChild(i);
-				List<String> subTexts = getNodeText(subNode);
+				List<String> subTexts = getNodeText(subNode,allNode);
 				result.addAll(subTexts);
 				result.add(sb.toString());
 			}
@@ -237,27 +252,19 @@ public class JavaSourceSearcher {
 			sb.append(p2);
 			result.add(sb.toString());
 		} else {
-			/*
-			if (!( node.getType() ==  JavaParser.NOT_EQUAL
-						|| node.getType()== JavaParser.EQUAL
-						|| node.getType() == JavaParser.GREATER_THAN
-						|| node.getType() == JavaParser.GREATER_OR_EQUAL
-						|| node.getType() == JavaParser.LESS_THAN
-						|| node.getType() == JavaParser.LESS_OR_EQUAL
-						|| node.getType() == JavaParser.STRING_LITERAL
-						|| node.getType() == JavaParser.CHARACTER_LITERAL
-						|| node.getType() == JavaParser.DECIMAL_LITERAL
-						|| node.getType() == JavaParser.HEX_LITERAL
-						|| node.getType() == JavaParser.OCTAL_LITERAL
-						|| node.getType() == JavaParser.FLOATING_POINT_LITERAL
-						|| node.getType() == JavaParser.NULL
-						|| node.getType() == JavaParser.STATIC_ARRAY_CREATOR
-						|| node.getType() == JavaParser.POST_DEC
-						|| node.getType() == JavaParser.POST_INC
-						|| node.getType() == JavaParser.UNARY_MINUS
-						)) {
-						*/
-			result.add(node.getText().trim());
+			if (!( node.getType() == JavaParser.STRING_LITERAL
+					|| node.getType() == JavaParser.CHARACTER_LITERAL
+					|| node.getType() == JavaParser.DECIMAL_LITERAL
+					|| node.getType() == JavaParser.HEX_LITERAL
+					|| node.getType() == JavaParser.OCTAL_LITERAL
+					|| node.getType() == JavaParser.FLOATING_POINT_LITERAL
+					|| node.getType() == JavaParser.NULL
+					|| node.getType() == JavaParser.STATIC_ARRAY_CREATOR
+					|| node.getType() == JavaParser.POST_DEC
+					|| node.getType() == JavaParser.POST_INC
+					|| node.getType() == JavaParser.UNARY_MINUS ) || allNode) {
+				result.add(node.getText().trim());
+			}
 		}
 		return result;
 	}
