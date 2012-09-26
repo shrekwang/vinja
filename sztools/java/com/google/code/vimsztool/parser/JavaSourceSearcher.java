@@ -1,9 +1,6 @@
 package com.google.code.vimsztool.parser;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -330,52 +327,116 @@ public class JavaSourceSearcher {
                 String methodName = parent.getChild(0).getText();
                 List<String> typenameList = parseArgumentTypenameList((CommonTree)parent.getChild(1));
                 searchMethod(methodName, typenameList, info);
-            } else if (parent.getType() == JavaParser.DOT) {
-                CommonTree leftNode = (CommonTree)parent.getChild(0);
-                String leftNodeTypeName = parseNodeTypeName(leftNode);
-                String leftNodeFilePath = getClassFilePath(leftNodeTypeName);
-                
-                if (leftNodeFilePath == null || leftNodeFilePath.equals("None" )) throw new LocationNotFoundException();
-                
-                info.setFilePath(leftNodeFilePath);
-                
-                if (node.getCharPositionInLine() > parent.getCharPositionInLine()) {
-	                CommonTree rightNode = (CommonTree)parent.getChild(1);
-	                CommonTree pparent = (CommonTree)parent.getParent();
-	                MemberType memberType = MemberType.FIELD;
-	                String memberName = rightNode.getText();
-                    List<String> typenameList = null;
-	                
-	                if (pparent.getType() == JavaParser.METHOD_CALL) {
-		                memberType = MemberType.METHOD;
-	                    typenameList = parseArgumentTypenameList((CommonTree)pparent.getChild(1));
-	                }
-	                
-	                if (sourceType != null && sourceType.equals("impl")) {
-	        			ClassMetaInfoManager cmm = this.ctx.getClassMetaInfoManager();
-	        			ClassInfo classInfo = cmm.getMetaInfo(leftNodeTypeName);
-	        			if (classInfo != null ) {
-	        				Set<String> subNames = classInfo.getSubNames();
-	        				if (subNames.size() == 1) {
-	        					leftNodeTypeName = subNames.toArray(new String[]{})[0];
-	        				}
-	        			}
-	        		}
+			} else if (parent.getType() == JavaParser.DOT) {
+				CommonTree leftNode = (CommonTree) parent.getChild(0);
+				String leftNodeTypeName = parseNodeTypeName(leftNode);
 
-	            	searchMemberInHierachy(leftNodeTypeName, memberType, memberName, typenameList,info);
-	            	
-                } else {
-	                //if cursor is under the left node , only locate to class level, no need to locate the member of the class
-	            	info = searchIdentDefLocation(node);
-                }
-                
-            } else if (parent.getType() == JavaParser.QUALIFIED_TYPE_IDENT
-            		&& parent.getParent().getType() == JavaParser.CLASS_CONSTRUCTOR_CALL ) {
-            	info = searchConstructorDefLocation(node); 	
+				String leftNodeFilePath = getClassFilePath(leftNodeTypeName);
+
+				if (leftNodeFilePath == null || leftNodeFilePath.equals("None")) {
+					// try inner class
+					int dotIndex = leftNodeTypeName.indexOf(".");
+					if (dotIndex > 0) {
+						String outterClass = this.convertTypeName(leftNodeTypeName.substring(0, dotIndex));
+						leftNodeFilePath = getClassFilePath(outterClass);
+						String innerClass = leftNodeTypeName .substring(dotIndex + 1);
+						
+						if (node.getCharPositionInLine() > parent .getCharPositionInLine()) { 
+							CommonTree rightNode = (CommonTree) parent.getChild(1);
+							CommonTree pparent = (CommonTree) parent.getParent();
+							MemberType memberType = MemberType.FIELD;
+							String memberName = rightNode.getText();
+							
+							JavaSourceSearcher searcher = createSearcher(leftNodeFilePath, ctx);
+					        memberType = MemberType.FIELD;
+					        searcher.searchMemberInHierachy(outterClass, memberType, innerClass, null,info);
+					        
+					        MemberInfo memberInfo = info.getMemberInfo();
+					        if (memberInfo != null) {
+					        	List<MemberInfo> subMembers = memberInfo.getSubMemberList();
+					        	if (subMembers.size() > 0) {
+					        		for (MemberInfo subMember: subMembers) {
+					        			if (subMember.getName().equals(memberName)) {
+					        				info.setLine(subMember.getLineNum());
+					    					info.setCol(subMember.getColumn());
+					    					info.setMemberInfo(subMember);
+					        			}
+					        		}
+					        	}
+					        }
+						} else {
+							info = searchIdentDefLocation(node);
+						}
+					} else {
+						throw new LocationNotFoundException();
+					}
+				} else { 
+
+					info.setFilePath(leftNodeFilePath);
+
+					if (node.getCharPositionInLine() > parent .getCharPositionInLine()) {
+						CommonTree rightNode = (CommonTree) parent.getChild(1);
+						CommonTree pparent = (CommonTree) parent.getParent();
+						MemberType memberType = MemberType.FIELD;
+						String memberName = rightNode.getText();
+						List<String> typenameList = null;
+
+						if (pparent.getType() == JavaParser.METHOD_CALL) {
+							memberType = MemberType.METHOD;
+							typenameList = parseArgumentTypenameList((CommonTree) pparent.getChild(1));
+						}
+
+						if (sourceType != null && sourceType.equals("impl")) {
+							ClassMetaInfoManager cmm = this.ctx.getClassMetaInfoManager();
+							ClassInfo classInfo = cmm.getMetaInfo(leftNodeTypeName);
+							if (classInfo != null) {
+								Set<String> subNames = classInfo.getSubNames();
+								if (subNames.size() == 1) {
+									leftNodeTypeName = subNames.toArray(new String[] {})[0];
+								}
+							}
+						}
+						searchMemberInHierachy(leftNodeTypeName, memberType, memberName, typenameList, info);
+					} 
+					else {
+						// if cursor is under the left node , only locate to
+						// class level, no need to locate the member of the
+						// class
+						info = searchIdentDefLocation(node);
+					}
+				}
+
+			} else if (parent.getType() == JavaParser.QUALIFIED_TYPE_IDENT ) {
+            		if ( parent.getParent().getType() == JavaParser.CLASS_CONSTRUCTOR_CALL ) {
+            			//search constructor call like " new ArrayList()"
+		            	info = searchConstructorDefLocation(node); 	
+            		} else if ( parent.getParent().getType() == JavaParser.TYPE ) {
+            			//seachr static inner class like "Map.Entry"
+		            	info = searchInnerClassDefLocation(parent); 	
+            		}
             } else {
             	info = searchIdentDefLocation(node);
             }
         }
+        return info;
+    }
+    
+    public LocationInfo searchInnerClassDefLocation(CommonTree node) {
+    	LocationInfo info = new LocationInfo();
+    	CommonTree outterClassNode = (CommonTree)node.getChild(0);
+    	CommonTree innerClassNode = (CommonTree)node.getChild(1);
+    	
+    	String innerClassName = innerClassNode.getText();
+    	
+    	String className = convertTypeName(outterClassNode.getText());
+        String classPath = getClassFilePath(className);
+        info.setFilePath(classPath);
+        
+        JavaSourceSearcher searcher = createSearcher(classPath, ctx);
+        MemberType memberType = MemberType.FIELD;
+        
+        searcher.searchMemberInHierachy(outterClassNode.getText(), memberType, innerClassName, null,info);
+        
         return info;
     }
     
@@ -1123,6 +1184,7 @@ public class JavaSourceSearcher {
         StringBuilder sb = new StringBuilder();
         for (int i=0; i<t.getChildCount(); i++) {
             CommonTree c = (CommonTree) t.getChild(i);
+            if (i>0) sb.append(".");
             sb.append(c.getText());
         }
         return sb.toString();
