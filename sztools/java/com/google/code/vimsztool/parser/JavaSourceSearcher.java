@@ -410,9 +410,12 @@ public class JavaSourceSearcher {
             		if ( parent.getParent().getType() == JavaParser.CLASS_CONSTRUCTOR_CALL ) {
             			//search constructor call like " new ArrayList()"
 		            	info = searchConstructorDefLocation(node); 	
-            		} else if ( parent.getParent().getType() == JavaParser.TYPE ) {
+            		} else if ( parent.getParent().getType() == JavaParser.TYPE
+            				&& parent.getChildCount() > 1 ) {
             			//seachr static inner class like "Map.Entry"
 		            	info = searchInnerClassDefLocation(parent); 	
+            		} else {
+		            	info = searchIdentDefLocation(node);
             		}
             } else {
             	info = searchIdentDefLocation(node);
@@ -678,7 +681,7 @@ public class JavaSourceSearcher {
                         info = parseFieldDecl(child); 
                     } else if (child.getType() == JavaParser.ENUM) {
                     	info = parseEnumDecl(child);
-                    } else if (child.getType() == JavaParser.CLASS) {
+                    } else if (child.getType() == JavaParser.CLASS || child.getType() == JavaParser.INTERFACE ) {
                     	info = new MemberInfo();
                     	for (int j=0; j<child.getChildCount(); j++) {
                     		CommonTree subChild = (CommonTree)child.getChild(j);
