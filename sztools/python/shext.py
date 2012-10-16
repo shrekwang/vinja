@@ -934,6 +934,7 @@ class Shext(object):
         self.shUtil = ShUtil(screen_width=80,yank_buffer=self.yank_buffer)
         self.pathResolver = PathResolver(self.shUtil)
         self.special_cmds = ["exit","edit","ledit","bmedit"]
+        self.extra_cmd_home= sztoolsCfg.get("extra_cmd_home")
 
     def enoughArguments(self,tokens):
         cmdName = tokens[0]
@@ -1019,6 +1020,7 @@ class Shext(object):
 
     def runSysCmd(self,cmdArray,cmdLine):
         try :
+            cmdArray = self.resolveExtraPythonCmd(cmdArray)
             serverName = vim.eval("v:servername")
             workDir = os.getcwd()
             file_list = self.pathResolver.resolve(cmdArray[0])
@@ -1038,6 +1040,16 @@ class Shext(object):
             BasicTalker.runSys(serverName,"::".join(path_resolved_cmdarray),runInShell,"shext",workDir,cmdLine)
         except (OSError,ValueError) , msg:
             Shext.stdout(msg)
+
+    def resolveExtraPythonCmd(self, cmdArray):
+        if not os.path.exists(self.extra_cmd_home) :
+            return cmdArray
+        ab_path = os.path.join(self.extra_cmd_home, cmdArray[0]+".py")
+        if os.path.exists(ab_path):
+            cmdArray.insert(0, "python")
+            cmdArray[1] = ab_path
+        return cmdArray
+
 
     def runInBackground(self,cmdline):
         try :
