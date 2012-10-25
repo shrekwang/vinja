@@ -653,6 +653,7 @@ nmap <silent><leader>zd  :call SearchDict('<C-R><C-W>')<CR>
 vmap <silent><leader>zf  :python MiscUtil.simpleFormatSQL()<cr>
 vmap <silent><leader>zm  :python MiscUtil.markVisual()<cr>
 vmap <silent><leader>te  :python MiscUtil.tabulate()<cr>
+vmap <silent><leader>zg  :python MiscUtil.operateVisualContext()<cr>
 nmap <silent><leader>rc  :python MiscUtil.remove_comment()<cr>
 nmap <silent><leader>ya  :python MiscUtil.copy_buffer_path()<cr>
 

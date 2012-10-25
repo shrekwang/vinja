@@ -199,6 +199,47 @@ def output(content,buffer=None,append=False):
             buffer.append(line)  
 
 class MiscUtil(object):
+
+    @staticmethod
+    def operateVisualContext():
+        vim.command("normal gvo")
+        line1 = int(vim.eval("line('.')"))
+        col1 = int(vim.eval("col('.')")) -1
+        vim.command("normal o")
+        line2 = int(vim.eval("line('.')"))
+        col2 = int(vim.eval("col('.')")) -1
+        if line2 > line1 :
+            startLine,startCol = line1,col1
+            endLine,endCol = line2,col2
+        else :
+            startLine,startCol = line2,col2
+            endLine,endCol = line1,col1
+        vim_mode = vim.eval("mode()")
+        #logging.debug("startCol is %s , endCol is %s " % (str(startCol), str(endCol)))
+        #logging.debug("current mode is %s " % vim_mode)
+        operateCode = VimUtil.getInput("choose an operation(sum,join,avg):")
+        result_list = []
+        inbuf=vim.current.buffer
+        for row_num in range(startLine, endLine+1, 1) :
+            if vim_mode == "v" or vim_mode == "V":
+                line_text = inbuf[row_num-1].strip()
+            else :  # else for blockwise visual mode
+                if startCol == endCol :
+                    line_text = inbuf[row_num-1] [startCol]
+                else :
+                    line_text = inbuf[row_num-1][startCol : endCol]
+            result_list.append(line_text)
+        if operateCode == "sum" :
+            sum_value = sum( [int(item) for item in result_list])
+            vim.command('call append(%s," sum result: %s")' %(str(endLine),str(sum_value)))
+        elif operateCode == "avg" :
+            sum_value = sum( [int(item) for item in result_list])
+            avg = sum_value / len(result_list)
+            vim.command('call append(%s,"avg result: %s")' %(str(endLine),str(avg)))
+        elif operateCode == "join" : 
+            join_text = ",".join(result_list)
+            vim.command('call append(%s,"join result: %s")' %(str(endLine),join_text))
+
     @staticmethod
     def startfile():
         """ invoke os.startfile to open the file under the cursor"""
