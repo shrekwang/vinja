@@ -279,12 +279,16 @@ class MiscUtil(object):
 
     @staticmethod
     def getVisualBlock():
-        vb=vim.eval("GetVisualBlock()")
+        vim.command('let save = @"')
+        vim.command('silent normal gvy')
+        vim.command('let vis_cmd = @"')
+        vim.command('let @" = save')
+        vb=vim.eval("vis_cmd")
         lines=vb.split("\n")
-        sql=""
+        sb=""
         for line in lines:
-          sql=sql+line+" "
-        return sql.strip()
+          sb=sb+line+" "
+        return sb.strip()
 
     @staticmethod
     def initIncValue():

@@ -1,49 +1,51 @@
-run className             --run class, example : run org.fake.test.Main 
-                            if className omitted, the current edited class is used.
-attach port               --attach to java process in local machine, need that process run in jpda debug mode.
-disconnect                --disconnect from debuged vm session
-shutdown                  --shutdown the target process
-hide                      --hide jdb buffer
-exit                      --exit jdb
+run className          --run class, example : run org.fake.test.Main 
+                         if className omitted, the current edited class is used.
+attach port            --attach to java process in local machine, need that process run in jpda debug mode.
+disconnect             --disconnect from debuged vm session
+shutdown               --shutdown the target process
+hide                   --hide jdb buffer
+exit                   --exit jdb
 
-break  n                  --create breakpoint on line n(alias b)
-tbreak n                  --temp breakpoint on line n(alias tb)
-clear  n                  --remove breakpoint on line n(alias cl)
-breakpoints               --list breakpoints,including watchpoints
-watch fieldname           --add watch field, suspended program when the field been written
-rwatch fieldname          --add watch field, suspended program when the field been read
-awatch fieldname          --add watch field, suspended program when the field been written or field been read
-unwatch fieldname         --remove watch field
+break  n               --create breakpoint on line n(alias b)
+tbreak n               --temp breakpoint on line n(alias tb)
+clear  n               --remove breakpoint on line n(alias cl)
+breakpoints            --list breakpoints,including watchpoints
+watch fieldname        --add watch field, suspended program when the field been written
+rwatch fieldname       --add watch field, suspended program when the field been read
+awatch fieldname       --add watch field, suspended program when the field been written or field been read
+unwatch fieldname      --remove watch field
 
-print expression          --eval the value of the expression(alias p,eval)
-reftype expression        --print the type of the expression(alias whatis)
-inspect expression        --print the non-static field value of the inspect expression(alias i)
-sinspect expression       --print the static field value of the inspect expression
-locals                    --list stack frame local variables
-fields                    --list fields (only non-static)
-sfields                   --list fields (only static)
+print expression       --eval the value of the expression(alias p,eval)
+qeval                  --eval expression in current and previous line (try this!)(map in normal mode '<leader>k')
+reftype expression     --print the type of the expression(alias whatis)
+inspect expression     --print the non-static field value of the inspect expression(alias i)
+sinspect expression    --print the static field value of the inspect expression
+locals                 --list stack frame local variables
+fields                 --list fields (only non-static)
+sfields                --list fields (only static)
 
-list n                                        --scroll source code to line n, if n is omitted, scroll to next page(alias:l)
-threads                                       --list threads state
-thread threadId                               --change current thread(the threadId can been obtain in threads command's output)
-frames                                        --list frame info in current stack(alias:where,backtrace,bt)
-frame n                                       --change current frame to n-th frame in current stack, start with 0
-up                                            --change current frame to current frame -1
-down                                          --change current frame to current frame +1
-bpa classname lineNum condition-expression    --add conditional break point
-setvalue  varname value-expression            --set varname's value to result of value-expression
+list n                --scroll source code to line n, if n is omitted, scroll to next page(alias:l)
+threads               --list threads state
+thread threadId       --change current thread(the threadId can been obtain in threads command's output)
+frames                --list frame info in current stack(alias:where,backtrace,bt)
+frame n               --change current frame to n-th frame in current stack, start with 0
+up                    --change current frame to current frame -1
+down                  --change current frame to current frame +1
 
-step_into         --step into method ,key <F5> (alias:step,s)
-step_over         --step over one line,key <F6>(alias:next,n)
-step_return       --step return , key <F7>(alias:finish)
-resume            --resume current thread, key <F8>(alias:continue,c)
-until line        --run to line(alias:u)
+bpa classname lineNum condition-exp     --add conditional break point
+setvalue  varname value-expression      --set varname's value to result of value-expression
+
+step_into     --step into method ,key <F5> (alias:step,s)
+step_over     --step over one line,key <F6>(alias:next,n)
+step_return   --step return , key <F7>(alias:finish)
+resume        --resume current thread, key <F8>(alias:continue,c)
+until line    --run to line(alias:u)
 
 catch  exception-class    --create exception request
 ignore exception-class    --remove exception request
 
-display expression          --add display variable(when program is suspended,alias di)
-displayi expression         --add inspect variable(when program is suspended,alias dii)
-show_display                --list current watched variables
-undisplay expression        --remove displayed variable
+display expression     --add display variable(when program is suspended,alias di)
+displayi expression    --add inspect variable(when program is suspended,alias dii)
+show_display           --list current watched variables
+undisplay expression   --remove displayed variable
 

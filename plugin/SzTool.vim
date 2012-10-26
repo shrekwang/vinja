@@ -587,14 +587,13 @@ function! Jdext()
   autocmd BufEnter  *.java    nmap <buffer><silent><M-9>       :python EditUtil.tipMethodParameter()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeSzToolBuffer("JdeConsole")<cr>
   
-  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F4>     :python jdb.qevalCmd()<cr>
+  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><leader>k     :python jdb.qevalCmd()<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F5>     :python jdb.stepCmd('step_into')<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F6>     :python jdb.stepCmd('step_over')<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F7>     :python jdb.stepCmd('step_return')<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F8>     :python jdb.stepCmd('resume')<cr>
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><c-s>    :python jdb.toggleQuickStep()<cr>
 
-  autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F4>     <c-o>:python jdb.qevalCmd()<cr>
   autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F5>     <c-o>:python jdb.stepCmd('step_into')<cr>
   autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F6>     <c-o>:python jdb.stepCmd('step_over')<cr>
   autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F7>     <c-o>:python jdb.stepCmd('step_return')<cr>

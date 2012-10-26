@@ -2186,6 +2186,12 @@ class Jdb(object):
         help_file.close()
         self.stdout(content)
 
+    def printAlias(self):
+        alias_file = open(os.path.join(SzToolsConfig.getShareHome(),"conf/jdb_alias.cfg"))
+        content = [line.rstrip() for line in alias_file.readlines()]
+        alias_file.close()
+        self.stdout(content)
+
     def closeBuffer(self):
         self.display = False
         vim.command("bw! SzToolView_Jdb")
@@ -2331,6 +2337,11 @@ class Jdb(object):
 
         if cmdLine.startswith("help"):
             self.printHelp()
+            self.appendPrompt()
+            return
+
+        if cmdLine.startswith("alias"):
+            self.printAlias()
             self.appendPrompt()
             return
 
