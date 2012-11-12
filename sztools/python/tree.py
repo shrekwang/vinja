@@ -677,8 +677,8 @@ class ProjectTree(object):
             else :
                 vim.command("call setqflist(%s)" % qflist_str)
 
-            vim.command("cwindow")
             vim.command("exec 'wincmd w'")
+            vim.command("cwindow")
         else :
             print "can't find any reference location."
 

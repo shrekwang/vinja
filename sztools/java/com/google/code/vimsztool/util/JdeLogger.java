@@ -24,15 +24,22 @@ public class JdeLogger {
 	}
 	
 	public void info(String msg) {
+		writeMsg("INFO",msg);
+	}
+	
+	public void warn(String msg) {
+		writeMsg("WARN",msg);
+	}
+	
+	private void writeMsg(String level, String msg) {
 		PrintWriter pw = null;
 		try {
 			pw = new PrintWriter(new FileWriter(logPath,true));
-			pw.println(buildMsg("INFO",msg));
+			pw.println(buildMsg(level,msg));
 			pw.close();
 		} catch (Throwable e) {
 			if (pw !=null) pw.close();
 		}
-	
 	}
 
 	private String buildMsg(String level,String msg) {

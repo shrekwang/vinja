@@ -161,7 +161,7 @@ public class CompilerContext {
 				File libFile = new File(path);
 				try { classPathUrls.add(libFile.toURI().toURL()); } catch (Exception e) {
 					String errorMsg = VjdeUtil.getExceptionValue(e);
-		    		log.info(errorMsg);
+		    		log.warn(errorMsg);
 				}
 			}
 		}
@@ -241,11 +241,17 @@ public class CompilerContext {
 	
 	private void parseDependProjectClassXml(String projectName) {
 		String extProjectPath = ProjectLocationConf.getProjectLocation(projectName);
-		if (extProjectPath == null ) return;
+		if (extProjectPath == null ) {
+			log.warn("the file path configured for project " + projectName + " not exits!. please check project.cfg");
+			return;
+		}
 		
 		String classPathXml = FilenameUtils.concat(extProjectPath, ".classpath");
 		File file = new File(classPathXml);
-		if (! file.exists()) return;
+		if (! file.exists()) {
+			log.warn("the .classpath file configured for project " + projectName + " not exits!. please check project.cfg");
+			return;
+		}
 		
 		List<ClassPathEntry> classPathEntries=parseClassPathXmlFile(classPathXml);
 
@@ -316,7 +322,7 @@ public class CompilerContext {
 			return prop;
 		}catch(Throwable e) {
 			String errorMsg = VjdeUtil.getExceptionValue(e);
-    		log.info(errorMsg);
+    		log.warn(errorMsg);
 		}
 		return null;
 	}
