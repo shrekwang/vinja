@@ -130,7 +130,15 @@ public class CompilerContext {
 			classMetaInfoManager.loadSingleMetaInfo(outFile);
 			bpmgr.verifyBreakpoint(className);
 		}
-		classMetaInfoManager.constructAllSubNames();	}
+		classMetaInfoManager.constructAllSubNames();
+		
+		//refresh class info in other CompilerContext
+		List<CompilerContext> ctxs = CompilerContextManager.getInstnace().getAllLoadedContext();
+		for (CompilerContext ctx : ctxs) {
+			if (ctx.getExtOutputDirs().contains(this.getOutputDir())) {
+				ctx.refreshClassInfo(classNames);
+			}
+		}	}
 	
 	
 	private void initJdeProperty(String jdeXmlPath) {
@@ -265,7 +273,7 @@ public class CompilerContext {
 				File libFile = new File(entryAbsPath);
 				//add external project output dir to second search place in class path
 				try { classPathUrls.add(1, libFile.toURI().toURL()); } catch (Exception e) {}
-				extOutputDirs.add(entryAbsPath);
+				extOutputDirs.add(libFile.getAbsolutePath());
 			} 
 		}
 	}
@@ -625,6 +633,14 @@ public class CompilerContext {
 
 	public void setFlatProject(boolean flatProject) {
 		this.flatProject = flatProject;
+	}
+
+	public List<String> getExtOutputDirs() {
+		return extOutputDirs;
+	}
+
+	public void setExtOutputDirs(List<String> extOutputDirs) {
+		this.extOutputDirs = extOutputDirs;
 	}
 
 

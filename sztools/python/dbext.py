@@ -387,7 +387,7 @@ class Dbext(object):
 
         def convert(value):
             if isinstance(value,unicode) :
-                value = value.encode(codepage)
+                value = value.encode(codepage, 'replace')
             value = str(value).rstrip().translate(trantab)
             return value
 
