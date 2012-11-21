@@ -209,6 +209,7 @@ class QuickLocater(object) :
         vim.command("bwipeout")
         vim.command("echo ''")
         self.restore_env()
+        self.restore_winsize()
         vim.command("exec '%s wincmd w'" % self.last_winnr)
 
 class FileContentManager(object):
