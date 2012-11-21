@@ -54,6 +54,7 @@ import com.sun.jdi.PrimitiveType;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ShortType;
 import com.sun.jdi.StackFrame;
+import com.sun.jdi.StringReference;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.Type;
 import com.sun.jdi.Value;
@@ -355,6 +356,8 @@ public class ExpEval {
 			return evalJdiArray(node);
 		case JavaParser.DOT:
 			return evalJdiMember(node);
+		case JavaParser.CLASS_CONSTRUCTOR_CALL:
+			return evalJdiClassConstructorCall(node); 
 			
 		case JavaParser.PLUS:
 		case JavaParser.MINUS:
@@ -581,6 +584,43 @@ public class ExpEval {
 			return value;
 		} catch (IncompatibleThreadStateException e) {
 			throw new ExpressionEvalException("eval expression error, caused by : " + e.getMessage());
+		}
+	}
+	
+	private static Value evalJdiClassConstructorCall(CommonTree node) {
+		CommonTree argNode = (CommonTree)node.getChild(1);
+		int argCount = argNode.getChildCount();
+		List<Value> arguments = new ArrayList<Value>();
+		
+		if (argCount > 0 ) {
+			for (int i=0; i<argCount; i++) {
+				Object result = evalTreeNode((CommonTree)argNode.getChild(i));
+				arguments.add(getMirrorValue(result));
+			}
+			
+		}
+		
+		CommonTree leftNode = (CommonTree)node.getChild(0);
+		String className = leftNode.getChild(0).getText();
+		ClassType refType = (ClassType)getClassType(className);
+		
+	    List<Method> methods = refType.methodsByName("<init>");
+	    
+	    Method matchedMethod = null;
+		if (methods != null && methods.size() > 0) {
+			if (methods.size() == 1) {
+				matchedMethod = methods.get(0);
+			} else {
+				matchedMethod = findMatchedMethod(methods, arguments);
+			}
+		}
+		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		ThreadReference threadRef = threadStack.getCurThreadRef();
+		try {
+			ObjectReference value =refType.newInstance(threadRef, matchedMethod, arguments, ObjectReference.INVOKE_SINGLE_THREADED);
+			return value;
+		} catch (Exception e) {
+			throw new ExpressionEvalException("call class constructor error, msg is : " + e.getMessage());
 		}
 	}
 	
@@ -914,6 +954,8 @@ public class ExpEval {
 			sb.deleteCharAt(sb.length() - 1);
 			sb.append("]");
 			return sb.toString();
+		} else if (var instanceof StringReference) {
+			return "\"" + ((StringReference)var).value() + "\"";
 		} else if (var instanceof ObjectReference) {
 			Value strValue = invoke((ObjectReference) var, "toString", new ArrayList());
 			return strValue.toString();
