@@ -347,6 +347,11 @@ class Dbext(object):
             conn = self.createConn(db_profile)
             conn_pool[bufnum] = conn
 
+        server_type = db_profile["servertype"]
+        if server_type == "mysql" :
+            codepage = sys.getdefaultencoding()
+            sql = sql.decode(codepage, 'ignore')
+
         cur = None
         try :
             cur = conn.cursor()
