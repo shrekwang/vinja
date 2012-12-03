@@ -727,6 +727,9 @@ class ShUtil(object):
         if not os.path.exists(abspath) :
             Shext.stdout("directory '%s' not exists." % path)
             return
+        if not os.path.isdir(abspath):
+            Shext.stdout("'%s' is not a directory." % path)
+            return
 
         vim.command("lcd %s" % abspath.replace(" ",r"\ "))
         if abspath in self.cd_history :
