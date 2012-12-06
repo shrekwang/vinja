@@ -18,7 +18,7 @@
 
 编译
 
-![jie tu](https://github.com/shrekwang/vim-sztool/blob/master/doc/meta/compile.jpg)
+![jie tu](https://raw.github.com/shrekwang/vim-sztool/master/doc/meta/compile.jpg)
 
 调试
 
