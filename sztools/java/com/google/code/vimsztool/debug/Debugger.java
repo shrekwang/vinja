@@ -15,7 +15,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.CompilerContextManager;
-import com.google.code.vimsztool.exception.ExpressionEvalException;
+import com.google.code.vimsztool.compiler.TomcatJvmoptConf;
 import com.google.code.vimsztool.exception.NoConnectedVmException;
 import com.google.code.vimsztool.exception.NoSuspendThreadException;
 import com.google.code.vimsztool.util.Preference;
@@ -477,10 +477,7 @@ public class Debugger {
 		cmd.append(" -Dcatalina.base="+tomcatHome);
 		cmd.append(" -Dcatalina.home="+tomcatHome);
 		cmd.append(" -Djava.io.tmpdir="+FilenameUtils.concat(tomcatHome, "temp"));
-		String customOpts = pref.getValue(Preference.TOMCAT_JVMOPTS);
-		if (customOpts != null ) {
-			cmd.append(" " + customOpts);
-		}
+		cmd.append(" " + TomcatJvmoptConf.getJvmOptions());
 		cmd.append(" -cp " + FilenameUtils.concat(tomcatHome, "bin/bootstrap.jar"));
 		cmd.append(" org.apache.catalina.startup.Bootstrap  start");
 		
