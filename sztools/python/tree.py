@@ -181,7 +181,11 @@ class NormalDirNode(TreeNode):
                     node = old_node
                     break
             if node == None :
-                node = NormalFileNode(file_name, abpath, isDirectory=False)
+                _ , ext  = os.path.splitext(file_name)
+                if ext.lower() in [".zip", ".jar", ".war", ".ear"] :
+                    node = ZipRootNode(file_name,abpath, False,False)
+                else :
+                    node = NormalFileNode(file_name, abpath, isDirectory=False)
             self.add_child(node)
         self.isLoaded = True
 
@@ -253,11 +257,16 @@ class NormalDirNode(TreeNode):
             if not os.path.exists(dst_dir):
                 os.makedirs(dst_dir)
 
+            #logging.debug("file_abpath is %s , dst_dir is %s " % (file_abpath , dst_dir))
             if remove_orignal :
                 FileUtil.fileOrDirMv(file_abpath,dst_dir)
                 if not isinstance(node,str) :
                     node.parent.remove_child(node)
             else :
+                if PathUtil.same_path(os.path.dirname(file_abpath), dst_dir) :
+                    basename = basename + "_bak"
+                    dst_dir = dst_dir + os.path.basename(file_abpath) + "_bak"
+                    #logging.debug("file_abpath is %s , dst_dir is %s " % (file_abpath , dst_dir))
                 FileUtil.fileOrDirCp(file_abpath,dst_dir)
 
             if rel_dir == "" :
@@ -1072,11 +1081,13 @@ class ProjectTree(object):
             inner_path = inner_path.replace("\\","/")
             zip_base_name = os.path.basename(zip_file_path)
             lib_node = node.get_child("Referenced Libraries")
-            if lib_node == None :
-                return None
-            lib_node.isOpen = True
-            zip_file_node = lib_node.get_child(zip_base_name)
-            zip_file_node.isOpen = True
+            if lib_node != None :
+                zip_file_node = lib_node.get_child(zip_base_name)
+                path = inner_path
+            else :
+                path = inner_path
+                zip_file_node = self.find_node(zip_file_path)
+            
             if not zip_file_node.isLoaded : 
                 zip_file_node.load_childrend()
             return self.open_path(inner_path, zip_file_node, False)
@@ -1102,32 +1113,40 @@ class ProjectTree(object):
             tree_path =[node.name]
             while True :
                 node = node.parent
+                node.isOpen = True
                 if node == self._get_render_root() :
                     break
                 tree_path.insert(0,node.name)
             return "/".join(tree_path)
 
-    def find_node(self,path):
-        node = self.root
+    def find_node(self,path, node=None):
+        if node == None :
+            node = self.root
         if path == None :
             return None
 
+        #TODO search in normal dir for jar first
         if path.startswith("jar:") :
             zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
             inner_path = inner_path.replace("\\","/")
             zip_base_name = os.path.basename(zip_file_path)
             lib_node = node.get_child("Referenced Libraries")
-            if lib_node == None :
-                return None
-            zip_file_node = lib_node.get_child(zip_base_name)
-            path = inner_path
-            node = zip_file_node
+            if lib_node != None :
+                zip_file_node = lib_node.get_child(zip_base_name)
+                path = inner_path
+                node = zip_file_node
+            else :
+                path = inner_path
+                node = self.find_node(zip_file_path)
         else :
             try :
                 path = os.path.relpath(path, node.realpath)
             except :
                 return None
             path = path.replace("\\","/")
+
+        if node == None :
+            return  None
 
         sections = path.split("/")
         if sections[-1] == "" :

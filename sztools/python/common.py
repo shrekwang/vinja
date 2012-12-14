@@ -22,11 +22,14 @@ class PathUtil(object):
             return True
         if path1 == None or path2 == None :
             return False
-        path1 = path1.replace("\\","#")
-        path1 = path1.replace("/","#")
-        path2 = path2.replace("\\","#")
-        path2 = path2.replace("/","#")
-        return path1 == path2
+        d1,p1 = os.path.splitdrive(path1)
+        d2,p2 = os.path.splitdrive(path2)
+        if d1.upper() == d2.upper() :
+            path1 = os.path.normpath(p1)
+            path2 = os.path.normpath(p2)
+            return path1 == path2
+        else :
+            return False
 
 class ZipUtil(object):
     @staticmethod
@@ -52,6 +55,10 @@ class ZipUtil(object):
         file_encoding = chardet.detect(all_the_text).get("encoding")
         if file_encoding != None :
             all_the_text = all_the_text.decode(file_encoding, "ignore")
+
+        if file_encoding != sys.getdefaultencoding() :
+            all_the_text = all_the_text.encode(sys.getdefaultencoding(), "replace")
+
         content = [line.rstrip() for line in all_the_text.split("\n")]
         return content
 
