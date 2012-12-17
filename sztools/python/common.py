@@ -658,6 +658,8 @@ def initSztool():
     gscope["search_pat"] = None
     gscope["stardict"] = None
     gscope["scratch_buf"] = []
+    gscope["g_winheights"] = []
+    gscope["g_win_maxed"] = False
     gscope["edit_history"] = EditHistory()
     gscope["markSchemeInited"] = False
     gscope["sztoolsCfg"]=SzToolsConfig(os.path.join(SzToolsConfig.getShareHome(),"conf/sztools.cfg"))
@@ -907,6 +909,34 @@ class VimUtil(object):
         return result
 
 
+    @staticmethod
+    def toggleMaxWin():
+        global g_win_maxed
+        if g_win_maxed :
+            VimUtil.restoreWinSize()
+        else :
+            VimUtil.maxWinSize()
+        
+    @staticmethod
+    def maxWinSize():
+        global g_winheights
+        global g_win_maxed
+        winnr = vim.eval("winnr('$')")
+        for i in range(1,int(winnr)):
+            g_winheights.append(vim.eval("winheight('%s')" % str(i)))
+        vim.command("exec 'wincmd _'")
+        g_win_maxed = True
+
+    @staticmethod
+    def restoreWinSize():
+        global g_winheights
+        global g_win_maxed
+        last_winnr = vim.eval("winnr()")
+        for i in range(0,len(g_winheights)):
+            vim.command("exec '%s wincmd w'" % str(i+1) )
+            vim.command("resize %s" % g_winheights[i])
+        vim.command("exec '%s wincmd w'" % last_winnr)
+        g_win_maxed = False
 
 class EditHistory(object):
     def __init__(self):
