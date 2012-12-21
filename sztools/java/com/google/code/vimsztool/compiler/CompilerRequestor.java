@@ -78,7 +78,10 @@ public class CompilerRequestor implements ICompilerRequestor {
                     }
                     classNames.add(className);
                     byte[] bytes = classFile.getBytes();
-                    String outFile = ctx.getOutputDir() + "/" + className.replace('.', '/') + ".class";
+                    String srcFile = String.valueOf(result.getFileName());
+                    
+                    String outFile = ctx.findProperOutputDir(srcFile) + "/" + className.replace('.', '/') + ".class";
+                    
                     File parentFile=new File(outFile).getParentFile();
                     if (!parentFile.exists()) parentFile.mkdirs();
                     FileOutputStream fout = new FileOutputStream(outFile);

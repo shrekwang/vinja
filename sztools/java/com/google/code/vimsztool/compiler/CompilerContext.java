@@ -56,6 +56,8 @@ public class CompilerContext {
 	
 	private boolean flatProject = false;
 	
+	private Map<String,String> testSrcLocationMap = new HashMap<String,String>();
+	
 	public static CompilerContext load(String classPathXml) {
 		return new CompilerContext(classPathXml);
 	}
@@ -200,6 +202,12 @@ public class CompilerContext {
 					parseDependProjectClassXml(entry.path.substring(1));
 				} else {
 					srcLocations.add(entryAbsPath);
+					if (entry.output != null && !entry.output.trim().equals("")) {
+						String outputAbsPath = FilenameUtils.concat(projectRoot, entry.output);
+						File libFile = new File(outputAbsPath);
+						try { classPathUrls.add(0, libFile.toURI().toURL()); } catch (Exception e) {}
+						testSrcLocationMap.put(entryAbsPath, outputAbsPath);
+					}
 				}
 			} else if (entry.kind.equals("output")) {
 				File libFile = new File(entryAbsPath);
@@ -283,27 +291,34 @@ public class CompilerContext {
 		classPathUrls.toArray(urlsA);
 		loader = new ReflectAbleClassLoader(urlsA, this.getClass().getClassLoader());
 		if (!this.isFlatProject()) {
-			cachePackageInfo(urlsA,outputDir);
-			classMetaInfoManager.cacheAllInfo(outputDir);
+			cachePackageInfo();
 		} else {
-			cacheFlatProjectPackageInfo(outputDir);
+			cacheFlatProjectPackageInfo();
 		}
 	}
 	
-	private void cacheFlatProjectPackageInfo(String dir) {
+	private void cacheFlatProjectPackageInfo() {
 		packageInfo.cacheSystemRtJar();
 		packageInfo.cacheClassNameInDist(outputDir,false);
 	}
 	
-	private void cachePackageInfo(URL[] urls,String outputDir) {
+	private void cachePackageInfo() {
 		packageInfo.cacheSystemRtJar();
-		for (URL url : urls) {
+		for (URL url : classPathUrls) {
 			String path = url.getPath();
 			if (path.endsWith(".jar")) {
 				packageInfo.cacheClassNameInJar(path);
 			}
 		}
+		
 		packageInfo.cacheClassNameInDist(outputDir,true);
+		classMetaInfoManager.cacheAllInfo(outputDir);
+		
+		for (String testOutDir :testSrcLocationMap.values()) {
+			packageInfo.cacheClassNameInDist(testOutDir,true);
+			classMetaInfoManager.cacheAllInfo(testOutDir);
+		}
+		
 		for (String dirPath : extOutputDirs) {
 			packageInfo.cacheClassNameInDist(dirPath,true);
 		}
@@ -352,6 +367,7 @@ public class CompilerContext {
 					ClassPathEntry entry=new ClassPathEntry();
 					entry.kind=el.getAttribute("kind");
 					entry.path=el.getAttribute("path");
+					entry.output = el.getAttribute("output");
 					entry.sourcepath =el.getAttribute("sourcepath");
 					classPathEntries.add(entry);
 				}
@@ -376,8 +392,14 @@ public class CompilerContext {
 			}
 		}
 		if (locatedSrcRoot == null) return null;
+		String locatedOutputDir = testSrcLocationMap.get(locatedSrcRoot);
+		if (locatedOutputDir == null) {
+			locatedOutputDir = outputDir;
+		}
+		
 		String relativePath = source.substring(locatedSrcRoot.length()+1);
-		String dstPath = FilenameUtils.concat(outputDir, relativePath);
+		
+		String dstPath = FilenameUtils.concat(locatedOutputDir, relativePath);
 		return dstPath;
 	}
 
@@ -439,6 +461,7 @@ public class CompilerContext {
 		public String 	kind;
 		public String  path;
 		public String  sourcepath;
+		public String output;
 
 	}
 	
@@ -580,6 +603,15 @@ public class CompilerContext {
 			}
 		}
 
+	}
+	
+	public String findProperOutputDir(String srcFile) {
+		for (String srcPath : testSrcLocationMap.keySet() ) {
+			srcFile = FilenameUtils.normalize(srcFile);
+			srcPath = FilenameUtils.normalize(srcPath);
+			if (srcFile.indexOf(srcPath) == 0) return testSrcLocationMap.get(srcPath);
+		}
+		return outputDir;
 	}
 	
 	/* =================================================================== */
