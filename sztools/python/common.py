@@ -916,6 +916,12 @@ class VimUtil(object):
             VimUtil.restoreWinSize()
         else :
             VimUtil.maxWinSize()
+
+    @staticmethod
+    def zoomWinWidth():
+        (row,col)=vim.current.window.cursor
+        line=vim.current.buffer[row-1]
+        vim.command("vertical resize %d" % len(line))
         
     @staticmethod
     def maxWinSize():
@@ -963,8 +969,9 @@ class EditHistory(object):
             file_list = self.history.get(uuid_str)
             if file_list == None :
                 file_list = []
-            if path not in file_list :
-                file_list.append(path)
+            if path in file_list :
+                file_list.remove(path)
+            file_list.insert(0,path)
             self.history[uuid_str] = file_list
 
     def get_history(self):
