@@ -1972,9 +1972,6 @@ class Jdb(object):
     def __init__(self):
         self.cur_dir = os.getcwd()
         self.bp_data = {}
-        fake_path = os.path.join(self.cur_dir,"fake")
-        self.project_root = ProjectManager.getProjectRoot(fake_path)
-        self.class_path_xml = ProjectManager.getClassPathXml(fake_path)
         self.serverName = vim.eval("v:servername")
         self.suspendRow = -1
         self.lastRunClass = None
@@ -1987,6 +1984,12 @@ class Jdb(object):
         self.quick_step = False
         alias_text = file(os.path.join(SzToolsConfig.getShareHome(),"conf/jdb_alias.cfg")).read()
         self.alias_table = [item.split() for item in alias_text.split("\n") if item.strip() != "" ]
+
+    def initDebugProject(self):
+        bufname = vim.current.buffer.name
+        #fake_path = os.path.join(self.cur_dir,"fake")
+        self.project_root = ProjectManager.getProjectRoot(bufname)
+        self.class_path_xml = ProjectManager.getClassPathXml(bufname)
 
     def show(self):
         self.display = True
@@ -2169,6 +2172,7 @@ class Jdb(object):
         
         if "jdb" not in globals() :
             jdb = Jdb()
+        jdb.initDebugProject()
         jdb.show()
 
     def stdout(self,msg):
