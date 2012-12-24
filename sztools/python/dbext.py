@@ -266,7 +266,7 @@ class Dbext(object):
             elif item["servertype"] == "oracle" :
                 print " %s : %s %s %s " % (str(index), item["host"].ljust(16),item["sid"].ljust(12),item["user"])
             else :
-                print " %s : %s %s" % (str(index), item["host"].ljust(16),item["user"])
+                print " %s : %s %s " % (str(index), item["host"].ljust(16),item["con_name"])
 
         vim.command("let b:profile_index = input('please enter a selection')")
         #clear temp connection parameter
@@ -324,12 +324,20 @@ class Dbext(object):
             conn = cx_Oracle.connect(profile["user"], profile["password"], dns_tns)
         elif server_type == "mssql":
             import pyodbc
-            conn = pyodbc.connect(driver = '{SQL Server}',server=profile["host"],uid=profile["user"], \
-                pwd = profile["password"] )
+            if profile.get("database") != None:
+                conn = pyodbc.connect(driver = '{SQL Server}',server=profile["host"],\
+                        database=profile["database"], uid=profile["user"],  pwd = profile["password"] )
+            else :
+                conn = pyodbc.connect(driver = '{SQL Server}',server=profile["host"],\
+                        uid=profile["user"],  pwd = profile["password"] )
         elif server_type == "mysql":
             import MySQLdb
-            conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
-                passwd = profile["password"], charset = "utf8", use_unicode = True )
+            if profile.get("database") != None:
+                conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
+                    db=profile["database"], passwd = profile["password"], charset = "utf8", use_unicode = True )
+            else :
+                conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
+                    passwd = profile["password"], charset = "utf8", use_unicode = True )
         elif server_type == "sqlite":
             import sqlite3 as sqlite
             conn = sqlite.connect(profile["file"])
