@@ -322,6 +322,7 @@ class NormalFileNode(TreeNode):
         current_file_name = vim_buffer.name
         if self.realpath != current_file_name :
             vim.command("%s %s" %(edit_cmd, self.realpath))
+        ProjectTree.set_file_edit(self.realpath,"true");
 
     def dispose(self):
         FileUtil.fileOrDirRm(self.realpath)
@@ -353,6 +354,7 @@ class ZipFileItemNode(TreeNode):
         vim.command("exec 'wincmd w'")
         scheme_path = "jar://"+self.zip_file_path+"!"+ self.realpath
         vim.command("%s %s" %(edit_cmd, scheme_path))
+        ProjectTree.set_file_edit(scheme_path,"true");
 
 class ZipRootNode(TreeNode):
 
