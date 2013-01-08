@@ -6,9 +6,9 @@ import com.sun.jdi.BooleanValue;
 
 public class LogicalOr {
 	
-	public static Object operate(CommonTree leftOp, CommonTree rightOp) {
-		Object leftValue = ExpEval.evalTreeNode(leftOp);
-		Object rightValue = ExpEval.evalTreeNode(rightOp);
+	public static Object operate(ExpEval expEval, CommonTree leftOp, CommonTree rightOp) {
+		Object leftValue = expEval.evalTreeNode(leftOp);
+		Object rightValue = expEval.evalTreeNode(rightOp);
 		Boolean lv = null; 
 		Boolean rv = null; 
 		

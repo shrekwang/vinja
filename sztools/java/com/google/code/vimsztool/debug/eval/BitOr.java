@@ -11,9 +11,9 @@ import com.sun.jdi.ShortValue;
 
 public class BitOr {
 	
-	public static Object operate(CommonTree leftOp, CommonTree rightOp) {
-		Object leftValue = ExpEval.evalTreeNode(leftOp);
-		Object rightValue = ExpEval.evalTreeNode(rightOp);
+	public static Object operate(ExpEval expEval, CommonTree leftOp, CommonTree rightOp) {
+		Object leftValue = expEval.evalTreeNode(leftOp);
+		Object rightValue = expEval.evalTreeNode(rightOp);
 		if ((leftValue instanceof Integer 
 				|| leftValue instanceof Character
 				|| leftValue instanceof Byte

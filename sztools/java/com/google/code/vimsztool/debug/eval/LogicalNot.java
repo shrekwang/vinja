@@ -7,8 +7,8 @@ import com.sun.jdi.BooleanValue;
 
 public class LogicalNot {
 	
-	public static Object operate(CommonTree leftOp) {
-		Object leftValue = ExpEval.evalTreeNode(leftOp);
+	public static Object operate(ExpEval expEval, CommonTree leftOp) {
+		Object leftValue = expEval.evalTreeNode(leftOp);
 		Boolean lv = null; 
 		
 		if (leftValue instanceof BooleanValue 

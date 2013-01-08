@@ -67,19 +67,16 @@ public class ExpEval {
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
 		"short", "int", "long", "float", "double" };
 	
-	public static void main(String[] args) {
-		ParseResult result = AstTreeFactory.getExpressionAst("new Date(2+3)");
-		if (result.hasError()) {
-			System.out.println(result.getErrorMsg());
-		}
-		System.out.println(result.getTree());
+	private  Debugger debugger;
+	
+	public ExpEval(Debugger debugger) {
+		this.debugger = debugger;
 		
 	}
 	
-	public static String quickEval() {
-		Debugger debugger = Debugger.getInstance();
+	public String quickEval() {
 		ThreadReference threadRef = checkAndGetCurrentThread();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		
 		CompilerContext ctx = debugger.getCompilerContext();
 		try {
@@ -114,10 +111,9 @@ public class ExpEval {
 		}
 	}
 	
-	public static String setFieldValue(String name, String exp) {
+	public String setFieldValue(String name, String exp) {
 		ThreadReference threadRef = checkAndGetCurrentThread();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		Debugger debugger = Debugger.getInstance();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		VirtualMachine vm = debugger.getVm();
 		
 		try {
@@ -159,7 +155,7 @@ public class ExpEval {
 
 	}
 
-	public static String executeEvalCmd(String debugCmd,String debugCmdArgs) {
+	public String executeEvalCmd(String debugCmd,String debugCmdArgs) {
 		String actionResult = null;
 		try {
 			if (debugCmd.equals("eval") || debugCmd.equals("print")) {
@@ -189,9 +185,9 @@ public class ExpEval {
 		}
 	}
 	
-	public static String fields(boolean staticField ) {
+	public String fields(boolean staticField ) {
 		ThreadReference threadRef = checkAndGetCurrentThread();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		StringBuilder sb = new StringBuilder();
 		try {
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
@@ -221,9 +217,9 @@ public class ExpEval {
 	}
 
 	
-	public static String variables() {
+	public String variables() {
 		ThreadReference threadRef = checkAndGetCurrentThread();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		int curFrame = threadStack.getCurFrame();
 		StringBuilder sb = new StringBuilder();
 		try {
@@ -246,7 +242,7 @@ public class ExpEval {
 		return sb.toString();
 	}
 	
-	public static String reftype(String exp) {
+	public String reftype(String exp) {
 		ParseResult result = AstTreeFactory.getExpressionAst(exp);
 		if (result.hasError()) {
 			return result.getErrorMsg();
@@ -255,7 +251,7 @@ public class ExpEval {
 		return value.type().name();
 	}
 
-	public static String inspect(String exp,boolean staticField) {
+	public String inspect(String exp,boolean staticField) {
 		ParseResult result = AstTreeFactory.getExpressionAst(exp);
 		if (result.hasError()) {
 			return result.getErrorMsg();
@@ -288,7 +284,7 @@ public class ExpEval {
 		return sb.toString();
 	}
 	
-	public static String eval(List<String> exps) {
+	public String eval(List<String> exps) {
 		if (exps ==null || exps.size() == 0) return "";
 		StringBuilder sb = new StringBuilder();
 		for (String exp : exps) {
@@ -298,7 +294,7 @@ public class ExpEval {
 		return sb.toString();
 	}
 
-	public static String eval(String exp) {
+	public String eval(String exp) {
 		
 		ParseResult result = AstTreeFactory.getExpressionAst(exp);
 		if (result.hasError()) {
@@ -323,7 +319,7 @@ public class ExpEval {
 		return sb.toString();
 	}
 	
-	private static String evalTreeNodeToStr(CommonTree node) {
+	private String evalTreeNodeToStr(CommonTree node) {
 		Object value = evalTreeNode(node);
 		return getPrettyPrintStr(value);
 	}
@@ -331,7 +327,7 @@ public class ExpEval {
 	
 
 
-	public static Object evalTreeNode(CommonTree node) {
+	public Object evalTreeNode(CommonTree node) {
 		
 		CommonTree subNode = null;
 		CommonTree leftOp = null;
@@ -346,7 +342,7 @@ public class ExpEval {
 			
 		case JavaParser.LOGICAL_NOT:
 			subNode = (CommonTree) node.getChild(0);
-			return LogicalNot.operate(subNode);
+			return LogicalNot.operate(this,subNode);
 			
 		case JavaParser.IDENT:
 			return evalJdiVar(node.getText());
@@ -405,10 +401,10 @@ public class ExpEval {
 		}
 	}
 	
-	private static Object evalThisObject() {
+	private Object evalThisObject() {
 		try {
 			ThreadReference threadRef = checkAndGetCurrentThread();
-			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			ObjectReference thisObj = stackFrame.thisObject();
 			return thisObj;
@@ -417,50 +413,51 @@ public class ExpEval {
 		}
 	}
 	
-	private static  Object evalTreeNode(CommonTree leftOp, CommonTree rightOp, int opType) {
-		Object leftValue = evalTreeNode(leftOp);
-		Object rightValue = evalTreeNode(rightOp);
+	private Object evalTreeNode(CommonTree leftOp, CommonTree rightOp, int opType) {
+		//Object leftValue = evalTreeNode(leftOp);
+		//Object rightValue = evalTreeNode(rightOp);
+		
 		Object result = null;
 		switch (opType) {
 		
 		case JavaParser.PLUS:
-			return Plus.operate(leftOp, rightOp);
+			return Plus.operate(this, leftOp, rightOp);
 		case JavaParser.MINUS:
-			return Minus.operate(leftOp, rightOp);
+			return Minus.operate(this, leftOp, rightOp);
 		case JavaParser.STAR:
-			return Multi.operate(leftOp, rightOp);
+			return Multi.operate(this, leftOp, rightOp);
 		case JavaParser.DIV:
-			return Divide.operate(leftOp, rightOp);
+			return Divide.operate(this, leftOp, rightOp);
 		case JavaParser.MOD:
-			return Mod.operate(leftOp, rightOp);
+			return Mod.operate(this, leftOp, rightOp);
 			
 		case JavaParser.NOT_EQUAL:
-			return NotEqual.operate(leftOp, rightOp);
+			return NotEqual.operate(this, leftOp, rightOp);
 		case JavaParser.EQUAL:
-			return Equal.operate(leftOp, rightOp);
+			return Equal.operate(this, leftOp, rightOp);
 		case JavaParser.GREATER_THAN:
-			return Greater.operate(leftOp, rightOp);
+			return Greater.operate(this, leftOp, rightOp);
 		case JavaParser.GREATER_OR_EQUAL:
-			return GreaterOrEqual.operate(leftOp, rightOp);
+			return GreaterOrEqual.operate(this, leftOp, rightOp);
 		case JavaParser.LESS_THAN:
-			return Less.operate(leftOp, rightOp);
+			return Less.operate(this,leftOp, rightOp);
 		case JavaParser.LESS_OR_EQUAL:
-			return LessOrEqual.operate(leftOp, rightOp);
+			return LessOrEqual.operate(this, leftOp, rightOp);
 			
 		case JavaParser.LOGICAL_AND:
-			return LogicalAnd.operate(leftOp, rightOp);
+			return LogicalAnd.operate(this, leftOp, rightOp);
 		case JavaParser.LOGICAL_OR:
-			return LogicalOr.operate(leftOp, rightOp);
+			return LogicalOr.operate(this, leftOp, rightOp);
 		case JavaParser.AND:
-			return BitAnd.operate(leftOp, rightOp);
+			return BitAnd.operate(this, leftOp, rightOp);
 		case JavaParser.OR:
-			return BitOr.operate(leftOp, rightOp);
+			return BitOr.operate(this, leftOp, rightOp);
 		}
 		return result;
 	}
 	
 	
-	public static void printTree(CommonTree t, int indent) {
+	public void printTree(CommonTree t, int indent) {
         if ( t != null ) {
             StringBuffer sb = new StringBuffer(indent);
             for ( int i = 0; i < indent; i++ )
@@ -472,7 +469,7 @@ public class ExpEval {
         }
     }
 	
-	private static Value evalJdiInvoke(CommonTree node) {
+	private Value evalJdiInvoke(CommonTree node) {
 		CommonTree firstNode = (CommonTree)node.getChild(0);
 		CommonTree argNode = (CommonTree)node.getChild(1);
 		int argCount = argNode.getChildCount();
@@ -499,7 +496,6 @@ public class ExpEval {
 				return invoke(var,methodName,arguments);
 			}
 			if (var instanceof String) {
-				Debugger debugger = Debugger.getInstance();
 				VirtualMachine vm = debugger.getVm();
 				return invoke(vm.mirrorOf((String)var),methodName,arguments);
 			}
@@ -509,7 +505,7 @@ public class ExpEval {
 				String methodName = firstNode.getText();
 				
 				ThreadReference threadRef = checkAndGetCurrentThread();
-				SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+				SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 				StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 				ReferenceType refType = stackFrame.location().declaringType();
 				
@@ -546,11 +542,10 @@ public class ExpEval {
 	}
 	
 	
-	private static Value getMirrorValue(Object value) {
+	private Value getMirrorValue(Object value) {
 		if (value == null) return null;
 		if (value instanceof Value) return (Value)value;
 		
-		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
 		if (value instanceof Integer) {
 			return vm.mirrorOf(((Integer)value).intValue());
@@ -574,10 +569,10 @@ public class ExpEval {
 		return null;
 	}
 	
-	private static Value evalJdiVar(String name) {
+	private Value evalJdiVar(String name) {
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		try {
-			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			ObjectReference thisObj = stackFrame.thisObject();
 			Value value = findValueInFrame(threadRef, name, thisObj, true);
@@ -587,7 +582,7 @@ public class ExpEval {
 		}
 	}
 	
-	private static Value evalJdiClassConstructorCall(CommonTree node) {
+	private Value evalJdiClassConstructorCall(CommonTree node) {
 		CommonTree argNode = (CommonTree)node.getChild(1);
 		int argCount = argNode.getChildCount();
 		List<Value> arguments = new ArrayList<Value>();
@@ -614,7 +609,7 @@ public class ExpEval {
 				matchedMethod = findMatchedMethod(methods, arguments);
 			}
 		}
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
 		try {
 			ObjectReference value =refType.newInstance(threadRef, matchedMethod, arguments, ObjectReference.INVOKE_SINGLE_THREADED);
@@ -624,7 +619,7 @@ public class ExpEval {
 		}
 	}
 	
-	private static Value evalJdiMember(CommonTree node) {
+	private Value evalJdiMember(CommonTree node) {
 		
 		CommonTree objNode = (CommonTree)node.getChild(0);
 		String memberName = node.getChild(1).getText();
@@ -647,7 +642,7 @@ public class ExpEval {
 	
 	
 	
-	private static Value evalJdiArray(CommonTree node) {
+	private Value evalJdiArray(CommonTree node) {
 		CommonTree arrayNode = (CommonTree)node.getChild(0);
 		CommonTree indexExpNode = (CommonTree)node.getChild(1);
 		
@@ -663,13 +658,13 @@ public class ExpEval {
 			throw new ExpressionEvalException("eval expression error, array index is not int type.");
 		}
 	}
-	private static ThreadReference checkAndGetCurrentThread() {
-		Debugger debugger = Debugger.getInstance();
+	
+	private ThreadReference checkAndGetCurrentThread() {
 		if (debugger.getVm() == null ) {
 			throw new ExpressionEvalException("no virtual machine connected.");
 		}
 		
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
 		if (threadRef == null ) {
 			throw new ExpressionEvalException("no suspend thread.");
@@ -678,12 +673,12 @@ public class ExpEval {
 	}
 	
 
-	public static Value findValueInFrame(ThreadReference threadRef, String name,
+	public Value findValueInFrame(ThreadReference threadRef, String name,
 			ObjectReference thisObj, boolean searchLocalVar)  {
 		
 		Value value = null;
 		try {
-			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			
 			if (searchLocalVar) {
@@ -727,11 +722,10 @@ public class ExpEval {
 		return value;
 	}
 	
-	private static String findStaticImported(String javaSourcePath, String memberName) {
+	private String findStaticImported(String javaSourcePath, String memberName) {
 		
 		BufferedReader br = null;
 		try {
-			Debugger debugger = Debugger.getInstance();
 			CompilerContext ctx = debugger.getCompilerContext();
 			String abPath = ctx.findSourceFile(javaSourcePath);
 			br = new BufferedReader(new FileReader(abPath));
@@ -756,8 +750,8 @@ public class ExpEval {
 		return null;
 	}
 	
-	public static Value invoke(Object invoker, String methodName, List args) {
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+	public Value invoke(Object invoker, String methodName, List args) {
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
 		Value value = null;
 		Method matchedMethod = null;
@@ -803,7 +797,7 @@ public class ExpEval {
 		}
 		return value;
 	}
-	private static Method findMatchedMethod(List<Method> methods, List arguments) {
+	private Method findMatchedMethod(List<Method> methods, List arguments) {
 		for (Method method : methods) {
 			try {
 				List argTypes = method.argumentTypes();
@@ -815,7 +809,7 @@ public class ExpEval {
 		return null;
 	}
 	
-	private static boolean argumentsMatch(List argTypes, List arguments) {
+	private boolean argumentsMatch(List argTypes, List arguments) {
 		if (argTypes.size() != arguments.size()) {
 			return false;
 		}
@@ -839,14 +833,14 @@ public class ExpEval {
 		return true;
 	}
 
-	private static boolean isPrimitiveType(String name) {
+	private boolean isPrimitiveType(String name) {
 		for (String primitiveType : primitiveTypeNames) {
 			if (primitiveType.equals(name))
 				return true;
 		}
 		return false;
 	}
-	private static boolean isAssignableTo(Type fromType, Type toType) {
+	private boolean isAssignableTo(Type fromType, Type toType) {
 
 		if (fromType.equals(toType))
 			return true;
@@ -893,7 +887,7 @@ public class ExpEval {
 		return false;
 	}
 
-	static boolean isArrayAssignableTo(ArrayType fromType, Type toType) {
+	boolean isArrayAssignableTo(ArrayType fromType, Type toType) {
 		if (toType instanceof ArrayType) {
 			try {
 				Type toComponentType = ((ArrayType) toType).componentType();
@@ -909,7 +903,7 @@ public class ExpEval {
 		return toType.name().equals("java.lang.Object");
 	}
 
-	private static boolean isComponentAssignable(Type fromType, Type toType) {
+	private boolean isComponentAssignable(Type fromType, Type toType) {
 		if (fromType instanceof PrimitiveType) {
 			return fromType.equals(toType);
 		}
@@ -920,7 +914,7 @@ public class ExpEval {
 	}
 	
 	
-	private static int getMaxLength(List<String> names) {
+	private int getMaxLength(List<String> names) {
 		int max = 0;
 		if (names == null || names.size() ==0) return 0;
 		for (String name : names ) {
@@ -929,7 +923,7 @@ public class ExpEval {
 		}
 		return max;
 	}
-	private static String padStr(int maxLen, String origStr) {
+	private String padStr(int maxLen, String origStr) {
 		if (origStr  == null) return "";
 		int len = origStr.length();
 		if (len >= maxLen ) return origStr;
@@ -939,7 +933,7 @@ public class ExpEval {
 		return origStr;
 	}
 	
-	public static String getPrettyPrintStr(Object var) {
+	public String getPrettyPrintStr(Object var) {
 		if (var == null)
 			return "null";
 		if (var instanceof ArrayReference) {
@@ -968,12 +962,11 @@ public class ExpEval {
 	}
 
 	
-    private static ReferenceType getClassType(String className) {
+    private ReferenceType getClassType(String className) {
 		
 		try {
 			ThreadReference threadRef = checkAndGetCurrentThread();
-			Debugger debugger = Debugger.getInstance();
-			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			CompilerContext ctx = debugger.getCompilerContext();
 			VirtualMachine vm = debugger.getVm();
@@ -1022,7 +1015,7 @@ public class ExpEval {
 		return null;
 	}
     
-    private static List<String> getResourceLines(String filename) {
+    private List<String> getResourceLines(String filename) {
     	List<String> result = new ArrayList<String>();
 		BufferedReader br = null;
     	if (filename.startsWith("jar:")) {
@@ -1063,7 +1056,7 @@ public class ExpEval {
 		return result;
     }
     
-    private static ReferenceType loadClass(ThreadReference threadRef,
+    private ReferenceType loadClass(ThreadReference threadRef,
     		ClassLoaderReference classLoaderRef, String className) {
     	
     	classLoaderRef = (ClassLoaderReference)invoke( (ObjectReference) classLoaderRef,"getSystemClassLoader" , new ArrayList() );

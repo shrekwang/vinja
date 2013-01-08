@@ -5,11 +5,7 @@ import com.sun.jdi.ThreadReference;
 
 public class SuspendThreadStack {
 	
-	private static SuspendThreadStack instance = new SuspendThreadStack();
-	public static SuspendThreadStack getInstance() {
-		return instance;
-	}
-	private SuspendThreadStack() {}
+	public SuspendThreadStack() { }
 	
 	private ThreadReference curThreadRef; 
 	private ReferenceType curRefType;

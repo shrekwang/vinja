@@ -12,17 +12,15 @@ import com.sun.jdi.request.ExceptionRequest;
 
 public class ExceptionPointManager {
 	
+	private Debugger debugger;
 	private List<String> exceptions = new ArrayList<String>();
 	private Map<String, ExceptionRequest> requests = new HashMap<String,ExceptionRequest>();
 	
-	private static ExceptionPointManager instance = new ExceptionPointManager();
 
-	private ExceptionPointManager() {
+	public ExceptionPointManager(Debugger debugger) {
+		this.debugger = debugger;
 	}
 
-	public static ExceptionPointManager getInstance() {
-		return instance;
-	}
 	
 	public String addExceptionPoint(String className) {
 		exceptions.add(className);
@@ -31,7 +29,6 @@ public class ExceptionPointManager {
 	}
 	
 	public void tryCreateExceptionRequest(String className) {
-		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
 		if (vm==null) return ;
 		EventRequestManager erm = vm.eventRequestManager();
@@ -53,7 +50,6 @@ public class ExceptionPointManager {
 	}
 	
 	public void tryRemoveExceptionRequest(String className) {
-		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
 		if (vm==null) return ;
 		EventRequestManager erm = vm.eventRequestManager();

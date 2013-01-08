@@ -11,10 +11,6 @@ import com.sun.jdi.request.StepRequest;
 
 public class DebugCommand  extends SzjdeCommand {
 	
-	private Debugger debugger = Debugger.getInstance();
-	private BreakpointManager bpMgr = BreakpointManager.getInstance();
-	private DisplayVariableManager dvMgr = DisplayVariableManager.getInstance();
-	private ExceptionPointManager ecpm  = ExceptionPointManager.getInstance();
 	
 	private static String[] availCmds = { "run", "runtest","exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
@@ -41,7 +37,13 @@ public class DebugCommand  extends SzjdeCommand {
 		String debugCmdArgs = params.get("debugCmdArgs");
 		
 		String serverName = params.get("serverName");
+		Debugger debugger = Debugger.getInstance(serverName);
 		debugger.setVimServerName(serverName);
+		
+		BreakpointManager bpMgr = debugger.getBreakpointManager();
+		DisplayVariableManager dvMgr = debugger.getDisplayVariableManager();
+		ExceptionPointManager ecpMgr = debugger.getExceptionPointManager();
+		StepManager stepMgr = debugger.getStepMgr();
 		
 		CompilerContextManager ccm = CompilerContextManager.getInstnace();
 		CompilerContext ctx = ccm.getCompilerContext(classPathXml);
@@ -50,7 +52,7 @@ public class DebugCommand  extends SzjdeCommand {
 		if (debugCmdArgs == null || debugCmdArgs.trim().equals("")) {
 			return "";
 		}
-		String[] args = debugCmdArgs.split(" ");
+		String[] args = debugCmdArgs.split("\\s+");
 		String debugCmd = args[0];
 		
 		String actionResult = "";
@@ -66,8 +68,15 @@ public class DebugCommand  extends SzjdeCommand {
 			String cmdLine = debugCmdArgs.substring(8).trim();
 			actionResult = debugger.launch(classPathXml, cmdLine,true);
 		} else if (debugCmd.equals("attach")) {
-			String port = args[1];
-			actionResult = debugger.attach(port);
+			String host = null;
+			String port = null;
+			if (args.length == 2 ) {
+				port = args[1];
+			} else {
+				host = args[1];
+				port = args[2];
+			}
+			actionResult = debugger.attach(host,port);
 		} else if (debugCmd.equals("breakpoint_add")) {
 			String mainClass = args[2];
 			int lineNum = Integer.parseInt(args[1]);
@@ -102,19 +111,20 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = bpMgr.removeBreakpoint(mainClass, lineNum);
 		} else if (debugCmd.equals("step_into")) {
 			int count = this.getStepCount(args);
-			actionResult = StepManager.step(StepRequest.STEP_INTO, count);
+			actionResult = stepMgr.step(StepRequest.STEP_INTO, count);
 		} else if (debugCmd.equals("step_over")) {
 			int count = this.getStepCount(args);
-			actionResult = StepManager.step(StepRequest.STEP_OVER, count);
+			actionResult = stepMgr.step(StepRequest.STEP_OVER, count);
 		} else if (debugCmd.equals("step_return")) {
 			int count = this.getStepCount(args);
-			actionResult = StepManager.step(StepRequest.STEP_OUT, count);
+			actionResult = stepMgr.step(StepRequest.STEP_OUT, count);
 		} else if (debugCmd.equals("eval") || debugCmd.equals("print")
 				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
 				|| debugCmd.equals("fields") || debugCmd.equals("reftype")
 				|| debugCmd.equals("sfields") || debugCmd.equals("sinspect")
 				|| debugCmd.equals("qeval")) {
-			actionResult =  ExpEval.executeEvalCmd(debugCmd, debugCmdArgs);
+			ExpEval expEval = debugger.getExpEval();
+			actionResult =  expEval.executeEvalCmd(debugCmd, debugCmdArgs);
 		} else if (debugCmd.equals("display")) {
 			String exp = debugCmdArgs.substring(debugCmd.length()+1);
 			actionResult =  dvMgr.addWatchExpression(exp);
@@ -155,10 +165,10 @@ public class DebugCommand  extends SzjdeCommand {
 			}
 		} else if (debugCmd.equals("catch")) {
 			String className = args[1];
-			actionResult = ecpm.addExceptionPoint(className);
+			actionResult = ecpMgr.addExceptionPoint(className);
 		} else if (debugCmd.equals("ignore")) {
 			String className = args[1];
-			actionResult = ecpm.removeExceptionRequest(className);
+			actionResult = ecpMgr.removeExceptionRequest(className);
 		} else if (debugCmd.equals("resume")) {
 			debugger.resume();
 		} else if (debugCmd.equals("shutdown")) {
@@ -178,7 +188,8 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("setvalue")) {
 			String name = args[1];
 			String value = args[2];
-			actionResult =  ExpEval.setFieldValue(name,value);
+			ExpEval expEval = debugger.getExpEval();
+			actionResult =  expEval.setFieldValue(name,value);
 		} else if (debugCmd.equals("runtomcat")) {
 			actionResult = debugger.launchTomcat();
 		} else if (debugCmd.equals("fetchJdbResult")) {

@@ -25,22 +25,21 @@ import com.sun.jdi.request.EventRequestManager;
 
 public class EventHandler extends Thread {
 
+	private Debugger debugger;
 	private VirtualMachine vm;
 	private EventQueue eventQueue;
 	private EventSet eventSet;
-	private EventRequestManager eventRequestManager;
 	private boolean vmExit = false;
 
-	public EventHandler(VirtualMachine vm) {
-		this.vm = vm;
-		this.eventRequestManager = vm.eventRequestManager();
+	public EventHandler(Debugger  debugger) {
+		this.debugger = debugger;
+		this.vm =debugger.getVm();
 	}
 
 	public void run() {
 		eventQueue = vm.eventQueue();
 		while (true) {
 			if (vmExit == true) {
-				Debugger debugger = Debugger.getInstance();
 				debugger.disconnectOrExit();
 				break;
 			}
@@ -78,14 +77,12 @@ public class EventHandler extends Thread {
 	}
 	
 	public void handleVMDeathEvent(VMDeathEvent event) {
-		Debugger debugger = Debugger.getInstance();
 		String funcName = "HandleJdiEvent";
 		String[] args = {"msg", "process terminated."};
 		VjdeUtil.callVimFunc(debugger.getVimServerName(), funcName, args);
 	}
 	
 	public void handleVMDisconnectEvent(VMDisconnectEvent event) {
-		Debugger debugger = Debugger.getInstance();
 		String funcName = "HandleJdiEvent";
 		String[] args = {"msg", "process disconnected."};
 		VjdeUtil.callVimFunc(debugger.getVimServerName(), funcName, args);
@@ -93,16 +90,15 @@ public class EventHandler extends Thread {
 	
 	private void handleVMStartEvent(VMStartEvent event) {
 		
-		ExceptionPointManager expm = ExceptionPointManager.getInstance();
+		ExceptionPointManager expm = debugger.getExceptionPointManager();
 		expm.tryCreateExceptionRequest();
-		
 		eventSet.resume();
 	}
 	
 	private void handleClassPrepareEvent(ClassPrepareEvent event) {
 		ClassPrepareEvent classPrepareEvent = (ClassPrepareEvent) event;
 		String mainClassName = classPrepareEvent.referenceType().name();
-		BreakpointManager bpm = BreakpointManager.getInstance();
+		BreakpointManager bpm = debugger.getBreakpointManager();
 		bpm.tryCreateBreakpointRequest(mainClassName);
 		
 		event.thread().resume();
@@ -115,18 +111,18 @@ public class EventHandler extends Thread {
 	private void handleBreakpointEvent(BreakpointEvent event) {
 		ThreadReference threadRef = event.thread();
 		ReferenceType refType = event.location().declaringType();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		threadStack.setCurRefType(refType);
 		threadStack.setCurThreadRef(threadRef);
 		
-		BreakpointManager bpm = BreakpointManager.getInstance();
+		BreakpointManager bpm = debugger.getBreakpointManager();
 		Breakpoint breakpoint = null;
 		
 		Object tmp = ((BreakpointRequest)event.request()).getProperty("breakpointObj");
 		if (tmp != null) breakpoint = (Breakpoint)tmp;
 		
 		if (breakpoint !=null && breakpoint.getConExp() != null) {
-			Object obj =ExpEval.eval(breakpoint.getConExp());
+			Object obj = debugger.getExpEval().eval(breakpoint.getConExp());
 			if (obj ==null || !obj.equals("true")) {
 				event.thread().resume();
 				return; 
@@ -152,12 +148,11 @@ public class EventHandler extends Thread {
 	private void handleSuspendLocatableEvent(LocatableEvent event) {
 		ThreadReference threadRef = event.thread();
 		ReferenceType refType = event.location().declaringType();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		threadStack.setCurRefType(refType);
 		threadStack.setCurThreadRef(threadRef);
 		
 		Location loc = event.location();
-		Debugger debugger = Debugger.getInstance();
 		String className = loc.declaringType().name();
 		int lineNum = loc.lineNumber();
 

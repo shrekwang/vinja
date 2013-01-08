@@ -8,17 +8,14 @@ import com.google.code.vimsztool.exception.ExpressionEvalException;
 
 public class DisplayVariableManager {
 	
+	private Debugger debugger;
 	private List<String> allExps = new ArrayList<String>();
 	private List<String> inspectExps = new ArrayList<String>();
-	private static DisplayVariableManager instance = new DisplayVariableManager();
 
-	private DisplayVariableManager() {
+	public DisplayVariableManager(Debugger debugger) {
+		this.debugger = debugger;
 	}
 
-	public static DisplayVariableManager getInstance() {
-		return instance;
-	}
-	
 	public String addWatchExpression(String exp) {
 		if (!allExps.contains(exp)) {
 			allExps.add(exp);
@@ -65,7 +62,8 @@ public class DisplayVariableManager {
 		StringBuilder sb = new StringBuilder();
 		if (allExps.size() > 0 ) {
 			try {
-				String result = ExpEval.eval(allExps);
+				
+				String result =debugger.getExpEval().eval(allExps);
 				sb.append(result);
 			} catch (ExpressionEvalException e) {
 				sb.append(e.getMessage()).append("\n");
@@ -74,7 +72,7 @@ public class DisplayVariableManager {
 		if (inspectExps.size() > 0 ) {
 			for (String exp : inspectExps) {
 				try {
-					sb.append(ExpEval.inspect(exp,false)).append("\n");
+					sb.append(debugger.getExpEval().inspect(exp,false)).append("\n");
 					sb.append(ExpEval.SEP_ROW_TXT);
 				} catch (ExpressionEvalException e) {
 					sb.append(e.getMessage()).append("\n");

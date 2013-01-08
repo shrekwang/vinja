@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -16,6 +17,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.compiler.CompilerContextManager;
 import com.google.code.vimsztool.compiler.TomcatJvmoptConf;
+import com.google.code.vimsztool.debug.eval.ExpEval;
 import com.google.code.vimsztool.exception.NoConnectedVmException;
 import com.google.code.vimsztool.exception.NoSuspendThreadException;
 import com.google.code.vimsztool.util.Preference;
@@ -38,7 +40,6 @@ import com.sun.jdi.connect.VMStartException;
 
 public class Debugger {
 
-	private static Debugger instance = new Debugger();
 
 	private VirtualMachine vm = null;
 	private Process process = null;
@@ -49,14 +50,41 @@ public class Debugger {
 	private StringBuffer buffer = new StringBuffer();
 	private ScheduledExecutorService exec = null;
 	
+	private BreakpointManager bpMgr = null;
+	private DisplayVariableManager dvMgr = null;
+	private ExceptionPointManager ecpMgr  = null;
+	private StepManager stepMgr = null;
+	private ExpEval expEval = null;
+	private SuspendThreadStack suspendThreadStack;
+	
 	public static final String CMD_SUCCESS = "success";
 	public static final String CMD_FAIL = "fail";
+	
+	private static ConcurrentHashMap<String, Debugger> instances = new ConcurrentHashMap<String, Debugger>();
 
-	private Debugger() {
+	private Debugger(String vimServerName) {
+		this.vimServerName = vimServerName;
+		bpMgr = new BreakpointManager(this);
+		dvMgr = new DisplayVariableManager(this);
+		ecpMgr  = new ExceptionPointManager(this);
+		stepMgr = new StepManager(this);
+		expEval = new ExpEval(this);
+		suspendThreadStack = new SuspendThreadStack();
 	}
 
-	public static Debugger getInstance() {
+	public static Debugger getInstance(String vimServerName) {
+		Debugger instance = instances.get(vimServerName);
+		if (instance == null) {
+			instance = new Debugger(vimServerName);
+			instances.put(vimServerName, instance);
+		}
 		return instance;
+	}
+	
+	public static List<Debugger> getInstances() {
+		List<Debugger> result = new ArrayList<Debugger>();
+		result.addAll(instances.values());
+		return result;
 	}
 	
 	public synchronized String fetchResult() {
@@ -70,10 +98,9 @@ public class Debugger {
 		if (process == null) {
 			process = vm.process();
 		}
-		BreakpointManager bm = BreakpointManager.getInstance();
-		bm.tryCreatePrepareRequest();
-
-		eventHandler = new EventHandler(vm);
+		
+		bpMgr.tryCreatePrepareRequest();
+		eventHandler = new EventHandler(this);
 		eventHandler.start();
 
 		if (process !=null) {
@@ -116,25 +143,22 @@ public class Debugger {
 		
 	}
 
-	public String attach(String port) {
+	public String attach(String host,String port) {
 		if (vm != null) 
 			return "VirtualMachine is not null";
-		vm = attachToVm(port);
+		vm = attachToVm(host, port);
 		if (vm == null)
 			return "attach to port fails.";
 		startProcess();
-		BreakpointManager bpm = BreakpointManager.getInstance();
-		bpm.tryCreateBreakpointRequest();
+		bpMgr.tryCreateBreakpointRequest();
 		
-		ExceptionPointManager expm = ExceptionPointManager.getInstance();
-		expm.tryCreateExceptionRequest();
+		ecpMgr.tryCreateExceptionRequest();
 		
 		return "attach to remote vm succeeded.";
 	}
 	
 	public String listBreakpoints() {
-		BreakpointManager bpm = BreakpointManager.getInstance();
-		List<Breakpoint> bps = bpm.getAllBreakpoints();
+		List<Breakpoint> bps = bpMgr.getAllBreakpoints();
 		if (bps.size() == 0) {
 			return "no breakpoints or watchpoints.";
 		}
@@ -167,7 +191,6 @@ public class Debugger {
 	
 	private List<String> getStackFrameInfos(ThreadReference threadRef) {
 		List<String> result = new ArrayList<String>();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		try {
 			List<StackFrame> frames = threadRef.frames();
 			for (int i=0; i<frames.size(); i++) {
@@ -176,7 +199,7 @@ public class Debugger {
 				String name = loc.declaringType().name() + "."
 						+ loc.method().name();
 				String frameInfo = name + " line: " + loc.lineNumber();
-				if (i == threadStack.getCurFrame()) {
+				if (i == suspendThreadStack.getCurFrame()) {
 					frameInfo = frameInfo + "  (current frame) ";
 				}
 				String num = padStr(3,"#"+i);
@@ -239,16 +262,14 @@ public class Debugger {
 	}
 	
 	public void checkVm() {
-		Debugger debugger = Debugger.getInstance();
-		if (debugger.getVm() == null ) {
+		if (getVm() == null ) {
 			throw new NoConnectedVmException();
 		}
 		
 		
 	}
 	public void checkSuspendThread() {
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		ThreadReference threadRef = threadStack.getCurThreadRef();
+		ThreadReference threadRef = suspendThreadStack.getCurThreadRef();
 		if (threadRef == null ) {
 			throw new NoSuspendThreadException();
 		}
@@ -258,8 +279,7 @@ public class Debugger {
 	public String listFrames() {
 		checkVm();
 		checkSuspendThread();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		ThreadReference threadRef = threadStack.getCurThreadRef();
+		ThreadReference threadRef = suspendThreadStack.getCurThreadRef();
 		StringBuilder sb = new StringBuilder();
 		appendStackInfo(sb,threadRef,0);
 		return sb.toString();
@@ -279,10 +299,8 @@ public class Debugger {
 	public String resume() {
 		checkVm();
 		checkSuspendThread();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		ThreadReference threadRef = threadStack.getCurThreadRef();
-		threadStack.clean();
-		
+		ThreadReference threadRef = suspendThreadStack.getCurThreadRef();
+		suspendThreadStack.clean();
 		threadRef.resume();
 		return "";
 	}
@@ -300,13 +318,12 @@ public class Debugger {
 			}
 		}
 		if (correctRef == null) return "no matched suspend thread";
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
 		ReferenceType refType;
 		try {
 			Location loc = correctRef.frame(0).location();
 			refType = loc.declaringType();
-			threadStack.setCurRefType(refType);
-			threadStack.setCurThreadRef(correctRef);
+			suspendThreadStack.setCurRefType(refType);
+			suspendThreadStack.setCurThreadRef(correctRef);
 			changeVimEditSourceLocaton(loc);
 			return "success";
 		} catch (IncompatibleThreadStateException e) {
@@ -317,16 +334,14 @@ public class Debugger {
 	public String currentFrameUp() {
 		checkVm();
 		checkSuspendThread();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		int curFrame = threadStack.getCurFrame();
+		int curFrame = suspendThreadStack.getCurFrame();
 		return changeCurrentFrame(curFrame-1);
 	}
 	
 	public String currentFrameDown() {
 		checkVm();
 		checkSuspendThread();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		int curFrame = threadStack.getCurFrame();
+		int curFrame = suspendThreadStack.getCurFrame();
 		return changeCurrentFrame(curFrame+1);
 	}
 	
@@ -335,13 +350,12 @@ public class Debugger {
 		checkVm();
 		checkSuspendThread();
 		
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
-		ThreadReference threadRef = threadStack.getCurThreadRef();
+		ThreadReference threadRef = suspendThreadStack.getCurThreadRef();
 		try {
 			Location loc = threadRef.frame(frameNum).location();
 			ReferenceType refType= loc.declaringType();
-			threadStack.setCurRefType(refType);
-			threadStack.setCurFrame(frameNum);
+			suspendThreadStack.setCurRefType(refType);
+			suspendThreadStack.setCurFrame(frameNum);
 			changeVimEditSourceLocaton(loc);
 			return "success";
 		} catch (IncompatibleThreadStateException e) {
@@ -386,7 +400,6 @@ public class Debugger {
 	}
 	
 	private void clean() {
-		SuspendThreadStack suspendThreadStack = SuspendThreadStack.getInstance();
 		suspendThreadStack.clean();
 		if (this.exec != null) {
 			exec.shutdown();
@@ -604,7 +617,7 @@ public class Debugger {
 		return null;
 	}
 
-	public VirtualMachine attachToVm(String port) {
+	public VirtualMachine attachToVm(String host, String port) {
 		AttachingConnector connector = getAttachingConnector();
 		if (connector == null) return null;
 		Map<String, Connector.Argument> args = connector.defaultArguments();
@@ -612,7 +625,11 @@ public class Debugger {
 		Connector.Argument hostArg = args.get("hostname");
 		try {
 			portArg.setValue(port);
-			hostArg.setValue("127.0.0.1"); 
+			if (host == null || host.trim().equals("")) {
+				hostArg.setValue("127.0.0.1"); 
+			} else {
+				hostArg.setValue(host);
+			}
 			VirtualMachine vm = connector.attach(args);
 			return vm;
 		} catch (Exception e) {
@@ -652,5 +669,34 @@ public class Debugger {
 			}
 		}
 	}
+
+	public BreakpointManager getBreakpointManager() {
+		return bpMgr;
+	}
+
+	public DisplayVariableManager getDisplayVariableManager() {
+		return dvMgr;
+	}
+
+	public ExceptionPointManager getExceptionPointManager() {
+		return ecpMgr;
+	}
+
+	public StepManager getStepMgr() {
+		return stepMgr;
+	}
+
+	public ExpEval getExpEval() {
+		return expEval;
+	}
+
+	public SuspendThreadStack getSuspendThreadStack() {
+		return suspendThreadStack;
+	}
+
+	public void setSuspendThreadStack(SuspendThreadStack suspendThreadStack) {
+		this.suspendThreadStack = suspendThreadStack;
+	}
+
 }
 	 

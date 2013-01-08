@@ -9,11 +9,17 @@ import com.sun.jdi.request.EventRequestManager;
 import com.sun.jdi.request.StepRequest;
 
 public class StepManager {
+	
+	private Debugger debugger;
+	
+	public StepManager(Debugger debugger) {
+		this.debugger = debugger;
+	}
+	
 
-	public static String step(int stepDepth, int count) {
-		Debugger debugger = Debugger.getInstance();
+	public String step(int stepDepth, int count) {
 		VirtualMachine vm = debugger.getVm();
-		SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		ThreadReference threadRef = threadStack.getCurThreadRef();
 
 		EventRequestManager mgr = vm.eventRequestManager();

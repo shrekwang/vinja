@@ -73,14 +73,15 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 	
 	private void hotSwapClass(CompileResultInfo resultInfo) {
 		
-		Debugger debugger = Debugger.getInstance();
-		BreakpointManager bpm = BreakpointManager.getInstance();
-		List<String[]> outputs = resultInfo.getOutputInfo();
-		for (String[] names : outputs) {
-			String className = names[0];
-			String outputPath = names[1];
-			HotSwapUtil.replace(debugger, new File(outputPath), className);
-			bpm.tryResetBreakpointRequest(className);
+		for (Debugger debugger : Debugger.getInstances()) {
+			BreakpointManager bpm = debugger.getBreakpointManager();
+			List<String[]> outputs = resultInfo.getOutputInfo();
+			for (String[] names : outputs) {
+				String className = names[0];
+				String outputPath = names[1];
+				HotSwapUtil.replace(debugger, new File(outputPath), className);
+				bpm.tryResetBreakpointRequest(className);
+			}
 		}
 		
 	}

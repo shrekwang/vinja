@@ -21,15 +21,13 @@ import com.sun.jdi.request.WatchpointRequest;
 
 public class BreakpointManager {
 
+	private Debugger debugger;
 	private List<Breakpoint> allBreakpoints = new ArrayList<Breakpoint>();
-	private static BreakpointManager instance = new BreakpointManager();
 
-	private BreakpointManager() {
+	public BreakpointManager(Debugger debugger) {
+		this.debugger = debugger;
 	}
 
-	public static BreakpointManager getInstance() {
-		return instance;
-	}
 	
 	public List<Breakpoint> getAllBreakpoints() {
 		return allBreakpoints;
@@ -45,7 +43,6 @@ public class BreakpointManager {
 	}
 	
 	public void verifyBreakpoint(String mainClass) {
-		Debugger debugger = Debugger.getInstance();
 		CompilerContext ctx = debugger.getCompilerContext();
 		if (ctx == null) return ;
 		
@@ -78,10 +75,9 @@ public class BreakpointManager {
 	public String addTempBreakpoint(String mainClass, int lineNum,boolean resumeThread) {
 		ThreadReference threadRef = null;
 		if (resumeThread ) {
-			Debugger debugger = Debugger.getInstance();
 			debugger.checkVm();
 			debugger.checkSuspendThread();
-			SuspendThreadStack threadStack = SuspendThreadStack.getInstance();
+			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 			threadRef = threadStack.getCurThreadRef();
 		}
 		
@@ -93,7 +89,6 @@ public class BreakpointManager {
 	}
 	
 	public String addWatchpoint(String mainClass, String fieldName, int accessMode) {
-		Debugger debugger = Debugger.getInstance();
 		CompilerContext ctx = debugger.getCompilerContext();
 		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
 		
@@ -122,7 +117,6 @@ public class BreakpointManager {
 	}
 
 	public String addBreakpoint(String mainClass, int lineNum,String conExp,boolean temp) {
-		Debugger debugger = Debugger.getInstance();
 		CompilerContext ctx = debugger.getCompilerContext();
 		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
 		
@@ -191,7 +185,6 @@ public class BreakpointManager {
 
 	public void tryCreatePrepareRequest() {
 		
-		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
 		if (vm==null) return ;
 		EventRequestManager erm = vm.eventRequestManager();
@@ -217,7 +210,6 @@ public class BreakpointManager {
 
 	public void tryRemoveRequest(Breakpoint breakpoint) {
 		
-		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
 		if (vm == null)
 			return;
@@ -279,7 +271,6 @@ public class BreakpointManager {
 		
 		int lineNum = breakpoint.getLineNum();
 		
-		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
 		if (vm == null)
 			return;
@@ -321,7 +312,6 @@ public class BreakpointManager {
 		
 		String fieldName = breakpoint.getField();
 		
-		Debugger debugger = Debugger.getInstance();
 		VirtualMachine vm = debugger.getVm();
 		if (vm == null)
 			return;
