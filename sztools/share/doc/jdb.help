@@ -1,6 +1,6 @@
 run className          --run class, example : run org.fake.test.Main 
                          if className omitted, the current edited class is used.
-attach port            --attach to java process in local machine, need that process run in jpda debug mode.
+attach [host] port     --attach to target jvm, if there's only one argument, attach to local:port
 disconnect             --disconnect from debuged vm session
 shutdown               --shutdown the target process
 hide                   --hide jdb buffer
