@@ -566,75 +566,78 @@ public class JavaSourceSearcher {
     }
     
 	@SuppressWarnings("rawtypes")
-	public void searchMemberInHierachy(String className,
+	public boolean searchMemberInHierachy(String className,
 			MemberType memberType, String memberName, 
 			List<String> typenameList,LocationInfo info) {
 
-		String superClassName = className;
+		boolean found = searchMemberInClass(className,memberType, memberName, typenameList, info);
+		if (found) return true;
+		
+		//if can't find, search the super class
+	 	Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{className},null);
+	 	if (! aClass.isInterface()) {
+			if (aClass == null || aClass.getName().equals("java.lang.Object")) { return false; }
+		 	aClass = aClass.getSuperclass();
+			if (aClass == null || aClass.getName().equals("java.lang.Object")) { return false; }
+		 	String superClassName = aClass.getCanonicalName();
+		 	return searchMemberInHierachy(superClassName,memberType, memberName, typenameList, info);
+	 	} else {
+	 		Class[] classes = aClass.getInterfaces();
+	 		for (Class clazz : classes) {
+	 			String itfName = clazz.getCanonicalName();
+	 			found = searchMemberInHierachy(itfName,memberType, memberName, typenameList, info);
+	 			if (found) return true;
+	 		}
+	 	}
+	 	return false;
+	
+	}
+	
+	public boolean searchMemberInClass(String className,
+			MemberType memberType, String memberName, 
+			List<String> typenameList,LocationInfo info ) {
+		
+		String classFilePath = getClassFilePath(className);
+		if (classFilePath == null || classFilePath.equals("None"))
+			throw new LocationNotFoundException();
 
-		while (true) {
-
-			String classFilePath = getClassFilePath(superClassName);
-			if (classFilePath == null || classFilePath.equals("None"))
-				throw new LocationNotFoundException();
-
-			JavaSourceSearcher searcher = createSearcher(classFilePath, ctx);
-			List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
-			
-			//if classname not equals to filename, find member in subclass or inner enum .
-			if (!FilenameUtils.getBaseName(classFilePath).equals(superClassName)) {
-				for (MemberInfo classMember : leftClassMembers) {
-					if ((classMember.getMemberType() == MemberType.ENUM
-							|| classMember.getMemberType() == MemberType.SUBCLASS)
-							&& classMember.getName().equals(superClassName)){
-						leftClassMembers = classMember.getSubMemberList();
-						break;
-					}
-					
+		JavaSourceSearcher searcher = createSearcher(classFilePath, ctx);
+		List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
+		
+		//if classname not equals to filename, find member in subclass or inner enum .
+		if (!FilenameUtils.getBaseName(classFilePath).equals(className)) {
+			for (MemberInfo classMember : leftClassMembers) {
+				if ((classMember.getMemberType() == MemberType.ENUM
+						|| classMember.getMemberType() == MemberType.SUBCLASS)
+						&& classMember.getName().equals(className)){
+					leftClassMembers = classMember.getSubMemberList();
+					break;
 				}
 				
 			}
-
-			if (!(memberType == MemberType.FIELD)) {
-				MemberInfo memberInfo = findMatchedMethod(memberName, typenameList, leftClassMembers);
-				if (memberInfo != null) {
-					info.setLine(memberInfo.getLineNum());
-					info.setCol(memberInfo.getColumn());
-					info.setFilePath(classFilePath);
-					info.setMemberInfo(memberInfo);
-					return;
-				}
-			} else {
-				MemberInfo memberInfo = findMatchedField(memberName, leftClassMembers);
-				if (memberInfo != null) {
-					info.setLine(memberInfo.getLineNum());
-					info.setCol(memberInfo.getColumn());
-					info.setFilePath(classFilePath);
-					info.setMemberInfo(memberInfo);
-					return;
-				} else {
-					LocationInfo tmpInfo = findFiledDefInItf(superClassName,memberName);
-					if (tmpInfo !=null) {
-						info.setFilePath(tmpInfo.getFilePath());
-						info.setLine(tmpInfo.getLine());
-						info.setCol(tmpInfo.getCol());
-						info.setMemberInfo(tmpInfo.getMemberInfo());
-						return;
-					}
-				}
-			}
 			
-			//if can't find, search the super class
-		 	Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{superClassName},null);
-			if (aClass == null || aClass.getName().equals("java.lang.Object")) { break; }
-		 	aClass = aClass.getSuperclass();
-			if (aClass == null || aClass.getName().equals("java.lang.Object")) { break; }
-		 	superClassName = aClass.getCanonicalName();
 		}
-		
-		if (! (memberType == MemberType.FIELD) ) return;
-		
-	
+
+		if (!(memberType == MemberType.FIELD)) {
+			MemberInfo memberInfo = findMatchedMethod(memberName, typenameList, leftClassMembers);
+			if (memberInfo != null) {
+				info.setLine(memberInfo.getLineNum());
+				info.setCol(memberInfo.getColumn());
+				info.setFilePath(classFilePath);
+				info.setMemberInfo(memberInfo);
+				return true;
+			}
+		} else {
+			MemberInfo memberInfo = findMatchedField(memberName, leftClassMembers);
+			if (memberInfo != null) {
+				info.setLine(memberInfo.getLineNum());
+				info.setCol(memberInfo.getColumn());
+				info.setFilePath(classFilePath);
+				info.setMemberInfo(memberInfo);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	@SuppressWarnings("rawtypes")
