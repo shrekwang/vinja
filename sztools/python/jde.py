@@ -2069,6 +2069,7 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>v   :python jdb.executeCmd(insertMode=False,cmdLine='>locals')<cr>")
             vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
+            vim.command("nnoremap <buffer><silent>e   :python jdb.qevalCmd()<cr>")
             vim.command("setlocal statusline=\ Jdb\ QuickStep")
         else :
             self.quick_step = False
@@ -2079,6 +2080,7 @@ class Jdb(object):
             vim.command("nunmap <buffer><silent>v")
             vim.command("nunmap <buffer><silent>w")
             vim.command("nunmap <buffer><silent>G")
+            vim.command("nunmap <buffer><silent>e")
             vim.command("setlocal statusline=\ Jdb")
 
     def handleSuspend(self,abs_path,lineNum,className,appendOperate):

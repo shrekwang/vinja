@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -86,13 +87,21 @@ public class ExpEval {
 		    JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(abPath,ctx);
 			StringBuilder sb = new StringBuilder();
 			
-		    for (int i=1; i>=0; i-- ) {
-		    	boolean currentLine = false;
-		    	if (i==0) currentLine = true;
-				Set<String> exps = searcher.searchNearByExps(loc.lineNumber()-i, currentLine);
-				if (exps ==null || exps.size() == 0) continue;
+			Set<String> evaluatedExp = new HashSet<String>();
+			
+			int count = 0;
+			int lineOffset = -1 ;
+	    	boolean currentLine = false;
+			//eval expressions in last three lines at suspend location.
+			while (count < 3 && loc.lineNumber()-lineOffset > 1 ) {
+				lineOffset++;
+		    	currentLine = (lineOffset == 0 ? true:false);
+		    	
+				Set<String> exps = searcher.searchNearByExps(loc.lineNumber()-lineOffset, currentLine);
+				if (exps ==null || exps.size() == 0)  continue; 
 				for (String exp : exps) {
 					if (exp ==null || exp.trim().equals("")) continue;
+					if (evaluatedExp.contains(exp)) continue;
 					ParseResult result = AstTreeFactory.getExpressionAst(exp);
 					if (result.hasError()) continue; 
 					try {
@@ -101,8 +110,12 @@ public class ExpEval {
 						sb.append(exp+": eval error," +e.getMessage());
 						if (sb.charAt(sb.length()-1) != '\n') sb.append("\n");
 					}
+					evaluatedExp.add(exp);
 				}
-				sb.append(ExpEval.SEP_ROW_TXT);
+				if (!sb.toString().endsWith(ExpEval.SEP_ROW_TXT)) {
+					sb.append(ExpEval.SEP_ROW_TXT);
+				}
+				count++;
 		    }
 			return sb.toString();
 		} catch (Exception e) {
