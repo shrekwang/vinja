@@ -1,5 +1,6 @@
-run className          --run class, example : run org.fake.test.Main 
+run [className]        --run class, example : run org.fake.test.Main 
                          if className omitted, the current edited class is used.
+runtest [className]    --run class as junit test case
 attach [host] port     --attach to target jvm, if there's only one argument, attach to local:port
 disconnect             --disconnect from debuged vm session
 shutdown               --shutdown the target process
