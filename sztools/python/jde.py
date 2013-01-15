@@ -2004,7 +2004,7 @@ class Jdb(object):
         if self.out_buf_list :
             output(self.out_buf_list)
         vim.command("call SwitchToSzToolView('Jdb')")
-        vim.command("vertical resize 45")
+        vim.command("vertical resize 65")
         buffer=vim.current.buffer
 
         if self.cmd_buf_list :

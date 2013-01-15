@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -69,6 +70,7 @@ public class ExpEval {
 		"short", "int", "long", "float", "double" };
 	
 	private  Debugger debugger;
+	private HashMap<String, Value> evalContext = new HashMap<String, Value>();
 	
 	public ExpEval(Debugger debugger) {
 		this.debugger = debugger;
@@ -309,6 +311,10 @@ public class ExpEval {
 
 	public String eval(String exp) {
 		
+		if (exp.trim().startsWith("[")) {
+			ForExpEval forEval = new ForExpEval();
+			return forEval.eval(this, exp);
+		}
 		ParseResult result = AstTreeFactory.getExpressionAst(exp);
 		if (result.hasError()) {
 			return result.getErrorMsg();
@@ -332,7 +338,7 @@ public class ExpEval {
 		return sb.toString();
 	}
 	
-	private String evalTreeNodeToStr(CommonTree node) {
+	public String evalTreeNodeToStr(CommonTree node) {
 		Object value = evalTreeNode(node);
 		return getPrettyPrintStr(value);
 	}
@@ -693,6 +699,8 @@ public class ExpEval {
 		try {
 			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			Value contextVar = evalContext.get(name);
+			if (contextVar != null) return contextVar;
 			
 			if (searchLocalVar) {
 				LocalVariable localVariable;
@@ -1096,6 +1104,13 @@ public class ExpEval {
 			e.printStackTrace();
 		}
 		return null;
+    }
+    
+    public void putVar(String name, Value value) {
+    	evalContext.put(name, value);
+    }
+    public void removeVar(String name) {
+    	evalContext.remove(name);
     }
 	
 }
