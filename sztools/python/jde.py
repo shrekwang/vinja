@@ -2228,6 +2228,11 @@ class Jdb(object):
 
     def breakCmd(self, cmdLine):
         global bp_data
+        condition = ""
+        if " if " in cmdLine:
+            condition = cmdLine[ cmdLine.find(" if ") :]
+            cmdLine = cmdLine[0: cmdLine.find(" if ")]
+
         cmd, row = cmdLine.strip().split()
         row = int(row.strip())
         self.switchSourceBuffer()
@@ -2238,7 +2243,7 @@ class Jdb(object):
         if bp_set == None :
             bp_set = set()
 
-        cmdline = "%s %s %s" % (cmd, row,mainClassName)
+        cmdline = "%s %s %s %s " % (cmd, row,mainClassName, condition)
         data = JdbTalker.submit(cmdline,self.class_path_xml,self.serverName)
 
         if "success" in data :

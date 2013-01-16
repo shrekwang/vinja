@@ -7,7 +7,7 @@ shutdown               --shutdown the target process
 hide                   --hide jdb buffer
 exit                   --exit jdb
 
-break  n               --create breakpoint on line n(alias b)
+break  n  [if cond]    --create breakpoint on line n(alias b)
 tbreak n               --temp breakpoint on line n(alias tb)
 clear  n               --remove breakpoint on line n(alias cl)
 breakpoints            --list breakpoints,including watchpoints
@@ -33,7 +33,6 @@ frame n               --change current frame to n-th frame in current stack, sta
 up                    --change current frame to current frame -1
 down                  --change current frame to current frame +1
 
-bpa classname lineNum condition-exp     --add conditional break point
 setvalue  varname value-expression      --set varname's value to result of value-expression
 
 step_into     --step into method ,key <F5> (alias:step,s)

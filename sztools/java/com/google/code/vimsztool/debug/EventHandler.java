@@ -49,27 +49,37 @@ public class EventHandler extends Thread {
 				e.printStackTrace();
 			}
 			EventIterator eventIterator = eventSet.eventIterator();
+			boolean suspendEventHandled = false;
 			while (eventIterator.hasNext()) {
 				Event event = (Event) eventIterator.next();
 				if (event instanceof VMStartEvent) {
 					handleVMStartEvent((VMStartEvent)event);
-				} else if (event instanceof ClassPrepareEvent) {
+				} 
+				else if (event instanceof ClassPrepareEvent) {
 					handleClassPrepareEvent((ClassPrepareEvent)event);
-				} else if (event instanceof BreakpointEvent) {
-					handleBreakpointEvent((BreakpointEvent)event);
-				} else if (event instanceof VMDisconnectEvent) {
+				} 
+				else if (event instanceof StepEvent) {
+					handleStepEvent((StepEvent)event);
+					suspendEventHandled = true;
+				} 
+				else if (event instanceof BreakpointEvent) {
+					if (!suspendEventHandled) handleBreakpointEvent((BreakpointEvent)event);
+				} 
+				else if (event instanceof VMDisconnectEvent) {
 					handleVMDisconnectEvent((VMDisconnectEvent)event);
 					vmExit = true;
-				} else if (event instanceof VMDeathEvent) {
+				} 
+				else if (event instanceof VMDeathEvent) {
 					handleVMDeathEvent((VMDeathEvent)event);
 					vmExit = true;
-				} else if (event instanceof ExceptionEvent) {
+				} 
+				else if (event instanceof ExceptionEvent) {
 					handleExceptionEvent((ExceptionEvent)event);
-				} else if (event instanceof StepEvent) {
-					handleStepEvent((StepEvent)event);
-				} else if (event instanceof WatchpointEvent) {
-					handleWatchpointEvent((WatchpointEvent)event);
-				} else {
+				} 
+				else if (event instanceof WatchpointEvent) {
+					if (!suspendEventHandled) handleWatchpointEvent((WatchpointEvent)event);
+				} 
+				else {
 					eventSet.resume();
 				}
 			}
@@ -122,7 +132,7 @@ public class EventHandler extends Thread {
 		if (tmp != null) breakpoint = (Breakpoint)tmp;
 		
 		if (breakpoint !=null && breakpoint.getConExp() != null) {
-			Object obj = debugger.getExpEval().eval(breakpoint.getConExp());
+			Object obj = debugger.getExpEval().evalSimpleValue(breakpoint.getConExp());
 			if (obj ==null || !obj.equals("true")) {
 				event.thread().resume();
 				return; 

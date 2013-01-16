@@ -338,6 +338,19 @@ public class ExpEval {
 		return sb.toString();
 	}
 	
+	public String evalSimpleValue(String exp) {
+		ParseResult result = AstTreeFactory.getExpressionAst(exp);
+		if (result.hasError()) {
+			return result.getErrorMsg();
+		}
+		try {
+			CommonTree node = result.getTreeList().get(0);
+			return evalTreeNodeToStr(node);
+		} catch (ExpressionEvalException e) {
+			return e.getMessage();
+		}
+	}
+	
 	public String evalTreeNodeToStr(CommonTree node) {
 		Object value = evalTreeNode(node);
 		return getPrettyPrintStr(value);
