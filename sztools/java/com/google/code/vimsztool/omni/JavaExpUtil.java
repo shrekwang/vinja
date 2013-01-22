@@ -32,7 +32,7 @@ public class JavaExpUtil {
 		return aClass;
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static Class searchMemberInHierarchy(Class aClass, String memberName,
 			String memberType, ModifierFilter modifierFilter, boolean classType) {
 		Class fClass = null;
@@ -57,6 +57,18 @@ public class JavaExpUtil {
 					}
 					foundField = true;
 					break;
+				}
+			}
+			if (foundField) break;
+			//try inner class
+			if (memberType.equals("field")) {
+				Class[] classes =aClass.getDeclaredClasses();
+				for (Class clazz: classes) {
+					if (clazz.getSimpleName().equals(memberName)) {
+						foundField = true;
+						fClass = clazz;
+						break;
+					}
 				}
 			}
 			if (foundField) break;

@@ -408,8 +408,15 @@ public class JavaSourceSearcher {
 
 			} else if (parent.getType() == JavaParser.QUALIFIED_TYPE_IDENT ) {
             		if ( parent.getParent().getType() == JavaParser.CLASS_CONSTRUCTOR_CALL ) {
-            			//search constructor call like " new ArrayList()"
-		            	info = searchConstructorDefLocation(node); 	
+            			//search constructor call like " new ArrayList()" or " View.OnClickListener() "
+            			String className = convertTypeName(node.getText());
+            			if (parent.getChildCount() > 1) {
+            				className = convertTypeName(parent.getChild(0).getText());
+            				if (node.getChildIndex() == 1) {
+	            				className = className + "$" + node.getText();
+            				}
+            			}
+		            	info = searchConstructorDefLocation(className, node); 	
             		} else if ( parent.getParent().getType() == JavaParser.TYPE
             				&& parent.getChildCount() > 1 ) {
             			//seachr static inner class like "Map.Entry"
@@ -443,9 +450,9 @@ public class JavaSourceSearcher {
         return info;
     }
     
-    public LocationInfo searchConstructorDefLocation(CommonTree node) {
+    public LocationInfo searchConstructorDefLocation(String className, CommonTree node) {
     	LocationInfo info = new LocationInfo();
-    	String className = convertTypeName(node.getText());
+    	
         String classPath = getClassFilePath(className);
         info.setFilePath(classPath);
         CommonTree parent = (CommonTree)node.getParent(); 
@@ -606,6 +613,7 @@ public class JavaSourceSearcher {
 		
 		//if classname not equals to filename, find member in subclass or inner enum .
 		if (!FilenameUtils.getBaseName(classFilePath).equals(className)) {
+			if (className.indexOf("$") > 0) className = className.substring(className.indexOf("$")+1);
 			for (MemberInfo classMember : leftClassMembers) {
 				if ((classMember.getMemberType() == MemberType.ENUM
 						|| classMember.getMemberType() == MemberType.SUBCLASS)
@@ -696,6 +704,7 @@ public class JavaSourceSearcher {
                     	}
                     	List<MemberInfo> subMemberInfos = new ArrayList<MemberInfo>();
                     	readClassInfo(child, subMemberInfos);
+                    	info.setMemberType(MemberType.SUBCLASS);
                     	info.setSubMemberList(subMemberInfos);
                     }
                     	
@@ -863,7 +872,8 @@ public class JavaSourceSearcher {
         			String memberType = "field";
         			aClass = JavaExpUtil.searchMemberInHierarchy(aClass, memberName ,memberType ,filter,false);
         			if (aClass != null) {
-        				typename = aClass.getCanonicalName();
+        				//typename = aClass.getCanonicalName();
+        				typename = aClass.getName();
         			}
             	}
             	break;

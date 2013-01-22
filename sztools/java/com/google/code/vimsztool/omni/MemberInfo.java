@@ -4,6 +4,7 @@ public class MemberInfo {
 	
 	public static final String TYPE_METHOD="method"; 
 	public static final String TYPE_FIELD="field"; 
+	public static final String TYPE_CLASS="class"; 
 	public static final String TYPE_CONSTRUCTOR="constructor"; 
 	
 	private String memberType;

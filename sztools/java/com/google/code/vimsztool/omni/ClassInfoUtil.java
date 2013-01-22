@@ -131,6 +131,23 @@ public class ClassInfoUtil {
 			memberInfo.setParams(getParameterInfo(methods[i]));
 			memberInfos.add(memberInfo);
 		}
+		
+		Class[] classes = aClass.getDeclaredClasses();
+		for (int i=0; i< classes.length; i++) {
+			int mod = classes[i].getModifiers();
+			if (!isValidateModifier(staticMember, protectedMember, mod))
+				continue;
+			
+			MemberInfo memberInfo = new MemberInfo();
+			memberInfo.setModifiers("");
+			memberInfo.setMemberType(MemberInfo.TYPE_CLASS);
+			memberInfo.setName(classes[i].getSimpleName());
+			memberInfo.setReturnType("");
+			memberInfo.setExceptions("");
+			memberInfo.setParams("");
+			memberInfos.add(memberInfo);
+			
+		}
 		return memberInfos;
 
 	}
