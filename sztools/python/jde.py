@@ -2342,7 +2342,7 @@ class Jdb(object):
             cmdLine = "run"  +" " + self.lastRunClass
 
         change_suspend_cmds = ["step_into","step_over","step_return","resume",
-                "exit","shutdown","frame","disconnect","until","up","down"]
+                "exit","shutdown","frame","disconnect","until","up","down","thread"]
         if cmdLine.strip().split(" ")[0] in change_suspend_cmds :
             self.resumeSuspend()
 

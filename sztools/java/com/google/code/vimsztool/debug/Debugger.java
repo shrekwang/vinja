@@ -191,6 +191,11 @@ public class Debugger {
 	
 	private List<String> getStackFrameInfos(ThreadReference threadRef) {
 		List<String> result = new ArrayList<String>();
+		long currentSuspendId = -1;
+		if (suspendThreadStack.getCurThreadRef() != null) {
+			currentSuspendId = suspendThreadStack.getCurThreadRef().uniqueID();
+		}
+		
 		try {
 			List<StackFrame> frames = threadRef.frames();
 			for (int i=0; i<frames.size(); i++) {
@@ -199,7 +204,8 @@ public class Debugger {
 				String name = loc.declaringType().name() + "."
 						+ loc.method().name();
 				String frameInfo = name + " line: " + loc.lineNumber();
-				if (i == suspendThreadStack.getCurFrame()) {
+				if (i == suspendThreadStack.getCurFrame()
+						&& threadRef.uniqueID() == currentSuspendId ) {
 					frameInfo = frameInfo + "  (current frame) ";
 				}
 				String num = padStr(3,"#"+i);
@@ -233,6 +239,11 @@ public class Debugger {
 		sb.append(getIndentStr(startLevel));
 		sb.append("Thread [" + ref.name() + "] ( ");
 		String status = getThreadStatusName(ref.status());
+		long currentSuspendId = -1;
+		if (suspendThreadStack.getCurThreadRef() != null) {
+			currentSuspendId = suspendThreadStack.getCurThreadRef().uniqueID();
+		}
+		
 		try {
 			if (ref.isSuspended()
 					&& ref.status() == ThreadReference.THREAD_STATUS_RUNNING) {
@@ -248,6 +259,9 @@ public class Debugger {
 				sb.append(") ");
 			}
 			sb.append(")").append(" uniqueId : ").append(ref.uniqueID());
+			if (ref.uniqueID() == currentSuspendId) {
+				sb.append(" (current thread)");
+			}
 			sb.append("\n");
 			
 			if (ref.isSuspended()) {
@@ -307,14 +321,15 @@ public class Debugger {
 	
 	public String changeCurrentThread(String uniqueId) {
 		checkVm();
-		checkSuspendThread();
 		
 		List<ThreadReference> threads = vm.allThreads();
 		ThreadReference correctRef = null;
 		for (ThreadReference ref : threads) {
 			if (String.valueOf(ref.uniqueID()).equals(uniqueId)) {
-				correctRef = ref;
-				break;
+				if (ref.isSuspended()) {
+					correctRef = ref;
+					break;
+				}
 			}
 		}
 		if (correctRef == null) return "no matched suspend thread";
