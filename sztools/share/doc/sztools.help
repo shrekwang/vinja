@@ -41,7 +41,7 @@ File display & edit :
     edit [args]    : edit file.
 
 LocateDb :
-    locatedb command entry_name [--dir dir][--depth depth][--excludes excludes]  :index dir or remove indexed data.
+    locatedb {add|remove|refresh|list} entry_name [--dir dir][--depth depth][--excludes excludes]  :index dir or remove indexed data.
     locate   [-n alias][-p path][--help]              : search files in indexed db.
     ledit  [ args ]                                       : search files in indexed db and edit it if found.
     lgrep  [-n alias][-p path][search-pattern][filename]  : like "grep" , but only search file names in indexed db.
