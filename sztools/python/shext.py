@@ -1053,6 +1053,19 @@ class Shext(object):
             cmdArray[1] = ab_path
         return cmdArray
 
+    def listExtraCmds(self):
+        if not os.path.exists(self.extra_cmd_home) :
+            Shext.stdout("no extra_cmd_home difined in sztools.cfg")
+            return 
+        result = []
+        for name in os.listdir(self.extra_cmd_home):
+            if name.endswith(".py"):
+                ab_path = os.path.join(self.extra_cmd_home, name)
+                output = Popen(["python", ab_path, "--desc"], stdout=PIPE, shell = True).communicate()[0]
+                result.append(name[0:name.rfind(".")] +" : " )
+                result.append(output.replace("\r",""))
+
+        Shext.stdout("\n".join(result))
 
     def runInBackground(self,cmdline):
         try :
@@ -1234,6 +1247,8 @@ class Shext(object):
             self.set(cmd[1:])
         elif cmd[0] == "help" :
             self.help()
+        elif cmd[0] == "listext" :
+            self.listExtraCmds()
         else :
             self.runSysCmd(cmd,cmdLine)
 
