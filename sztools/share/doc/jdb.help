@@ -49,7 +49,7 @@ displayi expression    --add inspect variable(when program is suspended,alias di
 show_display           --list current watched variables
 undisplay expression   --remove displayed variable
 
-Use <c-o> to toggle quickstep mode:
+Use <c-i> to toggle quickstep mode:
   l   -->step_into
   j   -->step_over
   h   -->step_return
