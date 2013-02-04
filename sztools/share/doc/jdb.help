@@ -7,7 +7,11 @@ shutdown               --shutdown the target process
 hide                   --hide jdb buffer
 exit                   --exit jdb
 
-break  n  [if cond]    --create breakpoint on line n(alias b)
+
+break  n  [if '[cond]'] [do '[cmds]']   
+--create breakpoint on line n(alias b)
+   example: "b 10 if [a > 5]",  "break 20 do [print a, setvalue b 20]"
+
 tbreak n               --temp breakpoint on line n(alias tb)
 clear  n               --remove breakpoint on line n(alias cl)
 breakpoints            --list breakpoints,including watchpoints

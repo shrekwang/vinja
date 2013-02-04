@@ -60,7 +60,7 @@ public class DebugCommand  extends SzjdeCommand {
 		String actionResult = "";
 		
 		if (!isAvailCmd(debugCmd)) {
-			return "not a valid command, try \"help\".";
+			return debugCmd + " is not a valid command, try \"help\".";
 		}
 		
 		if (debugCmd.equals("run")) {

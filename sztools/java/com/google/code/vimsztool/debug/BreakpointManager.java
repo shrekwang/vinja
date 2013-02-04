@@ -194,7 +194,9 @@ public class BreakpointManager {
 		} else {
 			breakpoint = new Breakpoint(mainClass, lineNum);
 		}
-		allBreakpoints.add(breakpoint);
+		if (breakpoint != null) {
+			allBreakpoints.add(breakpoint);
+		}
 		return breakpoint;
 	}
 

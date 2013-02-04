@@ -141,10 +141,12 @@ public class EventHandler extends Thread {
 		}
 		handleSuspendLocatableEvent(event);
 		if (breakpoint != null && breakpoint.getAutoCmds().size()>0 ) {
-			StringBuilder resultSb = new StringBuilder();
+			StringBuilder resultSb = new StringBuilder("\nBreakpoint Autocmds:\n");
 			DebugCommand debugCommand = new DebugCommand();
 			for (String cmd : breakpoint.getAutoCmds()) {
-				resultSb.append(debugCommand.execute(debugger, debugger.getClassPathXml(), cmd));
+				String line = debugCommand.execute(debugger, debugger.getClassPathXml(), cmd);
+				if (!line.endsWith("\n")) line = line + "\n";
+				resultSb.append("   ").append(line);
 			}
 			debugger.setAutoCmdResult(resultSb.toString());
 			String funcName = "FetchAutocmdResult";

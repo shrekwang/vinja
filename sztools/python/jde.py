@@ -2230,7 +2230,7 @@ class Jdb(object):
         global bp_data
         condition = ""
 
-        pat = re.compile(r"^(?P<cmd>.*)\s+(?P<row>\d+)(\s+if\s+(?P<condition>\[.*?\]))?(\s+do\s+(?P<autocmds>\[.*?\]))?")
+        pat = re.compile(r"^(?P<cmd>.*?)\s+(?P<row>\d+)(\s+if\s+(?P<condition>\[.*?\]))?(\s+do\s+\[(?P<autocmds>.*?)\])?")
         search_res = pat.search(cmdLine)
         if search_res == None :
             self.stdout("parse break command error.")
@@ -2249,10 +2249,12 @@ class Jdb(object):
             bp_set = set()
 
         cmdLine = "%s %s %s " % (cmd, row,mainClassName )
+
         if condition != None :
             cmdLine = cmdLine + " if " + condition 
         if autocmds != None :
-            cmdLine = cmdLine + " do " + autocmds
+            autocmds = ";".join([self.replaceAlias(item.strip()) for item in autocmds.split(";")])
+            cmdLine = cmdLine + " do [" + autocmds + "]"
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
 
