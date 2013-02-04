@@ -3,6 +3,8 @@ package com.google.code.vimsztool.debug;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.omni.ClassInfo;
@@ -115,14 +117,72 @@ public class BreakpointManager {
 	public String addBreakpoint(String mainClass, int lineNum,String conExp) {
 		return this.addBreakpoint(mainClass, lineNum, conExp,false);
 	}
+	
+	public String addBreakpoint(String cmdLine) {
+		Pattern pat = Pattern.compile("^(.*)\\s+(\\d+)\\s+(.*?)(\\s+if\\s+\\[.*?\\])?(\\s+do\\s+\\[.*?\\])?");
+        Matcher matcher = pat.matcher(cmdLine);
+		if (! matcher.matches()) return "parse do command error";
+		
+		int lineNum = Integer.parseInt(matcher.group(2));
+		String mainClass = matcher.group(3);
+		
+		Breakpoint breakpoint = createBreakpoint(mainClass, lineNum);
+		if (breakpoint == null) {
+			return "no source line " + lineNum +" in class \"" + mainClass+"\"";
+		}
+		
+		String ifClause = matcher.group(4);
+		if (ifClause !=null) {
+			ifClause = ifClause.trim();
+			String condition = ifClause.substring(ifClause.indexOf("[")+1, ifClause.length()-1);
+			breakpoint.setConExp(condition);
+		}
+		String doClause = matcher.group(5);
+		if (doClause != null) {
+			doClause =doClause.trim();
+			String[] cmds = doClause.substring(doClause.indexOf("[")+1, doClause.length()-1).split(";");
+			for (String cmd: cmds) {
+				cmd = cmd.trim();
+				if (cmd.equals("")) continue;
+				breakpoint.addAutoCmd(cmd);
+			}
+		}
+		
+		tryCreateRequest(breakpoint);
+		return Debugger.CMD_SUCCESS + ": add breakpoint at class \"" + mainClass + "\", line " + lineNum;
+	}
 
 	public String addBreakpoint(String mainClass, int lineNum,String conExp,boolean temp) {
+		
+		Breakpoint breakpoint = createBreakpoint(mainClass, lineNum);
+		if (breakpoint == null) {
+			return "no source line " + lineNum +" in class \"" + mainClass+"\"";
+		}
+		breakpoint.setConExp(conExp);
+		breakpoint.setTemp(temp);
+		
+		tryCreateRequest(breakpoint);
+		return Debugger.CMD_SUCCESS + ": add breakpoint at class \"" + mainClass + "\", line " + lineNum;
+	}
+	
+	private Breakpoint createBreakpoint(String mainClass, int lineNum) {
+		
+		Breakpoint breakpoint = null;
+		for (Breakpoint bp : allBreakpoints) {
+			if (bp.getKind() == Breakpoint.Kind.WATCH_POINT) continue;
+			if (bp.getMainClass().equals(mainClass) && bp.getLineNum() == lineNum) {
+				breakpoint = bp;
+				break;
+			}
+		}
+		if (breakpoint != null) return breakpoint;
+		
 		CompilerContext ctx = debugger.getCompilerContext();
 		ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
 		
 		ClassInfo metaInfo = cmm.getMetaInfo(mainClass);
-		if (metaInfo == null) return "failure";
-		Breakpoint breakpoint = null;
+		if (metaInfo == null) return null;
+		
 		if (!metaInfo.getLineNums().contains(lineNum)) {
 			for (String innerclassName : metaInfo.getInnerClasses()	) {
 				ClassInfo innerClassInfo = cmm.getMetaInfo(innerclassName);
@@ -134,17 +194,8 @@ public class BreakpointManager {
 		} else {
 			breakpoint = new Breakpoint(mainClass, lineNum);
 		}
-		
-		if (breakpoint == null) {
-			return "no source line " + lineNum +" in class \"" + mainClass+"\"";
-		}
-		breakpoint.setConExp(conExp);
-		breakpoint.setTemp(temp);
-		
-		
 		allBreakpoints.add(breakpoint);
-		tryCreateRequest(breakpoint);
-		return Debugger.CMD_SUCCESS + ": add breakpoint at class \"" + mainClass + "\", line " + lineNum;
+		return breakpoint;
 	}
 
 	public String removeBreakpoint(String mainClass, int lineNum) {

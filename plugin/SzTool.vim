@@ -497,6 +497,12 @@ function FetchJdbResult()
   redraw
 endfunction
 
+
+function FetchAutocmdResult()
+  python jdb.fetchAutocmdResult()
+  redraw
+endfunction
+
 function HandleJdiEvent(...)
   python jdb.handleJdiEvent(vim.eval("a:000"))
   "redraw

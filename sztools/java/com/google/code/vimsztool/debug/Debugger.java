@@ -46,6 +46,8 @@ public class Debugger {
 	private EventHandler eventHandler = null;
 	private String vimServerName = "";
 	private CompilerContext compilerContext =null;
+	private String classPathXml = null;
+	
 	private Preference pref = Preference.getInstance();
 	private StringBuffer buffer = new StringBuffer();
 	private ScheduledExecutorService exec = null;
@@ -59,6 +61,8 @@ public class Debugger {
 	
 	public static final String CMD_SUCCESS = "success";
 	public static final String CMD_FAIL = "fail";
+	
+	private String autoCmdResult = "";
 	
 	private static ConcurrentHashMap<String, Debugger> instances = new ConcurrentHashMap<String, Debugger>();
 
@@ -93,6 +97,9 @@ public class Debugger {
 		return result;
 	}
 
+	public String fetchAutocmdResult() {
+		return this.autoCmdResult;
+	}
 
 	private void startProcess() {
 		if (process == null) {
@@ -171,6 +178,16 @@ public class Debugger {
 			if (bp.getKind() == Breakpoint.Kind.BREAK_POINT) {
 				sb.append(className).append(" [line: ");
 				sb.append(bp.getLineNum()).append("] - ");
+				if (bp.getConExp() != null) {
+					sb.append(" if [").append(bp.getConExp()).append("]");
+				}
+				if (bp.getAutoCmds().size()>0) {
+					sb.append(" do [");
+					for (String autoCmd : bp.getAutoCmds()) {
+						sb.append(autoCmd).append(";");
+					}
+					sb.append("]");
+				}
 			} else {
 				sb.append(className).append(" [field: ");
 				sb.append(bp.getField()).append("] - ");
@@ -711,6 +728,22 @@ public class Debugger {
 
 	public void setSuspendThreadStack(SuspendThreadStack suspendThreadStack) {
 		this.suspendThreadStack = suspendThreadStack;
+	}
+
+	public String getAutoCmdResult() {
+		return autoCmdResult;
+	}
+
+	public void setAutoCmdResult(String autoCmdResult) {
+		this.autoCmdResult = autoCmdResult;
+	}
+
+	public String getClassPathXml() {
+		return classPathXml;
+	}
+
+	public void setClassPathXml(String classPathXml) {
+		this.classPathXml = classPathXml;
 	}
 
 }

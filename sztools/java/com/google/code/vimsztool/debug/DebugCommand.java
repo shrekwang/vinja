@@ -18,12 +18,18 @@ public class DebugCommand  extends SzjdeCommand {
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
 		"setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay",
 		"show_display","eval_display","tbreak", "watch","rwatch","awatch","up","down",
-		"sfields","sinspect","qeval"
+		"sfields","sinspect","qeval","fetchAutocmdResult"
 		};
 	
 	public String execute() {
 		try {
-			String actionResult = executeInternal();
+			String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
+			String debugCmdLine = params.get("debugCmdArgs");
+			String serverName = params.get("serverName");
+			Debugger debugger = Debugger.getInstance(serverName);
+			debugger.setVimServerName(serverName);
+			String actionResult = execute(debugger, classPathXml, debugCmdLine);
+			
 			return actionResult;
 		} catch (NoConnectedVmException e) {
 			return "no virtual machine connected.";
@@ -32,13 +38,8 @@ public class DebugCommand  extends SzjdeCommand {
 		}
 	}
 	
-	public String executeInternal() {
-		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
-		String debugCmdArgs = params.get("debugCmdArgs");
+	public String execute(Debugger debugger, String classPathXml, String debugCmdLine) {
 		
-		String serverName = params.get("serverName");
-		Debugger debugger = Debugger.getInstance(serverName);
-		debugger.setVimServerName(serverName);
 		
 		BreakpointManager bpMgr = debugger.getBreakpointManager();
 		DisplayVariableManager dvMgr = debugger.getDisplayVariableManager();
@@ -48,11 +49,12 @@ public class DebugCommand  extends SzjdeCommand {
 		CompilerContextManager ccm = CompilerContextManager.getInstnace();
 		CompilerContext ctx = ccm.getCompilerContext(classPathXml);
 		debugger.setCompilerContext(ctx);
+		debugger.setClassPathXml(classPathXml);
 		
-		if (debugCmdArgs == null || debugCmdArgs.trim().equals("")) {
+		if (debugCmdLine == null || debugCmdLine.trim().equals("")) {
 			return "";
 		}
-		String[] args = debugCmdArgs.split("\\s+");
+		String[] args = debugCmdLine.split("\\s+");
 		String debugCmd = args[0];
 		
 		String actionResult = "";
@@ -62,10 +64,10 @@ public class DebugCommand  extends SzjdeCommand {
 		}
 		
 		if (debugCmd.equals("run")) {
-			String cmdLine = debugCmdArgs.substring(4).trim();
+			String cmdLine = debugCmdLine.substring(4).trim();
 			actionResult = debugger.launch(classPathXml, cmdLine,false);
 		} else if (debugCmd.equals("runtest")) {
-			String cmdLine = debugCmdArgs.substring(8).trim();
+			String cmdLine = debugCmdLine.substring(8).trim();
 			actionResult = debugger.launch(classPathXml, cmdLine,true);
 		} else if (debugCmd.equals("attach")) {
 			String host = null;
@@ -78,13 +80,7 @@ public class DebugCommand  extends SzjdeCommand {
 			}
 			actionResult = debugger.attach(host,port);
 		} else if (debugCmd.equals("breakpoint_add")) {
-			String mainClass = args[2];
-			int lineNum = Integer.parseInt(args[1]);
-			String condition = null;
-			if (debugCmdArgs.indexOf(" if ") > 0) {
-				condition = debugCmdArgs.substring(debugCmdArgs.indexOf(" if ")+4);
-			}
-			actionResult = bpMgr.addBreakpoint(mainClass, lineNum,condition);
+			actionResult = bpMgr.addBreakpoint(debugCmdLine);
 		} else if (debugCmd.equals("until")) {
 			int lineNum = Integer.parseInt(args[1]);
 			String mainClass = args[2];
@@ -128,15 +124,15 @@ public class DebugCommand  extends SzjdeCommand {
 				|| debugCmd.equals("sfields") || debugCmd.equals("sinspect")
 				|| debugCmd.equals("qeval")) {
 			ExpEval expEval = debugger.getExpEval();
-			actionResult =  expEval.executeEvalCmd(debugCmd, debugCmdArgs);
+			actionResult =  expEval.executeEvalCmd(debugCmd, debugCmdLine);
 		} else if (debugCmd.equals("display")) {
-			String exp = debugCmdArgs.substring(debugCmd.length()+1);
+			String exp = debugCmdLine.substring(debugCmd.length()+1);
 			actionResult =  dvMgr.addWatchExpression(exp);
 		} else if (debugCmd.equals("displayi")) {
-			String exp = debugCmdArgs.substring(debugCmd.length()+1);
+			String exp = debugCmdLine.substring(debugCmd.length()+1);
 			actionResult =  dvMgr.addInspectExpression(exp);
 		} else if (debugCmd.equals("undisplay")) {
-			String exp = debugCmdArgs.substring(debugCmd.length()+1);
+			String exp = debugCmdLine.substring(debugCmd.length()+1);
 			actionResult =  dvMgr.removeWatchVariables(exp);
 		} else if (debugCmd.equals("show_display")) {
 			actionResult =  dvMgr.showWatchVariables();
@@ -192,7 +188,9 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = debugger.launchTomcat();
 		} else if (debugCmd.equals("fetchJdbResult")) {
 			actionResult = debugger.fetchResult();
-		}
+		} else if (debugCmd.equals("fetchAutocmdResult")) {
+			actionResult = debugger.fetchAutocmdResult();
+		} 
 		return actionResult;
 	}
 	

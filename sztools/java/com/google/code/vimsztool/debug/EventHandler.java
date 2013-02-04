@@ -140,11 +140,22 @@ public class EventHandler extends Thread {
 			
 		}
 		handleSuspendLocatableEvent(event);
+		if (breakpoint != null && breakpoint.getAutoCmds().size()>0 ) {
+			StringBuilder resultSb = new StringBuilder();
+			DebugCommand debugCommand = new DebugCommand();
+			for (String cmd : breakpoint.getAutoCmds()) {
+				resultSb.append(debugCommand.execute(debugger, debugger.getClassPathXml(), cmd));
+			}
+			debugger.setAutoCmdResult(resultSb.toString());
+			String funcName = "FetchAutocmdResult";
+			VjdeUtil.callVimFunc(debugger.getVimServerName(), funcName, null);
+		}
 		
 		//remove temporary breakpoint
 		if (breakpoint !=null && breakpoint.isTemp() == true) {
 			bpm.removeBreakpoint(breakpoint.getMainClass(), breakpoint.getLineNum());
 		}
+		
 	}
  
 	private void handleStepEvent(StepEvent event) {

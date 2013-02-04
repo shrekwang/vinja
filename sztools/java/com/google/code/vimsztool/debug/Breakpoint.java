@@ -19,11 +19,11 @@ public class Breakpoint {
 	private boolean temp;
 	private int accessMode = ACCESS_READ | ACCESS_WRITE ;
 	private Kind kind = Kind.BREAK_POINT;
-	
 	private List<EventRequest> requests = new ArrayList<EventRequest>();
 	
+	//do when code executing reached the breakpoint
+	private List<String> autoCmds = new ArrayList<String>();
 	
-
 	public Breakpoint(String className, String field) {
 		this.mainClass = className;
 		this.field = field;
@@ -99,6 +99,18 @@ public class Breakpoint {
 
 	public void setField(String field) {
 		this.field = field;
+	}
+	
+	public void addAutoCmd(String cmd) {
+		this.autoCmds.add(cmd);
+	}
+	
+	public void clearAutoCmd() {
+		this.autoCmds.clear();
+	}
+	
+	public List<String> getAutoCmds() {
+		return this.autoCmds;
 	}
 	
 

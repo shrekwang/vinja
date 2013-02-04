@@ -802,16 +802,16 @@ class EditUtil(object):
         bufnr=str(vim.eval("bufnr('%')"))
 
         if row in bp_set :
-            cmdline = "breakpoint_remove %s %s" % (row,mainClassName)
-            data = JdbTalker.submit(cmdline,class_path_xml,serverName)
+            cmdLine = "breakpoint_remove %s %s" % (row,mainClassName)
+            data = JdbTalker.submit(cmdLine,class_path_xml,serverName)
             if "success" in data :
                 bp_set.remove(row)
                 HighlightManager.removeSign(file_name,row,"B")
             else :
                 print "remove breakpoint error : msgs "+data
         else :
-            cmdline = "breakpoint_add %s %s" % (row,mainClassName)
-            data = JdbTalker.submit(cmdline,class_path_xml,serverName)
+            cmdLine = "breakpoint_add %s %s" % (row,mainClassName)
+            data = JdbTalker.submit(cmdLine,class_path_xml,serverName)
             if "success" in data :
                 HighlightManager.addSign(file_name,row, "B")
                 bp_set.add(row)
@@ -2229,12 +2229,17 @@ class Jdb(object):
     def breakCmd(self, cmdLine):
         global bp_data
         condition = ""
-        if " if " in cmdLine:
-            condition = cmdLine[ cmdLine.find(" if ") :]
-            cmdLine = cmdLine[0: cmdLine.find(" if ")]
 
-        cmd, row = cmdLine.strip().split()
-        row = int(row.strip())
+        pat = re.compile(r"^(?P<cmd>.*)\s+(?P<row>\d+)(\s+if\s+(?P<condition>\[.*?\]))?(\s+do\s+(?P<autocmds>\[.*?\]))?")
+        search_res = pat.search(cmdLine)
+        if search_res == None :
+            self.stdout("parse break command error.")
+            return
+        cmd = search_res.group("cmd")
+        row = search_res.group("row")
+        condition = search_res.group("condition")
+        autocmds = search_res.group("autocmds")
+
         self.switchSourceBuffer()
         mainClassName = Parser.getMainClass()
 
@@ -2243,9 +2248,15 @@ class Jdb(object):
         if bp_set == None :
             bp_set = set()
 
-        cmdline = "%s %s %s %s " % (cmd, row,mainClassName, condition)
-        data = JdbTalker.submit(cmdline,self.class_path_xml,self.serverName)
+        cmdLine = "%s %s %s " % (cmd, row,mainClassName )
+        if condition != None :
+            cmdLine = cmdLine + " if " + condition 
+        if autocmds != None :
+            cmdLine = cmdLine + " do " + autocmds
 
+        data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
+
+        row = int(row.strip())
         if "success" in data :
             if cmd == "breakpoint_add" or cmd == "tbreak" :
                 bp_set.add(row)
@@ -2425,6 +2436,13 @@ class Jdb(object):
             return 
         lines = resultText.split("\n")
         VimUtil.writeToSzToolBuffer("JdeConsole",lines,append=True)
+
+    def fetchAutocmdResult(self):
+        resultText = JdbTalker.submit("fetchAutocmdResult",self.class_path_xml,self.serverName)
+        if resultText == "" :
+            return 
+        lines = resultText.split("\n")
+        VimUtil.writeToSzToolBuffer("JdbStdOut",lines,append=True)
 
     def replaceAlias(self, cmdLine):
         alias = ""
