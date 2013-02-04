@@ -144,9 +144,13 @@ public class EventHandler extends Thread {
 			StringBuilder resultSb = new StringBuilder("\nBreakpoint Autocmds:\n");
 			DebugCommand debugCommand = new DebugCommand();
 			for (String cmd : breakpoint.getAutoCmds()) {
-				String line = debugCommand.execute(debugger, debugger.getClassPathXml(), cmd);
-				if (!line.endsWith("\n")) line = line + "\n";
-				resultSb.append("   ").append(line);
+				try {
+					String line = debugCommand.execute(debugger, debugger.getClassPathXml(), cmd);
+					if (!line.endsWith("\n")) line = line + "\n";
+					resultSb.append("   ").append(line);
+				} catch (Throwable e) {
+					resultSb.append("execute " + cmd + " error:" + e.getMessage()+" \n");
+				}
 			}
 			debugger.setAutoCmdResult(resultSb.toString());
 			String funcName = "FetchAutocmdResult";

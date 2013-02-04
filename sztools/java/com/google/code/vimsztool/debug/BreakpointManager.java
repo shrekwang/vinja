@@ -119,7 +119,7 @@ public class BreakpointManager {
 	}
 	
 	public String addBreakpoint(String cmdLine) {
-		Pattern pat = Pattern.compile("^(.*)\\s+(\\d+)\\s+(.*?)(\\s+if\\s+\\[.*?\\])?(\\s+do\\s+\\[.*?\\])?");
+		Pattern pat = Pattern.compile("^(.*?)\\s+(\\d+)\\s+(.*?)(\\s+if\\s+\\{.*?\\})?(\\s+do\\s+\\{.*?\\})?\\s*" );
         Matcher matcher = pat.matcher(cmdLine);
 		if (! matcher.matches()) return "parse do command error";
 		
@@ -134,13 +134,13 @@ public class BreakpointManager {
 		String ifClause = matcher.group(4);
 		if (ifClause !=null) {
 			ifClause = ifClause.trim();
-			String condition = ifClause.substring(ifClause.indexOf("[")+1, ifClause.length()-1);
+			String condition = ifClause.substring(ifClause.indexOf("{")+1, ifClause.length()-1);
 			breakpoint.setConExp(condition);
 		}
 		String doClause = matcher.group(5);
 		if (doClause != null) {
 			doClause =doClause.trim();
-			String[] cmds = doClause.substring(doClause.indexOf("[")+1, doClause.length()-1).split(";");
+			String[] cmds = doClause.substring(doClause.indexOf("{")+1, doClause.length()-1).split(";");
 			for (String cmd: cmds) {
 				cmd = cmd.trim();
 				if (cmd.equals("")) continue;
