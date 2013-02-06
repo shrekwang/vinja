@@ -920,8 +920,11 @@ class VimUtil(object):
     @staticmethod
     def zoomWinWidth():
         (row,col)=vim.current.window.cursor
-        line=vim.current.buffer[row-1]
-        vim.command("vertical resize %d" % len(line))
+        maxlen = 0
+        for line in vim.current.buffer :
+            if len(line) > maxlen :
+                maxlen = len(line)
+        vim.command("vertical resize %d" % maxlen)
         
     @staticmethod
     def maxWinSize():
