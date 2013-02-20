@@ -58,6 +58,11 @@ function MyTabLabel(n)
 endfunction
 
 function MyTitleString()
+
+  if exists("g:sztool_title")
+    return g:sztool_title
+  endif
+
 	let v = MyTabLabel(tabpagenr()) 
 	let idx = stridx(v, " ")
 	let v1 = strpart(v, idx + 1)

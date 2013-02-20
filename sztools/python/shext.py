@@ -483,6 +483,9 @@ class JdeUtilCmd(object):
             self.jde_help()
         elif cmd_array[0] == "project" :
             self.do_project_command(cmd_array[1:])
+        elif cmd_array[0] == "title" :
+            vim.command("let g:sztool_title = \"%s\"" % cmd_array[1])
+            vim.command("let &titlestring = MyTitleString()")
         else :
             Shext.stdout("not recognized jde command,please run 'jde help' .")
             return
