@@ -47,6 +47,7 @@ LocateDb :
     lgrep  [-n alias][-p path][search-pattern][filename]  : like "grep" , but only search file names in indexed db.
 
 Misc :
+    listext        : list extra shext command.
     batch [args]   : batch execute command .
     set  [args]    : set shext options.
     help           : print this help message.
