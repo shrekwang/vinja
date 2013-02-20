@@ -4,6 +4,7 @@ sztools/lib/szjde.jar
 .classpath
 .project
 .settings
+.jde_tree_state
 doc/meta/*.aux
 doc/meta/*.log
 doc/meta/*.out

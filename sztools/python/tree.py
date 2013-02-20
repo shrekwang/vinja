@@ -524,6 +524,7 @@ class ProjectTree(object):
         self.remove_orignal = False 
         self.work_path_set = []
         self.workset_config_path = os.path.join(root_dir, ".jde_work_set")
+        self.tree_state_path = os.path.join(root_dir, ".jde_tree_state")
         self.prefix_pat = re.compile(r"[^ \-+~`|]")
         self.tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
         self.root_dir = root_dir
@@ -1162,6 +1163,45 @@ class ProjectTree(object):
             found_node = node
         return found_node
 
+    def save_status(self):
+        opened_nodes = []
+        def _get_opened_nodes(current_node) :
+            if current_node.isOpen :
+                opened_nodes.append(current_node.realpath)
+            if not current_node.isLoaded :
+                return
+            for child in current_node.get_children():
+                if child.isDirectory :
+                    _get_opened_nodes(child)
+                elif child.isEdited :
+                    bufnr = vim.eval("bufnr('%s')" % child.realpath)    
+                    if bufnr != "-1" :
+                        vim.command('Bclose %s' % bufnr)
+                    opened_nodes.append(child.realpath)
+        _get_opened_nodes(self._get_render_root())
+        tree_state_file = open(self.tree_state_path,"w") 
+        for path in  opened_nodes :
+            tree_state_file.write(path)
+            tree_state_file.write("\n")
+        tree_state_file.close()
+
+    def restore_status(self, node_type = "dir"):
+        if not os.path.exists(self.tree_state_path):
+            return
+        lines = open(self.tree_state_path,"r").readlines()
+        for line in lines :
+            path = line.strip()
+            if node_type == "dir" :
+                node = self.find_node(path)
+                if node != None :
+                    if node.isDirectory :
+                        node.isOpen = True
+                    else :
+                        node.isEdited = True
+            elif node_type !="dir" and os.path.isfile(path):
+                edit_cmd = "edit"
+                vim.command("%s %s" %(edit_cmd, path))
+
     @staticmethod
     def locate_buf_in_tree(current_file_name = None):
 
@@ -1206,6 +1246,7 @@ class ProjectTree(object):
     def set_file_edit(path, flag):
         if "projectTree" not in globals() :
             return 
+
         if flag == "true" :
             flag = True
         else :
@@ -1243,8 +1284,10 @@ class ProjectTree(object):
         global projectTree
         tab_id = projectTree._get_tab_id()
         if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % tab_id):
+            projectTree.save_status()
             VimUtil.closeSzToolBuffer("ProjectTree_%s" % tab_id)
         projectTree = None
+        del globals()["projectTree"]
 
     @staticmethod
     def runApp():
@@ -1265,9 +1308,13 @@ class ProjectTree(object):
             vim.command("set filetype=ztree")
             vim.command("setlocal statusline=\ ProjectTree")
             vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
+            projectTree.restore_status()
             projectTree.render_tree()
             if current_file_name != None :
                 ProjectTree.locate_buf_in_tree(current_file_name)
+            vim.command("exec 'wincmd w'")
+            projectTree.restore_status(node_type="file")
+            vim.command("exec 'wincmd w'")
 
     @staticmethod
     def gotoBookmark():
@@ -1284,7 +1331,10 @@ class ProjectTree(object):
         selectedIndex = VimUtil.inputOption(options)
         if (selectedIndex) :
             global projectTree
+            if projectTree != None :
+                projectTree.save_status()
             projectTree = None
+            del globals()["projectTree"]
             vim.command("setlocal modifiable")
             vim_buffer = vim.current.buffer
             vim_buffer[:] = None
@@ -1292,6 +1342,10 @@ class ProjectTree(object):
             treeRootName = options[int(selectedIndex)]
             treeRootPath = bm_dict[treeRootName]
             projectTree = ProjectTree.create_project_tree(treeRootPath)
+
+            projectTree.restore_status()
             projectTree.render_tree()
-
-
+            
+            vim.command("exec 'wincmd w'")
+            projectTree.restore_status(node_type="file")
+            vim.command("exec 'wincmd w'")
