@@ -10,7 +10,7 @@ import com.google.code.vimsztool.omni.MemberInfo;
 
 public class SzjdeGetConstructorDefs extends SzjdeCommand {
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public String execute() {
 		String classPathXml = params.get(PARAM_CLASSPATHXML);
 		String[] classNameList = params.get("classnames").split(",");

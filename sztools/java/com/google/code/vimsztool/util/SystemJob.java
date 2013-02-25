@@ -1,7 +1,6 @@
 package com.google.code.vimsztool.util;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -18,7 +17,7 @@ public class SystemJob extends Thread {
 	private String uuid;
 	private String bufname;
 	private String origCmdLine;
-	private Preference pref = Preference.getInstance();
+	//private Preference pref = Preference.getInstance();
 	private ScheduledExecutorService exec = null;
 	private StringBuffer buffer = new StringBuffer();
 	private Process process ;
@@ -67,12 +66,14 @@ public class SystemJob extends Thread {
 			stdOut.start();
 			stdErr.start();
 			
+			/*
 			int timeOut = 60 * 10 ;
 			String timeOutStr = pref.getValue(Preference.JDE_RUN_TIMEOUT);
 			try {
 				timeOut = Integer.parseInt(timeOutStr);
 			} catch (NumberFormatException e) {
 			}
+			*/
 	
 			exec = Executors.newScheduledThreadPool(1);
 	        exec.scheduleAtFixedRate(new BufferChecker(), 1, 100, TimeUnit.MILLISECONDS);

@@ -15,7 +15,7 @@ import com.google.code.vimsztool.util.VjdeUtil;
 
 public class StepFilterConfiger {
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static List<String> getDefaultFilter() {
 		File cfgFile = getConfigFile();
 		if (cfgFile == null) return Collections.EMPTY_LIST;

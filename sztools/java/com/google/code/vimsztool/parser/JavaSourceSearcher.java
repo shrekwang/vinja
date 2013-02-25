@@ -32,8 +32,6 @@ public class JavaSourceSearcher {
     private String currentFileName;
     private String curFullClassName ;
     
-    private List<String> sourceLines = null;
-    
     private List<String> importedNames = new ArrayList<String>();
     private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
     private List<String> staticImportedNames = new ArrayList<String>();
@@ -283,6 +281,7 @@ public class JavaSourceSearcher {
         }
     }
 
+    @SuppressWarnings("all")
     private String getClassFilePath(String className) {
     	String path = ctx.findSourceClass(className);
     	
@@ -343,7 +342,6 @@ public class JavaSourceSearcher {
 						
 						if (node.getCharPositionInLine() > parent .getCharPositionInLine()) { 
 							CommonTree rightNode = (CommonTree) parent.getChild(1);
-							CommonTree pparent = (CommonTree) parent.getParent();
 							MemberType memberType = MemberType.FIELD;
 							String memberName = rightNode.getText();
 							
@@ -809,6 +807,7 @@ public class JavaSourceSearcher {
         return typenameList;
     }
 
+    @SuppressWarnings("all")
     private String parseNodeTypeName(CommonTree node) {
         if (node.getType() == JavaParser.EXPR) {
             node = (CommonTree)node.getChild(0);
@@ -972,6 +971,7 @@ public class JavaSourceSearcher {
         return false;
     }
 
+    @SuppressWarnings("all")
     private String findvarType(String varName ) {
  
         for (LocalVariableInfo var : visibleVars) {
@@ -1189,7 +1189,7 @@ public class JavaSourceSearcher {
     private String parseArrayDeclaratorList(CommonTree t) {
         StringBuilder sb = new StringBuilder();
         for (int i=0; i<t.getChildCount(); i++) {
-            CommonTree c = (CommonTree) t.getChild(i);
+            //CommonTree c = (CommonTree) t.getChild(i);
             sb.append("[]");
         }
         return sb.toString();

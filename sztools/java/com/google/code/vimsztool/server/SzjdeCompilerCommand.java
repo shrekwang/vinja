@@ -11,7 +11,6 @@ import com.google.code.vimsztool.compiler.JDTCompiler;
 import com.google.code.vimsztool.debug.BreakpointManager;
 import com.google.code.vimsztool.debug.Debugger;
 import com.google.code.vimsztool.omni.ClassMetaInfoManager;
-import com.google.code.vimsztool.parser.AstTreeFactory;
 import com.google.code.vimsztool.parser.JavaSourceSearcher;
 import com.google.code.vimsztool.util.HotSwapUtil;
 import com.google.code.vimsztool.util.JdeLogger;

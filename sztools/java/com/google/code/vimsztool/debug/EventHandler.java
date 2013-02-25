@@ -1,7 +1,6 @@
 package com.google.code.vimsztool.debug;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
-import com.google.code.vimsztool.debug.eval.ExpEval;
 import com.google.code.vimsztool.util.VjdeUtil;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
@@ -21,7 +20,6 @@ import com.sun.jdi.event.VMDisconnectEvent;
 import com.sun.jdi.event.VMStartEvent;
 import com.sun.jdi.event.WatchpointEvent;
 import com.sun.jdi.request.BreakpointRequest;
-import com.sun.jdi.request.EventRequestManager;
 
 public class EventHandler extends Thread {
 

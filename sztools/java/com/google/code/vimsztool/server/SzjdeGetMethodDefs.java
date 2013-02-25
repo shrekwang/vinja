@@ -16,7 +16,7 @@ import com.google.code.vimsztool.util.ModifierFilter;
 
 public class SzjdeGetMethodDefs extends SzjdeCommand {
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public String execute() {
 		String classPathXml = params.get(PARAM_CLASSPATHXML);
 		String[] classNameList = params.get("classnames").split(",");
@@ -31,7 +31,7 @@ public class SzjdeGetMethodDefs extends SzjdeCommand {
 		return this.getAllMember(aClass,methodName);
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public String getAllMember(Class aClass,String methodName) {
 		
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();

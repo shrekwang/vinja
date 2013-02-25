@@ -11,7 +11,7 @@ import com.google.code.vimsztool.util.ModifierFilter;
 
 public class JavaExpUtil {
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static Class parseExpResultType(String[] tokens, Class aClass, ModifierFilter modifierFilter) {
 		if (tokens == null || tokens.length == 0) return aClass;
 
@@ -80,7 +80,7 @@ public class JavaExpUtil {
 		return fClass;
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static String getAllMember(Class aClass,String methodName) {
 		
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();

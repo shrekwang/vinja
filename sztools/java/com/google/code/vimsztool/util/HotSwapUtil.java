@@ -14,7 +14,7 @@ import com.sun.jdi.VirtualMachine;
 public class HotSwapUtil {
 	private static JdeLogger log = JdeLogger.getLogger("HotSwapServer");
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static void replace(Debugger debugger, File classFile, String className) {
 		
 		VirtualMachine vm = debugger.getVm();

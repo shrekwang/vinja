@@ -17,7 +17,7 @@ public class SzjdeOverideMethodsCommand extends SzjdeCommand {
 	Set<String> optionalMethods = new HashSet<String>();
 	
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public String execute() {
 		
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
@@ -68,6 +68,7 @@ public class SzjdeOverideMethodsCommand extends SzjdeCommand {
 		return sb.toString();
 	}
 	
+	@SuppressWarnings("all")
 	public List<String> addMethods(Class aClass,boolean mandatory) {
 		List<MemberInfo> memberInfos=ClassInfoUtil.getMemberInfo(aClass, false,true);
 		List<String> methods = new ArrayList<String>();

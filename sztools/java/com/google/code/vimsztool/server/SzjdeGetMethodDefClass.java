@@ -16,7 +16,7 @@ import com.google.code.vimsztool.util.ModifierFilter;
 
 public class SzjdeGetMethodDefClass extends SzjdeCommand {
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public String execute() {
 		String classPathXml = params.get(PARAM_CLASSPATHXML);
 		String[] classNameList = params.get("classnames").split(",");

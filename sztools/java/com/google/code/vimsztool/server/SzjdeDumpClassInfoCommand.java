@@ -9,7 +9,7 @@ import com.google.code.vimsztool.omni.ClassInfoUtil;
 
 public class SzjdeDumpClassInfoCommand extends SzjdeCommand {
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public String execute() {
 		String classPathXml = params.get(PARAM_CLASSPATHXML);
 		String dumpClass = params.get(PARAM_DUMP_CLASS);
