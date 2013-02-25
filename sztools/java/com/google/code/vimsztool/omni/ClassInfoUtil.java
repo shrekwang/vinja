@@ -20,7 +20,7 @@ public class ClassInfoUtil {
 	private ClassInfoUtil() {}
 	
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static String dumpClassInfo(Class aClass) {
 		if (aClass == null ) return "";
 		
@@ -69,7 +69,7 @@ public class ClassInfoUtil {
 		return sb.toString();
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static ArrayList<MemberInfo> getConstructorInfo(Class aClass) {
 		ArrayList<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
 		Constructor[] constructors = aClass.getDeclaredConstructors();
@@ -98,7 +98,7 @@ public class ClassInfoUtil {
 		return false;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static ArrayList<MemberInfo> getMemberInfo(Class aClass,
 			boolean staticMember, boolean protectedMember) {
 
@@ -152,6 +152,7 @@ public class ClassInfoUtil {
 
 	}
 
+	@SuppressWarnings("all")
 	public static String typeName(Class t) {
 		String brackets = "";
 		while (t.isArray()) {
@@ -178,7 +179,7 @@ public class ClassInfoUtil {
 	}
 
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static String getParameterInfo(Member member) {
 		Class parameters[] ;
 		String[] paramnames;
@@ -216,7 +217,7 @@ public class ClassInfoUtil {
 		return names;
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("all")
 	public static String getExceptionInfo(Member member) {
 		Class exceptions[];
 		StringBuilder sb=new StringBuilder(" ");
