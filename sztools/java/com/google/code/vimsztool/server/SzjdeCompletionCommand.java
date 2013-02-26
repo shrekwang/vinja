@@ -24,13 +24,16 @@ import com.google.code.vimsztool.omni.JavaExpUtil;
 import com.google.code.vimsztool.omni.MemberInfo;
 import com.google.code.vimsztool.omni.PackageInfo;
 import com.google.code.vimsztool.util.ClassNameComparator;
+import com.google.code.vimsztool.util.MemberInfoResolver;
 import com.google.code.vimsztool.util.ModifierFilter;
 
 
 public class SzjdeCompletionCommand extends SzjdeCommand {
+	
+	private String classPathXml;
 
 	public String execute() {
-		String classPathXml = params.get(PARAM_CLASSPATHXML);
+		this.classPathXml = params.get(PARAM_CLASSPATHXML);
 		String completionType = params.get(PARAM_CPT_TYPE);
 		if (completionType.equals(CPT_TYPE_PACKAGE)) {
 			String pkgname = params.get("pkgname");
@@ -103,18 +106,11 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 	public String getAllMember(Class aClass,String completionType,boolean hasDotExp) {
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
 		LinkedList<Class> classList = ClassInfoUtil.getAllSuperClass(aClass);
+		
+		CompilerContext ctx = getCompilerContext(this.classPathXml);
 	
 		for (Class cls : classList) {
-			List<MemberInfo> tmpInfoList = null;
-			if (completionType.equals(CPT_TYPE_OBJECTMEMBER) || hasDotExp ) {
-				tmpInfoList=ClassInfoUtil.getMemberInfo(cls,false,false);
-			} else if (completionType.equals(CPT_TYPE_CLASSMEMBER)){
-				tmpInfoList=ClassInfoUtil.getMemberInfo(cls,true,false);
-			} else if (completionType.equals(CPT_TYPE_CONSTRUCTOR)){
-				tmpInfoList=ClassInfoUtil.getConstructorInfo(cls);
-			} else if (completionType.equals(CPT_TYPE_INHERITMEMBER)){
-				tmpInfoList=ClassInfoUtil.getMemberInfo(cls,false,true);
-			}
+			List<MemberInfo> tmpInfoList = MemberInfoResolver.resolveMemberInfo(ctx, cls, hasDotExp, completionType);
 			if (tmpInfoList == null) continue;
 			for (MemberInfo tmpMember : tmpInfoList) {
 				boolean added = false;
@@ -140,6 +136,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		}
 		return sb.toString();
 	}
+	
 	
 	
 	

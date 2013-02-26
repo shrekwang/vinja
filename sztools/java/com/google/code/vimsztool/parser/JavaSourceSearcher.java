@@ -1,6 +1,10 @@
 package com.google.code.vimsztool.parser;
 
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -18,6 +22,8 @@ import com.google.code.vimsztool.omni.ClassInfo;
 import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.omni.JavaExpUtil;
+
+
 import com.google.code.vimsztool.util.LRUCache;
 import com.google.code.vimsztool.util.ModifierFilter;
 
@@ -35,7 +41,7 @@ public class JavaSourceSearcher {
     private List<String> importedNames = new ArrayList<String>();
     private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
     private List<String> staticImportedNames = new ArrayList<String>();
-    public static LRUCache<String, JavaSourceSearcher> cache = new LRUCache<String,JavaSourceSearcher>(70);
+    public static LRUCache<String, JavaSourceSearcher> cache = new LRUCache<String,JavaSourceSearcher>(500);
     
     private int classScopeLine = 1;
     
@@ -93,6 +99,56 @@ public class JavaSourceSearcher {
 			readClassInfo(tree,this.memberInfos);
 		}
 
+	}
+	
+	@SuppressWarnings("all")
+	public ArrayList<com.google.code.vimsztool.omni.MemberInfo> getMemberInfo(Class aClass,
+			boolean staticMember, boolean protectedMember) {
+
+		ArrayList<com.google.code.vimsztool.omni.MemberInfo> memberInfos = 
+				new ArrayList<com.google.code.vimsztool.omni.MemberInfo>();
+		for (MemberInfo info: this.memberInfos) {
+			if (info.getMemberType() == MemberType.CONSTRUCTOR) continue;
+			if (!isValidateModifier(staticMember, protectedMember, info.getModifierDesc())) continue;
+			
+			com.google.code.vimsztool.omni.MemberInfo memberInfo = new com.google.code.vimsztool.omni.MemberInfo();
+			memberInfo.setModifiers(info.getModifierDesc());
+			memberInfo.setMemberType(info.getMemeberTypeDesc());
+			memberInfo.setName(info.getName());
+			memberInfo.setReturnType(info.getShortRtnType());
+			memberInfo.setExceptions("");
+			memberInfo.setParams(info.formatParamList());
+			memberInfos.add(memberInfo);
+		}
+		return memberInfos;
+
+	}
+	
+	@SuppressWarnings("all")
+	public  ArrayList<com.google.code.vimsztool.omni.MemberInfo> getConstructorInfo() {
+		ArrayList<com.google.code.vimsztool.omni.MemberInfo> memberInfos=new ArrayList<com.google.code.vimsztool.omni.MemberInfo>();
+		for (MemberInfo info: this.memberInfos) {
+			if (!isValidateModifier(false, true, info.getModifierDesc())) continue;
+			if (! ( info.getMemberType() == MemberType.CONSTRUCTOR)) continue;
+			com.google.code.vimsztool.omni.MemberInfo memberInfo=new com.google.code.vimsztool.omni.MemberInfo();
+			memberInfo.setMemberType(info.getMemeberTypeDesc());
+			memberInfo.setModifiers(info.getModifierDesc());
+			memberInfo.setName(info.getName());
+			memberInfo.setExceptions("");
+			memberInfo.setParams(info.formatParamList());
+			memberInfos.add(memberInfo);
+		}
+		return memberInfos;
+	}
+	
+	public static boolean isValidateModifier(boolean staticMember,boolean protectedMember,String mod) {
+		if (staticMember && ! (mod.indexOf("static") > -1) ) return false;
+		if (protectedMember ) {
+			if ( mod.indexOf("protected") > -1 || mod.indexOf("public") > -1 ) return true;
+		} else {
+			if (mod.indexOf("public") > -1 ) return true;
+		}
+		return false;
 	}
 	
 
@@ -1243,6 +1299,12 @@ public class JavaSourceSearcher {
                 param[0] = parseType(c);
             } else {
                 param[1] = c.getText();
+                if (c.getChildren()!=null) {
+                	CommonTree tmpTree = (CommonTree)c.getChild(0);
+                	if (tmpTree.getType() == JavaParser.ARRAY_DECLARATOR_LIST){
+                		param[0] = param[0] + parseArrayDeclaratorList(tmpTree);
+                	}
+                }
             }
         }
         return param;

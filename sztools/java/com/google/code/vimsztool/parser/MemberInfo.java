@@ -29,9 +29,14 @@ public class MemberInfo {
         this.rtnType=rtnType;
     }
     public String getRtnType() {
+    	if (rtnType == null) return "void";
         return this.rtnType;
     }
 
+    public String getShortRtnType() {
+    	if (rtnType == null) return "void";
+        return shortName(this.rtnType);
+    }
 
 
     public void setLineNum(int lineNum) {
@@ -49,6 +54,14 @@ public class MemberInfo {
         return this.modifierList;
     }
 
+    public String getModifierDesc() {
+    	if (this.modifierList == null || this.modifierList.size() ==0 ) return "";
+    	StringBuilder sb = new StringBuilder();
+    	for (String mod: this.modifierList) {
+    		sb.append(mod).append(" ");
+    	}
+    	return sb.toString();
+    }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -73,11 +86,16 @@ public class MemberInfo {
     public MemberType getMemberType() {
         return this.memberType;
     }
+    
+    public String getMemeberTypeDesc() {
+    	return this.memberType.getName();
+    }
 
-    private String formatParamList() {
+    public String formatParamList() {
+    	if (this.paramList == null || this.paramList.size() == 0 ) return "";
         StringBuilder sb = new StringBuilder();
         for(String[] param : this.paramList) {
-            sb.append(param[0]).append(" ").append(param[1]);
+            sb.append(shortName(param[0])).append(" ").append(param[1]);
             sb.append(",");
         }
         if (sb.length() > 0) sb.deleteCharAt(sb.length()-1);
@@ -104,4 +122,9 @@ public class MemberInfo {
 		this.subMemberList = subMemberList;
 	}
 
+	private String shortName(String typeName) {
+		if (typeName == null) return "";
+		if (typeName.indexOf(".") < 0 ) return typeName;
+		return typeName.substring(typeName.lastIndexOf(".")+1);
+	}
 }

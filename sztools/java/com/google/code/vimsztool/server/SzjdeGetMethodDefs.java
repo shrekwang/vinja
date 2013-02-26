@@ -8,9 +8,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.JavaExpUtil;
 import com.google.code.vimsztool.omni.MemberInfo;
+import com.google.code.vimsztool.parser.JavaSourceSearcher;
+import com.google.code.vimsztool.util.MemberInfoResolver;
 import com.google.code.vimsztool.util.ModifierFilter;
 
 
@@ -28,18 +31,21 @@ public class SzjdeGetMethodDefs extends SzjdeCommand {
 		ModifierFilter filter = new ModifierFilter(false,true);
 		aClass = JavaExpUtil.parseExpResultType(tokens, aClass,filter);
 		if (aClass == null) return "";
-		return this.getAllMember(aClass,methodName);
+		return this.getAllMember(aClass,methodName, classPathXml);
 	}
 	
 	@SuppressWarnings("all")
-	public String getAllMember(Class aClass,String methodName) {
+	public String getAllMember(Class aClass,String methodName, String classPathXml) {
 		
 		List<MemberInfo> memberInfos=new ArrayList<MemberInfo>();
 		LinkedList<Class> classList = ClassInfoUtil.getAllSuperClass(aClass);
+		
+		CompilerContext ctx = this.getCompilerContext(classPathXml);
 	
 		for (Class cls : classList) {
-			List<MemberInfo> tmpInfoList = null;
-			tmpInfoList=ClassInfoUtil.getMemberInfo(cls,false,true);
+			
+			List<MemberInfo> tmpInfoList = MemberInfoResolver.resolveMemberInfo(ctx, cls);
+			
 			if (tmpInfoList == null) continue;
 			for (MemberInfo tmpMember : tmpInfoList) {
 				boolean added = false;

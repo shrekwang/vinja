@@ -84,6 +84,13 @@ public class CompilerContext {
 			this.outputDir = abpath;
 			this.srcLocations.add(abpath);
 			try { classPathUrls.add(file.toURI().toURL()); } catch (Exception e) {}
+			String jdkSrc = FilenameUtils.concat(System.getenv("JAVA_HOME") , "src.zip");
+			if (jdkSrc != null ) {
+				 File jdkSrcFile = new File(jdkSrc);
+				 if (jdkSrcFile.exists()) {
+					 libSrcLocations.add(jdkSrc);
+				 }
+			}
 		}
 		this.classMetaInfoManager = new ClassMetaInfoManager(this);
 		initClassLoader();
