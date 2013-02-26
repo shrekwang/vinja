@@ -109,16 +109,17 @@ public class JavaSourceSearcher {
 				new ArrayList<com.google.code.vimsztool.omni.MemberInfo>();
 		for (MemberInfo info: this.memberInfos) {
 			if (info.getMemberType() == MemberType.CONSTRUCTOR) continue;
-			if (!isValidateModifier(staticMember, protectedMember, info.getModifierDesc())) continue;
-			
-			com.google.code.vimsztool.omni.MemberInfo memberInfo = new com.google.code.vimsztool.omni.MemberInfo();
-			memberInfo.setModifiers(info.getModifierDesc());
-			memberInfo.setMemberType(info.getMemeberTypeDesc());
-			memberInfo.setName(info.getName());
-			memberInfo.setReturnType(info.getShortRtnType());
-			memberInfo.setExceptions("");
-			memberInfo.setParams(info.formatParamList());
-			memberInfos.add(memberInfo);
+			if (aClass.isEnum() || aClass.isInterface() || aClass.isAnnotation() || 
+					isValidateModifier(staticMember, protectedMember, info.getModifierDesc())) {
+				com.google.code.vimsztool.omni.MemberInfo memberInfo = new com.google.code.vimsztool.omni.MemberInfo();
+				memberInfo.setModifiers(info.getModifierDesc());
+				memberInfo.setMemberType(info.getMemeberTypeDesc());
+				memberInfo.setName(info.getName());
+				memberInfo.setReturnType(info.getShortRtnType());
+				memberInfo.setExceptions("");
+				memberInfo.setParams(info.formatParamList());
+				memberInfos.add(memberInfo);
+			}
 		}
 		return memberInfos;
 
@@ -130,6 +131,7 @@ public class JavaSourceSearcher {
 		for (MemberInfo info: this.memberInfos) {
 			if (!isValidateModifier(false, true, info.getModifierDesc())) continue;
 			if (! ( info.getMemberType() == MemberType.CONSTRUCTOR)) continue;
+			
 			com.google.code.vimsztool.omni.MemberInfo memberInfo=new com.google.code.vimsztool.omni.MemberInfo();
 			memberInfo.setMemberType(info.getMemeberTypeDesc());
 			memberInfo.setModifiers(info.getModifierDesc());
