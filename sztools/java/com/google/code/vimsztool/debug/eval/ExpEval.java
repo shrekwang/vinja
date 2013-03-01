@@ -77,6 +77,41 @@ public class ExpEval {
 		
 	}
 	
+	public String sizeOf(String exp) {
+		try {
+			
+			ThreadReference threadRef = checkAndGetCurrentThread();
+			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			ClassLoaderReference classLoaderRef = stackFrame.location().declaringType().classLoader();
+			String qualifiedClass = "com.github.shrekwang.oi.MeasurerMain";
+			
+			ReferenceType refType = loadClass(threadRef, classLoaderRef,qualifiedClass);
+			ClassType clazz = (ClassType)refType;
+			
+			Method matchedMethod =  refType.methodsByName("measure").get(0);
+			
+			ParseResult result = AstTreeFactory.getExpressionAst(exp);
+			if (result.hasError()) {
+				return result.getErrorMsg();
+			}
+		
+			CommonTree node = result.getTreeList().get(0);
+			Object arg = evalTreeNode(node);
+			
+			List<Value> arguments = new ArrayList<Value>();
+			arguments.add(getMirrorValue(arg));
+				
+			Value value = clazz.invokeMethod(threadRef, matchedMethod, arguments, ObjectReference.INVOKE_SINGLE_THREADED);
+			return ((StringReference)value).value();
+			
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "error:" + e.getMessage();
+		}
+	}
+	
 	public String quickEval() {
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
@@ -193,6 +228,9 @@ public class ExpEval {
 				actionResult = reftype(exp);
 			} else if (debugCmd.equals("qeval")) {
 				actionResult = quickEval();
+			} else if (debugCmd.equals("sizeof")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = sizeOf(exp);
 			}
 			return actionResult;
 		} catch (ExpressionEvalException e) {
