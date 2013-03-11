@@ -24,7 +24,7 @@ class ShextOptionParser(OptionParser):
         
 class LsCmd(object):
 
-    def __init__(self, screen_width) :
+    def __init__(self, screen_width, pathResolver) :
         self.cmp_types = ["zip","rar","tgz","tar","jar","war","gz"]
         self.exe_types = ["exe","bat","sh"]
         self.col_pad = 3
@@ -32,6 +32,7 @@ class LsCmd(object):
         self.file_types = {}
         self.colorInfos = []
         self.screen_width = screen_width
+        self.pathResolver = pathResolver
 
     def colorOutput(self):
         vim.command("call SwitchToSzToolView('shext')" )
@@ -161,35 +162,18 @@ class LsCmd(object):
 
         if pathname.endswith(":") :
             pathname = pathname + os.path.sep
+
+        abspath = os.getcwd()
+        file_list = self.pathResolver.resolve(pathname, True)
+        if len(file_list) > 0 :
+            abspath = os.path.dirname(os.path.normpath(os.path.join(os.getcwd(),file_list[0])))
+            file_list = [os.path.basename(item) for item in file_list]
+
+        file_list = self.sort_file(abspath, file_list, options)
+        self.extract_file_typeinfo(abspath, file_list)
             
-        if pathname.startswith("/") or re.match("^.:.*",pathname) :
-            abspath = pathname
-        elif pathname.startswith("~"):
-            rtlpath = "" if len(pathname) < 2 else pathname[2:]
-            abspath = os.path.join(os.path.expanduser("~"),rtlpath)
-        else :
-            abspath = os.path.join(os.getcwd(),pathname)
-
-        file_list = []
-        if os.path.exists(abspath):
-            if os.path.isdir(abspath):
-                file_list= os.listdir(abspath)
-            else:
-                file_list = [abspath]
-            file_list = self.sort_file(abspath, file_list, options)
-            self.extract_file_typeinfo(abspath, file_list)
-        else :
-            file_list = [os.path.basename(item) for item in glob.glob(abspath)]
-            sepIndex = abspath.rfind("/")
-            if sepIndex > -1:
-                file_list = self.sort_file(abspath[0:sepIndex+1], file_list, options)
-                self.extract_file_typeinfo(abspath[0:sepIndex+1], file_list)
-            else :
-                file_list = self.sort_file(os.getcwd(), file_list, options)
-                self.extract_file_typeinfo(os.getcwd(), file_list)
-
         if options.longformat :
-            nlist = self.getLongFormatInfo(os.getcwd(), file_list)
+            nlist = self.getLongFormatInfo(abspath, file_list)
         elif options.singlecolumn :
             nlist = self.getmatrix(file_list, 1)
         else :
@@ -570,7 +554,6 @@ class ZipUtilCmd(object):
 class ShUtil(object):
 
     def __init__(self,screen_width,yank_buffer):
-        self.lscmd = LsCmd(screen_width)
         self.findcmd = FindCmd()
         self.shext_bm_path = os.path.join(SzToolsConfig.getDataHome(), "shext-bm.txt")
         if not os.path.exists(self.shext_bm_path) :
@@ -582,6 +565,7 @@ class ShUtil(object):
         self.yank_buffer = yank_buffer
         self.cd_history = [os.getcwd()]
         self.pathResolver = PathResolver(self)
+        self.lscmd = LsCmd(screen_width,self.pathResolver)
 
     def ls(self,cmd_array):
         self.lscmd.ls(cmd_array)
@@ -1344,7 +1328,7 @@ class PathResolver(object):
     def __init__(self,shUtil):
         self.shUtil = shUtil
 
-    def resolve(self,path):
+    def resolve(self,path, expand = False):
         path = path.strip()
         if path.startswith("~"):
             rtlpath = "" if len(path) < 2 else path[2:]
@@ -1353,10 +1337,16 @@ class PathResolver(object):
         else :
             abspath = os.path.join(os.getcwd(),path)
         if os.path.exists(abspath):
-            return [abspath]
+            if expand :
+                return [os.path.join(abspath, item) for item in os.listdir(abspath)]
+            else :
+                return [abspath]
 
         filelist = glob.glob(path)
         if len(filelist) > 0 :
+            if path.rfind("/") > path.rfind("*") and expand and len(filelist) == 1 and os.path.isdir(filelist[0]) :
+                tmp = [os.path.join(filelist[0], item) for item in os.listdir(filelist[0])]
+                return tmp
             return filelist 
 
         if "/" in path :
@@ -1366,10 +1356,19 @@ class PathResolver(object):
         else :
             abspath = self.shUtil.getbm(path)
         if os.path.exists(abspath):
-            return [abspath]
+            if expand :
+                return [os.path.join(abspath, item) for item in os.listdir(abspath)]
+            else :
+                return [abspath]
 
         filelist = glob.glob(abspath)
         if len(filelist) > 0 :
+            if path.rfind("/") > path.rfind("*") and expand and len(filelist) == 1 and os.path.isdir(filelist[0]) :
+                tmp = [os.path.join(filelist[0], item) for item in os.listdir(filelist[0])]
+                return tmp
             return filelist 
 
-        return [path]
+        if expand :
+            return []
+        else :
+            return [path]
