@@ -2049,15 +2049,23 @@ class Jdb(object):
             vim.command("redraw")
 
     def switchSourceBuffer(self):
+        min_normal_buf = -1
+        found_java_buf = False
+
         for i in range(1,6):
             vim.command("%swincmd w" % str(i))    
             bufname = vim.current.buffer.name
             if bufname == None :
                 continue
-            if vim.eval("&buftype") == "" \
-                    or bufname.endswith(".temp_src") \
-                    or bufname.endswith(".java") :
+            if bufname.endswith(".temp_src")  or bufname.endswith(".java") :
+                found_java_buf = True
                 break
+            if vim.eval("&buftype") == "" and min_normal_buf == -1 :
+                min_normal_buf = i
+        if not found_java_buf :
+            vim.command("%swincmd w" % str(min_normal_buf))    
+
+
 
     def toggleQuickStep(self):
         if not self.quick_step :
