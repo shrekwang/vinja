@@ -347,6 +347,8 @@ class MiscUtil(object):
     @staticmethod
     def displayWidth(value):
         if value == None : return 0
+        #can't eval width when single quot in string
+        value = value.replace("'"," ")
         return int(vim.eval("strdisplaywidth('%s')" % value))
 
     @staticmethod
