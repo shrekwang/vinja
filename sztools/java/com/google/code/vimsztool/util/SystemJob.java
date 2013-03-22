@@ -1,15 +1,13 @@
 package com.google.code.vimsztool.util;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class SystemJob extends Thread {
 
-	private static Map<String,SystemJob> jobs = new HashMap<String,SystemJob>();
+	
 	private String[] cmdArray;
 	private String workDir;
 	private String vimServerName;
@@ -24,9 +22,6 @@ public class SystemJob extends Thread {
 	private StreamGobbler stdOut = null;
 	private StreamGobbler stdErr = null;
 	
-	public static SystemJob getJob(String uuid) {
-		return jobs.get(uuid);
-	}
 
 	public SystemJob(String cmd,String vimServerName,String cmdShell, 
 			String uuid,String bufname,String workDir,String origCmdLine) {
@@ -39,7 +34,7 @@ public class SystemJob extends Thread {
 		if (cmdShell !=null && cmdShell.equalsIgnoreCase("true")) {
 			runInShell = true;
 		}
-		jobs.put(uuid, this);
+		BufferStore.put(uuid, buffer);
 	}
 	
 	public synchronized String fetchResult() {

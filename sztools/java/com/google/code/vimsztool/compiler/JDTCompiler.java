@@ -1,6 +1,8 @@
 
 package com.google.code.vimsztool.compiler;
 
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -24,8 +26,12 @@ public class JDTCompiler  {
 		this.ctx=ctx;
 	}
 	
-
 	public CompileResultInfo generateClass( final String[] sourceFiles ) {
+		return this.generateClass(sourceFiles, null);
+	}
+	
+
+	public CompileResultInfo generateClass( final String[] sourceFiles,PrintWriter out ) {
         
         String[] fileNames = sourceFiles;
         String[] classNames = new String[sourceFiles.length];
@@ -72,7 +78,9 @@ public class JDTCompiler  {
             new DefaultProblemFactory(Locale.getDefault());
         
         CompileResultInfo compileResult = new CompileResultInfo();
-        final ICompilerRequestor requestor = new CompilerRequestor(ctx,compileResult);
+        out.println("total " + fileNames.length + " files.");
+        out.println("");
+        final ICompilerRequestor requestor = new CompilerRequestor(ctx,compileResult, out);
 
         ICompilationUnit[] compilationUnits = 
             new ICompilationUnit[classNames.length];

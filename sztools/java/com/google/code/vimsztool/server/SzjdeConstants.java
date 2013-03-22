@@ -46,7 +46,7 @@ public class SzjdeConstants {
 	public final static String PARAM_BUF_NAME="bufname";
 	public final static String PARAM_WORK_DIR="workDir";
 	public final static String PARAM_VIM_SERVER="vimServer";
-	public final static String PARAM_JOB_ID="jobId";
+	public final static String PARAM_UUID_ID="uuid";
 	public final static String PARAM_ARGS="args";
 	public final static String PARAM_PWD="pwd";
 	public final static String PARAM_HOTSWAP_ENABLED="hotSwapEnabled";

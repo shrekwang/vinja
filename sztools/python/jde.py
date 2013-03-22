@@ -246,6 +246,9 @@ class Talker(BasicTalker):
         params["cmd"]="compile"
         params["classPathXml"] = xmlPath
         params["sourceFile"] = sourceFile
+        params["bufname"] = "shext"
+        serverName = vim.eval("v:servername")
+        params["vimServer"] = serverName
         data = Talker.send(params)
         return data
 
@@ -1109,7 +1112,7 @@ class Compiler(object):
             return path
 
     @staticmethod
-    def compileCurrentFile(buildProject = False):
+    def compileCurrentFile():
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
 
@@ -1128,9 +1131,6 @@ class Compiler(object):
         if not need_compiled :
             return 
 
-        if buildProject :
-            current_file_name = "All"
-            print "build project can take a while, please wait....."
         resultText = Talker.compileFile(classPathXml,current_file_name)
         allsrcFiles, errorMsgList = resultText.split("$$$$$")
         allsrcFiles = allsrcFiles.split("\n")
@@ -1171,6 +1171,41 @@ class Compiler(object):
             vim.command("cwindow")
         else :
             vim.command("cclose")
+
+    @staticmethod
+    def setQfList(guid):
+        guid = guid[0]
+        resultText = BasicTalker.fetchResult(guid)
+        allsrcFiles, errorMsgList = resultText.split("$$$$$")
+        allsrcFiles = allsrcFiles.split("\n")
+        errorMsgList = errorMsgList.split("\n")
+        qflist = []
+        #clear highlight type E and W
+        HighlightManager.removeHighlightType("E")
+        HighlightManager.removeHighlightType("W")
+        error_files = []
+        for line in errorMsgList:
+            if line.strip() == "" : continue
+            try :
+                errorType,filename,lnum,text,lstart,lend = line.split("::")
+                if errorType == "E" :
+                    error_files.append(filename)
+
+                absname = os.path.normpath(filename)
+                filename = Compiler.relpath(absname)
+                qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
+                HighlightManager.addHighlightInfo(absname,lnum,errorType,text,lstart,lend)
+                qflist.append(qfitem)
+            except Exception , e:
+                fp = StringIO.StringIO()
+                traceback.print_exc(file=fp)
+                message = fp.getvalue()
+                logging.debug(message)
+
+        pathflags =[(filename.replace("\n",""),False) for filename in allsrcFiles]
+        pathflags.extend([(filename,True) for filename in error_files])
+        Compiler.set_error_flags(pathflags)
+        vim.command("call setqflist(%s)" % qflist)
 
     @staticmethod
     def set_error_flags(pathflags):

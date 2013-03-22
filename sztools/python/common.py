@@ -737,10 +737,10 @@ class BasicTalker(object):
         return data
 
     @staticmethod
-    def fetchResult(guid):
+    def fetchResult(uuid):
         params = dict()
         params["cmd"]="fetchResult"
-        params["jobId"] = guid
+        params["uuid"] = uuid
         data = BasicTalker.send(params)
         return data
 

@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,14 +22,16 @@ public class CompilerRequestor implements ICompilerRequestor {
 	 private CompileResultInfo compileResult;
 	 private Preference pref = Preference.getInstance();
 	 private boolean ignoreWarning ;
+	 private PrintWriter out = null;
 	 
 	 private static final String FIELD_SEPERATOR="::";
 	 
-	 public CompilerRequestor(CompilerContext ctx,  CompileResultInfo compileResult) {
+	 public CompilerRequestor(CompilerContext ctx,  CompileResultInfo compileResult, PrintWriter resultOutput) {
 		 this.ctx = ctx;
 		 this.compileResult = compileResult;
 		 String ignoreStr = pref.getValue(Preference.JDE_COMPILE_IGNORE_WARING);
 		 this.ignoreWarning = ignoreStr.equals("true") ? true : false;
+		 this.out = resultOutput;
 	 }
 	
     public void acceptResult(CompilationResult result) {
@@ -54,6 +57,14 @@ public class CompilerRequestor implements ICompilerRequestor {
                     sb.append(problem.getSourceStart()).append(FIELD_SEPERATOR);
                     sb.append(problem.getSourceEnd()).append("\n");
                     compileResult.addProblemInfo(sb.toString());
+                    if (out != null && problem.isError()) {
+	                    String errorType = problem.isError()? "Error" : "Warning";
+                    	out.println("compile " + new String(problem.getOriginatingFileName()) + " " + errorType);
+                    	String line = ((CompilationUnit)result.getCompilationUnit()).getLine(problem.getSourceLineNumber());
+                    	out.println(problem.getSourceLineNumber()+" : " + line);
+                    	out.println(problem.getMessage());
+                    	out.println("");
+                    }
                     
                     if (problem.isError()) {
                     	errorList.add(problem);

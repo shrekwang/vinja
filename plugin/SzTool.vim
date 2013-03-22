@@ -513,6 +513,10 @@ function HandleJdiEvent(...)
   "redraw
 endfunction
 
+function HandleBuildResult(...)
+  python Compiler.setQfList(vim.eval("a:000"))
+endfunction
+
 
 function RunAntBuild(...)
   if a:0 > 0
@@ -564,7 +568,6 @@ function! Jdext()
   autocmd CursorHold *.java  :python HighlightManager.displayMsg()
   autocmd CursorMoved *.java :python HighlightManager.displayMsg()
 
-  command! -nargs=0   BuildProject     :python Compiler.compileCurrentFile(buildProject=True)
   command! -nargs=0   DumpClass        :python EditUtil.dumpClassInfo()
   command! -nargs=0   AutoImport       :python AutoImport.autoImportVar()
   command! -nargs=0   Run              :python Runner.runCurrentFile()

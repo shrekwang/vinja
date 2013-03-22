@@ -479,6 +479,13 @@ class JdeUtilCmd(object):
             self.jde_create_project()
         elif cmd_array[0] == "index" :
             Shext.stdout("not implement yet.")
+        elif cmd_array[0] == "build" :
+            Shext.stdout("start building....\n")
+            classPathXml = os.path.join(os.getcwd(),".classpath")
+            if not os.path.exists(classPathXml):
+                return
+            current_file_name = "All"
+            Talker.compileFile(classPathXml,current_file_name)
         else :
             Shext.stdout("not recognized jde command.")
             return
@@ -488,7 +495,10 @@ class JdeUtilCmd(object):
                 "jde start ---> start jde mode.",
                 "jde stop  ---> no, you can't stop jde mode unless you quit vim :)" ,
                 "jde help  ---> print this help.",
+                "jde title [name]  --> change vim title",
                 "jde project init  --> create .classpath file and src dir.",
+                "jde project build --> build current project." ,
+                "jde project clean --> clean current project." ,
                 "jde project index --> index current project." ]
         Shext.stdout(help_text)
 
@@ -1152,6 +1162,8 @@ class Shext(object):
             return "diff"
         if len(cmd)> 1 and cmd[0] == "xxd" :
             return "xxd"
+        if len(cmd) == 3 and cmd[0] == "jde" and cmd[2] == "build":
+            return "builderror"
         return None
 
     def dispatchCmd(self, cmd,cmdLine) :

@@ -16,6 +16,7 @@ public class CompilationUnit implements ICompilationUnit {
     String className;
     String sourceFile;
     String encoding;
+    String sourceText;
     
 
     CompilationUnit(String sourceFile, String className,String encoding) {
@@ -57,6 +58,7 @@ public class CompilationUnit implements ICompilationUnit {
                 }
             }
         }
+        this.sourceText = new String(result);
         return result;
     }
     
@@ -77,6 +79,14 @@ public class CompilationUnit implements ICompilationUnit {
             result[i] = tok.toCharArray();
         }
         return result;
+    }
+    
+    public String getLine(int lineNumber) {
+    	String[] lines = sourceText.split("\n");
+    	if (lineNumber < lines.length) {
+    		return lines[lineNumber-1].replace("\r", "");
+    	}
+    	return "";
     }
 
 }

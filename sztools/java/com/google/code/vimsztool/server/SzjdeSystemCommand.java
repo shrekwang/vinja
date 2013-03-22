@@ -2,6 +2,7 @@ package com.google.code.vimsztool.server;
 
 import java.util.UUID;
 
+import com.google.code.vimsztool.util.BufferStore;
 import com.google.code.vimsztool.util.SystemJob;
 
 public class SzjdeSystemCommand extends SzjdeCommand {
@@ -22,9 +23,8 @@ public class SzjdeSystemCommand extends SzjdeCommand {
 			job.start();
 			return "";
 		} else {
-			String jobId = params.get(SzjdeConstants.PARAM_JOB_ID);
-			SystemJob job = SystemJob.getJob(jobId);
-			String result = job.fetchResult();
+			String uuid = params.get(SzjdeConstants.PARAM_UUID_ID);
+			String result = BufferStore.getContent(uuid);
 			return result;
 		}
 	}
