@@ -78,6 +78,6 @@ hi def link treeBookmark Statement
 
 hi def link treeEditedFile Label
 hi def link treeMarkedFile Question
-hi def link treeErrorFile  Error
 
+hi treeErrorFile  guifg=#FF7272
 
