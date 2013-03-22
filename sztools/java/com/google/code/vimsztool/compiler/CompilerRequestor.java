@@ -70,6 +70,17 @@ public class CompilerRequestor implements ICompilerRequestor {
                     	errorList.add(problem);
                     }
                 }
+            } else {
+                 StringBuilder sb = new StringBuilder();
+            	 CompilationUnit unit = (CompilationUnit)result.getCompilationUnit();
+            	 String filename=new String(unit.getFileName());
+                 sb.append("N").append(FIELD_SEPERATOR);
+                 sb.append(filename).append(FIELD_SEPERATOR);
+                 sb.append("").append(FIELD_SEPERATOR);
+                 sb.append("").append(FIELD_SEPERATOR);
+                 sb.append("").append(FIELD_SEPERATOR);
+                 sb.append("").append("\n");
+                 compileResult.addProblemInfo(sb.toString());
             }
         	compileResult.setError(true);
             if (errorList.isEmpty()) {

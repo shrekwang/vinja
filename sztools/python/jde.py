@@ -884,6 +884,40 @@ class EditUtil(object):
         resultText = Talker.typeHierarchy(classPathXml,current_file_name)
         return resultText
 
+class QuickFixListManager(object):
+
+    @staticmethod
+    def setQuickFixList(qflist): 
+        global jde_quickfix_list
+        jde_quickfix_list = qflist
+        
+
+    @staticmethod
+    def addQuickFix(fix): 
+        global jde_quickfix_list
+        jde_quickfix_list = globals().get("jde_quickfix_list")
+        if jde_quickfix_list == None :
+            jde_quickfix_list = []
+        jde_quickfix_list.append(fix)
+
+    @staticmethod
+    def removeFileFromQuickFixList(file_path):
+        global jde_quickfix_list
+        jde_quickfix_list = globals().get("jde_quickfix_list")
+        if jde_quickfix_list == None :
+            return
+        for fix in jde_quickfix_list : 
+            if fix.get("filename") == file_path :
+                jde_quickfix_list.remove(fix)
+
+    @staticmethod
+    def getQuickFixList():
+        global jde_quickfix_list
+        jde_quickfix_list = globals().get("jde_quickfix_list")
+        if jde_quickfix_list == None :
+            jde_quickfix_list = []
+        return jde_quickfix_list
+
 class HighlightManager(object):
 
     class Info(object):
@@ -898,13 +932,15 @@ class HighlightManager(object):
             return "(%s,%s)" % (self.hltype,self.msg)
 
     @staticmethod
-    def removeHighlightType(removed_hltype):
+    def removeHighlightType(removed_hltype, op_file_path = None):
         global all_hl_info
         all_hl_info = globals().get("all_hl_info")
         if all_hl_info == None :
             return 
         empty_buf = []
         for file_path in all_hl_info :
+            if op_file_path != None and not PathUtil.same_path(op_file_path, file_path): 
+                continue
             buf_hl_info = all_hl_info.get(file_path)
             empty_line =[]
             for line_num in buf_hl_info :
@@ -1135,26 +1171,30 @@ class Compiler(object):
         allsrcFiles, errorMsgList = resultText.split("$$$$$")
         allsrcFiles = allsrcFiles.split("\n")
         errorMsgList = errorMsgList.split("\n")
-        qflist = []
-        #clear highlight type E and W
-        HighlightManager.removeHighlightType("E")
-        HighlightManager.removeHighlightType("W")
         error_files = []
+        for line in errorMsgList:
+            if line.strip() == "" : continue
+            errorType,filename,lnum,text,lstart,lend = line.split("::")
+            absname = os.path.normpath(filename)
+            filename = Compiler.relpath(absname)
+            QuickFixListManager.removeFileFromQuickFixList(filename)
+            HighlightManager.removeHighlightType("E",absname)
+            HighlightManager.removeHighlightType("W",absname)
+
         for line in errorMsgList:
             if line.strip() == "" : continue
             try :
                 errorType,filename,lnum,text,lstart,lend = line.split("::")
                 if errorType == "E" :
                     error_files.append(filename)
+                if errorType == "N" :
+                    continue
                 bufnr=str(vim.eval("bufnr('%')"))
                 absname = os.path.normpath(filename)
                 filename = Compiler.relpath(absname)
-                if filename != Compiler.relpath(current_file_name) :
-                    qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
-                else :
-                    qfitem = dict(bufnr=bufnr,lnum=lnum,text=text,type=errorType)
+                qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
                 HighlightManager.addHighlightInfo(absname,lnum,errorType,text,lstart,lend)
-                qflist.append(qfitem)
+                QuickFixListManager.addQuickFix(qfitem)
             except Exception , e:
                 fp = StringIO.StringIO()
                 traceback.print_exc(file=fp)
@@ -1166,7 +1206,7 @@ class Compiler(object):
         pathflags.extend([(filename,True) for filename in error_files])
         Compiler.set_error_flags(pathflags)
 
-        vim.command("call setqflist(%s)" % qflist)
+        vim.command("call setqflist(%s)" % QuickFixListManager.getQuickFixList())
         if len(error_files) > 0 :
             vim.command("cwindow")
         else :
@@ -1179,10 +1219,11 @@ class Compiler(object):
         allsrcFiles, errorMsgList = resultText.split("$$$$$")
         allsrcFiles = allsrcFiles.split("\n")
         errorMsgList = errorMsgList.split("\n")
-        qflist = []
         #clear highlight type E and W
         HighlightManager.removeHighlightType("E")
         HighlightManager.removeHighlightType("W")
+        #clear quick fix list
+        QuickFixListManager.setQuickFixList([])
         error_files = []
         for line in errorMsgList:
             if line.strip() == "" : continue
@@ -1190,12 +1231,13 @@ class Compiler(object):
                 errorType,filename,lnum,text,lstart,lend = line.split("::")
                 if errorType == "E" :
                     error_files.append(filename)
-
+                if errorType == "N" :
+                    continue
                 absname = os.path.normpath(filename)
                 filename = Compiler.relpath(absname)
                 qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
+                QuickFixListManager.addQuickFix(qfitem)
                 HighlightManager.addHighlightInfo(absname,lnum,errorType,text,lstart,lend)
-                qflist.append(qfitem)
             except Exception , e:
                 fp = StringIO.StringIO()
                 traceback.print_exc(file=fp)
@@ -1205,7 +1247,7 @@ class Compiler(object):
         pathflags =[(filename.replace("\n",""),False) for filename in allsrcFiles]
         pathflags.extend([(filename,True) for filename in error_files])
         Compiler.set_error_flags(pathflags)
-        vim.command("call setqflist(%s)" % qflist)
+        vim.command("call setqflist(%s)" % QuickFixListManager.getQuickFixList())
 
     @staticmethod
     def set_error_flags(pathflags):
