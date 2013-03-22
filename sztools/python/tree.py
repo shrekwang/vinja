@@ -730,7 +730,7 @@ class ProjectTree(object):
         vim_buffer = vim.current.buffer
         for row_num in range(row+1,len(vim_buffer)+1):
             node = self.get_selected_node(row_num)
-            if node.isEdited :
+            if node.isEdited or node.isError or node.isMarked:
                 vim.current.window.cursor = (row_num,col)
                 break
 
@@ -739,13 +739,14 @@ class ProjectTree(object):
         vim_buffer = vim.current.buffer
         for row_num in range(row-1,0,-1):
             node = self.get_selected_node(row_num)
-            if node.isEdited :
+            if node.isEdited or node.isError or node.isMarked:
                 vim.current.window.cursor = (row_num,col)
                 break
 
     def close_opened_file(self, discard_change):
         def _close_opened_file(node):
             if not node.isDirectory :
+                node.set_error_flag(False)
                 if node.isEdited :
                     bufnr = vim.eval("bufnr('%s')" % node.realpath)    
                     bang = "!" if discard_change else ""
@@ -758,6 +759,8 @@ class ProjectTree(object):
 
         node = self.get_selected_node()
         _close_opened_file(node)
+        self.render_tree()
+        self.select_node(node)
 
     def _save_display_info(self, parent_node, file_names):
         
