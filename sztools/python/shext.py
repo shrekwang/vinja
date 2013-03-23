@@ -477,8 +477,26 @@ class JdeUtilCmd(object):
     def do_project_command(self, cmd_array):
         if cmd_array[0] == "init" :
             self.jde_create_project()
-        elif cmd_array[0] == "index" :
+
+        if not self._jde_has_started() : return
+
+        if cmd_array[0] == "index" :
             Shext.stdout("not implement yet.")
+
+        elif cmd_array[0] == "loadjar" :
+            Shext.stdout("")
+            classPathXml = os.path.join(os.getcwd(),".classpath")
+            if not os.path.exists(classPathXml):
+                return
+            Talker.loadJarMeta(classPathXml)
+
+        elif cmd_array[0] == "clean" :
+            Shext.stdout("")
+            classPathXml = os.path.join(os.getcwd(),".classpath")
+            if not os.path.exists(classPathXml):
+                return
+            Talker.projectClean(classPathXml)
+
         elif cmd_array[0] == "build" :
             Shext.stdout("start building....\n")
             classPathXml = os.path.join(os.getcwd(),".classpath")
@@ -486,6 +504,7 @@ class JdeUtilCmd(object):
                 return
             current_file_name = "All"
             Talker.compileFile(classPathXml,current_file_name)
+
         else :
             Shext.stdout("not recognized jde command.")
             return
@@ -495,11 +514,12 @@ class JdeUtilCmd(object):
                 "jde start ---> start jde mode.",
                 "jde stop  ---> no, you can't stop jde mode unless you quit vim :)" ,
                 "jde help  ---> print this help.",
-                "jde title [name]  --> change vim title",
-                "jde project init  --> create .classpath file and src dir.",
-                "jde project build --> build current project." ,
-                "jde project clean --> clean current project." ,
-                "jde project index --> index current project." ]
+                "jde title [name]    --> change vim title",
+                "jde project init    --> create .classpath file and src dir.",
+                "jde project build   --> build current project." ,
+                "jde project clean   --> reload classpath and classinfo in current project." ,
+                "jde project loadjar --> load classinfo in jar package." ,
+                "jde project index   --> not implement yet." ]
         Shext.stdout(help_text)
 
     def _jde_has_started(self):
@@ -517,6 +537,10 @@ class JdeUtilCmd(object):
 
     def jde_create_project(self):
         if not self._jde_has_started() : return
+        classPathXml = os.path.join(os.getcwd(),".classpath")
+        if os.path.exists(classPathXml):
+            Shext.stdout("project already exists.")
+            return
         ProjectManager.projectInit()
         Shext.stdout("project created.")
 

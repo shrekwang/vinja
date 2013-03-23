@@ -327,6 +327,9 @@ class Talker(BasicTalker):
         params = dict()
         params["cmd"]="projectClean"
         params["classPathXml"] = xmlPath
+        params["bufname"] = "shext"
+        serverName = vim.eval("v:servername")
+        params["vimServer"] = serverName
         data = Talker.send(params)
         return data
 
@@ -344,6 +347,9 @@ class Talker(BasicTalker):
         params = dict()
         params["cmd"]="loadJarMeta"
         params["classPathXml"] = xmlPath
+        params["bufname"] = "shext"
+        serverName = vim.eval("v:servername")
+        params["vimServer"] = serverName
         data = Talker.send(params)
         return data
 

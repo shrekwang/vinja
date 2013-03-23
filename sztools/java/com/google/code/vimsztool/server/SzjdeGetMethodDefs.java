@@ -12,7 +12,6 @@ import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.JavaExpUtil;
 import com.google.code.vimsztool.omni.MemberInfo;
-import com.google.code.vimsztool.parser.JavaSourceSearcher;
 import com.google.code.vimsztool.util.MemberInfoResolver;
 import com.google.code.vimsztool.util.ModifierFilter;
 

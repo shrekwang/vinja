@@ -140,7 +140,7 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 			for (String problem : problemList) {
 				sb.append(problem);
 			}
-			out.println("finised");
+			out.println("(jde project build finished.)");
 			
 			if (sourceFile.equals("All")) {
 				finishCompiler(sb);

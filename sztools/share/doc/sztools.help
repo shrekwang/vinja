@@ -46,6 +46,9 @@ LocateDb :
     ledit  [ args ]                                       : search files in indexed db and edit it if found.
     lgrep  [-n alias][-p path][search-pattern][filename]  : like "grep" , but only search file names in indexed db.
 
+Java development:
+    use "jde help" to see all avail options.
+
 Misc :
     listext        : list extra shext command.
     batch [args]   : batch execute command .
