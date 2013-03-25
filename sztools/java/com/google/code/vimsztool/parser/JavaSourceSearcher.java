@@ -1259,9 +1259,38 @@ public class JavaSourceSearcher {
         for (int i=0; i<t.getChildCount(); i++) {
             CommonTree c = (CommonTree) t.getChild(i);
             if (i>0) sb.append(".");
-            sb.append(c.getText());
+            sb.append(parseTypeWithGenericInfo(c));
         }
         return sb.toString();
+    }
+    
+    private String parseTypeWithGenericInfo(CommonTree t) {
+    	if (t.getChildCount() == 0) return t.getText();
+    		
+    	StringBuilder sb = new StringBuilder(t.getText());
+        for (int i=0; i<t.getChildCount(); i++) {
+            CommonTree c = (CommonTree) t.getChild(i);
+            if (c.getType() == JavaParser.GENERIC_TYPE_ARG_LIST) {
+            	sb.append("<");
+		        for (int j=0; j<c.getChildCount(); j++) {
+		            CommonTree genericTypeNode = (CommonTree) c.getChild(j);
+		            if (j>0) sb.append(",");
+		            if (genericTypeNode.getType() == JavaParser.QUESTION) {
+		            	sb.append("?");
+		            	if (genericTypeNode.getChildCount() > 0) {
+			            	CommonTree extendsNode = (CommonTree)genericTypeNode.getChild(0);
+			            	CommonTree typeNode = (CommonTree)extendsNode.getChild(0);
+			            	sb.append(" extends ");
+				        	sb.append(parseType(typeNode));
+		            	}
+		            } else {
+			        	sb.append(parseType(genericTypeNode));
+		            }
+		        }
+		        sb.append(">");
+            }
+        }
+    	return sb.toString();
     }
 
     private List<String> parseModifierList(CommonTree t) {

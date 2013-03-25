@@ -1,9 +1,12 @@
 package com.google.code.vimsztool.parser;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MemberInfo {
 
+	private static Pattern regex = Pattern.compile("([a-zA-Z1-9]+)(\\.[a-zA-Z1-9]+)*\\.([a-zA-Z1-9]+)");
     private String name;
     private String rtnType;
     private MemberType memberType;
@@ -30,7 +33,8 @@ public class MemberInfo {
     }
     public String getRtnType() {
     	if (rtnType == null) return "void";
-        return this.rtnType;
+    	if (rtnType.indexOf("<") < 0 ) return rtnType;
+        return rtnType.substring(0, rtnType.indexOf("<"));
     }
 
     public String getShortRtnType() {
@@ -122,9 +126,11 @@ public class MemberInfo {
 		this.subMemberList = subMemberList;
 	}
 
-	private String shortName(String typeName) {
+	private synchronized String shortName(String typeName) {
 		if (typeName == null) return "";
 		if (typeName.indexOf(".") < 0 ) return typeName;
-		return typeName.substring(typeName.lastIndexOf(".")+1);
+		Matcher regexMatcher = regex.matcher(typeName);
+        String resultString = regexMatcher.replaceAll("$3");
+		return resultString;
 	}
 }

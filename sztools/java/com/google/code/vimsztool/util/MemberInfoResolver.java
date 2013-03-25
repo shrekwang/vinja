@@ -20,7 +20,7 @@ public class MemberInfoResolver {
 		String className = cls.getName();
 		
 		//only resove java.xx.xx class with source
-		if (! className.startsWith("java")) return null;
+		//if (! className.startsWith("java")) return null;
 		String sourcePath = ctx.findSourceClass(cls.getName());
 		if (sourcePath.equals("None")) return null;
 		return sourcePath;

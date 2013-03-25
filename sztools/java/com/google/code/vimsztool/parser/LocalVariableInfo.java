@@ -20,7 +20,9 @@ public class LocalVariableInfo {
         this.type=type;
     }
     public String getType() {
-        return this.type;
+    	if (type == null) return "void";
+    	if (type.indexOf("<") < 0 ) return type;
+        return type.substring(0, type.indexOf("<"));
     }
 
     public void setLine(int line) {
