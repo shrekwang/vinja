@@ -716,7 +716,7 @@ class EditUtil(object):
         return
 
     @staticmethod
-    def tipMethodParameter():
+    def tipMethodDefinition(generateTmpVar = False):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]
@@ -780,8 +780,15 @@ class EditUtil(object):
         methodDefs = Talker.getMethodDefs(params)
         if methodDefs == "" :
             return
-        VimUtil.writeToSzToolBuffer("JdeConsole",methodDefs)
-        
+        if generateTmpVar :
+            line = vim_buffer[row-1]
+            rtntype = methodDefs.split(" ")[0]
+            tmp = re.sub('(?P<white>\s*)(?P<text>.+)', lambda m: m.group("white") + rtntype +" t = " + m.group('text'), line) 
+            idx = tmp.find(" = ")
+            vim_buffer[row-1] = tmp
+            vim.current.window.cursor = (row,idx)
+        else :
+            VimUtil.writeToSzToolBuffer("JdeConsole",methodDefs)
         return
 
     @staticmethod

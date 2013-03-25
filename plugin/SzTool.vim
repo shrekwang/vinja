@@ -593,9 +593,12 @@ function! Jdext()
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gt  :call LocateHierarchy()<cr>
   autocmd BufEnter  *         nmap <buffer><silent><leader>gc  :call LocateClass()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
-  autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:python EditUtil.tipMethodParameter()<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:python EditUtil.tipMethodDefinition()<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-8>       <c-o>:python EditUtil.tipMethodDefinition(True)<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:python VimUtil.closeSzToolBuffer("JdeConsole")<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><M-9>       :python EditUtil.tipMethodParameter()<cr>
+
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-9>       :python EditUtil.tipMethodDefinition()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-8>       :python EditUtil.tipMethodDefinition(True)<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeSzToolBuffer("JdeConsole")<cr>
   
   autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><leader>k     :python jdb.qevalCmd()<cr>
