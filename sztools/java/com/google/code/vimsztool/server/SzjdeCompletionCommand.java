@@ -110,6 +110,7 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		CompilerContext ctx = getCompilerContext(this.classPathXml);
 	
 		for (Class cls : classList) {
+			if (cls.getName().equals("java.lang.Enum")) continue;
 			List<MemberInfo> tmpInfoList = MemberInfoResolver.resolveMemberInfo(ctx, cls, hasDotExp, completionType);
 			if (tmpInfoList == null) continue;
 			for (MemberInfo tmpMember : tmpInfoList) {

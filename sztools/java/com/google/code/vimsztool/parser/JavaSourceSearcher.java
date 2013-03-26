@@ -780,6 +780,7 @@ public class JavaSourceSearcher {
             					enumItem.setName(enumChild.getText());
             					enumItem.setLineNum(enumChild.getLine());
             					enumItem.setColumn(enumChild.getCharPositionInLine());
+            					enumItem.setRtnType("enum");
             					memberInfos.add(enumItem);
             				}
             			}
@@ -829,6 +830,7 @@ public class JavaSourceSearcher {
     					enumItem.setName(enumChild.getText());
     					enumItem.setLineNum(enumChild.getLine());
     					enumItem.setColumn(enumChild.getCharPositionInLine());
+    					enumItem.setRtnType("enum");
     					list.add(enumItem);
     				}
     				

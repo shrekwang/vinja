@@ -92,7 +92,8 @@ public class MemberInfo {
     }
     
     public String getMemeberTypeDesc() {
-    	return this.memberType.getName();
+    	if (memberType == null) return "";
+    	return memberType.getName();
     }
 
     public String formatParamList() {
