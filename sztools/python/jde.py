@@ -919,9 +919,7 @@ class QuickFixListManager(object):
         jde_quickfix_list = globals().get("jde_quickfix_list")
         if jde_quickfix_list == None :
             return
-        for fix in jde_quickfix_list : 
-            if fix.get("filename") == file_path :
-                jde_quickfix_list.remove(fix)
+        jde_quickfix_list = [fix for fix in jde_quickfix_list if fix.get("filename") != file_path]
 
     @staticmethod
     def getQuickFixList():
