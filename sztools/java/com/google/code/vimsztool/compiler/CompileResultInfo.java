@@ -6,6 +6,10 @@ import java.util.List;
 public class CompileResultInfo {
 	
 	private boolean error;
+	
+	private int errorCount = 0;
+	private int warningCount = 0 ;
+	
 	private List<String> problemInfoList = new ArrayList<String>();
 	private List<String[]> outputClassList = new ArrayList<String[]>();
 	
@@ -32,5 +36,18 @@ public class CompileResultInfo {
 		return error;
 	}
 	
+	public void incErrorCount() {
+		errorCount++;
+	}
+	
+	public void incWarningCount() {
+		warningCount++;
+	}
+	public int getErrorCount() {
+		return errorCount;
+	}
+	public int getWarningCount() {
+		return warningCount;
+	}
 	
 }

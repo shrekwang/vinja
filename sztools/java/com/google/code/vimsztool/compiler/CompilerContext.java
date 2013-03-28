@@ -56,6 +56,8 @@ public class CompilerContext {
 	
 	private boolean flatProject = false;
 	
+	private enum ResourceType { Java, Other };
+	
 	private Map<String,String> testSrcLocationMap = new HashMap<String,String>();
 	
 	public static CompilerContext load(String classPathXml) {
@@ -97,11 +99,19 @@ public class CompilerContext {
 	}
 	
 	public String[] getAllSourceFiles() {
+		return getAllSourceFilesByType(ResourceType.Java);
+	}
+	
+	public String[] getAllResourceFiles() {
+		return getAllSourceFilesByType(ResourceType.Other);
+	}
+	
+	public String[] getAllSourceFilesByType(ResourceType type) {
 		List<String> names = new ArrayList<String>();
 		for (String srcRoot : srcLocations ) {
             File dir = new File(srcRoot);
             if (dir.isFile()) continue;
-            appendSrcFileToList(names, dir);
+            appendSrcFileToList(names, dir,type);
 		}
 		String[] result = new String[names.size()];
 		for (int i=0; i<names.size(); i++) {
@@ -110,15 +120,19 @@ public class CompilerContext {
 		return result;
 	}
 	
-	private void appendSrcFileToList(List<String> names, File dir) {
+	private void appendSrcFileToList(List<String> names, File dir,ResourceType type) {
 		File[] files = dir.listFiles();
 		for (File file : files) {
 			if (file.isDirectory()) {
-				appendSrcFileToList(names, file);
+				appendSrcFileToList(names, file, type);
 			} else {
-				if (!file.getName().endsWith(".java"))
-					continue;
-				names.add(file.getAbsolutePath());
+				String fileName = file.getName();
+				if (type == ResourceType.Java && fileName.endsWith(".java")){
+					names.add(file.getAbsolutePath());
+				}
+				if (type == ResourceType.Other && !fileName.endsWith(".java")) {
+					names.add(file.getAbsolutePath());
+				}
 			}
 		}
 

@@ -47,8 +47,10 @@ public class CompilerRequestor implements ICompilerRequestor {
                     }
                     if (problem.isError()) {
                     	sb.append("E").append(FIELD_SEPERATOR);
+                    	compileResult.incErrorCount();
                     } else {
                     	sb.append("W").append(FIELD_SEPERATOR);
+                    	compileResult.incWarningCount();
                     }
                     String filename=String.valueOf(problem.getOriginatingFileName());
                     sb.append(filename).append(FIELD_SEPERATOR);

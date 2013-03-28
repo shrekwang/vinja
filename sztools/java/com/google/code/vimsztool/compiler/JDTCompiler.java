@@ -78,8 +78,6 @@ public class JDTCompiler  {
             new DefaultProblemFactory(Locale.getDefault());
         
         CompileResultInfo compileResult = new CompileResultInfo();
-        out.println("total " + fileNames.length + " files.");
-        out.println("");
         final ICompilerRequestor requestor = new CompilerRequestor(ctx,compileResult, out);
 
         ICompilationUnit[] compilationUnits = 
@@ -92,6 +90,10 @@ public class JDTCompiler  {
         Compiler compiler = new Compiler(env, policy, options, requestor, problemFactory);
         compiler.compile(compilationUnits);
         
+        if (out != null ) {
+        	out.println("total " + sourceFiles.length + " files compiled, " 
+		        + compileResult.getErrorCount() + " errors," + compileResult.getWarningCount() + " warnings.");
+        }
        
         
         return compileResult;

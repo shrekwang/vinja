@@ -41,6 +41,10 @@ public abstract class SzjdeShextCommand extends SzjdeCommand {
 	
 	public abstract Thread createShextJob() ;
 	
+	public Thread callBackJob () {
+		return null;
+	}
+	
 	public abstract String getCmdName() ;
 	
 	class JobFinishNotifier extends Thread {
@@ -59,6 +63,10 @@ public abstract class SzjdeShextCommand extends SzjdeCommand {
 			out.println("(" + getCmdName() + " finished.)");
 			new BufferChecker(buffer,uuid).run();
 			exec.shutdown();
+			Thread callBackJob = callBackJob();
+			if (callBackJob != null) {
+				callBackJob.start();
+			}
 		}
 	}
 		

@@ -1188,6 +1188,8 @@ class Shext(object):
             return "xxd"
         if len(cmd) == 3 and cmd[0] == "jde" and cmd[2] == "build":
             return "builderror"
+        if len(cmd) == 3 and cmd[0] == "jde" and cmd[2] == "clean":
+            return "builderror"
         return None
 
     def dispatchCmd(self, cmd,cmdLine) :
