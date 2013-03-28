@@ -32,8 +32,12 @@ public class SzjdeProjectClean extends SzjdeShextCommand {
 				File outputDir = new File(cc.getOutputDir());
 				for (File subFile : outputDir.listFiles()) {
 					try {
-						FileUtils.deleteDirectory(subFile);
-					} catch (IOException e) {
+						if (subFile.isFile()) {
+							subFile.delete();
+						} else {
+							FileUtils.deleteDirectory(subFile);
+						}
+					} catch (Exception e) {
 						out.println(e.getMessage());
 					}
 				}
