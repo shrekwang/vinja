@@ -477,6 +477,7 @@ class JdeUtilCmd(object):
     def do_project_command(self, cmd_array):
         if cmd_array[0] == "init" :
             self.jde_create_project()
+            return
 
         if not self._jde_has_started() : return
 
@@ -487,6 +488,8 @@ class JdeUtilCmd(object):
             Shext.stdout("")
             classPathXml = os.path.join(os.getcwd(),".classpath")
             if not os.path.exists(classPathXml):
+                Shext.stdout("no .classpath file in current dir, not a valid project")
+                Shext.stdout("( jde project loadjar finished.)", True)
                 return
             Talker.loadJarMeta(classPathXml)
 
@@ -494,6 +497,8 @@ class JdeUtilCmd(object):
             Shext.stdout("")
             classPathXml = os.path.join(os.getcwd(),".classpath")
             if not os.path.exists(classPathXml):
+                Shext.stdout("no .classpath file in current dir, not a valid project")
+                Shext.stdout("( jde project clean finished.)", True)
                 return
             Talker.projectClean(classPathXml)
 
@@ -501,6 +506,8 @@ class JdeUtilCmd(object):
             Shext.stdout("start building....\n")
             classPathXml = os.path.join(os.getcwd(),".classpath")
             if not os.path.exists(classPathXml):
+                Shext.stdout("no .classpath file in current dir, not a valid project")
+                Shext.stdout("( jde project build finished.)", True)
                 return
             current_file_name = "All"
             Talker.compileFile(classPathXml,current_file_name)
