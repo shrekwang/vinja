@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.antlr.runtime.tree.CommonErrorNode;
 import org.antlr.runtime.tree.CommonTree;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
@@ -56,6 +57,12 @@ public class SzjdeAutoImportCommand extends SzjdeCommand  {
 	
 	public static void searchImportedTokens(CommonTree t, Set<String> names) {
         if ( t != null ) {
+        	if (t instanceof CommonErrorNode) {
+        		CommonErrorNode tmp = (CommonErrorNode)t;
+	    		if ("ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(tmp.start.getText().charAt(0)) > -1 ) {
+		        	names.add(tmp.start.getText().trim());
+	    		}
+        	}
 	        if (t.getType() ==  JavaParser.QUALIFIED_TYPE_IDENT) {
 	        	names.add(t.getChild(0).getText().trim());
 	    	}
