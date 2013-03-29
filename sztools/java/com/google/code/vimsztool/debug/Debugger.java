@@ -333,7 +333,31 @@ public class Debugger {
 		ThreadReference threadRef = suspendThreadStack.getCurThreadRef();
 		suspendThreadStack.clean();
 		threadRef.resume();
+		changeToNextSuspnedThread();
 		return "";
+	}
+	
+	public void changeToNextSuspnedThread() {
+		checkVm();
+		
+		try {
+			List<ThreadReference> threads = vm.allThreads();
+			ThreadReference correctRef = null;
+			for (ThreadReference ref : threads) {
+				if (ref.isSuspended()) {
+					correctRef = ref;
+					break;
+				}
+			}
+			if (correctRef == null) return;
+			ReferenceType refType;
+			Location loc = correctRef.frame(0).location();
+			refType = loc.declaringType();
+			suspendThreadStack.setCurRefType(refType);
+			suspendThreadStack.setCurThreadRef(correctRef);
+			changeVimEditSourceLocaton(loc);
+		} catch (Throwable e) {
+		}
 	}
 	
 	public String changeCurrentThread(String uniqueId) {
