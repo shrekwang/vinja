@@ -2305,11 +2305,13 @@ class Jdb(object):
         return work_buffer[row-1]
 
     def appendPrompt(self):
-        self.editBufOut(">")
-        buffer=vim.current.buffer
-        row = len(buffer)
-        col = len(buffer[-1])
-        vim.current.window.cursor = (row, col)
+        row, col = vim.current.window.cursor
+        cur_buffer =vim.current.buffer
+        row_count = len(cur_buffer)
+
+        if not (row_count > row and cur_buffer[row].strip() == ">" ) :
+            vim.command('call append(%s,">")' % str(row))
+        vim.current.window.cursor = (row+1, 1)
         vim.command("startinsert")
 
     def stepCmd(self, cmd ):
@@ -2412,12 +2414,12 @@ class Jdb(object):
             cmdLine = self.getCmdLine()
 
         if cmdLine.strip() == "" :
-            self.appendPrompt()
+            #self.appendPrompt()
             return
 
         cmdLine = cmdLine.replace("\ ","$$").strip()[1:]
         #remove duplicate line 
-        self.removeDuplicate()
+        #self.removeDuplicate()
 
         cmdLine = self.replaceAlias(cmdLine)
 
