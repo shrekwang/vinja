@@ -18,7 +18,7 @@ public class DebugCommand  extends SzjdeCommand {
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
 		"setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay",
 		"show_display","eval_display","tbreak", "watch","rwatch","awatch","up","down",
-		"sfields","sinspect","qeval","fetchAutocmdResult","sizeof"
+		"sfields","sinspect","qeval","geval","ginspect", "fetchAutocmdResult","sizeof"
 		};
 	
 	public String execute() {
@@ -122,7 +122,8 @@ public class DebugCommand  extends SzjdeCommand {
 				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
 				|| debugCmd.equals("fields") || debugCmd.equals("reftype")
 				|| debugCmd.equals("sfields") || debugCmd.equals("sinspect")
-				|| debugCmd.equals("qeval") || debugCmd.equals("sizeof")) {
+				|| debugCmd.equals("geval") || debugCmd.equals("qeval") 
+				|| debugCmd.equals("ginspect") || debugCmd.equals("sizeof")) {
 			ExpEval expEval = debugger.getExpEval();
 			actionResult =  expEval.executeEvalCmd(debugCmd, debugCmdLine);
 		} else if (debugCmd.equals("display")) {

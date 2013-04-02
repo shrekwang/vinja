@@ -112,6 +112,112 @@ public class ExpEval {
 		}
 	}
 	
+	private static Pattern translate(String pat) {
+		if (pat == null || pat.trim().equals(""))
+			return null;
+		StringBuilder sb = new StringBuilder("");
+		for (int i = 0; i < pat.length(); i++) {
+			char c = pat.charAt(i);
+			switch (c) {
+			case '*':
+				sb.append(".*");
+				break;
+			case '?':
+				sb.append(".");
+				break;
+			default:
+				sb.append(Pattern.quote(String.valueOf(c)));
+			}
+		}
+		return Pattern.compile(sb.toString());
+	}
+	
+	private void addValueToEvalResult(ObjectReference objRef, Pattern pat, Map<String,Value> evalResult, String objName) {
+		Value value = null;
+		ReferenceType refType = objRef.referenceType();
+		List<Field> fields = refType.fields();
+		for (Field field: fields) {
+			if (pat.matcher(field.name()).matches()) {
+				value = objRef.getValue(field);
+				evalResult.put(objName + "." + field.name(), value);
+			}
+		}
+	}
+	public String globExpEval(String globExp, boolean inspect) {
+		String[] exps = globExp.split(",");
+		StringBuilder sb = new StringBuilder();
+		for (int i=0; i<exps.length; i++) {
+			String exp = exps[i];
+			sb.append(singleGlobExpEval(exp.trim(),inspect));
+			if (i <exps.length-1) {
+				sb.append(SEP_ROW_TXT);
+			}
+		}
+		return sb.toString();
+		
+	}
+	
+	public String singleGlobExpEval(String globExp, boolean inspect) {
+		ThreadReference threadRef = checkAndGetCurrentThread();
+		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
+		Value value = null;
+		String[] expSecs = globExp.split("\\.");
+		Pattern pat = translate(expSecs[0]);
+		Pattern pat1 = null;
+		if (expSecs.length > 1) {
+			pat1 = translate(expSecs[1]);
+		}
+		Map<String,Value> evalResult = new HashMap<String, Value>();
+		try {
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			ObjectReference thisObj = stackFrame.thisObject();
+			List<LocalVariable> localVariables = stackFrame.visibleVariables();
+			for (LocalVariable localVar : localVariables) {
+				if (pat.matcher(localVar.name()).matches()) {
+					value = stackFrame.getValue(localVar);
+					if (pat1 != null) {
+						addValueToEvalResult((ObjectReference)value, pat1, evalResult, localVar.name());
+					} else {
+						evalResult.put(localVar.name(), value);
+					}
+				}
+			}
+			
+			ReferenceType refType = stackFrame.location().declaringType();
+			if (thisObj != null ) {
+				refType = thisObj.referenceType();
+			}
+			List<Field> fields = refType.fields();
+			for (Field field: fields) {
+				if (pat.matcher(field.name()).matches()) {
+					if (thisObj != null) {
+						value = thisObj.getValue(field);
+					} else {
+						value = refType.getValue(field);
+					}
+					if (pat1 != null) {
+						addValueToEvalResult((ObjectReference)value, pat1, evalResult, field.name());
+					} else {
+						evalResult.put(field.name(), value);
+					}
+				}
+			}
+		} catch (Throwable e) {
+		}
+		StringBuilder sb = new StringBuilder();
+		for (String name : evalResult.keySet()) {
+			sb.append(name).append(" : ");
+			if (inspect) {
+				sb.append(getInspectFieldsStr(name, (ObjectReference)evalResult.get(name)));
+			} else {
+				sb.append(getPrettyPrintStr(evalResult.get(name)));
+			}
+			sb.append("\n");
+		}
+		return sb.toString();
+		
+	}
+	
 	public String quickEval() {
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
@@ -248,6 +354,12 @@ public class ExpEval {
 			} else if (debugCmd.equals("sizeof")) {
 				String exp = debugCmdArgs.substring(debugCmd.length()+1);
 				actionResult = sizeOf(exp);
+			} else if (debugCmd.equals("geval")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = globExpEval(exp, false);
+			} else if (debugCmd.equals("ginspect")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = globExpEval(exp, true);
 			}
 			return actionResult;
 		} catch (ExpressionEvalException e) {
@@ -349,6 +461,31 @@ public class ExpEval {
 					sb.append(getPrettyPrintStr(values.get(field)));
 					sb.append("\n");
 				}
+			}
+		}
+		return sb.toString();
+	}
+	
+	private String getInspectFieldsStr(String exp, ObjectReference value) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(exp).append(" = ");
+		sb.append(value.type().name()).append("\n");
+		
+		ObjectReference objRef = (ObjectReference) value;
+		Map<Field, Value> values = objRef.getValues(objRef.referenceType().visibleFields());
+		List<String> fieldNames = new ArrayList<String>();
+		for (Field field : values.keySet()) {
+			if ( !field.isStatic()) {
+				fieldNames.add(field.name());
+			}
+		}
+		int maxLen = getMaxLength(fieldNames)+2;
+		for (Field field : values.keySet()) {
+			if ( !field.isStatic() ) {
+				sb.append("    ");
+				sb.append(padStr(maxLen,field.name())).append(":");
+				sb.append(getPrettyPrintStr(values.get(field)));
+				sb.append("\n");
 			}
 		}
 		return sb.toString();
