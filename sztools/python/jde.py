@@ -2304,7 +2304,9 @@ class Jdb(object):
         row,col = vim.current.window.cursor
         return work_buffer[row-1]
 
-    def appendPrompt(self):
+    def appendPrompt(self, insertMode = True):
+        if not insertMode :
+            return
         row, col = vim.current.window.cursor
         cur_buffer =vim.current.buffer
         row_count = len(cur_buffer)
@@ -2406,6 +2408,15 @@ class Jdb(object):
                 lineset.add(curBuf[rowNum-1])
             rowNum = rowNum -1
 
+
+    def retainLines(self):
+        curBuf = vim.current.buffer
+        if len(curBuf) > 8 :
+            del curBuf[0]
+        row = len(curBuf)
+        col = len(curBuf[row-1])
+        vim.current.window.cursor = (row, col)
+
     def executeCmd(self, insertMode = True, cmdLine = None):
         
         #if self.project_root == None or not os.path.exists(self.project_root) :
@@ -2414,30 +2425,29 @@ class Jdb(object):
             cmdLine = self.getCmdLine()
 
         if cmdLine.strip() == "" :
-            #self.appendPrompt()
             return
 
         cmdLine = cmdLine.replace("\ ","$$").strip()[1:]
         #remove duplicate line 
         #self.removeDuplicate()
+        if insertMode :
+            self.retainLines()
 
         cmdLine = self.replaceAlias(cmdLine)
 
         if cmdLine.startswith("list") :
             self.listCmd(cmdLine)
-            if insertMode :
-                self.appendPrompt()
+            self.appendPrompt(insertMode)
             return
 
         if cmdLine.startswith("breakpoint_") or cmdLine.startswith("tbreak"):
             self.breakCmd(cmdLine)
-            if insertMode :
-                self.appendPrompt()
+            self.appendPrompt(insertMode)
             return
 
         if cmdLine == "wow":
             self.stdout(self)
-            self.appendPrompt()
+            self.appendPrompt(insertMode)
             return 
 
         if cmdLine == "run" or cmdLine == "runtest" :
@@ -2459,12 +2469,12 @@ class Jdb(object):
 
         if cmdLine.startswith("help"):
             self.printHelp()
-            self.appendPrompt()
+            self.appendPrompt(insertMode)
             return
 
         if cmdLine.startswith("alias"):
             self.printAlias()
-            self.appendPrompt()
+            self.appendPrompt(insertMode)
             return
 
         if cmdLine.startswith("hide"):
@@ -2527,8 +2537,7 @@ class Jdb(object):
                 VimUtil.doCommandInSzToolBuffer("JdbStdOut",callback)
 
         vim.command("call SwitchToSzToolView('Jdb')")
-        if insertMode :
-            self.appendPrompt()
+        self.appendPrompt(insertMode)
 
     def fetchJdbResult(self):
         resultText = JdbTalker.submit("fetchJdbResult",self.class_path_xml,self.serverName)
