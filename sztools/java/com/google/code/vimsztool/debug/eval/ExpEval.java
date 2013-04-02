@@ -185,18 +185,35 @@ public class ExpEval {
 			}
 			
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			String[] expSecs = name.split("\\.");
+				
 			LocalVariable localVariable;
-			localVariable = stackFrame.visibleVariableByName(name);
+			localVariable = stackFrame.visibleVariableByName(expSecs[0]);
 			if (localVariable != null) {
-				stackFrame.setValue(localVariable, value);
+				if (expSecs.length == 1) {
+					stackFrame.setValue(localVariable, value);
+				} else {
+					ReferenceType refType = (ReferenceType)localVariable.type();
+					Field field = refType.fieldByName(expSecs[1]);
+					ObjectReference varValue = (ObjectReference)stackFrame.getValue(localVariable);
+					varValue.setValue(field, value);
+				}
 			} else {
 				ObjectReference thisObj = stackFrame.thisObject();
 				if (thisObj == null) {
 					return "can't find field or variable with name '"+name+"'";
 				}
 				ReferenceType refType = thisObj.referenceType();
-				Field field = refType.fieldByName(name);
-				thisObj.setValue(field, value);
+				Field field = refType.fieldByName(expSecs[0]);
+				if (expSecs.length == 1) {
+					thisObj.setValue(field, value);
+				} else {
+					ObjectReference secFieldValue = (ObjectReference)thisObj.getValue(field);
+					
+					refType = (ReferenceType)field.type();
+					Field secField = refType.fieldByName(expSecs[1]);
+					secFieldValue.setValue(secField, value);
+				}
 			}
 			return Debugger.CMD_SUCCESS + ": set \""+name + "\" to value " + value.toString();
 		} catch (Throwable e) {
