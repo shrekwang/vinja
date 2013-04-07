@@ -1049,9 +1049,7 @@ public class ExpEval {
 					return false;
 			}
 			if (!value.type().equals(argType)) {
-				if (isAssignableTo(value.type(), argType)) {
-					return true;
-				} else {
+				if (!isAssignableTo(value.type(), argType)) {
 					return false;
 				}
 			}
@@ -1285,7 +1283,7 @@ public class ExpEval {
     private ReferenceType loadClass(ThreadReference threadRef,
     		ClassLoaderReference classLoaderRef, String className) {
     	
-    	classLoaderRef = (ClassLoaderReference)invoke( (ObjectReference) classLoaderRef,"getSystemClassLoader" , new ArrayList() );
+    	//classLoaderRef = (ClassLoaderReference)invoke( (ObjectReference) classLoaderRef,"getSystemClassLoader" , new ArrayList() );
     	
     	ReferenceType refType= classLoaderRef.referenceType();
 		List<Method> aa = refType.methodsByName("loadClass");
@@ -1300,15 +1298,20 @@ public class ExpEval {
 		List<Value> args = new ArrayList<Value>();
 		args.add(value);
 		args.add(vm.mirrorOf(true));
+		ClassObjectReference v = null;
 		try {
-			ClassObjectReference v =(ClassObjectReference)classLoaderRef.invokeMethod(threadRef, matchedMethod, args, ObjectReference.INVOKE_SINGLE_THREADED);
-	    	invoke( (ObjectReference)v,"newInstance" , new ArrayList() ); //force to initialize the static field, don't otherwise can do it.
-			ReferenceType v2 = v.reflectedType();
-			return v2;
+			v =(ClassObjectReference)classLoaderRef.invokeMethod(threadRef, matchedMethod, args, ObjectReference.INVOKE_SINGLE_THREADED);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
+		if (v == null) return null;
+		
+		try {
+	    	invoke( (ObjectReference)v,"newInstance" , new ArrayList() ); //force to initialize the static field, don't otherwise can do it.
+		} catch (Exception e) {
+		}
+		ReferenceType v2 = v.reflectedType();
+		return v2;
     }
     
     public void putVar(String name, Value value) {
