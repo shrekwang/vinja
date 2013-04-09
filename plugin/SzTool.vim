@@ -424,6 +424,7 @@ function ProjectTree(...)
     map <silent><buffer> B     :python projectTree.change_back()<cr>
     map <silent><buffer> U     :python projectTree.change_root_upper()<cr>
     map <silent><buffer> QQ    :python projectTree.dispose_tree()<cr>
+    map <silent><buffer> S     :python projectTree.save_status(False)<cr>
 	endif
 endfunction
 

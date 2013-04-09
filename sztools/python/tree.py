@@ -1166,7 +1166,7 @@ class ProjectTree(object):
             found_node = node
         return found_node
 
-    def save_status(self):
+    def save_status(self, closeFile = True):
         opened_nodes = []
         def _get_opened_nodes(current_node) :
             if current_node.isOpen :
@@ -1178,7 +1178,7 @@ class ProjectTree(object):
                     _get_opened_nodes(child)
                 elif child.isEdited :
                     bufnr = vim.eval("bufnr('%s')" % child.realpath)    
-                    if bufnr != "-1" :
+                    if bufnr != "-1" and closeFile:
                         vim.command('Bclose %s' % bufnr)
                     opened_nodes.append(child.realpath)
         _get_opened_nodes(self._get_render_root())
@@ -1187,6 +1187,8 @@ class ProjectTree(object):
             tree_state_file.write(path)
             tree_state_file.write("\n")
         tree_state_file.close()
+        if not closeFile :
+            print "ProjectTree status has been saved."
 
     def restore_status(self, node_type = "dir"):
         if not os.path.exists(self.tree_state_path):
