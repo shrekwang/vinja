@@ -2137,7 +2137,22 @@ class Jdb(object):
             vim.command("redraw")
 
     def switchSourceBuffer(self):
-        min_normal_buf = -1
+        for i in range(1,5):
+            bufname = vim.eval("bufname(winbufnr(%s))" % str(i))
+            if bufname.endswith(".temp_src")  or bufname.endswith(".java") :
+                #found java buf
+                vim.command("%swincmd w" % str(i))    
+                return
+
+        bufwin = 1
+        bufname = vim.eval("bufname(winbufnr(1))")
+        if "ProjectTree" in bufname : 
+            bufwin = 2
+        vim.command("%swincmd w" % str(bufwin))    
+        return
+
+        """
+        min_normal_buf = 1
         found_java_buf = False
 
         for i in range(1,6):
@@ -2145,13 +2160,13 @@ class Jdb(object):
             bufname = vim.current.buffer.name
             if bufname == None :
                 continue
-            if bufname.endswith(".temp_src")  or bufname.endswith(".java") :
-                found_java_buf = True
-                break
-            if vim.eval("&buftype") == "" and min_normal_buf == -1 :
+            if vim.eval("&buftype") == "" and min_normal_buf == 1 :
                 min_normal_buf = i
-        if not found_java_buf :
-            vim.command("%swincmd w" % str(min_normal_buf))    
+                break
+        vim.command("%swincmd w" % str(min_normal_buf))    
+        logging.debug("found_java_buf is %s" % str(found_java_buf) )
+        logging.debug("min_normal_buf is %s" % str(min_normal_buf) )
+        """
 
 
 
