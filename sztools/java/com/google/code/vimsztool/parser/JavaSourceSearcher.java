@@ -946,7 +946,10 @@ public class JavaSourceSearcher {
                 typename = NULL_TYPE;
                 break;
             case JavaParser.QUALIFIED_TYPE_IDENT:
+            case JavaParser.TYPE:
             case JavaParser.CLASS_CONSTRUCTOR_CALL:
+            case JavaParser.PARENTESIZED_EXPR:
+            case JavaParser.CAST_EXPR :
             	typename = parseNodeTypeName((CommonTree)node.getChild(0));
             	break;
             default :
@@ -956,6 +959,7 @@ public class JavaSourceSearcher {
 
 
     }
+    
     
     @SuppressWarnings("rawtypes")
 	private String convertTypeName(String typeName) {
