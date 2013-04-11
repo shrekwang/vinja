@@ -404,7 +404,13 @@ class EditHistoryManager(object):
         if line == "" :
             return
         basename,path = re.split("\s+",line)
-        vim.command("edit %s "  %(path))
+
+        if mode == "local" :
+            vim.command("edit %s "  %(path))
+        elif mode == "buffer" :
+            vim.command("split %s "  %(path))
+        elif mode == "tab" :
+            vim.command("tabedit %s "  %(path))
 
     def cursor_current_buf(self):
         if self.cur_buf == None :
