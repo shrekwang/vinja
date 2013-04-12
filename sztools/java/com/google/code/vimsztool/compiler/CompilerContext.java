@@ -130,12 +130,19 @@ public class CompilerContext {
 				if (type == ResourceType.Java && fileName.endsWith(".java")){
 					names.add(file.getAbsolutePath());
 				}
-				if (type == ResourceType.Other && !fileName.endsWith(".java")) {
+				if (type == ResourceType.Other && isResourceFile(fileName)) {
 					names.add(file.getAbsolutePath());
 				}
 			}
 		}
 
+	}
+	private boolean isResourceFile(String fileName) {
+		if (fileName.endsWith(".java")
+				|| fileName.endsWith(".class")) {
+			return false;
+		}
+		return true;
 	}
 	
 	public void refreshClassInfo(List<String> classNames) {
