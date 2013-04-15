@@ -134,22 +134,29 @@ class QueryUtil(object):
         name = MiscUtil.getVisualBlock()
         outBuffer = Dbext.getOutputBuffer()
         server_type = db_profile["servertype"]
+
+        col_names = []
+        values =[] 
+
         if server_type == "oracle":
             sql = """select column_name from user_tab_columns 
                 where table_name = '%s' """ % name.upper()
+            col_names = [row[0] for row in dbext.query(sql)[1]]
+            sql = "select top 1 * from %s " % name
+            values = [str(v)[0:30] for v in dbext.query(sql)[1][0] ]
+
         elif server_type == "mssql":
-            sql = """select syscolumns.name from sysobjects
-                    join syscolumns on sysobjects.id = syscolumns.id
-                    join systypes on syscolumns.xtype = systypes.xtype
-                where sysobjects.name = '%s' """ % name
-            
+            sql = """select column_name, data_type,  character_maximum_length  
+                        from information_schema.columns where table_schema+'.'+table_name = '%s'; """ % name
 
-        result = [row[0] for row in dbext.query(sql)[1]]
+            col_names = [row[0] for row in dbext.query(sql)[1]]
+            sql = "select top 1 * from %s " % name
+            values = [str(v)[0:30] for v in dbext.query(sql)[1][0] ]
 
-        values = (name, ",".join(result), ",".join("?"*len(result) ))
-        insertSql = "insert into %s (%s) values (%s) \n" % values
-        values = (name, " = ?,".join(result) )
-        updateSql = "update %s set %s where id = ?" % values
+        params = (name, ",".join(col_names),"'" + "','".join(values) + "'")
+        insertSql = "insert into %s (%s) \n values (%s) \n" % params
+        params = (name, " = ?,".join(col_names) )
+        updateSql = "update %s set %s where id = ?" % params
         output(insertSql + updateSql, outBuffer)
 
 class Dbext(object):
