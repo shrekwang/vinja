@@ -1,10 +1,6 @@
 package com.google.code.vimsztool.parser;
 
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -22,8 +18,6 @@ import com.google.code.vimsztool.omni.ClassInfo;
 import com.google.code.vimsztool.omni.ClassInfoUtil;
 import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.omni.JavaExpUtil;
-
-
 import com.google.code.vimsztool.util.LRUCache;
 import com.google.code.vimsztool.util.ModifierFilter;
 
@@ -151,6 +145,46 @@ public class JavaSourceSearcher {
 			if (mod.indexOf("public") > -1 ) return true;
 		}
 		return false;
+	}
+	
+	public int searchLoopOutLine(int currentLine) {
+		CommonTree tree = parseResult.getTree();
+		LinkedList<CommonTree> currentLineNodes = new LinkedList<CommonTree>();
+		
+		searchAllNodeAtLine(tree, currentLineNodes, currentLine); 
+		CommonTree parentNode = currentLineNodes.get(0);
+		CommonTree childNode = null;
+		boolean foundOut = false;
+		while (true) {
+			int nodeType = parentNode.getType();
+			if (nodeType == JavaParser.WHILE || 
+					nodeType == JavaParser.FOR || nodeType == JavaParser.FOR_EACH) {
+				foundOut = true;
+				break;
+			}
+			if (parentNode.getParent() == null) break;
+			childNode = parentNode;
+			parentNode = (CommonTree)parentNode.getParent();
+				
+		}
+		if (!foundOut) return -1;
+		
+		while (childNode.getChildIndex() == parentNode.getChildCount()-1) {
+			childNode = parentNode;
+			parentNode = (CommonTree)parentNode.getParent();
+		}
+		CommonTree nextNode = (CommonTree)parentNode.getChild(childNode.getChildIndex()+1);
+		return getNodeLine(nextNode);
+	}
+	
+	private int getNodeLine(CommonTree node) {
+		if (node.getLine() > 0) return node.getLine();
+		for (int i=0; i<node.getChildCount(); i++) {
+			CommonTree childNode = (CommonTree)node.getChild(i);
+			int childNodeLine = getNodeLine(childNode);
+			if (childNodeLine > 0) return childNodeLine;
+		}
+		return -1;
 	}
 	
 

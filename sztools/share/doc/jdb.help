@@ -42,6 +42,7 @@ setvalue  varname value-expression      --set varname's value to result of value
 step_into     --step into method ,key <F5> (alias:step,s)
 step_over     --step over one line,key <F6>(alias:next,n)
 step_return   --step return , key <F7>(alias:finish)
+step_out      --step out current loop
 resume        --resume current thread, key <F8>(alias:continue,c)
 until line    --run to line(alias:u)
 
@@ -57,6 +58,7 @@ Use <c-i> to toggle quickstep mode:
   l   -->step_into
   j   -->step_over
   h   -->step_return
+  u   -->step_out
   c   -->resume
   v   -->locals
   w   -->frames

@@ -2176,6 +2176,7 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>l   :python jdb.stepCmd('step_into')<cr>")
             vim.command("nnoremap <buffer><silent>j   :<C-U>python jdb.stepCmd('step_over')<cr>")
             vim.command("nnoremap <buffer><silent>h   :<C-U>python jdb.stepCmd('step_return')<cr>")
+            vim.command("nnoremap <buffer><silent>u   :<C-U>python jdb.stepCmd('step_out')<cr>")
             vim.command("nnoremap <buffer><silent>c   :python jdb.stepCmd('resume')<cr>")
             vim.command("nnoremap <buffer><silent>v   :python jdb.executeCmd(insertMode=False,cmdLine='>locals')<cr>")
             vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
@@ -2187,6 +2188,7 @@ class Jdb(object):
             vim.command("nunmap <buffer><silent>l")
             vim.command("nunmap <buffer><silent>j")
             vim.command("nunmap <buffer><silent>h")
+            vim.command("nunmap <buffer><silent>u")
             vim.command("nunmap <buffer><silent>c")
             vim.command("nunmap <buffer><silent>v")
             vim.command("nunmap <buffer><silent>w")
@@ -2477,7 +2479,7 @@ class Jdb(object):
                 return
             cmdLine = "run"  +" " + self.lastRunClass
 
-        change_suspend_cmds = ["step_into","step_over","step_return","resume",
+        change_suspend_cmds = ["step_into","step_over","step_return","step_out","resume",
                 "exit","shutdown","frame","disconnect","until","up","down","thread"]
         if cmdLine.strip().split(" ")[0] in change_suspend_cmds :
             self.resumeSuspend()

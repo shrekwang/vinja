@@ -14,7 +14,7 @@ public class DebugCommand  extends SzjdeCommand {
 	
 	private static String[] availCmds = { "run", "runtest","exit", "print", "eval","inspect",
 		"breakpoints","locals","fields","frames", "attach","breakpoint_add", "breakpoint_remove",
-		"step_into","step_over","step_return", "resume", "shutdown" ,"catch", 
+		"step_into","step_over","step_return","step_out", "resume", "shutdown" ,"catch", 
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
 		"setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay",
 		"show_display","eval_display","tbreak", "watch","rwatch","awatch","up","down",
@@ -118,6 +118,8 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("step_return")) {
 			int count = this.getStepCount(args);
 			actionResult = stepMgr.step(StepRequest.STEP_OUT, count);
+		} else if (debugCmd.equals("step_out")) {
+			actionResult = stepMgr.stepOut();
 		} else if (debugCmd.equals("eval") || debugCmd.equals("print")
 				|| debugCmd.equals("inspect") || debugCmd.equals("locals")
 				|| debugCmd.equals("fields") || debugCmd.equals("reftype")

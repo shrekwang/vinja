@@ -2,6 +2,10 @@ package com.google.code.vimsztool.debug;
 
 import java.util.List;
 
+import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.parser.JavaSourceSearcher;
+import com.sun.jdi.Location;
+import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.request.EventRequest;
@@ -48,6 +52,30 @@ public class StepManager {
 		request.enable();
 		
 		threadRef.resume();
+		return "";
+	}
+	
+	public String stepOut() {
+		try {
+			CompilerContext ctx = debugger.getCompilerContext();
+			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
+			ThreadReference threadRef = threadStack.getCurThreadRef();
+			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
+			Location loc = stackFrame.location();
+		    String abPath = ctx.findSourceFile(loc.sourcePath());
+		    JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(abPath,ctx);
+		    int currentLine = loc.lineNumber();
+		    int outLine = searcher.searchLoopOutLine(currentLine);
+		    if (outLine == -1) {
+		    	return step(StepRequest.STEP_OUT, 1);
+		    }
+			BreakpointManager bpMgr = debugger.getBreakpointManager();
+			String className = loc.declaringType().name();
+		    bpMgr.addTempBreakpoint(className, outLine,false);
+		    threadRef.resume();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return "";
 	}
 
