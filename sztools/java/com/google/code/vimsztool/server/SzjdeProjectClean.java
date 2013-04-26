@@ -42,6 +42,13 @@ public class SzjdeProjectClean extends SzjdeShextCommand {
 					}
 				}
 				
+				out.println("reload classpath...");
+				out.println("");
+				CompilerContextManager ccm = CompilerContextManager.getInstnace();
+				ccm.reloadCompilerContext(classPathXml, false);
+				
+				//get reloaded compilerContext
+				cc=getCompilerContext(classPathXml);
 				out.println("compile java source...");
 				out.println("");
 				compileSource(cc);
@@ -52,8 +59,7 @@ public class SzjdeProjectClean extends SzjdeShextCommand {
 				copyResource(cc);
 					
 				out.println("refresh cache...");
-				CompilerContextManager ccm = CompilerContextManager.getInstnace();
-				ccm.reloadCompilerContext(classPathXml);
+				cc.cacheClassInfo();
 			}
 			
 			private void copyResource(CompilerContext cc) {

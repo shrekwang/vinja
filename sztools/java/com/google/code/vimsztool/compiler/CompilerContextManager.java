@@ -22,13 +22,17 @@ public class CompilerContextManager {
 		return instance;
 	}
 	
-	public Future<CompilerContext> loadCompilerContext(final String classPathXml) {
+	public Future<CompilerContext> loadCompilerContext(final String classPathXml ) {
+		return loadCompilerContext(classPathXml, true);
+	}
+	
+	public Future<CompilerContext> loadCompilerContext(final String classPathXml, final boolean cacheClassInfo) {
 		Future<CompilerContext> f = ctxCache.get(classPathXml);
 		
         if (f == null) {
             Callable<CompilerContext> loader = new Callable<CompilerContext>() {
                 public CompilerContext call() throws InterruptedException {
-                    CompilerContext ctx = new CompilerContext(classPathXml);
+                    CompilerContext ctx = new CompilerContext(classPathXml,cacheClassInfo);
                     return ctx;
                 }
             };
@@ -72,6 +76,11 @@ public class CompilerContextManager {
 	public void reloadCompilerContext(String classPathXml) {
 		ctxCache.remove(classPathXml);
 		loadCompilerContext(classPathXml);
+	}
+	
+	public void reloadCompilerContext(String classPathXml, boolean cacheClassInfo) {
+		ctxCache.remove(classPathXml);
+		loadCompilerContext(classPathXml, cacheClassInfo);
 	}
 	
 

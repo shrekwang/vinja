@@ -55,6 +55,7 @@ public class CompilerContext {
 	private String lastSearchResult = "";
 	
 	private boolean flatProject = false;
+	private boolean classInfoCached = false;
 	
 	private enum ResourceType { Java, Other };
 	
@@ -65,6 +66,10 @@ public class CompilerContext {
 	}
 	
 	public CompilerContext(String classPathXml) {
+		this(classPathXml, true);
+	}
+	
+	public CompilerContext(String classPathXml, boolean cacheClassInfo) {
 		
 		encoding = pref.getValue(Preference.JDE_COMPILE_ENCODING);
 		srcVM = pref.getValue(Preference.JDE_SRC_VM);
@@ -95,7 +100,25 @@ public class CompilerContext {
 			}
 		}
 		this.classMetaInfoManager = new ClassMetaInfoManager(this);
-		initClassLoader();
+		
+		URL urlsA[] = new URL[classPathUrls.size()];
+		classPathUrls.toArray(urlsA);
+		loader = new ReflectAbleClassLoader(urlsA, this.getClass().getClassLoader());
+		
+		if (cacheClassInfo) {
+			cacheClassInfo();
+		}
+	}
+	
+	public void cacheClassInfo() {
+		if (classInfoCached) return;
+		
+		if (!this.isFlatProject()) {
+			cachePackageInfo();
+		} else {
+			cacheFlatProjectPackageInfo();
+		}
+		classInfoCached = true;
 	}
 	
 	public String[] getAllSourceFiles() {
@@ -313,17 +336,6 @@ public class CompilerContext {
 				try { classPathUrls.add(1, libFile.toURI().toURL()); } catch (Exception e) {}
 				extOutputDirs.add(libFile.getAbsolutePath());
 			} 
-		}
-	}
-	
-	private void initClassLoader() {
-		URL urlsA[] = new URL[classPathUrls.size()];
-		classPathUrls.toArray(urlsA);
-		loader = new ReflectAbleClassLoader(urlsA, this.getClass().getClassLoader());
-		if (!this.isFlatProject()) {
-			cachePackageInfo();
-		} else {
-			cacheFlatProjectPackageInfo();
 		}
 	}
 	
