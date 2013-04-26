@@ -148,8 +148,13 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("threads")) {
 			actionResult = debugger.listThreads();
 		} else if (debugCmd.equals("thread")) {
-			String uniqueId = args[1];
-			actionResult = debugger.changeCurrentThread(uniqueId);
+			if (args.length == 1 ) {
+				debugger.changeToNextSuspnedThread();
+				return "success";
+			} else {
+				String uniqueId = args[1];
+				actionResult = debugger.changeCurrentThread(uniqueId);
+			}
 		} else if (debugCmd.equals("frame") ) {
 			int frameNum = Integer.parseInt(args[1]);
 			actionResult = debugger.changeCurrentFrame(frameNum);
