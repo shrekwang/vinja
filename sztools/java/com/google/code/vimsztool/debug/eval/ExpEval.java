@@ -206,10 +206,10 @@ public class ExpEval {
 		}
 		StringBuilder sb = new StringBuilder();
 		for (String name : evalResult.keySet()) {
-			sb.append(name).append(" : ");
 			if (inspect) {
 				sb.append(getInspectFieldsStr(name, (ObjectReference)evalResult.get(name)));
 			} else {
+				sb.append(name).append(" : ");
 				sb.append(getPrettyPrintStr(evalResult.get(name)));
 			}
 			sb.append("\n");
@@ -469,6 +469,10 @@ public class ExpEval {
 	private String getInspectFieldsStr(String exp, ObjectReference value) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(exp).append(" = ");
+		if (value == null) {
+			sb.append("null").append("\n");
+			return sb.toString();
+		}
 		sb.append(value.type().name()).append("\n");
 		
 		ObjectReference objRef = (ObjectReference) value;
