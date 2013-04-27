@@ -28,6 +28,8 @@ sinspect expression    --print the static field value of the inspect expression
 locals                 --list stack frame local variables
 fields                 --list fields (only non-static)
 sfields                --list fields (only static)
+geval                  --like print(eval) but accept "*" in expression (alias ge, gp), exampe : gp item*
+ginspect               --like inspect but accept "*" in expression(alias gi) 
 
 list n                --scroll source code to line n, if n is omitted, scroll to next page(alias:l)
 threads               --list threads state
