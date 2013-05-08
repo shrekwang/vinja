@@ -441,9 +441,9 @@ function WatchExample(name)
   python MiscUtil.watchExample(vim.eval("a:name"))
 endfunction
 
-function LocateFile()
+function LocateFile(locateType)
   call RunSzPyfile("locate.py")
-  python fcmgr = FileContentManager()
+  python fcmgr = FileContentManager(vim.eval("a:locateType"))
   python QuickLocater.runApp(fcmgr)
 endfunction
 
@@ -679,7 +679,8 @@ nmap <silent><leader>zv  <C-Q>
 
 nmap <silent><leader>zt  :call Tagext()<cr>
 nmap <silent><leader>zl  :call TagList()<cr>
-nmap <silent><leader>lw  :call LocateFile()<cr>
+nmap <silent><leader>lw  :call LocateFile("currentDir")<cr>
+nmap <silent><leader>lW  :call LocateFile("all")<cr>
 nmap <silent><leader>la  :call LocateHistory()<cr>
 
 function SetProjectTreeFileEditFlag(filename,flag)

@@ -213,11 +213,12 @@ class QuickLocater(object) :
         vim.command("exec '%s wincmd w'" % self.last_winnr)
 
 class FileContentManager(object):
-    def __init__(self):
 
+    def __init__(self, locateType):
         self.bound_chars = """/\?%*:|"<>(), \t\n"""
         shext_locatedb_path = os.path.join(SzToolsConfig.getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
+        self.locateType = locateType
         self.show_on_open = False
 
     def get_init_prompt(self):
@@ -240,14 +241,21 @@ class FileContentManager(object):
         return "".join(result)
 
     def search_content(self,search_pat):
-
+        cur_dir = os.getcwd()
         result = self.locatecmd.locateFile(search_pat,startWithAlias=True)
-        result = result[0:30]
+
         rows = []
         self.start_dirs = {}
         for apath,alias,start_dir in result :
-            rows.append(apath)
+            if self.locateType == "all" :
+                rows.append(apath)
+            else :
+                rtl_path = apath[apath.find(os.path.sep)+1:]
+                abpath = os.path.join(start_dir, rtl_path)
+                if cur_dir in abpath :
+                    rows.append(apath)
             self.start_dirs[alias] = start_dir
+        rows = rows[0:30]
         return rows
 
     def open_content(self,line,mode="local"):
