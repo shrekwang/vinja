@@ -1,86 +1,54 @@
-*SzTools.txt* plugin 
+*SzTools.txt*    Vim的java开发工具集
 
-            SzTools  help 
-
-1.Jdext.....................................|Jdext|
-2.Shext.....................................|Shext|
-3.Dbext.....................................|Dbext|
-4.Scratch...................................|Scratch|
+Author:         shrek wang <shrek.wang@gmail.com>
+Homepage:       https://github.com/shrekwang/vim-sztool
 
 ==============================================================================
-Jdext                                                    *Jdext*
 
-  Jdext是一组用于帮助编写java代码的命令,主要有代码补全,编译,执行,get和set方法
-生成,自动导入,dump类信息等.
+内容                         *SzTools* 
 
-  Jdext采用了和eclipse一样的.classpath来管理类路径,所以如果已经有在用eclipse管
-理的项目,就不需要再做类路径的设置.对于新建的项目,可以用ProjectInit命令来初始化
-目录结构和建立.classpath 文件,对于没有建项目的单个java文件,Jdext也一样可以补全
-编译和执行,只是把源码目录和输出目录默认为当前文件所在的目录.另外Jdext的项目根
-目录项可以建一个.jde 的xml配置文件,用来配置此项目的java encoding和jdk兼容级等.
-文件内容可以参见sztools/share/examples/jde.xml.
-
-  Jdext命令默认是不开启的,只有用:Jdext启动后,补全,编译,执行等功能才可以用,启动
-后在托盘区会有个图标,这个是独立的java进程, vim通过socket和它通信,可以被多个vim
-实例共用,默认端口9527.
-
-  Jdext服务端程序启动时读取sztools/share/conf/sztools.cfg以设置一些全局参数,可
-以设的值有(其中一些可以在.jde中单独设置):
-
-  jde_compile_encoding : 默认的java encoding
-  jde_compile_ignore_waring : 编译时是否忽略警告
-  jde_run_timeout : 运行默认超时,单位为秒.默认30秒,如果运行超过这个时间,则返回
-  jde_src_vm : java源码的jdk版本兼容级,默认为1.6
-  jde_dst_vm : java编译后class文件的jdk版本兼容级, 默认1.6
-  jde_server_port : Jdext服务端程序的监听端口,默认9527
-
-Jdext启动后可用的功能
-
-0: 补全. 可以对类名,成员名,等进行补全.
-    a: 用"<ctrl-x><ctrl-o>"启动omni补全, 如果已经装了supertab插件,则直接可以用
-       <tab>来进行补全.
-    b: 方法的补全是忽略大小写的,而且可以用*来匹配任意字符, 比如
-       employee.get*id, 可以匹配 employee.getDeptId();
-    c: 对于没有匹配到的名称，再继续偿试用模糊匹配来补全， 比如schinfo,可以匹配
-       schoolinfo, sheep 匹配 sleep
-    d: 大写开始的名称进行类名补全(对于没有import的类名,也可以直接补全).
-
-1: 补全完，在括号面输参数时如果忘了参数的类型，在插入模式下按<alt-9>, 可以提示
-   方法的参数类型，按<alt-0>, 关闭提示buffer. (构造函数的参数也可以提示)
-
-2: 用"<leader>gd" 实现goto definition的功能
-
-3: 对于在光标下的类,可以用"<leader>dc"来dump一些类信息（类继承,成员等)
-
-4: 保存java时自动编译,编译错误自动设为quickfix列表,可以通过<ctrl-n>,<ctrl-p>跳
-   转.Waring默认也是在quickfix列表里的,可以通过sztools.cfg配置为编译时忽略警
-   告.
-
-5: ":Run"来运行当前的class, 如果程序有死循环,则默认是30秒后自动返回.
-   也可以用"<leader>,"来运行当前类
-
-6: visual选中field,然后用"<leader>gs"可以为这些field生成getter和setter.
-
-7: 对于所有没有import的类,用":AutoImport"来进行自动导入,如果有些类可能位于多个
-   package的,则会进行提示选择. 也可以用默认的mapping "<leader>ai"来自动导入
-
-8: ":Ant"命令执行ant, 默认查找项目根目录的build.xml,此命令可以加参数,比如
-   ":Ant deploy", ":Ant build"
-
-9: 在没有项目配置的目录,可以执行":ProjectInit"来初始化项目设置.
-
-10: 如果已经安装了NERDTree插件，用"ProjectTree"来打开项目树，并定位当前文件
-
-11: 如果修改了项目的.classpath或.jde配置,可以用":ProjectClean"来更新这些设置.
-
-12: "<leader>zo" 实现快速成员跳转,类似 eclipse中的<ctrl-o>功能
-
-13: "<leader>lw" 实现文件快速定位,不过需要先在shext中进行索引 ,参见 *Shext*
-
+0. 准备 ........................................... |SzTools-preparement|
+    需求 .......................................... |SzTools-requirements|
+    安装 .......................................... |SzTools-installation|
+1. Shext .......................................... |SzTools-Shext|
+    介绍 .......................................... |SzTools-Shext-Intro|
+    命令参考 ...................................... |SzTools-Shext-Reference|
+2. Jdext .......................................... |SzTools-Jdext|
+    项目设置 ...................................... |SzTools-Jdext-Project|
+    补全 .......................................... |SzTools-Jdext-Completion|
+    编译 .......................................... |SzTools-Jdext-Compile|
+    Import ........................................ |SzTools-Jdext-Import|
+    跳转 .......................................... |SzTools-Jdext-GotoDef|
+    杂项 .......................................... |SzTools-Jdext-Misc|
+    调试 .......................................... |SzTools-Jdext-Jdb|
+3. ProjectTree .................................... |SzTools-ProjectTree|
+4. Dbext .......................................... |SzTools-Dbext|
+5. QuickLocator ................................... |SzTools-QuickLocator|
+6. 杂项 ........................................... |SzTools-Misc|
+7. 配置 ........................................... |SzTools-Conf|
 
 
 ==============================================================================
-Shext                                                *Shext*
+准备                                                  *SzTools-preparement*
+
+需求                                                  *SzTools-requirements*
+  vim的需添加python支持
+  JDK 1.6 以上,需设置JDK_HOME和PATH变量 
+  Python2.7以上
+    python环境需安装pyparsing,BeautifulSoup,chardet模块
+  只支持Gvim版本
+
+安装                                                    *Sztools-installation*
+ 1: 把Sztools目录拷到vim的插件目录(或添加Sztools目录路径到runtimepath)
+ 2: 在vimrc中添加全局变量 g:sztool_home,变量值是Sztools源码目录下的sztools目录
+
+ 如果安装成功,此时启动gvim,在系统托盘区会有个军刀的图标,这个是Agent程序,说明已
+经安装成功了.
+
+==============================================================================
+Shext                                                    *Sztools-Shext*
+
+介绍:                                                    *Sztools-Shext-Intro*
 
   Shext不是一个shell插件,Shext是个命令执行器类似的东西.启动Shext后,会split一
 个buffer出来.上下两个buffer, 上面是执行命令的,下面一个显示命令的输出, 除了在命
@@ -88,7 +56,21 @@ Shext                                                *Shext*
 通buffer,可以做vim任意操作.因为每执行一次命令就更新一次输出,所以输出buffer只能
 显示最近一条命令的输出. 
 
-开始之前 :
+
+  在命令编辑buffer, 如果输入"/",如果对应的参数是目路路径, 则在命令输出buffer会
+显示对应路径的内容作为提示. 比如 
+  cd c:/
+  在"/"按下后, 会列出c:根目录的内容.(Shext默认在linux和win下都使用"/"作为目录
+分隔符)
+
+  在命令编辑buffer, 在insert模式下输入"\$n;;", 则会把输出buffer的第n行补全到当
+前命令行中. 在某些条件下会比较有用.
+  比如你可以先用 find --name *.java --text Apple 查找包含Apple的java文件, 在找
+到后, 如果想编辑其中的第5个文件, 则可以用 "edit \$5;;<cr>" 来实现. 注意这个补
+全是带状态的,在\$5;;后,如果你还要编辑上一个文件,可以用<C-p>, 如果想编辑下一个
+文件, 可以用<C-n>.
+
+一些约定 :
   1: 命令参数由空格分隔,如果参数字符串中包含空格,用"\ "来转义
   2: shext自已实现的命令会优先查找,如果shext没有实现,则执行os定义的命令.
   3: 交互式命令如mysql,telnet,ftp等不能支持
@@ -97,7 +79,8 @@ Shext                                                *Shext*
   6: 用:Shext启动 shext模式
   7: 目录名和压缩文件等用语法高亮了,这个高亮颜色可以在sztools.cfg中配置
 
-命令参考 :
+命令参考 :                                         *Sztools-Shext-Reference*
+
   更改目录和显示 :
     pwd : 显示当前目录
     cd [arg] : 更改目录,可以使用书签或通配符.
@@ -137,8 +120,6 @@ Shext                                                *Shext*
     head [arg]     : 显示文件内容 (前10行)
     edit [args]    : 在新的tab中编辑文件
 
-==============================================================================
-
   文件位置索引 :
     locatedb command entry_name [--dir dir][--depth depth][--excludes pattern]  
       这个是一系列命令, command可以是{"add","remove","refresh"}中的一个, add时
@@ -159,15 +140,140 @@ Shext                                                *Shext*
       
 
   杂项 :
-    help           : 打印帮助
+    help           : 打印Shext命令列表
     exit           : 退出Shext
 
 ==============================================================================
-Dbext                                                *Dbext*
+Jdext                                                    *Sztools-Jdext*
+
+  Jdext是一组用于帮助编写java代码的命令,主要有代码补全,编译,执行,get和set方法
+生成,自动导入,dump类信息等.
+
+  Jdext采用了和eclipse一样的.classpath来管理类路径,所以如果已经有在用eclipse管
+理的项目,就不需要再做类路径的设置.对于新建的项目,可以用ProjectInit命令来初始化
+目录结构和建立.classpath 文件,对于没有建项目的单个java文件,Jdext也一样可以补全
+编译和执行,只是把源码目录和输出目录默认为当前文件所在的目录.另外Jdext的项目根
+目录项可以建一个.jde 的xml配置文件,用来配置此项目的java encoding和jdk兼容级等.
+文件内容可以参见sztools/share/examples/jde.xml.
+
+  Jdext命令默认是不开启的,只有用:Jdext启动后,补全,编译,执行等功能才可以用,启动
+后在托盘区会有个图标,这个是独立的java进程, vim通过socket和它通信,可以被多个vim
+实例共用,默认端口9527.
+
+
+项目设置                                             *Sztools-Jdext-Project*
+
+  Jdext服务端程序启动时读取sztools/share/conf/sztools.cfg以设置一些全局参数,可
+以设的值有(其中一些可以在.jde中单独设置):
+  jde_compile_encoding : 默认的java encoding
+  jde_compile_ignore_waring : 编译时是否忽略警告
+  jde_run_timeout : 运行默认超时,单位为秒.默认30秒,如果运行超过这个时间,则返回
+  jde_src_vm : java源码的jdk版本兼容级,默认为1.6
+  jde_dst_vm : java编译后class文件的jdk版本兼容级, 默认1.6
+  jde_server_port : Jdext服务端程序的监听端口,默认9527
+
+
+补全                                               *Sztools-Jdext-Completion*
+
+  补全可以对类名,成员名,等进行补全.
+
+  a: 用"<ctrl-x><ctrl-o>"启动omni补全, 如果已经装了supertab插件,则直接可以用
+     <tab>来进行补全.
+  b: 方法的补全是忽略大小写的,而且可以用*来匹配任意字符, 比如
+     employee.get*id, 可以匹配 employee.getDeptId();
+  c: 对于没有匹配到的名称,再继续偿试用模糊匹配来补全, 比如schinfo,可以匹配
+     schoolinfo, sheep 匹配 sleep
+  d: 大写开始的名称进行类名补全(对于没有import的类名,也可以直接补全).
+
+  补全完,在括号面输参数时如果忘了参数的类型,在插入模式下按<alt-9>, 可以提示
+方法的参数类型,按<alt-0>, 关闭提示buffer. (构造函数的参数也可以提示)
+
+
+编译                                                 *Sztools-Jdext-Compile*
+
+  保存 java 时自动编译,如果有错误,则会生成 quickfix 列表,可以用:cn,:cp命令转到
+前一个或后一个错误.对于在类路径下的资源文件,如xml或properties文件,在保存时也会
+自动复制到项目的编译输出目录.
+
+  Jdext默认的编译级别,编译encoding,这些在sztools.cfg中设置.
+
+  想要针对对于当前的项目单独设置,可以在项目根目录中增加.jde文件,用于配置编译级
+别和encoding.文件内容样例参见share/examples/jde.xml文件.
+
+
+跳转                                                 *Sztools-Jdext-GotoDef*
+
+  1: 用"<leader>gd" 实现goto definition的功能
+  1: 用"<leader>zo" 实现快速成员跳转,类似 eclipse中的<ctrl-o>功能
+
+杂项                                                 *Sztools-Jdext-Misc*
+
+  1: 对于在光标下的类,可以用"<leader>dc"来dump一些类信息（类继承,成员等)
+  2: visual选中field,然后用"<leader>gs"可以为这些field生成getter和setter.
+
+调试                                                 *Sztools-Jdext-Jdb*
+  Jdb是插件实现的java程序调试功能(跟jdk里自带的jdb程序没关系), 需要在Jdext启动
+后再调用.
+  以:Jdb启动,启动后, 默认会split两块buffer, 一块是jdb命令buffer, 一块是jdb命令
+的输出buffer. jdb命令的buffer也是普通buffer, 除了在回车时自动执行命令(类似于
+shext), 在jdb命令buffer运行help命令可以得到jdb命令的简要帮助.
+
+　简要命令列表:
+  run  [classname]         :运行java class
+  attach [host] port       :attach到已运行的jvm进程
+  disconnect               :断开attach的进程
+  shutdown                 :终止java进程
+
+
+  break  n  [if {cond}] [do {cmds}]  :在n行新建断点,if中为条件表达式, do中为在
+                                      断点处自动执行的jdb命令   
+
+  tbreak n                           :临时断点
+  clear  n                           :清除断点
+  breakpoints                        :显示断点列表
+  watch fieldname                    :字段断点, 字段被写时触发
+  rwatch fieldname                   :字段断点, 字段被读时触发
+  awatch fieldname                   :字段断点, 字段被读写时触发
+  unwatch fieldname                  :清除字段断点
+
+  print expression       :打印表达式的值
+  reftype expression     :打印表达式的类型
+  inspect expression     :打印表达式对象的内部字段的值
+  locals                 :列出当前方法里的local变量
+  fields                 :列出当前类里的字段
+
+  threads               :列出线程状态
+  thread threadId       :切换到线程
+  frames                :列出栈列表
+  frame n               :切换到栈
+
+  step_into     :单步进入, 快捷键<F5>
+  step_over     :单步执行, 快捷键<F6>
+  step_return   :执行到本方法返回 , 快捷键<F7>
+  step_out      :执行到本循环体退出
+  resume        :继续执行
+  until line    :执行到指定行
+             
+按<c-i>来切换单字符命令模式:
+  l   -->step_into
+  j   -->step_over
+  h   -->step_return
+  u   -->step_out
+  c   -->resume
+  v   -->locals
+  w   -->frames
+  nG  -->run until nth line
+  e   -->eval all expression in the current and previous line
+
+==============================================================================
+Dbext                                                *Sztools-Dbext*
 
    Dbext是个SQL语句执行器,可以支持oracle,mssql,mysql(部份), 如果想要支持这些功
 能,需要安装相应的模块,分别是cx_oracle, pyodbc, mysql_python. 这个插件和shext差
 不多,也分命令buffer和输出buffer.
+
+   运行:Dbext启动Dbext模式, 启动后当前buffer为sql编辑buffer, 选中buffer中的sql
+执行后,会在结果buffer中显示sql执行结果.
         
  ,,    执行sql并显示结果(需要visual选中sql,多条sql用";"分隔)
  ,lt   列出包含光标下的单词的所有表名
@@ -175,10 +281,63 @@ Dbext                                                *Dbext*
  ,go   提示选择连接信息
  ,gg   生成insert和update语句
 
+==============================================================================
+QuickLocator                                          *Sztools-QuickLocator*
+
+  QuickLocator是一种快速定位的模式, 可以用来定位多种资源. 目前可以用
+1: <leader>lw 快速定位已经索引的当前目录下的文件
+2: <leader>lW 快速定位所有已经索引过的目录下的文件
+3: <leader>la 快速定位在本window内打开的文件
+
+  在进入QuickLocator模式以后,可用的按键包括:
+
+<BS>     :删除字符
+<Del>    :删除字符
+<CR>     :打开当前光标下的内容
+<Esc>    :退出快速定位模式
+<C-j>    :当标向下移动一行
+<C-k>    :当标向上移动一行
+<C-B>    :在split的buffer中打开光标下的内容
+<C-T>    :在新建的tab中打开光标下的内容
+<C-v>    :粘贴剪切板中的内容
 
 ==============================================================================
-Scratch                                                *Scratch*
+杂项                                                         *Sztools-Misc*
 
-   Split一个临时buffer, 可以写一些python代码,并用",,"来执行,无需保存. 在同一个
-vim实列中,临时buffer的内容是一直保持的,关闭buffer后打开这个内容还是存在
+<leader>mm                                  *Sztools-toggleMaxWindow*
+                   如果当前tab内有多个window, 将当前window最大化. 如果已经最大
+                   化,则还原.
+
+<leader>mw                                 *Sztools-zoomWinWidth*
+                   自动扩展当前window的宽度, 可用在ProjectTree中.
+
+<leader>ya                                 *Sztools-yankBufferPath*
+                   将当前编辑的bufferr的文件绝对路径拷到剪贴板.
+
+<leader>rc                                 *Sztools-removeComment*
+                   删除java源文件中所有的注释.
+
+<leader>zg                                 *Sztools-operateVisualContext*
+                   对选中的文本做聚合操作, 目前支持(sum,join,avg)
+
+<leader>te                                 *Sztools-tabulate*
+                   将选中的文本表格化.
+
+<leader>zc                                 *Sztools-startScriptEdit*
+                   Split一个临时buffer, 可以写一些python代码,并用",,"来执行,无
+                   需保存. 在同一个vim实列中,临时buffer的内容是一直保持的,关闭
+                   buffer后打开这个内容还是存在.
+
+==============================================================================
+配置                                                        *Sztools-Conf*
+
+   Sztool的默认配置文件位于安装目录的sztools/share/conf目录下,一般不要改动此文
+件中的内容, 而是把文件复制到 ~/.sztools/ 目录下进行改动.Vim-Sztool会读取此两个
+目录下的内容, 优先级以home目录下的为高.
+
+sztools.cfg      主要配置文件,用于配置jde的一些基本设置
+vars.txt         配置.classpath文件中引用的变量
+stepfilters.txt  配置jdb调试时,略过的一些package
+db.conf          配置Dbext用到的数据库连接
+shext-bm.txt     配置书签,参见Shext中的bm相关命令
 
