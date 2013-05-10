@@ -679,8 +679,8 @@ nmap <silent><leader>zv  <C-Q>
 
 nmap <silent><leader>zt  :call Tagext()<cr>
 nmap <silent><leader>zl  :call TagList()<cr>
-nmap <silent><leader>lw  :call LocateFile("currentDir")<cr>
-nmap <silent><leader>lW  :call LocateFile("all")<cr>
+nmap <silent><leader>lc  :call LocateFile("currentDir")<cr>
+nmap <silent><leader>lw  :call LocateFile("all")<cr>
 nmap <silent><leader>la  :call LocateHistory()<cr>
 
 function SetProjectTreeFileEditFlag(filename,flag)
