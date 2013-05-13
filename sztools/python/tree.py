@@ -624,6 +624,46 @@ class ProjectTree(object):
         self.render_tree()
         vim.current.window.cursor = (row,col)
 
+    def mark_visual_node(self):
+
+        (row,col) = vim.current.window.cursor
+        _,_,startLine,endLine=MiscUtil.getVisualArea()
+        for row_num in range(startLine, endLine+1):
+            node = self.get_selected_node(row_num)
+            node.toggle_mark()
+        self.render_tree()
+        vim.current.window.cursor = (row,col)
+        #vim.command("silent normal gv")
+
+    def yank_visual_node(self, remove_orignal = False):
+        _,_,startLine,endLine=MiscUtil.getVisualArea()
+        nodes = []
+        for row_num in range(startLine, endLine+1):
+            node = self.get_selected_node(row_num)
+            nodes.append(node)
+        node = self.get_selected_node()
+        self.yank_buffer = nodes
+        self.remove_orignal = remove_orignal
+        print "visual selected node has been yanked"
+
+    def delete_visual_node(self):
+        _,_,startLine,endLine=MiscUtil.getVisualArea()
+        nodes = []
+        for row_num in range(startLine, endLine+1):
+            node = self.get_selected_node(row_num)
+            nodes.append(node)
+        node_names = ",".join([os.path.basename(node.realpath) for node in nodes])
+        prompt = "Are you sure you with to delete \n" + node_names +" (yN):"
+        answer = VimUtil.getInput(prompt)
+        if not answer or answer != "y" :
+            print "delete node abort."
+            return
+        parent = nodes[0].parent
+        for node in nodes :
+            suc = node.dispose()
+        self.render_tree()
+        self.select_node(parent)
+
     def recursive_open_node(self):
         node = self.get_selected_node()
         opened = False

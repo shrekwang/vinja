@@ -425,6 +425,11 @@ function ProjectTree(...)
     map <silent><buffer> U     :python projectTree.change_root_upper()<cr>
     map <silent><buffer> QQ    :python projectTree.dispose_tree()<cr>
     map <silent><buffer> S     :python projectTree.save_status(False)<cr>
+
+    vmap <silent><buffer> DD   :python projectTree.delete_visual_node()<cr>
+    vmap <silent><buffer> m    :python projectTree.mark_visual_node()<cr>
+    vmap <silent><buffer> yy   :python projectTree.yank_visual_node(False)<cr>
+    vmap <silent><buffer> dd   :python projectTree.yank_visual_node(True)<cr>
 	endif
 endfunction
 
