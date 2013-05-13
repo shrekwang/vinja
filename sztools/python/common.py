@@ -224,7 +224,7 @@ class MiscUtil(object):
         vim_mode = vim.eval("mode()")
         #logging.debug("startCol is %s , endCol is %s " % (str(startCol), str(endCol)))
         #logging.debug("current mode is %s " % vim_mode)
-        operateCode = VimUtil.getInput("choose an operation(sum,join,avg):")
+        operateCode = VimUtil.getInput("choose an operation(sum,join,avg,inc):")
         result_list = []
         inbuf=vim.current.buffer
         for row_num in range(startLine, endLine+1, 1) :
@@ -246,6 +246,11 @@ class MiscUtil(object):
         elif operateCode == "join" : 
             join_text = ",".join(result_list)
             vim.command('call append(%s,"join result: %s")' %(str(endLine),join_text))
+        elif operateCode == "inc":
+            start_num = int(result_list[0]) 
+            for row_num in range(startLine, endLine+1, 1) :
+                inbuf[row_num-1] = inbuf[row_num-1][0:startCol] + str(start_num) + inbuf[row_num-1][endCol:]
+                start_num = start_num + 1
 
     @staticmethod
     def startfile():
