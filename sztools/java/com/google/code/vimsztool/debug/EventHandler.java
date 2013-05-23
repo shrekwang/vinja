@@ -85,12 +85,14 @@ public class EventHandler extends Thread {
 	}
 	
 	public void handleVMDeathEvent(VMDeathEvent event) {
+		debugger.clean();
 		String funcName = "HandleJdiEvent";
 		String[] args = {"msg", "process terminated."};
 		VjdeUtil.callVimFunc(debugger.getVimServerName(), funcName, args);
 	}
 	
 	public void handleVMDisconnectEvent(VMDisconnectEvent event) {
+		debugger.clean();
 		String funcName = "HandleJdiEvent";
 		String[] args = {"msg", "process disconnected."};
 		VjdeUtil.callVimFunc(debugger.getVimServerName(), funcName, args);
@@ -117,11 +119,11 @@ public class EventHandler extends Thread {
 	}
 	
 	private void handleBreakpointEvent(BreakpointEvent event) {
-		ThreadReference threadRef = event.thread();
-		ReferenceType refType = event.location().declaringType();
-		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
-		threadStack.setCurRefType(refType);
-		threadStack.setCurThreadRef(threadRef);
+		//ThreadReference threadRef = event.thread();
+		//ReferenceType refType = event.location().declaringType();
+		//SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
+		//threadStack.setCurRefType(refType);
+		//threadStack.setCurThreadRef(threadRef);
 		
 		BreakpointManager bpm = debugger.getBreakpointManager();
 		Breakpoint breakpoint = null;
@@ -174,6 +176,10 @@ public class EventHandler extends Thread {
 		ThreadReference threadRef = event.thread();
 		ReferenceType refType = event.location().declaringType();
 		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
+		
+		//already suspend at some point
+		if (threadStack.hasSuspendedThread()) return;
+		
 		threadStack.setCurRefType(refType);
 		threadStack.setCurThreadRef(threadRef);
 		

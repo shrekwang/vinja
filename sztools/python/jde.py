@@ -2142,13 +2142,19 @@ class Jdb(object):
             if bufname.endswith(".temp_src")  or bufname.endswith(".java") :
                 #found java buf
                 vim.command("%swincmd w" % str(i))    
+                vim.command("redraw")
+                #don't remove the log, or the vim will go bad
+                logging.debug("bufwin is %s" % str(i))
                 return
 
         bufwin = 1
         bufname = vim.eval("bufname(winbufnr(1))")
         if "ProjectTree" in bufname : 
             bufwin = 2
+        #don't remove the log, or the vim will go bad
+        logging.debug("bufwin is %s" % str(bufwin))
         vim.command("%swincmd w" % str(bufwin))    
+        vim.command("redraw")
         return
 
         """

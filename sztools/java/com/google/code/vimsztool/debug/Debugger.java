@@ -455,7 +455,7 @@ public class Debugger {
 		clean();
 	}
 	
-	private void clean() {
+	public void clean() {
 		suspendThreadStack.clean();
 		if (this.exec != null) {
 			exec.shutdown();

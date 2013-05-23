@@ -35,5 +35,9 @@ public class SuspendThreadStack {
 	public synchronized int getCurFrame() {
 		return curFrame;
 	} 
+	
+	public boolean hasSuspendedThread() {
+		return curThreadRef != null;
+	}
 
 }
