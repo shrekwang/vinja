@@ -2,6 +2,7 @@ import zipfile, os
 import shutil
 import logging
 import chardet
+import fnmatch
 from common import ZipUtil,FileUtil,VimUtil,PathUtil
 from xml.etree.ElementTree import *
 from jde import ProjectManager,EditUtil
