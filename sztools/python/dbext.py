@@ -19,7 +19,6 @@ class QueryUtil(object):
         if db_profile == None :  
             return
         outBuffer = Dbext.getOutputBuffer()
-        name = MiscUtil.getVisualBlock()
         server_type = db_profile["servertype"]
         if server_type == "mssql":
             sql = """ SELECT name 
