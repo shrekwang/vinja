@@ -119,11 +119,7 @@ public class EventHandler extends Thread {
 	}
 	
 	private void handleBreakpointEvent(BreakpointEvent event) {
-		//ThreadReference threadRef = event.thread();
-		//ReferenceType refType = event.location().declaringType();
-		//SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
-		//threadStack.setCurRefType(refType);
-		//threadStack.setCurThreadRef(threadRef);
+		
 		
 		BreakpointManager bpm = debugger.getBreakpointManager();
 		Breakpoint breakpoint = null;
@@ -132,11 +128,25 @@ public class EventHandler extends Thread {
 		if (tmp != null) breakpoint = (Breakpoint)tmp;
 		
 		if (breakpoint !=null && breakpoint.getConExp() != null) {
+			
+			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
+			ReferenceType oldRefType = threadStack.getCurRefType();
+			ThreadReference oldThreadRef = threadStack.getCurThreadRef();
+			
+			threadStack.setCurRefType(event.location().declaringType());
+			threadStack.setCurThreadRef(event.thread());
+			
 			Object obj = debugger.getExpEval().evalSimpleValue(breakpoint.getConExp());
+			
+			//restore threadStack for handleSuspendLocatableEvent() call
+			threadStack.setCurRefType(oldRefType);
+			threadStack.setCurThreadRef(oldThreadRef);
+			
 			if (obj ==null || !obj.equals("true")) {
 				event.thread().resume();
 				return; 
 			}
+			
 			
 		}
 		handleSuspendLocatableEvent(event);
