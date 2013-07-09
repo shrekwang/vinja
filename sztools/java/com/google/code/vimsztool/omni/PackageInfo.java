@@ -29,6 +29,8 @@ public class PackageInfo {
 	 */
 	private Map<String,Set<String>> cache = new HashMap<String,Set<String>>();
 	
+	private Map<String,String> pkgLocationCache = new HashMap<String,String>();
+	
 	/**
 	 * cachekey is jar file path, value is "true" or "false". 
 	 */
@@ -90,19 +92,30 @@ public class PackageInfo {
         return pattern;
 	}
 	
-	public List<String> findClass(String nameStart,boolean ignoreCase) {
+	public List<String> findClass(String nameStart,boolean ignoreCase,boolean withLoc) {
 		
 		List<String> result = new ArrayList<String>();
         Pattern pattern = getPattern(nameStart,ignoreCase);
 	        
 		for (String pkgname : cache.keySet()) {
 			Set<String> classNames = cache.get(pkgname);
-			result.addAll(getMatchedClassName(classNames, nameStart, pattern, pkgname));
+			List<String> tmpList =getMatchedClassName(classNames, nameStart, pattern, pkgname);
+			
+			for (String className : tmpList) {
+				if (cache.get(className) != null ) continue;
+				
+				if (withLoc) {
+					String location = pkgLocationCache.get(pkgname);
+					result.add(getClassNameWithLoc(className, location));
+				} else {
+					result.add(className);
+				}
+			}
 		}
 		return result;
 	}
 	
-	public List<String> findClassByQualifiedName(String name,boolean ignoreCase) {
+	public List<String> findClassByQualifiedName(String name,boolean ignoreCase,boolean withLoc) {
 		String[] splits = splitClassName(name);
 		String pkgName = splits[0];
 		String className = splits[1];
@@ -111,7 +124,23 @@ public class PackageInfo {
 		if (classNames == null) {
 			return new ArrayList<String>();
 		}
-		return getMatchedClassName(classNames, className, pattern, pkgName);
+		List<String> tmpList = getMatchedClassName(classNames, className, pattern, pkgName);
+		if (!withLoc) return tmpList;
+		
+		List<String> resultList = new ArrayList<String>();
+		String location = pkgLocationCache.get(pkgName);
+		for (String tmpClassName :tmpList) {
+			resultList.add(getClassNameWithLoc(tmpClassName, location));
+		}
+		return resultList;
+		
+	}
+	
+	private String getClassNameWithLoc(String className,String location) {
+		if (location == null) return className;
+		String fileName = FilenameUtils.getName(location);
+	
+		return className + " - " + fileName;
 	}
 	
 	public List<String> getMatchedClassName(Set<String> set, String plainPat,
@@ -146,7 +175,7 @@ public class PackageInfo {
 		return result;
 	}
 	
-	public void addClassNameToCache(String className) {
+	public void addClassNameToCache(String className,String classLocation) {
 		//don't cache class under sun or com.sun package
 		//if (className == null || className.startsWith("sun") || className.startsWith("com.sun")) return ;
 		if (className == null) return;
@@ -158,6 +187,7 @@ public class PackageInfo {
 			if (names == null) {
 				names=new HashSet<String>();
 				cache.put("", names);
+				pkgLocationCache.put("", classLocation);
 			}
 			names.add(tokens[0]);
 			return;
@@ -170,6 +200,7 @@ public class PackageInfo {
 			if (names == null) {
 				names=new HashSet<String>();
 				cache.put(key, names);
+				pkgLocationCache.put(key, classLocation);
 			}
 			names.add(tokens[count+1]);
 			count = count + 1;
@@ -193,7 +224,7 @@ public class PackageInfo {
 			File file = (File)it.next();
 			String relativeName = file.getAbsolutePath().substring(outputDir.length()+1);
 			String className = relativeName.replace('/', '.').replace('\\', '.').replace(".class", "");
-		    addClassNameToCache(className);
+		    addClassNameToCache(className,"src path");
 		    addClasstoDstClass(className);
 		}
 	}
@@ -213,7 +244,7 @@ public class PackageInfo {
 	             if (entryName.indexOf("$") > -1) continue;
 	             if (!entryName.endsWith(".class")) continue;
 	             String className = entryName.replace('/', '.').replace('\\', '.').replace(".class", "");
-	             addClassNameToCache(className);
+	             addClassNameToCache(className,path);
 	         }
 	         jarFile.close();
 		} catch (IOException e ) {

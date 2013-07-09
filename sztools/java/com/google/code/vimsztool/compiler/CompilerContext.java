@@ -176,7 +176,7 @@ public class CompilerContext {
 		for (Debugger debugger : Debugger.getInstances()) {
 			BreakpointManager bpmgr = debugger.getBreakpointManager();
 			for (String className : classNames ) {
-				packageInfo.addClassNameToCache(className);
+				packageInfo.addClassNameToCache(className,"src path");
 				packageInfo.addClasstoDstClass(className);
 				String classPath = getOutputDir() + "/" + className.replace('.', '/') + ".class";
 				File outFile = new File(classPath);

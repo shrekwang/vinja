@@ -11,6 +11,7 @@ import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CLASS_NAME;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_CPT_TYPE;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_EXP_TOKENS;
 import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_IGNORE_CASE;
+import static com.google.code.vimsztool.server.SzjdeConstants.PARAM_WITH_LOCATION;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,15 +47,23 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		} else if (completionType.equals(CPT_TYPE_CLASS)){
 			String nameStart = params.get(PARAM_CLASS_NAME);
 			String ignoreCaseParam = params.get(PARAM_IGNORE_CASE);
+			String withLocationParam = params.get(PARAM_WITH_LOCATION);
+			
+			
 			boolean ignoreCase = false;
 			if (ignoreCaseParam != null && ignoreCaseParam.equals("true")) {
 				ignoreCase = true;
 			}
-			return completeClass(classPathXml,nameStart,ignoreCase);
+			boolean withLoc = false;
+			if (withLocationParam != null && withLocationParam.equals("true")) {
+				withLoc = true;
+			}
+			return completeClass(classPathXml,nameStart,ignoreCase,withLoc);
 		}
 		return "";
 	}
-	public String completeClass(String classPathXml, String nameStart,boolean ignoreCase) {
+	public String completeClass(String classPathXml, String nameStart,
+			boolean ignoreCase, boolean withLoc) {
 		if (classPathXml ==null || nameStart == null) return "";
 		CompilerContext ctx = getCompilerContext(classPathXml);
 		PackageInfo packageInfo = ctx.getPackageInfo();
@@ -63,9 +72,9 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 			return "";
 		}
 		if (nameStart.indexOf(".") > -1) {
-			classNameList=packageInfo.findClassByQualifiedName(nameStart,ignoreCase);
+			classNameList=packageInfo.findClassByQualifiedName(nameStart,ignoreCase,withLoc);
 		} else {
-			classNameList=packageInfo.findClass(nameStart,ignoreCase);
+			classNameList=packageInfo.findClass(nameStart,ignoreCase,withLoc);
 		}
 		Collections.sort(classNameList, new ClassNameComparator());
 		StringBuilder sb=new StringBuilder();

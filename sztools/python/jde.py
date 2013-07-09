@@ -143,13 +143,14 @@ class Talker(BasicTalker):
         return data
 
     @staticmethod
-    def getClassList(classNameStart,xmlPath,ignoreCase="false"):
+    def getClassList(classNameStart,xmlPath,ignoreCase="false",withLoc="false"):
         params = dict()
         params["cmd"]="completion"
         params["completionType"] = "class"
         params["className"] = classNameStart
         params["classPathXml"] = xmlPath
         params["ignoreCase"] = ignoreCase
+        params["withLoc"] = withLoc
         data = Talker.send(params)
         return data
 

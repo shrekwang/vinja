@@ -372,11 +372,12 @@ class JavaClassNameContentManager(object):
         search_pat = search_pat[:-1]
         if not search_pat :
             return []
-        classNameList = Talker.getClassList(search_pat,self.classPathXml,ignoreCase="true").split("\n")
+        classNameList = Talker.getClassList(search_pat,self.classPathXml,ignoreCase="true",withLoc="true").split("\n")
         return classNameList
 
     def open_content(self,line,mode):
-        className = line.strip()
+        line = line.strip()
+        className = line[0:line.find(" ")]
         EditUtil.searchAndEdit(self.current_file_name, className,"",mode)
 
 class EditHistoryManager(object):
