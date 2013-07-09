@@ -1988,38 +1988,43 @@ class SzJdeCompletion(object):
                     menu["word"] = shortName
                     menu["menu"] = className
                     classNameMenus.append(menu)
-            #try get work complete in scope visible lines.
-            result = SzJdeCompletion.getWordCompleteResult(base)
+                result.extend(classNameMenus)
+            else :
+                #try get work complete in scope visible lines.
+                result = SzJdeCompletion.getWordCompleteResult(base)
 
-            #try get member complete in buffer.
-            pat = re.compile("^%s.*" % base.replace("*",".*"), re.IGNORECASE)
-            if base[0].isupper():
-                pat = re.compile("^%s.*" % base.replace("*",".*"))
-            members = Parser.parseAllMemberInfo(vim_buffer)
-            memberInfos = [(mtype,name,param,rtntype) for name,mtype,rtntype,param,lineNum in members]
-            bufmembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
+                #try get member complete in buffer.
+                pat = re.compile("^%s.*" % base.replace("*",".*"), re.IGNORECASE)
+                if base[0].isupper():
+                    pat = re.compile("^%s.*" % base.replace("*",".*"))
+                members = Parser.parseAllMemberInfo(vim_buffer)
+                memberInfos = [(mtype,name,param,rtntype) for name,mtype,rtntype,param,lineNum in members]
+                bufmembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
 
-            for item in bufmembers :
-                result.append(item)
+                for item in bufmembers :
+                    if item["word"] in result :
+                        result.remove(item["word"])
 
-            #try get member complete in supper class 
-            if len(bufmembers) == 0 :
-                completionType = "inheritmember"
-                classNameList = ["this"]
-                expTokens = []
-                params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
-                memberInfos = []
-                memberInfoLines = Talker.getMemberList(params).split("\n")
-                
-                for line in memberInfoLines :
-                    if line == "" : continue
-                    mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
-                    memberInfos.append( (mtype,mname,mparams,mreturntype) )
-                inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
-                for item in inheritMembers :
-                    result.append(item)
+                bufmembers.extend(result)
+                result = bufmembers
 
-            result.extend(classNameMenus)
+                #try get member complete in supper class 
+                if len(bufmembers) == 0 :
+                    completionType = "inheritmember"
+                    classNameList = ["this"]
+                    expTokens = []
+                    params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
+                    memberInfos = []
+                    memberInfoLines = Talker.getMemberList(params).split("\n")
+                    
+                    for line in memberInfoLines :
+                        if line == "" : continue
+                        mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
+                        memberInfos.append( (mtype,mname,mparams,mreturntype) )
+                    inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
+                    for item in inheritMembers :
+                        result.append(item)
+
 
             if len(result) == 0 :
                 result = SzJdeCompletion.getWordFuzzyCompleteResult(base)
