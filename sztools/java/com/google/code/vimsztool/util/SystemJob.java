@@ -101,7 +101,7 @@ public class SystemJob extends Thread {
 			//wait max 3 seconds till stdout gobbler finished.
 			int count = 0;
 			while (true) {
-				if (!stdOut.isAlive())  break;
+				if (stdOut == null || !stdOut.isAlive())  break;
 				if (count > 30 ) break;
 				try {
 					sleep(100);
