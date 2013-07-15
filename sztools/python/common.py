@@ -661,6 +661,7 @@ def initSztool():
 
     gscope=globals()
     gscope["incValue"] = 0
+    gscope["endsWithNewLine"] = True
     gscope["digit_pat"] = re.compile("\d+")
     gscope["search_pat"] = None
     gscope["stardict"] = None
@@ -678,8 +679,8 @@ def initSztool():
 def fetchCallBack(args):
     guid,bufname = args
     resultText = BasicTalker.fetchResult(guid)
-    lines = resultText.split("\n")
-    VimUtil.writeToSzToolBuffer(bufname,lines,append=True)
+    #lines = resultText.split("\n")
+    VimUtil.writeToSzToolBuffer(bufname,resultText,append=True)
 
 class BasicTalker(object):
 
@@ -738,6 +739,15 @@ class BasicTalker(object):
         params["bufname"] = bufname
         params["workDir"] = workDir
         params["origCmdLine"] = origCmdLine
+        data = BasicTalker.send(params)
+        return data
+
+    @staticmethod
+    def feedInput(vimServer,inputString):
+        params = dict()
+        params["cmd"]="feedInput"
+        params["vimServer"] = vimServer
+        params["inputString"] = inputString
         data = BasicTalker.send(params)
         return data
 
@@ -807,16 +817,49 @@ class VimUtil(object):
     def writeToSzToolBuffer(name, text, append=False):
         if not text : return
         buf = VimUtil.getSzToolBuffer(name)
-
-        if type(text) == type(""):
-            lines = text.split("\n")
-        else :
-            lines = text
-        output(lines,buf, append)
+        logging.debug("writeToSzToolBuffer1")
+        VimUtil.outputText(text,buf, append)
+        logging.debug("writeToSzToolBuffer2")
         if append and VimUtil.isSzToolBufferVisible(name):
             endrow = len(buf)
             callback = lambda : VimUtil.scrollTo(endrow)
             VimUtil.doCommandInSzToolBuffer(name,callback)
+
+    @staticmethod
+    def outputText(content,buffer=None,append=False):
+
+        logging.debug("outputText0")
+        global endsWithNewLine 
+
+        if buffer == None:
+            buffer=vim.current.buffer
+        if not append :
+            buffer[:]=None
+        if content == None :
+            return 
+
+        lines=content
+        if lines.endswith("\n") :
+            lines = lines[:-1]
+
+        logging.debug("outputText1")
+        rowList = str(lines).split("\n")
+        for index,line in enumerate(rowList):  
+            if index == 0 :
+                if  len(buffer)==1 and buffer[0] == "" :
+                    buffer[0]=line
+                elif not endsWithNewLine:
+                    buffer[-1] = buffer[-1] + line
+                else:
+                    buffer.append(line)  
+            else :
+                buffer.append(line)  
+
+        logging.debug("outputText2")
+        if content.endswith("\n") :
+            endsWithNewLine = True
+        else :
+            endsWithNewLine = False
 
     @staticmethod
     def closeSzToolBuffer(name):

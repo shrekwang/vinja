@@ -1,6 +1,9 @@
 package com.google.code.vimsztool.util;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -8,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 public class SystemJob extends Thread {
 
 	
+	private int jobId;
 	private String[] cmdArray;
 	private String workDir;
 	private String vimServerName;
@@ -21,13 +25,15 @@ public class SystemJob extends Thread {
 	private Process process ;
 	private StreamGobbler stdOut = null;
 	private StreamGobbler stdErr = null;
+	private OutputStream stdIn = null;
 	
 
-	public SystemJob(String cmd,String vimServerName,String cmdShell, 
-			String uuid,String bufname,String workDir,String origCmdLine) {
+	public SystemJob(int jobId,String cmd,String vimServerName,String cmdShell, 
+			String bufname,String workDir,String origCmdLine) {
+		this.jobId = jobId;
 		this.cmdArray = cmd.split("::");
 		this.vimServerName = vimServerName;
-		this.uuid = uuid;
+		this.uuid = UUID.randomUUID().toString();
 		this.bufname = bufname;
 		this.workDir = workDir;
 		this.origCmdLine = origCmdLine;
@@ -37,10 +43,14 @@ public class SystemJob extends Thread {
 		BufferStore.put(uuid, buffer);
 	}
 	
-	public synchronized String fetchResult() {
-		String result =this.buffer.toString();
-		this.buffer.delete(0, buffer.length());
-		return result;
+	public void feedInput(String input) {
+		try {
+			byte[] bytes = input.getBytes();
+			stdIn.write(bytes);
+			stdIn.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void run() {
@@ -58,6 +68,7 @@ public class SystemJob extends Thread {
 			}
 			stdOut=new StreamGobbler(buffer, process.getInputStream());
 			stdErr=new StreamGobbler(buffer, process.getErrorStream());
+			stdIn = process.getOutputStream();
 			stdOut.start();
 			stdErr.start();
 			
@@ -71,7 +82,7 @@ public class SystemJob extends Thread {
 			*/
 	
 			exec = Executors.newScheduledThreadPool(1);
-	        exec.scheduleAtFixedRate(new BufferChecker(), 1, 100, TimeUnit.MILLISECONDS);
+	        exec.scheduleAtFixedRate(new BufferChecker(this.jobId), 1, 100, TimeUnit.MILLISECONDS);
 	        /*
 	        exec.schedule(new Runnable() {
 	            public void run() { 
@@ -101,17 +112,23 @@ public class SystemJob extends Thread {
 			buffer.append("\n");
 			buffer.append( "(" + origCmdLine + "  finished.)");
 			//run buffer checker last time 
-		    new BufferChecker().run();
+		    new BufferChecker(this.jobId).run();
+		    SystemJobManager.finishJob(this.jobId);
 		}
 		
 	}
 
 	class BufferChecker implements Runnable {
+		private int jobId;
+		public BufferChecker(int jobId) {
+			this.jobId = jobId;
+		}
 		public void run() {
 			synchronized (buffer) {
 				if ( ! (buffer.length() > 0)) return; 
 				String[] args = new String[] { uuid,bufname };
 				VjdeUtil.callVimFunc(vimServerName, "FetchResult", args);
+				SystemJobManager.setLastJobId(jobId);
 			}
 		}
 	}

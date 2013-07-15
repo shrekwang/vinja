@@ -99,7 +99,9 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeOverideMethodsCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_COPY_RESOURCE)) {
 		   szjdeCommand = new SzjdeCopyResourceCommand();
-	   } else if (cmdStr.equals(SzjdeConstants.CMD_RUN_SYS) || cmdStr.endsWith(SzjdeConstants.CMD_FETCH_RESULT)) {
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_RUN_SYS) 
+			   || cmdStr.endsWith(SzjdeConstants.CMD_FEED_INPUT)
+			   || cmdStr.endsWith(SzjdeConstants.CMD_FETCH_RESULT)) {
 		   szjdeCommand = new SzjdeSystemCommand(cmdStr);
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_LOCATEDB)) {
 		   szjdeCommand = new SzjdeLocatedbCommand();

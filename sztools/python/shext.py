@@ -1049,6 +1049,14 @@ class Shext(object):
         vim.command("bw!")
         shext = None
 
+    def feedInput(self,cmdLine):
+        try :
+            serverName = vim.eval("v:servername")
+            inputString = cmdLine
+            BasicTalker.feedInput(serverName,inputString)
+        except (OSError,ValueError) , msg:
+            Shext.stdout(msg)
+
     def runSysCmd(self,cmdArray,cmdLine):
         try :
             cmdArray = self.resolveExtraPythonCmd(cmdArray)
@@ -1281,6 +1289,8 @@ class Shext(object):
             self.help()
         elif cmd[0] == "listext" :
             self.listExtraCmds()
+        elif cmd[0] == "feed" :
+            self.feedInput(" ".join(cmd[1:]))
         else :
             self.runSysCmd(cmd,cmdLine)
 

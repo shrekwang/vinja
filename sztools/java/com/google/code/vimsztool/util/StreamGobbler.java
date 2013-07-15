@@ -6,28 +6,32 @@
  */
 package com.google.code.vimsztool.util;
 
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 
 public class StreamGobbler extends Thread {
 	
-	private BufferedReader br;
 	private StringBuffer buffer;
 	
+	private InputStream is  = null;
+	private byte[] byteBuffer = new byte[4098];
+	
 	public StreamGobbler(StringBuffer buffer, InputStream is) {
-		this.br = new BufferedReader(new InputStreamReader(is));
+		
+		this.is = is;
 		this.buffer = buffer;
 	}
 	
 	 public void run() {
-            String line;
             try {
-                while ((line = br.readLine()) != null) {
+                while (true) {
+                	int count = is.read(byteBuffer);
+                	if (count == -1) break;
                 	synchronized(buffer) {
-	                	buffer.append(line).append("\n");
+	                	buffer.append(new String(byteBuffer,0,count));
                 	}
                 }
-            } catch (Exception e) {throw new Error(e);}
+            } catch (Exception e) {
+	        	throw new Error(e);
+        	}
         }
 }

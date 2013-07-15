@@ -3,10 +3,10 @@ package com.google.code.vimsztool.server;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
-import java.util.UUID;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
 import com.google.code.vimsztool.util.SystemJob;
+import com.google.code.vimsztool.util.SystemJobManager;
 
 public class SzjdeClassRunnerCommand extends SzjdeCommand {
 	boolean runAsUnitTest;
@@ -31,12 +31,11 @@ public class SzjdeClassRunnerCommand extends SzjdeCommand {
 		}
 		String className = cc.buildClassName(sourceFile);
 		cmd.append(className);
-		String uuid=UUID.randomUUID().toString();
 		String vimServerName = params.get(SzjdeConstants.PARAM_VIM_SERVER);
 		String bufname = params.get(SzjdeConstants.PARAM_BUF_NAME);
 		String origCmdLine = "Run " + className;
-		SystemJob job = new SystemJob(cmd.toString(),
-				vimServerName,"false",uuid,bufname,cc.getProjectRoot(),origCmdLine);
+		SystemJob job = SystemJobManager.createJob(cmd.toString(),
+				vimServerName,"false",bufname,cc.getProjectRoot(),origCmdLine);
 		job.start();
 		return "";
 		

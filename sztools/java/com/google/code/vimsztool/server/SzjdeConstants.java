@@ -17,6 +17,7 @@ public class SzjdeConstants {
 	public final static String CMD_COPY_RESOURCE="copyResource";
 	public final static String CMD_RUN_SYS="runSys";
 	public final static String CMD_FETCH_RESULT="fetchResult";
+	public final static String CMD_FEED_INPUT="feedInput";
 	public final static String CMD_PROJECT_CLEAN="projectClean";
 	public final static String CMD_PROJECT_OPEN="projectOpen";
 	public final static String CMD_LOAD_JAR_META="loadJarMeta";
@@ -47,6 +48,7 @@ public class SzjdeConstants {
 	public final static String PARAM_WORK_DIR="workDir";
 	public final static String PARAM_VIM_SERVER="vimServer";
 	public final static String PARAM_UUID_ID="uuid";
+	public final static String PARAM_INPUT_STRING="inputString";
 	public final static String PARAM_ARGS="args";
 	public final static String PARAM_PWD="pwd";
 	public final static String PARAM_HOTSWAP_ENABLED="hotSwapEnabled";
