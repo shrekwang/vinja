@@ -92,9 +92,13 @@ public class Debugger {
 	}
 	
 	public synchronized String fetchResult() {
-		String result =this.buffer.toString();
-		this.buffer.delete(0, buffer.length());
-		return result;
+		if (buffer != null) {
+			String tmp = buffer.toString();
+			tmp = tmp.replace("\r\n", "\n");
+			buffer.delete(0, buffer.length());
+			return tmp;
+		}
+		return "";
 	}
 
 	public String fetchAutocmdResult() {

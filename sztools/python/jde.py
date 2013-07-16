@@ -2572,15 +2572,13 @@ class Jdb(object):
         resultText = JdbTalker.submit("fetchJdbResult",self.class_path_xml,self.serverName)
         if resultText == "" :
             return 
-        lines = resultText.split("\n")
-        VimUtil.writeToSzToolBuffer("JdeConsole",lines,append=True)
+        VimUtil.writeToSzToolBuffer("JdeConsole",resultText,append=True)
 
     def fetchAutocmdResult(self):
         resultText = JdbTalker.submit("fetchAutocmdResult",self.class_path_xml,self.serverName)
         if resultText == "" :
             return 
-        lines = resultText.split("\n")
-        VimUtil.writeToSzToolBuffer("JdbStdOut",lines,append=True)
+        VimUtil.writeToSzToolBuffer("JdbStdOut",resultText,append=True)
 
     def replaceAlias(self, cmdLine):
         alias = ""

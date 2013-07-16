@@ -48,6 +48,8 @@ public class SystemJob extends Thread {
 			byte[] bytes = input.getBytes();
 			stdIn.write(bytes);
 			stdIn.flush();
+			//feeded string also goes to output
+			buffer.append(new String(bytes));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
