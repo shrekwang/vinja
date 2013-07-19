@@ -46,6 +46,7 @@ step_over     --step over one line,key <F6>(alias:next,n)
 step_return   --step return , key <F7>(alias:finish)
 step_out      --step out current loop
 resume        --resume current thread, key <F8>(alias:continue,c)
+resume_all    --resume all suspended thread
 until line    --run to line(alias:u)
 
 catch  exception-class    --create exception request

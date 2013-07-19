@@ -341,6 +341,15 @@ public class Debugger {
 		return "";
 	}
 	
+	public String resumeAll() {
+		checkVm();
+		checkSuspendThread();
+		vm.resume();
+		suspendThreadStack.clean();
+		return "";
+		
+	}
+	
 	public void changeToNextSuspnedThread() {
 		checkVm();
 		

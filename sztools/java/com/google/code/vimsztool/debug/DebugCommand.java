@@ -18,7 +18,7 @@ public class DebugCommand  extends SzjdeCommand {
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
 		"setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay",
 		"show_display","eval_display","tbreak", "watch","rwatch","awatch","up","down",
-		"sfields","sinspect","qeval","geval","ginspect", "fetchAutocmdResult","sizeof"
+		"sfields","sinspect","qeval","geval","ginspect", "fetchAutocmdResult","sizeof","resume_all"
 		};
 	
 	public String execute() {
@@ -179,6 +179,8 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = ecpMgr.removeExceptionRequest(className);
 		} else if (debugCmd.equals("resume")) {
 			debugger.resume();
+		} else if (debugCmd.equals("resume_all")) {
+			debugger.resumeAll();
 		} else if (debugCmd.equals("shutdown")) {
 			debugger.shutdown();
 		} else if (debugCmd.equals("exit")) {
