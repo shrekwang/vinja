@@ -2093,6 +2093,7 @@ class Jdb(object):
         #vim.command("call SwitchToSzToolView('Jdb','aboveleft','7')")
         vim.command("call SwitchToSzToolView('Jdb','belowright','%s')" % height)
         vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
+        vim.command("call SetTabPageName('Jdb')")
         vim.command("set filetype=jdb")
 
         if self.out_buf_list :
@@ -2145,12 +2146,10 @@ class Jdb(object):
     def switchSourceBuffer(self):
         for i in range(1,5):
             bufname = vim.eval("bufname(winbufnr(%s))" % str(i))
-            if bufname.endswith(".temp_src")  or bufname.endswith(".java") :
+            if bufname == None or bufname.strip() == "" or bufname.endswith(".temp_src")  or bufname.endswith(".java") :
                 #found java buf
-                vim.command("%swincmd w" % str(i))    
-                vim.command("redraw")
-                #don't remove the log, or the vim will go bad
-                logging.debug("bufwin is %s" % str(i))
+                vim.command("noautocmd %swincmd w" % str(i))    
+                vim.command("noautocmd normal kj")
                 return
 
         bufwin = 1
@@ -2159,8 +2158,8 @@ class Jdb(object):
             bufwin = 2
         #don't remove the log, or the vim will go bad
         logging.debug("bufwin is %s" % str(bufwin))
-        vim.command("%swincmd w" % str(bufwin))    
-        vim.command("redraw")
+        vim.command("noautocmd %swincmd w" % str(bufwin))    
+        vim.command("noautocmd normal kj")
         return
 
         """
@@ -2220,7 +2219,6 @@ class Jdb(object):
                 jdbvar = vim.eval('gettabvar('+str(i)+',"jdb_tab")')
                 if jdbvar == "true" :
                     vim.command("tabn %s" % str(i)) 
-                    vim.command("redraw")
                     break
 
         self.switchSourceBuffer()
@@ -2247,7 +2245,6 @@ class Jdb(object):
             if lineNum < winStartRow or lineNum > winEndRow :
                 vim.command("normal %sG" % str(lineNum))
                 vim.command("normal zt")
-                vim.command("redraw")
 
         else :
             vim.command("edit .temp_src")
@@ -2255,7 +2252,6 @@ class Jdb(object):
             vim.current.buffer.append("the source code can't be found")
             vim.current.buffer.append("class name is " + className)
             vim.current.buffer.append("the current line is " + lineNum)
-            vim.command("redraw")
 
         if (self.display == False ) :
             self.show()
@@ -2266,6 +2262,7 @@ class Jdb(object):
         if data : 
             self.stdout(data)
         vim.command("call foreground()")
+        vim.command("redraw")
 
     def resumeSuspend(self):
         if self.suspendRow == -1 :
