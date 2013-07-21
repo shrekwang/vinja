@@ -13,6 +13,8 @@ break  n  [if {cond}] [do {cmds}]
    example: "b 10 if {a > 5}",  "break 20 do {print a; setvalue b 20}"
 
 tbreak n               --temp breakpoint on line n(alias tb)
+enable  {n|all}        --enable breakpoint on line n, or enable all 
+disable {n|all}        --disable breakpoint on line n, or disable all 
 clear  n               --remove breakpoint on line n(alias cl)
 breakpoints            --list breakpoints,including watchpoints
 watch fieldname        --add watch field, suspended program when the field been written
