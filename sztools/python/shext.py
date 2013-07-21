@@ -1201,6 +1201,8 @@ class Shext(object):
             return "diff"
         if len(cmd)> 1 and cmd[0] == "xxd" :
             return "xxd"
+        if len(cmd)> 1 and cmd[0] == "man" :
+            return "man"
         if len(cmd) == 3 and cmd[0] == "jde" and cmd[2] == "build":
             return "builderror"
         if len(cmd) == 3 and cmd[0] == "jde" and cmd[2] == "clean":
