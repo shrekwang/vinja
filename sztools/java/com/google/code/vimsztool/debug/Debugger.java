@@ -192,6 +192,9 @@ public class Debugger {
 					}
 					sb.append("]");
 				}
+				if (!bp.isEnabled()) {
+					sb.append(" disabled");
+				}
 			} else {
 				sb.append(className).append(" [field: ");
 				sb.append(bp.getField()).append("] - ");
@@ -470,6 +473,7 @@ public class Debugger {
 	
 	public void clean() {
 		suspendThreadStack.clean();
+		this.bpMgr.clean();
 		if (this.exec != null) {
 			exec.shutdown();
 		}

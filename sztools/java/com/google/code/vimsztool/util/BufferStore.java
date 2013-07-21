@@ -15,6 +15,7 @@ public class BufferStore {
 		StringBuffer buffer = store.get(uuid);
 		if (buffer != null) {
 			String tmp = buffer.toString();
+			tmp = tmp.replace("\r\r\n", "\n");
 			tmp = tmp.replace("\r\n", "\n");
 			buffer.delete(0, buffer.length());
 			return tmp;

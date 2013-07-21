@@ -20,7 +20,16 @@ public class Breakpoint {
 	private int accessMode = ACCESS_READ | ACCESS_WRITE ;
 	private Kind kind = Kind.BREAK_POINT;
 	private List<EventRequest> requests = new ArrayList<EventRequest>();
+	private boolean enabled = true;
 	
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
+
 	//do when code executing reached the breakpoint
 	private List<String> autoCmds = new ArrayList<String>();
 	
@@ -60,6 +69,10 @@ public class Breakpoint {
 
 	public int getLineNum() {
 		return lineNum;
+	}
+	
+	public void clearRequests() {
+		requests = new ArrayList<EventRequest>();
 	}
 	
 	public void addRequest(EventRequest request) {

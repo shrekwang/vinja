@@ -2340,7 +2340,7 @@ class Jdb(object):
         if not (row_count > row and cur_buffer[row].strip() == ">" ) :
             vim.command('call append(%s,">")' % str(row))
         vim.current.window.cursor = (row+1, 1)
-        vim.command("startinsert")
+        vim.command("startinsert!")
 
     def stepCmd(self, cmd ):
         self.resumeSuspend()
@@ -2356,7 +2356,7 @@ class Jdb(object):
         global bp_data
         condition = ""
 
-        pat = re.compile(r"^(?P<cmd>.*?)\s+(?P<row>\d+)(\s+if\s+(?P<condition>{.*?}))?(\s+do\s+{(?P<autocmds>.*?)})?")
+        pat = re.compile(r"^(?P<cmd>.*?)\s+(?P<row>\d+|all)(\s+if\s+(?P<condition>{.*?}))?(\s+do\s+{(?P<autocmds>.*?)})?")
         search_res = pat.search(cmdLine)
         if search_res == None :
             self.stdout("parse break command error.")
@@ -2384,13 +2384,14 @@ class Jdb(object):
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
 
-        row = int(row.strip())
         if "success" in data :
             if cmd == "breakpoint_add" or cmd == "tbreak" :
+                row = int(row.strip())
                 bp_set.add(row)
                 bp_data[file_name] = bp_set
                 HighlightManager.addSign(file_name,row, "B")
-            else :
+            elif cmd == "breakpoint_remove" :
+                row = int(row.strip())
                 if row in bp_set: 
                     bp_set.remove(row)
                 HighlightManager.removeSign(file_name,row,"B")
@@ -2466,7 +2467,8 @@ class Jdb(object):
             self.appendPrompt(insertMode)
             return
 
-        if cmdLine.startswith("breakpoint_") or cmdLine.startswith("tbreak"):
+        if cmdLine.startswith("breakpoint_") or cmdLine.startswith("tbreak") \
+                or cmdLine.startswith("enable") or cmdLine.startswith("disable") :
             self.breakCmd(cmdLine)
             self.appendPrompt(insertMode)
             return

@@ -18,7 +18,8 @@ public class DebugCommand  extends SzjdeCommand {
 		"unwatch","ignore","clear", "threads","thread", "syncbps","disconnect","reftype","frame" , 
 		"setvalue","runtomcat","fetchJdbResult","until","display","displayi","undisplay",
 		"show_display","eval_display","tbreak", "watch","rwatch","awatch","up","down",
-		"sfields","sinspect","qeval","geval","ginspect", "fetchAutocmdResult","sizeof","resume_all"
+		"sfields","sinspect","qeval","geval","ginspect", "fetchAutocmdResult","sizeof",
+		"resume_all","enable","disable"
 		};
 	
 	public String execute() {
@@ -109,6 +110,14 @@ public class DebugCommand  extends SzjdeCommand {
 			String mainClass = args[2];
 			int lineNum = Integer.parseInt(args[1]);
 			actionResult = bpMgr.removeBreakpoint(mainClass, lineNum);
+		} else if (debugCmd.equals("enable")) {
+			String mainClass = args[2];
+			String loc = args[1];
+			actionResult = bpMgr.setBreakpointEnable(mainClass, loc, true);
+		} else if (debugCmd.equals("disable")) {
+			String mainClass = args[2];
+			String loc = args[1];
+			actionResult = bpMgr.setBreakpointEnable(mainClass, loc, false);
 		} else if (debugCmd.equals("step_into")) {
 			int count = this.getStepCount(args);
 			actionResult = stepMgr.step(StepRequest.STEP_INTO, count);

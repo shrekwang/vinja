@@ -219,6 +219,40 @@ public class BreakpointManager {
 		return Debugger.CMD_SUCCESS + ": breakpoint at class \"" + mainClass + "\", line " + lineNum + " not exists.";
 	}
 	
+	public String setBreakpointEnable(String mainClass, String loc, boolean enabled) {
+		if (loc.equals("all")) {
+			for (Breakpoint bp : allBreakpoints) {
+				setBreakpointEnable(bp,enabled);
+			}
+		} else {
+			int lineNum = Integer.parseInt(loc);
+			Breakpoint breakpoint = null;
+			for (Breakpoint bp : allBreakpoints) {
+				if (bp.getKind() == Breakpoint.Kind.WATCH_POINT) continue;
+				if (bp.getMainClass().equals(mainClass) && bp.getLineNum() == lineNum) {
+					breakpoint = bp;
+					break;
+				}
+			}
+			if (breakpoint != null) {
+				setBreakpointEnable(breakpoint,enabled);
+			}
+		}
+		return "success";
+	}
+	
+	private void setBreakpointEnable(Breakpoint bp, boolean enabled) {
+		bp.setEnabled(enabled);
+		for (EventRequest bpRequest : bp.getRequests()) {
+			if (enabled) {
+				bpRequest.enable();
+			} else {
+				bpRequest.disable();
+			}
+
+		}
+	}
+	
 	public String removeWatchpoint(String mainClass, String field) {
 		Breakpoint breakpoint = null;
 		for (Breakpoint bp : allBreakpoints) {
@@ -346,7 +380,7 @@ public class BreakpointManager {
 				Location loc = lines.get(0);
 				BreakpointRequest request = vm.eventRequestManager().createBreakpointRequest(loc);
 				request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-				request.setEnabled(true);
+				request.setEnabled(breakpoint.isEnabled());
 				request.putProperty("breakpointObj", breakpoint);
 				breakpoint.addRequest(request);
 			} catch (AbsentInformationException e) {
@@ -362,6 +396,7 @@ public class BreakpointManager {
 		if (breakpoint.getInnerClass() !=null) {
 			className = breakpoint.getInnerClass();
 		}
+		breakpoint.clearRequests();
 		
 		String fieldName = breakpoint.getField();
 		
@@ -385,19 +420,25 @@ public class BreakpointManager {
 			if ( (breakpoint.getAccessMode() & Breakpoint.ACCESS_READ) ==  Breakpoint.ACCESS_READ ) {
 				WatchpointRequest request = vm.eventRequestManager().createAccessWatchpointRequest(field);
 				request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-				request.setEnabled(true);
+				request.setEnabled(breakpoint.isEnabled());
 				request.putProperty("breakpointObj", breakpoint);
 				breakpoint.addRequest(request);
 			}
 			if ( (breakpoint.getAccessMode() & Breakpoint.ACCESS_WRITE) ==  Breakpoint.ACCESS_WRITE ) {
 				WatchpointRequest request = vm.eventRequestManager().createModificationWatchpointRequest(field);
 				request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
-				request.setEnabled(true);
+				request.setEnabled(breakpoint.isEnabled());
 				request.putProperty("breakpointObj", breakpoint);
 				breakpoint.addRequest(request);
 			}
 		}
 
+	}
+	
+	public void clean() {
+		for (Breakpoint bp : allBreakpoints) {
+			bp.clearRequests();
+		}
 	}
 
 }
