@@ -200,9 +200,9 @@ public class DebugCommand  extends SzjdeCommand {
 			debugger.disconnectOrExit();
 		} else if (debugCmd.equals("setvalue")) {
 			String name = args[1];
-			String value = args[2];
+			String valueExp = debugCmdLine.substring(debugCmdLine.indexOf(name) + name.length());
 			ExpEval expEval = debugger.getExpEval();
-			actionResult =  expEval.setFieldValue(name,value);
+			actionResult =  expEval.setFieldValue(name,valueExp);
 		} else if (debugCmd.equals("runtomcat")) {
 			actionResult = debugger.launchTomcat();
 		} else if (debugCmd.equals("fetchJdbResult")) {
