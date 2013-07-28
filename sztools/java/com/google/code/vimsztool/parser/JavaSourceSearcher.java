@@ -1,5 +1,6 @@
 package com.google.code.vimsztool.parser;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -13,6 +14,7 @@ import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.io.FilenameUtils;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
+import com.google.code.vimsztool.compiler.CompilerContextManager;
 import com.google.code.vimsztool.exception.LocationNotFoundException;
 import com.google.code.vimsztool.omni.ClassInfo;
 import com.google.code.vimsztool.omni.ClassInfoUtil;
@@ -63,9 +65,9 @@ public class JavaSourceSearcher {
     }
 
 	private JavaSourceSearcher(String filename, CompilerContext ctx) {
-		this.ctx = ctx;
+		this.ctx = findProperContext(filename,ctx);
 		this.currentFileName = filename;
-		this.curFullClassName = ctx.buildClassName(filename);
+		this.curFullClassName = this.ctx.buildClassName(filename);
 
 		//filename could be a jar entry path like below
 		// jar://C:\Java\jdk1.6.0_29\src.zip!java/lang/String.java
@@ -78,8 +80,7 @@ public class JavaSourceSearcher {
 				entryName = entryName.replace("\\", "/");
 				ZipEntry zipEntry = jarFile.getEntry(entryName);
 				InputStream is = jarFile.getInputStream(zipEntry);
-				parseResult = AstTreeFactory.getJavaSourceAst(is,
-						ctx.getEncoding());
+				parseResult = AstTreeFactory.getJavaSourceAst(is, this.ctx.getEncoding());
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -93,6 +94,34 @@ public class JavaSourceSearcher {
 			readClassInfo(tree,this.memberInfos);
 		}
 
+	}
+	
+	private CompilerContext findProperContext(String fileName, CompilerContext ctx) {
+		
+		if (fileName.startsWith("jar:")) {
+			return ctx;
+		}
+		if (FilenameUtils.normalize(fileName).startsWith(ctx.getProjectRoot())) {
+			return ctx;
+		}
+		CompilerContext tmp = ctx;
+		String classPath = null;
+		File file=new File(fileName);
+		while (true) {
+			File parentFile =file.getParentFile();
+			if (parentFile == null ) break;
+			File classpathFile = new File(parentFile,".classpath");
+			if (classpathFile.exists()) {
+				classPath = classpathFile.getAbsoluteFile().getAbsolutePath();
+				break;
+			}
+			file = parentFile;
+		}
+		if (classPath !=null) {
+			tmp = CompilerContextManager.getInstnace().getCompilerContext(classPath);
+		}
+		
+		return tmp;
 	}
 	
 	@SuppressWarnings("all")
@@ -544,6 +573,19 @@ public class JavaSourceSearcher {
     	LocationInfo info = new LocationInfo();
     	
         String classPath = getClassFilePath(className);
+        //can't find classpath , try imported names
+        if (classPath.equals("None") && className.indexOf(".") < 0 ) {
+        	boolean found = false;
+        	for (String importedName: this.importedNames) {
+        		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
+        		if (lastName.equals("*")) {
+        			className = importedName.substring(0,importedName.lastIndexOf(".")+1) + className;
+        			found = true;
+        			break;
+        		}
+        	}
+        	if (found) classPath = getClassFilePath(className);
+        }
         info.setFilePath(classPath);
         CommonTree parent = (CommonTree)node.getParent(); 
         List<String> typenameList = parseArgumentTypenameList((CommonTree)parent.getParent().getChild(1));
@@ -583,10 +625,17 @@ public class JavaSourceSearcher {
         if (!found ) {
         	for (String importedName: this.importedNames) {
         		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
+        		String matchedName = null;
+        		if (importedName.endsWith("*") ) {
+        			matchedName = importedName.substring(0,importedName.lastIndexOf(".")+1) + node.getText();
+        		}
         		if (node.getText().equals(lastName)) {
-        			String path = this.getClassFilePath(importedName);
+        			matchedName = importedName;
+        		}
+        		if (matchedName != null) {
+        			String path = this.getClassFilePath(matchedName);
         			if (path != null && !path.equals("None")) {
-	        			info.setFilePath(this.getClassFilePath(importedName));
+	        			info.setFilePath(path);
 	                    JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
 	        			info.setLine(searcher.getClassScopeLine());
 	        			info.setCol(1);
@@ -835,6 +884,9 @@ public class JavaSourceSearcher {
 	                buildImportStr((CommonTree)t.getChild(0),sb);
 	                if (sb.length()> 0) {
 		                sb.deleteCharAt(0);
+		                if (t.getChildCount()> 1 && ((CommonTree)t.getChild(1)).getType() == JavaParser.DOTSTAR) {
+		                	sb.append(".*");
+		                }
 		                importedNames.add(sb.toString());
 	                }
             	}
