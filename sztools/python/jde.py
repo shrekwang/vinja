@@ -1564,7 +1564,7 @@ class Parser(object):
         else :
             generic_def = ("<")+delimitedList(var_type) + (">")
             array_def = ("[") + ("]")
-        var_type << Word(alphas,alphanums) + Optional(generic_def | array_def )
+        var_type << Word(alphas,alphanums) + Optional("."+Word(alphas,alphanums)) + Optional(generic_def | array_def )
         if not var_name :
             var_name = Word( alphas, alphanums ).setResultsName("var_name")
         else :
@@ -1599,7 +1599,11 @@ class Parser(object):
                 continue
             for result in jdef_parser.searchString(vim_buffer[row]):
                 if Parser.isJavaKeyword(result[0][0]) : continue
-                var_type = result[0][0]
+                if (len(result[0]) > 2) and result[0][1] == ".":
+                    #inner class
+                    var_type = result[0][0] + "$" + result[0][2]
+                else :
+                    var_type = result[0][0]
                 var_type_row = row
                 found = True
                 break
@@ -1622,12 +1626,20 @@ class Parser(object):
         if not currentPackage :
             currentPackage = ""
         hasExactMatch = False
+
+        innerclassName = ""
+        classNameSec = classname.split("$")
+
+        if len(classNameSec) > 1:
+            classname = classNameSec[0]
+            innerclassName = "$" + "$".join(classNameSec[1:])
+
         for line in vim_buffer:
             line = line.strip()
             if line.startswith("import "):
                 lastName=line[7:-1].split(".")[-1]
                 if lastName == classname :
-                    binNames = [ line[7:-1] ]
+                    binNames = [ line[7:-1].strip()+innerclassName ]
                     hasExactMatch = True
                     break
                 elif lastName == "*" :
@@ -1636,12 +1648,12 @@ class Parser(object):
             return binNames
         samePkgClass=currentPackage+"."+classname
         if len(binNames) > 0 :
-            binNames= [name.replace("*",classname) for name in binNames]
+            binNames= [name.replace("*",classname).strip()+innerclassName for name in binNames]
             binNames.append(samePkgClass)
             binNames.append(classname)
             return binNames
         else :
-            return [classname,samePkgClass]
+            return [classname+innerclassName,samePkgClass]
 
 
     @staticmethod

@@ -127,10 +127,21 @@ public class JavaSourceSearcher {
 	@SuppressWarnings("all")
 	public ArrayList<com.google.code.vimsztool.omni.MemberInfo> getMemberInfo(Class aClass,
 			boolean staticMember, boolean protectedMember) {
+		
+		List<MemberInfo> tmpMemberInfo = this.memberInfos;
+		if (aClass.getName().indexOf("$")> -1 ) { //inner class
+			String innerClassName = aClass.getSimpleName();
+			for (MemberInfo info : this.memberInfos) {
+				if (innerClassName.equals(info.getName()) && info.getMemberType() == MemberType.SUBCLASS ) {
+					tmpMemberInfo = info.getSubMemberList();
+					break;
+				}
+			}
+		}
 
 		ArrayList<com.google.code.vimsztool.omni.MemberInfo> memberInfos = 
 				new ArrayList<com.google.code.vimsztool.omni.MemberInfo>();
-		for (MemberInfo info: this.memberInfos) {
+		for (MemberInfo info: tmpMemberInfo) {
 			if (info.getMemberType() == MemberType.CONSTRUCTOR) continue;
 			if (aClass.isEnum() || aClass.isInterface() || aClass.isAnnotation() || 
 					isValidateModifier(staticMember, protectedMember, info.getModifierDesc())) {
@@ -813,6 +824,7 @@ public class JavaSourceSearcher {
 
     public void readClassInfo(CommonTree t,List<MemberInfo> memberInfos) {
         if ( t != null ) {
+        	boolean needGoDeeper = true;
             if (t.getType() == JavaParser.CLASS_TOP_LEVEL_SCOPE
             		|| t.getType() == JavaParser.INTERFACE_TOP_LEVEL_SCOPE ) {
             	if (classScopeLine == 1) {
@@ -828,7 +840,8 @@ public class JavaSourceSearcher {
                     } else if (child.getType() == JavaParser.CONSTRUCTOR_DECL) {
                         info = parseFuncDecl(child,MemberType.CONSTRUCTOR); 
                     } else if (child.getType() == JavaParser.VAR_DECLARATION) {
-                        info = parseFieldDecl(child); 
+                        List<MemberInfo> infos = parseFieldDecl(child); 
+                        memberInfos.addAll(infos);
                     } else if (child.getType() == JavaParser.ENUM) {
                     	info = parseEnumDecl(child);
                     } else if (child.getType() == JavaParser.CLASS || child.getType() == JavaParser.INTERFACE ) {
@@ -839,12 +852,15 @@ public class JavaSourceSearcher {
                     			info.setName(subChild.getText());
                     			info.setLineNum(subChild.getLine());
                     			info.setColumn(child.getCharPositionInLine());
-                    		}
+	                    	 } else if (subChild.getType() == JavaParser.MODIFIER_LIST) {
+	                            info.setModifierList( parseModifierList(subChild));
+	                    	 }
                     	}
                     	List<MemberInfo> subMemberInfos = new ArrayList<MemberInfo>();
                     	readClassInfo(child, subMemberInfos);
                     	info.setMemberType(MemberType.SUBCLASS);
                     	info.setSubMemberList(subMemberInfos);
+                    	needGoDeeper = false;
                     }
                     	
                     if (info !=null) {
@@ -891,8 +907,10 @@ public class JavaSourceSearcher {
 	                }
             	}
 	    	}
-            for ( int i = 0; i < t.getChildCount(); i++ ) {
-            	readClassInfo((CommonTree)t.getChild(i),memberInfos);
+            if (needGoDeeper) {
+	            for ( int i = 0; i < t.getChildCount(); i++ ) {
+	            	readClassInfo((CommonTree)t.getChild(i),memberInfos);
+	            }
             }
         }
     }
@@ -1218,13 +1236,15 @@ public class JavaSourceSearcher {
 	    	for (int i=0; i < parent.getChildCount(); i++) {
 	    		CommonTree child = (CommonTree) parent.getChild(i);
 	    		if (child.getType() == JavaParser.VAR_DECLARATION) {
-                    MemberInfo membeInfo = parseFieldDecl(child);
-                    LocalVariableInfo info = new LocalVariableInfo();
-                    info.setName(membeInfo.getName());
-                    info.setType(membeInfo.getRtnType());
-                    info.setLine(membeInfo.getLineNum());
-                    info.setCol(membeInfo.getColumn());
-                    infoList.add(info);
+                    List<MemberInfo> membeInfos = parseFieldDecl(child);
+                    for (MemberInfo membeInfo: membeInfos) {
+	                    LocalVariableInfo info = new LocalVariableInfo();
+	                    info.setName(membeInfo.getName());
+	                    info.setType(membeInfo.getRtnType());
+	                    info.setLine(membeInfo.getLineNum());
+	                    info.setCol(membeInfo.getColumn());
+	                    infoList.add(info);
+                    }
 	    		}
                 if (child.getType() == JavaParser.FORMAL_PARAM_LIST) {
                     infoList.addAll(parseParamlist(child));
@@ -1265,25 +1285,39 @@ public class JavaSourceSearcher {
         return result;
     }
 
-    private MemberInfo parseFieldDecl(CommonTree t) {
-        MemberInfo info = new MemberInfo();
-        info.setMemberType(MemberType.FIELD);
+    private List<MemberInfo> parseFieldDecl(CommonTree t) {
+    	
+    	
+        List<MemberInfo> infos = new ArrayList<MemberInfo>();
+        String rtnType = "";
+        List<String> modifierList = null;
+        
 
         for (int i=0; i< t.getChildCount(); i++) {
             CommonTree c = (CommonTree)t.getChild(i);
             if (c.getType() == JavaParser.VAR_DECLARATOR_LIST) {
-                CommonTree variableDeclaratorId = (CommonTree)((CommonTree)c.getChild(0)).getChild(0);
-
-                info.setLineNum(variableDeclaratorId.getLine());
-                info.setColumn(variableDeclaratorId.getCharPositionInLine());
-                info.setName(variableDeclaratorId.getText());
+            	
+            	for (int j=0; j<c.getChildCount(); j++ ) {
+            		CommonTree tmp = (CommonTree)c.getChild(j);
+	                CommonTree variableDeclaratorId = (CommonTree)tmp.getChild(0);
+	                MemberInfo info = new MemberInfo();
+			        info.setMemberType(MemberType.FIELD);
+	                info.setLineNum(variableDeclaratorId.getLine());
+	                info.setColumn(variableDeclaratorId.getCharPositionInLine());
+	                info.setName(variableDeclaratorId.getText());
+	                info.setRtnType(rtnType);
+	                info.setModifierList(modifierList);
+	                infos.add(info);
+            	}
             } else if (c.getType() == JavaParser.MODIFIER_LIST) {
-                info.setModifierList( parseModifierList(c));
+                //info.setModifierList( parseModifierList(c));
+            	modifierList = parseModifierList(c);
             } else if (c.getType() == JavaParser.TYPE) {
-                info.setRtnType(parseType(c));
+                //info.setRtnType(parseType(c));
+            	rtnType = parseType(c);
             }
         }
-        return info;
+        return infos;
     }
 
     private MemberInfo parseFuncDecl(CommonTree t,MemberType memberType ) {
