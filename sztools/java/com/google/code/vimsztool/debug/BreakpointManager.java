@@ -76,17 +76,21 @@ public class BreakpointManager {
 	
 	public String addTempBreakpoint(String mainClass, int lineNum,boolean resumeThread) {
 		ThreadReference threadRef = null;
+		SuspendThreadStack threadStack = null;
 		if (resumeThread ) {
 			debugger.checkVm();
 			debugger.checkSuspendThread();
-			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
+			threadStack = debugger.getSuspendThreadStack();
 			threadRef = threadStack.getCurThreadRef();
 		}
 		
 		String result =this.addBreakpoint(mainClass, lineNum, null,true);
 		if (result.indexOf(Debugger.CMD_SUCCESS) < 0 ) return result;
 		
-		if (resumeThread ) threadRef.resume();
+		if (resumeThread ) {
+			threadStack.clean();
+			threadRef.resume();
+		}
 		return Debugger.CMD_SUCCESS + ":add temp breakpoint at class \"" + mainClass + "\", line " + lineNum ;
 	}
 	

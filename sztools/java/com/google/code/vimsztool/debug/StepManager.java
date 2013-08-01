@@ -40,7 +40,7 @@ public class StepManager {
 		if (threadRef == null) {
 			return "";
 		}
-		threadStack.clean();
+		
 		
 		StepRequest request = mgr.createStepRequest(threadRef, StepRequest.STEP_LINE, stepDepth);
 		List<String> excludeFilters = StepFilterConfiger.getDefaultFilter(); 
@@ -51,6 +51,7 @@ public class StepManager {
 		request.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 		request.enable();
 		
+		threadStack.clean();
 		threadRef.resume();
 		return "";
 	}
@@ -72,6 +73,8 @@ public class StepManager {
 			BreakpointManager bpMgr = debugger.getBreakpointManager();
 			String className = loc.declaringType().name();
 		    bpMgr.addTempBreakpoint(className, outLine,false);
+		    
+			threadStack.clean();
 		    threadRef.resume();
 		} catch (Exception e) {
 			e.printStackTrace();
