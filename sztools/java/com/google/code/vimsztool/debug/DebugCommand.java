@@ -200,7 +200,7 @@ public class DebugCommand  extends SzjdeCommand {
 			debugger.disconnectOrExit();
 		} else if (debugCmd.equals("setvalue")) {
 			String name = args[1];
-			String valueExp = debugCmdLine.substring(debugCmdLine.indexOf(name) + name.length());
+			String valueExp = debugCmdLine.substring(debugCmdLine.indexOf(name,"setvalue".length()) + name.length());
 			ExpEval expEval = debugger.getExpEval();
 			actionResult =  expEval.setFieldValue(name,valueExp);
 		} else if (debugCmd.equals("runtomcat")) {

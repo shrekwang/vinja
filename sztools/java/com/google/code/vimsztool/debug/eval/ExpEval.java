@@ -321,7 +321,8 @@ public class ExpEval {
 					secFieldValue.setValue(secField, value);
 				}
 			}
-			return Debugger.CMD_SUCCESS + ": set \""+name + "\" to value " + value.toString();
+			String valueStr = (value == null ? "null": value.toString()) ;
+			return Debugger.CMD_SUCCESS + ": set \""+name + "\" to value " + valueStr;
 		} catch (Throwable e) {
 			return e.getMessage();
 		}
