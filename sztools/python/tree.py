@@ -1255,7 +1255,7 @@ class ProjectTree(object):
             vim_buffer = vim.current.buffer
             current_file_name = vim_buffer.name
 
-        if current_file_name == None or "ProjectTree" in current_file_name:
+        if current_file_name == None or current_file_name =="" or "ProjectTree" in current_file_name:
             return 
 
         tab_id = projectTree._get_tab_id()
