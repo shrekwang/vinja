@@ -988,6 +988,14 @@ class ProjectTree(object):
         files = BasicTalker.setClipbordContent(file_path)
         print "files had been copied to system clipboard. "
 
+    def open_with_default(self):
+        file_path = self.get_selected_node().realpath
+        BasicTalker.doTreeCmd(file_path,"openWithDefault")
+
+    def open_in_terminal(self):
+        file_path = self.get_selected_node().realpath
+        BasicTalker.doTreeCmd(file_path,"openInTerminal")
+
     def print_help(self):
         help_file = os.path.join(SzToolsConfig.getShareHome(),"doc/tree.help")
         vim.command("exec 'wincmd w'")

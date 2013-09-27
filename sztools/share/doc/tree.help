@@ -17,6 +17,8 @@ f     :search node content for prompted string.
 F     :search node content for content in the vim search register.
 >     :jump to next editing file
 <     :jump to prev editing file
+e     :open select node with system default application(open directory in file explorer)
+E     :open select node in terminal 
 @     :goto bookmark
 
 DD    :delete select dir or file

@@ -729,6 +729,17 @@ class BasicTalker(object):
         data = BasicTalker.send(params)
         return data
 
+
+    @staticmethod
+    def doTreeCmd(file_path,cmd_name):
+        "set system clipboard of copied files, 'files' is ';' seperated file path list"
+        params = dict()
+        params["cmd"]="treecmd"
+        params["cmdName"]=cmd_name
+        params["treePath"]=file_path
+        data = BasicTalker.send(params)
+        return data
+
     @staticmethod
     def runSys(vimServer,cmdName,runInShell,bufname,workDir,origCmdLine):
         params = dict()

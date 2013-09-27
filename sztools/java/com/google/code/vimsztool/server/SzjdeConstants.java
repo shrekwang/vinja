@@ -26,6 +26,7 @@ public class SzjdeConstants {
 	public final static String CMD_SEARCH_REF="searchRef";
 	public final static String CMD_QUIT="quit";
 	public final static String CMD_CLIPBOARD="clipboard";
+	public final static String CMD_TREECMD="treecmd";
 	
 	public final static String CMD_SEARCH_DEF_LOC="locateDefinition";
 	

@@ -129,7 +129,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeClipboardCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_SEARCH_DEF_LOC)) {
 		   szjdeCommand = new SzjdeSearchDefLocation();
-		   
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_TREECMD)) {
+		   szjdeCommand = new SzjdeTreeCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_QUIT)) {
 		   Display.getDefault().syncExec(new Runnable() {
 				public void run() {
