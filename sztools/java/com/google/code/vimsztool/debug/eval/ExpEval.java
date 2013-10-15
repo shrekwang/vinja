@@ -66,6 +66,10 @@ public class ExpEval {
 	
 	public static final String SEP_ROW_TXT="=========================\n";
 	
+	public static final String VAR_NODE_DIR = "dir";
+	public static final String VAR_NODE_LEAF = "leaf";
+	public static final int VAR_NODE_VALUE_LEN = 50;
+	
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
 		"short", "int", "long", "float", "double" };
 	
@@ -75,6 +79,51 @@ public class ExpEval {
 	public ExpEval(Debugger debugger) {
 		this.debugger = debugger;
 		
+	}
+	
+	public String executeEvalCmd(String debugCmd,String debugCmdArgs) {
+		String actionResult = null;
+		try {
+			if (debugCmd.equals("eval") || debugCmd.equals("print")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult =  eval(exp);
+			} else if (debugCmd.equals("inspect")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult =  inspect(exp,false);
+			} else if (debugCmd.equals("sinspect")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult =  inspect(exp,true);
+			} else if (debugCmd.equals("locals")) {
+				actionResult = variables();
+			} else if (debugCmd.equals("fields")) {
+				actionResult = fields(false);
+			} else if (debugCmd.equals("sfields")) {
+				actionResult = fields(true);
+			} else if (debugCmd.equals("reftype")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = reftype(exp);
+			} else if (debugCmd.equals("qeval")) {
+				actionResult = quickEval();
+			} else if (debugCmd.equals("sizeof")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = sizeOf(exp);
+			} else if (debugCmd.equals("geval")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = globExpEval(exp, false);
+			} else if (debugCmd.equals("ginspect")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = globExpEval(exp, true);
+			} else if (debugCmd.equals("etree")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = etree(exp);
+			} else if (debugCmd.equals("subetree")) {
+				String exp = debugCmdArgs.substring(debugCmd.length()+1);
+				actionResult = etreeSubNode(exp);
+			}
+			return actionResult;
+		} catch (ExpressionEvalException e) {
+			return e.getMessage();
+		}
 	}
 	
 	public String sizeOf(String exp) {
@@ -329,44 +378,7 @@ public class ExpEval {
 
 	}
 
-	public String executeEvalCmd(String debugCmd,String debugCmdArgs) {
-		String actionResult = null;
-		try {
-			if (debugCmd.equals("eval") || debugCmd.equals("print")) {
-				String exp = debugCmdArgs.substring(debugCmd.length()+1);
-				actionResult =  eval(exp);
-			} else if (debugCmd.equals("inspect")) {
-				String exp = debugCmdArgs.substring(debugCmd.length()+1);
-				actionResult =  inspect(exp,false);
-			} else if (debugCmd.equals("sinspect")) {
-				String exp = debugCmdArgs.substring(debugCmd.length()+1);
-				actionResult =  inspect(exp,true);
-			} else if (debugCmd.equals("locals")) {
-				actionResult = variables();
-			} else if (debugCmd.equals("fields")) {
-				actionResult = fields(false);
-			} else if (debugCmd.equals("sfields")) {
-				actionResult = fields(true);
-			} else if (debugCmd.equals("reftype")) {
-				String exp = debugCmdArgs.substring(debugCmd.length()+1);
-				actionResult = reftype(exp);
-			} else if (debugCmd.equals("qeval")) {
-				actionResult = quickEval();
-			} else if (debugCmd.equals("sizeof")) {
-				String exp = debugCmdArgs.substring(debugCmd.length()+1);
-				actionResult = sizeOf(exp);
-			} else if (debugCmd.equals("geval")) {
-				String exp = debugCmdArgs.substring(debugCmd.length()+1);
-				actionResult = globExpEval(exp, false);
-			} else if (debugCmd.equals("ginspect")) {
-				String exp = debugCmdArgs.substring(debugCmd.length()+1);
-				actionResult = globExpEval(exp, true);
-			}
-			return actionResult;
-		} catch (ExpressionEvalException e) {
-			return e.getMessage();
-		}
-	}
+	
 	
 	public String fields(boolean staticField ) {
 		ThreadReference threadRef = checkAndGetCurrentThread();
@@ -432,6 +444,83 @@ public class ExpEval {
 		}
 		Value value = (Value)evalTreeNode(result.getTree());
 		return value.type().name();
+	}
+	
+	public String etree(String exp) {
+		ParseResult result = AstTreeFactory.getExpressionAst(exp);
+		if (result.hasError()) {
+			return result.getErrorMsg();
+		}
+		List<String> exps = result.getExpList();
+		int maxLen = getMaxLength(exps)+2;
+		
+		List<VarNode> varNodes = new ArrayList<VarNode>();
+		
+		for (int i=0; i< exps.size(); i++) {
+			String expOrigStr = exps.get(i);
+			String varNodeName = padStr(maxLen,expOrigStr);
+			try {
+				CommonTree node = result.getTreeList().get(i);
+				Value value = (Value)evalTreeNode(node);
+				VarNode varNode = createVarNode(varNodeName, value);
+				varNodes.add(varNode);
+			} catch (ExpressionEvalException e) {
+				VarNode varNode = new VarNode(varNodeName,"dir","error",e.getMessage());
+				varNodes.add(varNode);
+			}
+		}
+		String v=XmlGenerate.generate(varNodes);
+		return v;
+	}
+	
+	public String etreeSubNode(String exp) {
+		
+		List<VarNode> varNodes = new ArrayList<VarNode>();
+		
+		ParseResult result = AstTreeFactory.getExpressionAst(exp);
+		Value value = (Value)evalTreeNode(result.getTree());
+		
+		if (value instanceof ObjectReference) {
+			
+			ObjectReference objRef = (ObjectReference) value;
+			Map<Field, Value> values = objRef.getValues(objRef.referenceType().visibleFields());
+			List<String> fieldNames = new ArrayList<String>();
+			for (Field field : values.keySet()) {
+				if ( !field.isStatic() ) {
+					fieldNames.add(field.name());
+				}
+			}
+			int maxLen = getMaxLength(fieldNames)+2;
+			for (Field field : values.keySet()) {
+				if ( !field.isStatic() ) {
+					String varNodeName = padStr(maxLen,field.name());
+					Value fieldValue = values.get(field);
+					VarNode varNode = createVarNode(varNodeName, fieldValue);
+					varNodes.add(varNode);
+				}
+			}
+		}
+		String v=XmlGenerate.generate(varNodes);
+		return v;
+	}
+	
+	private VarNode createVarNode(String varNodeName, Value value) {
+		String varNodeType = VAR_NODE_LEAF;
+		if (value instanceof ObjectReference) {
+			varNodeType = VAR_NODE_DIR;
+		}
+		String varJavaType = "";
+		if (value != null) {
+			varJavaType = value.getClass().getName();
+		}
+		String repr = getPrettyPrintStr(value);
+		repr = repr.replaceAll("\n", "\\\\n");
+		if (repr.length() > VAR_NODE_VALUE_LEN) {
+			repr = repr.substring(0, VAR_NODE_VALUE_LEN - 3) + "..." + repr.substring(repr.length() - 3);
+		}
+		
+		VarNode varNode = new VarNode(varNodeName,varNodeType,varJavaType,repr);
+		return varNode;
 	}
 
 	public String inspect(String exp,boolean staticField) {

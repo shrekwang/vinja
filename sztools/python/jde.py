@@ -2105,6 +2105,7 @@ class Jdb(object):
         #vim.command("call SwitchToSzToolView('Jdb','aboveleft','7')")
         vim.command("call SwitchToSzToolView('Jdb','belowright','%s')" % height)
         vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
+        vim.command("nnoremap <buffer><silent>o      :python VarTree.open_selected_node()<cr>")
         vim.command("call SetTabPageName('Jdb')")
         vim.command("set filetype=jdb")
 
@@ -2544,7 +2545,11 @@ class Jdb(object):
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
-            self.stdout(data)
+            if cmdLine.startswith("etree"):
+                varTree = VarTree.createVarTree(data)
+                self.stdout(varTree.renderToString())
+            else :
+                self.stdout(data)
 
         if cmdLine.startswith("bpa") and data == "success" :
             args = cmdLine.split(" ")
@@ -2748,6 +2753,233 @@ class InspectorVarParser():
         eleTree.write(stringIO)
         msg = stringIO.getvalue()
         return msg
+
+class VarNode(object):
+
+    def __init__(self, name, value, isDirectory, isOpen = False, isLoaded = False):
+        self.name=name
+        self.value = value
+        #self.realpath = realpath
+        self.isDirectory = isDirectory
+        self.isOpen = isOpen
+        self.isLoaded = isLoaded
+        self._children = []
+        self.parent = None
+
+    def get_child(self,name):
+        for node in self._children :
+            if node.name.strip() == name.strip() :
+                return node
+        return None
+
+    def get_children(self) :
+        if not self.isLoaded : 
+            self._load_varnode_content()
+            self.isLoaded = True
+        return self._children
+
+    def _load_varnode_content(self):
+        path = []
+        if self.parent == None :
+            exp = self.name.strip()
+        else :
+            p = self.parent
+            while p != None :
+                path.insert(0, p.name.strip())
+                p = p.parent
+            path.append(self.name.strip())
+            exp = ".".join(path)
+        cmdLine = "subetree %s" % exp
+        serverName = vim.eval("v:servername")
+        data = JdbTalker.submit(cmdLine,jdb.class_path_xml,serverName)
+        subnodes = VarTree.parse_tree_nodes(data)
+        for subnode in subnodes: 
+            self.add_child(subnode)
+
+    def add_child(self,child):
+        self._children.append(child)
+        child.parent = self
+
+    def add_from_xml(self,xml_str):
+        nodes = VarTree.parse_tree_nodes(xml_str)
+        for node in nodes :
+            self.add_child(node)
+
+    def insert_child(self,child):
+        self._children.insert(0,child)
+        child.parent = self
+
+    def remove_child(self, child):
+        self._children.remove(child)
+        return
+
+    def get_node_repr(self):
+        return self.name + ":  " + self.value
+
+    def renderToString(self,depth,  vertMap, isLastChild):
+        treeParts = ''
+        if depth > 1 :
+            for j in vertMap[0:-1] :
+                if j == 1 :
+                    treeParts = treeParts + "| "
+                else :
+                    treeParts = treeParts + "  "
+        if isLastChild :
+            treeParts = treeParts + "`"
+        else :
+            treeParts = treeParts + "|"
+
+        if self.isDirectory :
+            if self.isOpen :
+                treeParts = treeParts + "~"
+            else :
+                treeParts = treeParts + "+"
+        else :
+            treeParts = treeParts + "-"
+
+        if depth == 1 :
+            treeParts = treeParts[1:] + self.get_node_repr() + "\n"
+        else :
+            treeParts = treeParts + self.get_node_repr() + "\n"
+            
+
+        if self.isDirectory and self.isOpen :
+            childNodes = self.get_children()
+            if len(childNodes) > 0 :
+                lastIndex = len(childNodes) -1 
+                if lastIndex > 0 :
+                    for i in range(0,lastIndex):
+                        tmpMap = vertMap[:]
+                        tmpMap.append(1)
+                        treeParts = treeParts + childNodes[i].renderToString(depth+1, tmpMap, 0)
+                tmpMap = vertMap[:]
+                tmpMap.append(0)
+                treeParts = treeParts + childNodes[lastIndex].renderToString(depth+1, tmpMap, 1)
+        return treeParts
+
+
+class VarTree(object):
+
+    prefix_pat = re.compile(r"[^ \-+~`|]")
+    tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
+    instance = None
+
+    def __init__(self,xml_str):
+        self.nodes = VarTree.parse_tree_nodes(xml_str)
+
+    def renderToString(self):
+        strs = []
+        for node in self.nodes :
+            strs.append(node.renderToString(1,[0],0))
+        return "".join(strs)
+
+    def getNodes(self):
+        return self.nodes
+
+    def getNode(self,name):
+        for node in self.nodes :
+            if node.name.strip() == name.strip() :
+                return node
+        return None
+
+    @staticmethod
+    def getInstance():
+        return VarTree.instance
+
+    @staticmethod
+    def createVarTree(xml_str):
+        VarTree.instance = VarTree(xml_str)
+        return VarTree.instance
+
+    @staticmethod
+    def parse_tree_nodes(xml_str):
+        tree = fromstring(xml_str)
+        entries = tree.findall("var")
+        var_nodes = []
+
+        for entry in  entries :
+            nodetype=entry.get("nodetype")
+            name=entry.get("name")
+            value = entry.get("value")
+            is_dir = False
+            if nodetype == "dir" :
+                is_dir = True
+            v = VarNode(name,value, is_dir)
+            var_nodes.append(v)
+        return var_nodes
+
+    @staticmethod
+    def open_selected_node():
+        node = VarTree.get_selected_node()
+        if node == None :
+            return
+        (row,col) = vim.current.window.cursor
+        if node.isDirectory :
+            if node.isOpen :
+                node.isOpen = False
+            else :
+                node.isOpen = True
+
+            varTree = VarTree.getInstance()
+            output(varTree.renderToString())
+            vim.current.window.cursor = (row,col)
+
+    @staticmethod
+    def get_selected_node(row = None):
+        if row == None :
+            (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        line = vim_buffer[row-1]
+        indent = VarTree._get_indent_level(line)
+        node_path = VarTree._strip_markup_from_line(line, False)
+        lnum = row - 1
+        node_array = []
+        while lnum > -1 :
+            curLine = vim_buffer[lnum]
+            curLineStripped = VarTree._strip_markup_from_line(curLine, True)
+            lpindent = VarTree._get_indent_level(curLine)
+            if lpindent < indent :
+                indent = indent - 1
+                node_array.insert(0,curLineStripped)
+            if lpindent <= 1 :
+                break 
+            lnum = lnum - 1
+        node_array.append(node_path)
+        varTree = VarTree.getInstance()
+        varTreeNode = varTree.getNode(node_array[0])
+        for node_name in node_array[1:] :
+            varTreeNode = varTreeNode.get_child(node_name)
+        return varTreeNode
+
+    @staticmethod
+    def _get_indent_level(line):
+        matches = VarTree.prefix_pat.search(line)
+        if matches :
+            return matches.start() / 2
+        return -1
+
+    @staticmethod
+    def _strip_markup_from_line(line,remove_leading_spaces):
+
+        #remove the tree parts and the leading space
+        line = VarTree.tree_markup_pat.sub("",line)
+
+        #strip off any read only flag
+        line = re.sub(' \[RO\]', "", line)
+
+        #strip off any bookmark flags
+        line = re.sub( ' {[^}]*}', "", line)
+        line = re.sub( '\n', "", line)
+        line = re.sub( '\r', "", line)
+
+        if remove_leading_spaces :
+            line = re.sub( '^ *', "", line)
+
+        #strip off value part of node label
+        line = line[0: line.find(":")].strip()
+        return line
+
+
 
 if __name__ == "__main__" :
     #ivp = InspectorVarParser()
