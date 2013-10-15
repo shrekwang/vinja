@@ -2779,16 +2779,22 @@ class VarNode(object):
         return self._children
 
     def _load_varnode_content(self):
-        path = []
+        parents = []
+        exp = ""
         if self.parent == None :
             exp = self.name.strip()
         else :
-            p = self.parent
+            p = self
             while p != None :
-                path.insert(0, p.name.strip())
+                pname =p.name.strip()
+                print pname
+                if pname.isdigit():
+                    parents.insert(0, "["+pname+"]")
+                else :
+                    parents.insert(0, "."+pname)
                 p = p.parent
-            path.append(self.name.strip())
-            exp = ".".join(path)
+            
+            exp = "".join(parents)[1:]
         cmdLine = "subetree %s" % exp
         serverName = vim.eval("v:servername")
         data = JdbTalker.submit(cmdLine,jdb.class_path_xml,serverName)

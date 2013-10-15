@@ -480,7 +480,20 @@ public class ExpEval {
 		ParseResult result = AstTreeFactory.getExpressionAst(exp);
 		Value value = (Value)evalTreeNode(result.getTree());
 		
-		if (value instanceof ObjectReference) {
+		if (value instanceof ArrayReference) {
+			try {
+				ArrayReference array = (ArrayReference)value;
+				int loopCount = array.length() > 20 ? 20 : array.length();
+				for (int i=0; i<loopCount; i++) {
+					Value cellValue = array.getValue(i);
+					VarNode varNode = createVarNode(String.valueOf(i), cellValue);
+					varNodes.add(varNode);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		 
+		} else if (value instanceof ObjectReference) {
 			
 			ObjectReference objRef = (ObjectReference) value;
 			Map<Field, Value> values = objRef.getValues(objRef.referenceType().visibleFields());
@@ -500,6 +513,7 @@ public class ExpEval {
 				}
 			}
 		}
+		
 		String v=XmlGenerate.generate(varNodes);
 		return v;
 	}
