@@ -141,9 +141,6 @@ public class DebugCommand  extends SzjdeCommand {
 		} else if (debugCmd.equals("display")) {
 			String exp = debugCmdLine.substring(debugCmd.length()+1);
 			actionResult =  dvMgr.addWatchExpression(exp);
-		} else if (debugCmd.equals("displayi")) {
-			String exp = debugCmdLine.substring(debugCmd.length()+1);
-			actionResult =  dvMgr.addInspectExpression(exp);
 		} else if (debugCmd.equals("undisplay")) {
 			String exp = debugCmdLine.substring(debugCmd.length()+1);
 			actionResult =  dvMgr.removeWatchVariables(exp);

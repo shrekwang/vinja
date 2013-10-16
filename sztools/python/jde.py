@@ -2273,7 +2273,8 @@ class Jdb(object):
 
         data = JdbTalker.submit("eval_display",self.class_path_xml,self.serverName)
         if data : 
-            self.stdout(data)
+            varTree = VarTree.createVarTree(data)
+            self.stdout(varTree.renderToString())
         vim.command("call foreground()")
         vim.command("redraw")
 
@@ -2545,7 +2546,10 @@ class Jdb(object):
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
-            if cmdLine.startswith("etree"):
+            if cmdLine.startswith("eval") or cmdLine.startswith("print")  \
+                    or cmdLine.startswith("locals") or cmdLine.startswith("fields") \
+                    or cmdLine.startswith("eval_display") :
+
                 varTree = VarTree.createVarTree(data)
                 self.stdout(varTree.renderToString())
             else :
@@ -2791,11 +2795,6 @@ class VarNode(object):
         self._children.append(child)
         child.parent = self
 
-    def add_from_xml(self,xml_str):
-        nodes = VarTree.parse_tree_nodes(xml_str)
-        for node in nodes :
-            self.add_child(node)
-
     def insert_child(self,child):
         self._children.insert(0,child)
         child.parent = self
@@ -2828,7 +2827,7 @@ class VarNode(object):
             else :
                 treeParts = treeParts + "+"
         else :
-            treeParts = treeParts + "-"
+            treeParts = treeParts + " "
 
         if depth == 1 :
             treeParts = treeParts[1:] + self.get_node_repr() + "\n"
@@ -2858,9 +2857,17 @@ class VarTree(object):
     instance = None
 
     def __init__(self,xml_str):
-        self.nodes = VarTree.parse_tree_nodes(xml_str)
+        nodes = VarTree.parse_tree_nodes(xml_str)
+        if isinstance(nodes,list) :
+            self.nodes = nodes
+            self.errorMsg = ""
+        else :
+            self.errorMsg = nodes
+            self.nodes = []
 
     def renderToString(self):
+        if self.errorMsg :
+            return self.errorMsg
         strs = []
         for node in self.nodes :
             strs.append(node.renderToString(1,[0],0))
@@ -2886,22 +2893,26 @@ class VarTree(object):
 
     @staticmethod
     def parse_tree_nodes(xml_str):
-        tree = fromstring(xml_str)
-        entries = tree.findall("var")
         var_nodes = []
+        try :
+            tree = fromstring(xml_str)
+            entries = tree.findall("var")
 
-        for entry in  entries :
-            nodetype=entry.get("nodetype")
-            javatype=entry.get("javatype")
-            uuid=entry.get("uuid")
-            name=entry.get("name")
-            value = entry.get("value")
-            is_dir = False
-            if nodetype == "dir" :
-                is_dir = True
-            v = VarNode(name,value, is_dir,uuid,javatype)
-            var_nodes.append(v)
-        return var_nodes
+            for entry in  entries :
+                nodetype=entry.get("nodetype")
+                javatype=entry.get("javatype")
+                uuid=entry.get("uuid")
+                name=entry.get("name")
+                value = entry.get("value")
+                is_dir = False
+                if nodetype == "dir" :
+                    is_dir = True
+                v = VarNode(name,value, is_dir,uuid,javatype)
+                var_nodes.append(v)
+            return var_nodes
+        except Exception:
+            return xml_str
+
 
     @staticmethod
     def open_selected_node():

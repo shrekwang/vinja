@@ -116,9 +116,6 @@ public class ExpEval {
 			} else if (debugCmd.equals("ginspect")) {
 				String exp = debugCmdArgs.substring(debugCmd.length()+1);
 				actionResult = globExpEval(exp, true);
-			} else if (debugCmd.equals("etree")) {
-				String exp = debugCmdArgs.substring(debugCmd.length()+1);
-				actionResult = etree(exp);
 			} else if (debugCmd.equals("subetree")) {
 				String exp = debugCmdArgs.substring(debugCmd.length()+1);
 				actionResult = etreeSubNode(exp);
@@ -386,7 +383,7 @@ public class ExpEval {
 	public String fields(boolean staticField ) {
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
-		StringBuilder sb = new StringBuilder();
+		List<VarNode> varNodes = new ArrayList<VarNode>();
 		try {
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			ObjectReference thisObj = stackFrame.thisObject();
@@ -403,15 +400,16 @@ public class ExpEval {
 			int maxLen = getMaxLength(fieldNames)+2;
 			for (Field field : values.keySet()) {
 				if (field.isStatic() == staticField) {
-					sb.append(padStr(maxLen,field.name())).append(":");
-					sb.append(getPrettyPrintStr(values.get(field)));
-					sb.append("\n");
+					String varNodeName = padStr(maxLen,field.name());
+					VarNode varNode = createVarNode(varNodeName, values.get(field));
+			        varNodes.add(varNode);
 				}
 			}
 		} catch (IncompatibleThreadStateException e) {
 		}
 
-		return sb.toString();
+		String v=XmlGenerate.generate(varNodes);
+		return v;
 	}
 
 	
@@ -419,7 +417,7 @@ public class ExpEval {
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		int curFrame = threadStack.getCurFrame();
-		StringBuilder sb = new StringBuilder();
+		List<VarNode> varNodes = new ArrayList<VarNode>();
 		try {
 			List<String> varNames = new ArrayList<String>();
 			for (LocalVariable var : threadRef.frame(curFrame).visibleVariables()) {
@@ -428,16 +426,16 @@ public class ExpEval {
 			int maxLen = getMaxLength(varNames)+2;
 			for (LocalVariable var : threadRef.frame(curFrame).visibleVariables()) {
 				Value value = threadRef.frame(curFrame).getValue(var);
-				sb.append(padStr(maxLen,var.name())).append(":");
-				sb.append(getPrettyPrintStr(value));
-				sb.append("\n");
+				String varNodeName = padStr(maxLen,var.name());
+				VarNode varNode = createVarNode(varNodeName, value);
+		        varNodes.add(varNode);
 			}
-		} catch (AbsentInformationException e) {
-			e.printStackTrace();
-		} catch (IncompatibleThreadStateException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			VarNode varNode = new VarNode("locals","dir","error",e.getMessage());
+	        varNodes.add(varNode);
 		}
-		return sb.toString();
+		String v=XmlGenerate.generate(varNodes);
+		return v;
 	}
 	
 	public String reftype(String exp) {
@@ -449,11 +447,14 @@ public class ExpEval {
 		return value.type().name();
 	}
 	
-	public String etree(String exp) {
+	public String eval(String exp) {
+		List<VarNode> varNodes = createVarNodesFromExp(exp);
+		String v=XmlGenerate.generate(varNodes);
+		return v;
+	}
+	
+	public List<VarNode> createVarNodesFromExp(String exp) {
 		ParseResult result = AstTreeFactory.getExpressionAst(exp);
-		if (result.hasError()) {
-			return result.getErrorMsg();
-		}
 		List<String> exps = result.getExpList();
 		int maxLen = getMaxLength(exps)+2;
 		
@@ -472,8 +473,7 @@ public class ExpEval {
 				varNodes.add(varNode);
 			}
 		}
-		String v=XmlGenerate.generate(varNodes);
-		return v;
+		return varNodes;
 	}
 	
 	private ReferenceType getCollectionRefType() {
@@ -654,43 +654,15 @@ public class ExpEval {
 	
 	public String eval(List<String> exps) {
 		if (exps ==null || exps.size() == 0) return "";
-		StringBuilder sb = new StringBuilder();
+		
+		List<VarNode> allNodes = new ArrayList<VarNode>();
 		for (String exp : exps) {
-			sb.append(eval(exp));
-			sb.append(ExpEval.SEP_ROW_TXT);
+			allNodes.addAll(createVarNodesFromExp(exp));
 		}
-		return sb.toString();
+		String v=XmlGenerate.generate(allNodes);
+		return v;
 	}
 
-	public String eval(String exp) {
-		
-		if (exp.trim().startsWith("[")) {
-			ForExpEval forEval = new ForExpEval();
-			return forEval.eval(this, exp);
-		}
-		ParseResult result = AstTreeFactory.getExpressionAst(exp);
-		if (result.hasError()) {
-			return result.getErrorMsg();
-		}
-		StringBuilder sb = new StringBuilder();
-		List<String> exps = result.getExpList();
-		int maxLen = getMaxLength(exps)+2;
-		
-		for (int i=0; i< exps.size(); i++) {
-			String basicExp = exps.get(i);
-			sb.append(padStr(maxLen,basicExp)).append(":");
-			try {
-				CommonTree node = result.getTreeList().get(i);
-				sb.append(evalTreeNodeToStr(node));
-				sb.append("\n");
-			} catch (ExpressionEvalException e) {
-				sb.append(e.getMessage());
-				if (sb.charAt(sb.length()-1) != '\n') sb.append("\n");
-			}
-		}
-		return sb.toString();
-	}
-	
 	public String evalSimpleValue(String exp) {
 		ParseResult result = AstTreeFactory.getExpressionAst(exp);
 		if (result.hasError()) {
