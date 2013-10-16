@@ -70,7 +70,7 @@ public class ExpEval {
 	
 	public static final String VAR_NODE_DIR = "dir";
 	public static final String VAR_NODE_LEAF = "leaf";
-	public static final int VAR_NODE_VALUE_LEN = 50;
+	public static final int VAR_NODE_VALUE_LEN = 80;
 	public static final int MAX_VAR_NODE = 50;
 	
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
@@ -570,12 +570,13 @@ public class ExpEval {
 	
 	private VarNode createVarNode(String varNodeName, Value value) {
 		String varNodeType = VAR_NODE_LEAF;
-		if (value instanceof ObjectReference) {
+		if (value instanceof ObjectReference && ! (value instanceof StringReference) ) {
 			varNodeType = VAR_NODE_DIR;
 		}
 		String varJavaType = "";
 		if (value != null) {
-			varJavaType = value.getClass().getName();
+			varJavaType = value.type().name();
+			if (varJavaType.indexOf(".") > -1 ) varJavaType = varJavaType.substring(varJavaType.lastIndexOf(".")+1);
 		}
 		String repr = getPrettyPrintStr(value);
 		repr = repr.replaceAll("\n", "\\\\n");
@@ -1336,7 +1337,11 @@ public class ExpEval {
 			return "\"" + ((StringReference)var).value() + "\"";
 		} else if (var instanceof ObjectReference) {
 			Value strValue = invoke((ObjectReference) var, "toString", new ArrayList());
-			return strValue.toString();
+			String v = strValue.toString();
+			if (v.startsWith("\"") &&  v.endsWith("\"")) {
+				v = v.substring(1, v.length()-1);
+			}
+			return v;
 		} else if (var instanceof String) {
 			return "\"" + (String)var + "\"";
 			

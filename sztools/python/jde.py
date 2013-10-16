@@ -2756,10 +2756,11 @@ class InspectorVarParser():
 
 class VarNode(object):
 
-    def __init__(self, name, value, isDirectory, uuid, isOpen = False, isLoaded = False):
+    def __init__(self, name, value, isDirectory, uuid,javatype,isOpen = False, isLoaded = False):
         self.name=name
         self.value = value
         self.uuid = uuid
+        self.javatype = javatype
         self.isDirectory = isDirectory
         self.isOpen = isOpen
         self.isLoaded = isLoaded
@@ -2804,7 +2805,9 @@ class VarNode(object):
         return
 
     def get_node_repr(self):
-        return self.name + ":  " + self.value
+        if self.javatype :
+            return self.name + ":  " + self.value + "  (" + self.javatype + ")"
+        return self.name + ":  " + self.value 
 
     def renderToString(self,depth,  vertMap, isLastChild):
         treeParts = ''
@@ -2889,13 +2892,14 @@ class VarTree(object):
 
         for entry in  entries :
             nodetype=entry.get("nodetype")
+            javatype=entry.get("javatype")
             uuid=entry.get("uuid")
             name=entry.get("name")
             value = entry.get("value")
             is_dir = False
             if nodetype == "dir" :
                 is_dir = True
-            v = VarNode(name,value, is_dir,uuid)
+            v = VarNode(name,value, is_dir,uuid,javatype)
             var_nodes.append(v)
         return var_nodes
 
