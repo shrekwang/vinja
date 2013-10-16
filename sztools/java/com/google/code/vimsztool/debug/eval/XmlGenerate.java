@@ -51,6 +51,7 @@ public class XmlGenerate {
             nodeElement.setAttribute("nodetype", varNode.getNodeType());
             nodeElement.setAttribute("javatype", varNode.getJavaType());
             nodeElement.setAttribute("value", varNode.getValue());
+            nodeElement.setAttribute("uuid", varNode.getUuid());
             
         }
  

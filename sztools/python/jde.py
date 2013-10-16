@@ -2756,10 +2756,10 @@ class InspectorVarParser():
 
 class VarNode(object):
 
-    def __init__(self, name, value, isDirectory, isOpen = False, isLoaded = False):
+    def __init__(self, name, value, isDirectory, uuid, isOpen = False, isLoaded = False):
         self.name=name
         self.value = value
-        #self.realpath = realpath
+        self.uuid = uuid
         self.isDirectory = isDirectory
         self.isOpen = isOpen
         self.isLoaded = isLoaded
@@ -2779,23 +2779,7 @@ class VarNode(object):
         return self._children
 
     def _load_varnode_content(self):
-        parents = []
-        exp = ""
-        if self.parent == None :
-            exp = self.name.strip()
-        else :
-            p = self
-            while p != None :
-                pname =p.name.strip()
-                print pname
-                if pname.isdigit():
-                    parents.insert(0, "["+pname+"]")
-                else :
-                    parents.insert(0, "."+pname)
-                p = p.parent
-            
-            exp = "".join(parents)[1:]
-        cmdLine = "subetree %s" % exp
+        cmdLine = "subetree %s" % self.uuid
         serverName = vim.eval("v:servername")
         data = JdbTalker.submit(cmdLine,jdb.class_path_xml,serverName)
         subnodes = VarTree.parse_tree_nodes(data)
@@ -2905,12 +2889,13 @@ class VarTree(object):
 
         for entry in  entries :
             nodetype=entry.get("nodetype")
+            uuid=entry.get("uuid")
             name=entry.get("name")
             value = entry.get("value")
             is_dir = False
             if nodetype == "dir" :
                 is_dir = True
-            v = VarNode(name,value, is_dir)
+            v = VarNode(name,value, is_dir,uuid)
             var_nodes.append(v)
         return var_nodes
 

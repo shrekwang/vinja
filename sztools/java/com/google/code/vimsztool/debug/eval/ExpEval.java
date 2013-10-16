@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +33,7 @@ import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
 import com.sun.jdi.BooleanType;
+import com.sun.jdi.BooleanValue;
 import com.sun.jdi.ByteType;
 import com.sun.jdi.CharType;
 import com.sun.jdi.ClassLoaderReference;
@@ -69,6 +71,7 @@ public class ExpEval {
 	public static final String VAR_NODE_DIR = "dir";
 	public static final String VAR_NODE_LEAF = "leaf";
 	public static final int VAR_NODE_VALUE_LEN = 50;
+	public static final int MAX_VAR_NODE = 50;
 	
 	private static String[] primitiveTypeNames = { "boolean", "byte", "char",
 		"short", "int", "long", "float", "double" };
@@ -473,26 +476,73 @@ public class ExpEval {
 		return v;
 	}
 	
-	public String etreeSubNode(String exp) {
+	private ReferenceType getCollectionRefType() {
+		VirtualMachine vm = debugger.getVm();
+	    ReferenceType refType = vm.classesByName("java.util.Collection").get(0);
+	    return refType;
+	}
+	
+	private ReferenceType getMapRefType() {
+		VirtualMachine vm = debugger.getVm();
+	    ReferenceType refType = vm.classesByName("java.util.Map").get(0);
+	    return refType;
+	}
+	
+	private boolean isRefType(ReferenceType refType, Value value) {
+	    List<Value> arguments = new ArrayList<Value>();
+	    arguments.add(value);
+	    boolean isInstance =((BooleanValue)invoke(refType.classObject(),"isInstance",arguments)).booleanValue();
+	    return isInstance;
+	}
+	
+	
+	private List<VarNode> getCollectionNodes(Value value) {
+	    
+		List<VarNode> varNodes = new ArrayList<VarNode>();
+	    List<Value> arguments = new ArrayList<Value>();
+	    arguments.add(value);
+    	Object iterator = invoke(value, "iterator", new ArrayList<Value>());
+    	int i = 0;
+    	while (true) {
+	    	boolean hasNext =((BooleanValue) invoke(iterator, "hasNext", new ArrayList<Value>())).booleanValue();
+	    	if (!hasNext) break;
+	    	Value next = invoke(iterator,"next",new ArrayList<Value>());
+			VarNode varNode = createVarNode("["+String.valueOf(i)+"]", next);
+			varNodes.add(varNode);
+			if (i++ >= MAX_VAR_NODE ) break;
+    	}
+    	return varNodes;
+	}
+	
+	private List<VarNode> getMapNodes(Value value) {
+	    List<Value> arguments = new ArrayList<Value>();
+	    arguments.add(value);
+    	Value entrySet = invoke(value, "entrySet", new ArrayList<Value>());
+    	return getCollectionNodes(entrySet);
+	}
+	
+	public String etreeSubNode(String uuid) {
 		
 		List<VarNode> varNodes = new ArrayList<VarNode>();
 		
-		ParseResult result = AstTreeFactory.getExpressionAst(exp);
-		Value value = (Value)evalTreeNode(result.getTree());
+		Value value = evalContext.get(uuid);
 		
 		if (value instanceof ArrayReference) {
 			try {
 				ArrayReference array = (ArrayReference)value;
-				int loopCount = array.length() > 20 ? 20 : array.length();
+				int loopCount = array.length() > MAX_VAR_NODE ? MAX_VAR_NODE : array.length();
 				for (int i=0; i<loopCount; i++) {
 					Value cellValue = array.getValue(i);
-					VarNode varNode = createVarNode(String.valueOf(i), cellValue);
+					VarNode varNode = createVarNode("["+String.valueOf(i)+"]", cellValue);
 					varNodes.add(varNode);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		 
+		} else if (isRefType(getCollectionRefType(),value)) {
+			varNodes = getCollectionNodes(value);
+		} else if (isRefType(getMapRefType(),value)) {
+			varNodes = getMapNodes(value);
 		} else if (value instanceof ObjectReference) {
 			
 			ObjectReference objRef = (ObjectReference) value;
@@ -532,8 +582,10 @@ public class ExpEval {
 		if (repr.length() > VAR_NODE_VALUE_LEN) {
 			repr = repr.substring(0, VAR_NODE_VALUE_LEN - 3) + "..." + repr.substring(repr.length() - 3);
 		}
-		
+		String uuid = UUID.randomUUID().toString();
 		VarNode varNode = new VarNode(varNodeName,varNodeType,varJavaType,repr);
+		varNode.setUuid(uuid);
+		putVar(uuid,value);
 		return varNode;
 	}
 
