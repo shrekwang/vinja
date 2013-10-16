@@ -2895,6 +2895,10 @@ class VarTree(object):
     def parse_tree_nodes(xml_str):
         var_nodes = []
         try :
+            xml_encoding = chardet.detect(xml_str).get("encoding")
+            if xml_encoding != "utf-8" :
+                xml_str = xml_str.decode(xml_encoding)
+                xml_str = xml_str.encode("utf-8")
             tree = fromstring(xml_str)
             entries = tree.findall("var")
 
