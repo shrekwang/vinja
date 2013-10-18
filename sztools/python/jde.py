@@ -2106,6 +2106,7 @@ class Jdb(object):
         vim.command("call SwitchToSzToolView('Jdb','belowright','%s')" % height)
         vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
         vim.command("nnoremap <buffer><silent>o      :python VarTree.open_selected_node()<cr>")
+        vim.command("setlocal cursorline")
         vim.command("call SetTabPageName('Jdb')")
         vim.command("set filetype=jdb")
 

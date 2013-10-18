@@ -470,7 +470,7 @@ public class ExpEval {
 				VarNode varNode = createVarNode(varNodeName, value);
 				varNodes.add(varNode);
 			} catch (ExpressionEvalException e) {
-				VarNode varNode = new VarNode(varNodeName,"dir","error",e.getMessage());
+				VarNode varNode = new VarNode(varNodeName,VAR_NODE_LEAF,"error",e.getMessage());
 				varNodes.add(varNode);
 			}
 		}
