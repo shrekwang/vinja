@@ -36,6 +36,7 @@ import com.sun.jdi.BooleanType;
 import com.sun.jdi.BooleanValue;
 import com.sun.jdi.ByteType;
 import com.sun.jdi.CharType;
+import com.sun.jdi.CharValue;
 import com.sun.jdi.ClassLoaderReference;
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassObjectReference;
@@ -1307,8 +1308,12 @@ public class ExpEval {
 			return sb.toString();
 		} else if (var instanceof StringReference) {
 			return "\"" + ((StringReference)var).value() + "\"";
+		} else if (var instanceof CharValue) {
+			return "'" + ((CharValue)var).value() + "'";
+			
 		} else if (var instanceof ObjectReference) {
 			Value strValue = invoke((ObjectReference) var, "toString", new ArrayList());
+			if (strValue == null) return "";
 			String v = strValue.toString();
 			if (v.startsWith("\"") &&  v.endsWith("\"")) {
 				v = v.substring(1, v.length()-1);

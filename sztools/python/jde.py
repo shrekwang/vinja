@@ -2854,6 +2854,7 @@ class VarTree(object):
 
     prefix_pat = re.compile(r"[^ \-+~`|]")
     tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
+    unknow_char_pat = re.compile("&#([0-9]+);|&#x([0-9a-fA-F]+);")
     instance = None
 
     def __init__(self,xml_str):
@@ -2899,6 +2900,8 @@ class VarTree(object):
             if xml_encoding != "utf-8" :
                 xml_str = xml_str.decode(xml_encoding)
                 xml_str = xml_str.encode("utf-8")
+            #some nasty char entity like &#0; will cause xml parse error,so just replace it;
+            xml_str=VarTree.unknow_char_pat.sub("?", xml_str)
             tree = fromstring(xml_str)
             entries = tree.findall("var")
 
