@@ -581,9 +581,11 @@ public class ExpEval {
 		}
 		String repr = getPrettyPrintStr(value);
 		repr = repr.replaceAll("\n", "\\\\n");
+		/*
 		if (repr.length() > VAR_NODE_VALUE_LEN) {
 			repr = repr.substring(0, VAR_NODE_VALUE_LEN - 3) + "..." + repr.substring(repr.length() - 3);
 		}
+		*/
 		String uuid = UUID.randomUUID().toString();
 		VarNode varNode = new VarNode(varNodeName,varNodeType,varJavaType,repr);
 		varNode.setUuid(uuid);

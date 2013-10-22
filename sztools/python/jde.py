@@ -2897,10 +2897,10 @@ class VarTree(object):
     def parse_tree_nodes(xml_str):
         var_nodes = []
         try :
-            xml_encoding = chardet.detect(xml_str).get("encoding")
+            xml_encoding = sys.getdefaultencoding()
             if xml_encoding != "utf-8" :
-                xml_str = xml_str.decode(xml_encoding)
-                xml_str = xml_str.encode("utf-8")
+                xml_str = xml_str.decode(xml_encoding,"ignore")
+                xml_str = xml_str.encode("utf-8","replace")
             #some nasty char entity like &#0; will cause xml parse error,so just replace it;
             xml_str=VarTree.unknow_char_pat.sub("?", xml_str)
             tree = fromstring(xml_str)
@@ -2918,7 +2918,8 @@ class VarTree(object):
                 v = VarNode(name,value, is_dir,uuid,javatype)
                 var_nodes.append(v)
             return var_nodes
-        except Exception:
+        except Exception as e :
+            logging.debug("error in parse_tree_nodes : %s " % e)
             return xml_str
 
 
