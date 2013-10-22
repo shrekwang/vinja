@@ -39,4 +39,3 @@ C     :change root to select node
 B     :change root back
 U     :change root to upper dir
 QQ    :dispse the project tree
-S     :save tree status
