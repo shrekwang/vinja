@@ -629,8 +629,10 @@ endfunction
 
 function! Jdesp()
   python MiscUtil.select_project_open()
-  call Jdext()
-  call ProjectTree()
+  silent call Shext()
+  silent tabnew
+  silent call Jdext()
+  silent call ProjectTree()
 endfunction
 
 
