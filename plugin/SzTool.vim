@@ -405,6 +405,8 @@ function ProjectTree(...)
     map <silent><buffer> >     :python projectTree.get_next_open_node()<cr>
     map <silent><buffer> e     :python projectTree.open_with_default()<cr>
     map <silent><buffer> E     :python projectTree.open_in_terminal()<cr>
+    map <silent><buffer> <C-j> :python projectTree.goto_next_sibling()<cr>
+    map <silent><buffer> <C-k> :python projectTree.goto_prev_sibling()<cr>
 
     map <silent><buffer> @     :python projectTree.gotoBookmark()<cr>
     map <silent><buffer> DD    :python projectTree.delete_node()<cr>

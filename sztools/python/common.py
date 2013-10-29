@@ -1049,7 +1049,8 @@ class EditHistory(object):
         filename = filename.replace("\\","/")
         for uuid_str in self.history :
             file_list = self.history.get(uuid_str)
-            if filename in file_list :
-                file_list.remove(filename)
+            for path1 in file_list :
+                if PathUtil.same_path(path1, filename):
+                    file_list.remove(path1)
 
 initSztool()

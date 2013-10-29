@@ -43,6 +43,20 @@ class TreeNode(object):
     def get_children(self) :
         return self._children
 
+    def get_next_sibling(self):
+        if self.parent  == None :
+            return None
+        for index,node in  enumerate(self.parent._children) :
+            if node ==  self  and index < len(self.parent._children) -1 :
+                return self.parent._children[index+1]
+
+    def get_prev_sibling(self):
+        if self.parent  == None :
+            return None
+        for index,node in  enumerate(self.parent._children) :
+            if node ==  self  and index > 0: 
+                return self.parent._children[index-1]
+
     def add_child(self,child):
         self._children.append(child)
         child.parent = self
@@ -765,6 +779,18 @@ class ProjectTree(object):
         node = self.get_selected_node()
         if node.parent != None :
             self.select_node(node.parent)
+
+    def goto_next_sibling(self):
+        node = self.get_selected_node()
+        sibling = node.get_next_sibling()
+        if sibling != None :
+            self.select_node(sibling)
+
+    def goto_prev_sibling(self):
+        node = self.get_selected_node()
+        sibling = node.get_prev_sibling()
+        if sibling != None :
+            self.select_node(sibling)
 
     def get_next_open_node(self):
         (row,col) = vim.current.window.cursor
