@@ -8,6 +8,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.google.code.vimsztool.util.BufferStore;
+import com.google.code.vimsztool.util.IdGenerator;
 import com.google.code.vimsztool.util.VjdeUtil;
 
 public abstract class SzjdeShextCommand extends SzjdeCommand {
@@ -26,7 +27,7 @@ public abstract class SzjdeShextCommand extends SzjdeCommand {
 		vimServerName = params.get(SzjdeConstants.PARAM_VIM_SERVER);
 		bufname = params.get(SzjdeConstants.PARAM_BUF_NAME);
 		
-		uuid=UUID.randomUUID().toString();
+		uuid=IdGenerator.getUniqueId();
 		BufferStore.put(uuid, buffer);
 		exec = Executors.newScheduledThreadPool(1);
         exec.scheduleAtFixedRate(new BufferChecker(buffer,uuid), 1, 200, TimeUnit.MILLISECONDS);

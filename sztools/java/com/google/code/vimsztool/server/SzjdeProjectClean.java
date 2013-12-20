@@ -15,6 +15,7 @@ import com.google.code.vimsztool.compiler.CompilerContextManager;
 import com.google.code.vimsztool.compiler.JDTCompiler;
 import com.google.code.vimsztool.parser.JavaSourceSearcher;
 import com.google.code.vimsztool.util.BufferStore;
+import com.google.code.vimsztool.util.IdGenerator;
 import com.google.code.vimsztool.util.VjdeUtil;
 
 public class SzjdeProjectClean extends SzjdeShextCommand {
@@ -131,7 +132,7 @@ public class SzjdeProjectClean extends SzjdeShextCommand {
 	public Thread callBackJob () {
 		return new Thread() {
 			public void run() {
-				uuid=UUID.randomUUID().toString();
+				uuid=IdGenerator.getUniqueId();
 				BufferStore.put(uuid, sb);
 				
 				String funcName = "HandleBuildResult";

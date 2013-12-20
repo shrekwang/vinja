@@ -20,6 +20,7 @@ import com.google.code.vimsztool.omni.ClassMetaInfoManager;
 import com.google.code.vimsztool.parser.JavaSourceSearcher;
 import com.google.code.vimsztool.util.BufferStore;
 import com.google.code.vimsztool.util.HotSwapUtil;
+import com.google.code.vimsztool.util.IdGenerator;
 import com.google.code.vimsztool.util.JdeLogger;
 import com.google.code.vimsztool.util.VjdeUtil;
 
@@ -43,7 +44,7 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		
 		String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
 		if (sourceFile.equals("All")) {
-			uuid=UUID.randomUUID().toString();
+			uuid=IdGenerator.getUniqueId();
 			BufferStore.put(uuid, buffer);
 			exec = Executors.newScheduledThreadPool(1);
 	        exec.scheduleAtFixedRate(new BufferChecker(buffer,uuid), 1, 200, TimeUnit.MILLISECONDS);
@@ -59,7 +60,7 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 		
 		new BufferChecker(buffer,uuid).run();
 		
-		uuid=UUID.randomUUID().toString();
+		uuid=IdGenerator.getUniqueId();
 		BufferStore.put(uuid, resultBuffer);
 		
 		String funcName = "HandleBuildResult";

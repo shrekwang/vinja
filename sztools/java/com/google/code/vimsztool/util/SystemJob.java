@@ -33,7 +33,7 @@ public class SystemJob extends Thread {
 		this.jobId = jobId;
 		this.cmdArray = cmd.split("::");
 		this.vimServerName = vimServerName;
-		this.uuid = UUID.randomUUID().toString();
+		this.uuid = IdGenerator.getUniqueId();
 		this.bufname = bufname;
 		this.workDir = workDir;
 		this.origCmdLine = origCmdLine;
