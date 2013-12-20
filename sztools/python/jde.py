@@ -2549,7 +2549,7 @@ class Jdb(object):
         if data : 
             if cmdLine.startswith("eval") or cmdLine.startswith("print")  \
                     or cmdLine.startswith("locals") or cmdLine.startswith("fields") \
-                    or cmdLine.startswith("eval_display") :
+                    or cmdLine.startswith("geval") or cmdLine.startswith("eval_display") :
 
                 varTree = VarTree.createVarTree(data)
                 self.stdout(varTree.renderToString())

@@ -29,6 +29,7 @@ import com.google.code.vimsztool.parser.AstTreeFactory;
 import com.google.code.vimsztool.parser.JavaParser;
 import com.google.code.vimsztool.parser.JavaSourceSearcher;
 import com.google.code.vimsztool.parser.ParseResult;
+import com.google.code.vimsztool.util.IdGenerator;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ArrayType;
@@ -195,19 +196,17 @@ public class ExpEval {
 	}
 	public String globExpEval(String globExp, boolean inspect) {
 		String[] exps = globExp.split(",");
-		StringBuilder sb = new StringBuilder();
+		List<VarNode> allNodes = new ArrayList<VarNode>();
 		for (int i=0; i<exps.length; i++) {
 			String exp = exps[i];
-			sb.append(singleGlobExpEval(exp.trim(),inspect));
-			if (i <exps.length-1) {
-				sb.append(SEP_ROW_TXT);
-			}
+			allNodes.addAll(singleGlobExpEval(exp.trim()));
 		}
-		return sb.toString();
-		
+		String v=XmlGenerate.generate(allNodes);
+		return v;
 	}
 	
-	public String singleGlobExpEval(String globExp, boolean inspect) {
+	public List<VarNode> singleGlobExpEval(String globExp) {
+		
 		ThreadReference threadRef = checkAndGetCurrentThread();
 		SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
 		Value value = null;
@@ -254,17 +253,13 @@ public class ExpEval {
 			}
 		} catch (Throwable e) {
 		}
-		StringBuilder sb = new StringBuilder();
+		
+		List<VarNode> varNodes = new ArrayList<VarNode>();
 		for (String name : evalResult.keySet()) {
-			if (inspect) {
-				sb.append(getInspectFieldsStr(name, (ObjectReference)evalResult.get(name)));
-			} else {
-				sb.append(name).append(" : ");
-				sb.append(getPrettyPrintStr(evalResult.get(name)));
-			}
-			sb.append("\n");
+			VarNode varNode = createVarNode(name, evalResult.get(name));
+	        varNodes.add(varNode);
 		}
-		return sb.toString();
+		return varNodes;
 		
 	}
 	
@@ -586,7 +581,7 @@ public class ExpEval {
 			repr = repr.substring(0, VAR_NODE_VALUE_LEN - 3) + "..." + repr.substring(repr.length() - 3);
 		}
 		*/
-		String uuid = UUID.randomUUID().toString();
+		String uuid = IdGenerator.getUniqueId();
 		VarNode varNode = new VarNode(varNodeName,varNodeType,varJavaType,repr);
 		varNode.setUuid(uuid);
 		putVar(uuid,value);
