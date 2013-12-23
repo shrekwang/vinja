@@ -422,8 +422,15 @@ public class Debugger {
 		checkVm();
 		checkSuspendThread();
 		
+		
 		ThreadReference threadRef = suspendThreadStack.getCurThreadRef();
 		try {
+			if (frameNum < 0 || frameNum > threadRef.frameCount() -1 ) {
+				frameNum = suspendThreadStack.getCurFrame();
+				Location loc = threadRef.frame(frameNum).location();
+				changeVimEditSourceLocaton(loc);
+				return "success";
+			}
 			Location loc = threadRef.frame(frameNum).location();
 			ReferenceType refType= loc.declaringType();
 			suspendThreadStack.setCurRefType(refType);
