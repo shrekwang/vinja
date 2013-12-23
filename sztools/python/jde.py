@@ -2140,6 +2140,18 @@ class Jdb(object):
                 """ % (self.cur_dir, self.project_root, self.class_path_xml)
 
     def handleJdiEvent(self,args):
+        #first check whether the current tab is jdb tab
+        #if not ,then go through a loop to find the jdb tab
+        cur_tab = int(vim.eval("tabpagenr()"))
+        jdbvar = vim.eval('gettabvar('+str(cur_tab)+',"jdb_tab")')
+        if jdbvar != "true" :
+            tab_count = int(vim.eval("tabpagenr('$')"))
+            for i in range(1,tab_count+1):
+                jdbvar = vim.eval('gettabvar('+str(i)+',"jdb_tab")')
+                if jdbvar == "true" :
+                    vim.command("tabn %s" % str(i)) 
+                    break
+
         if args[0] == "suspend" :
             self.handleSuspend(args[1],args[2],args[3],args[4])
         elif args[0] == "msg" :
@@ -2222,21 +2234,7 @@ class Jdb(object):
             vim.command("setlocal statusline=\ Jdb")
 
     def handleSuspend(self,abs_path,lineNum,className,appendOperate):
-
-        #first check whether the current tab is jdb tab
-        #if not ,then go through a loop to find the jdb tab
-        cur_tab = int(vim.eval("tabpagenr()"))
-        jdbvar = vim.eval('gettabvar('+str(cur_tab)+',"jdb_tab")')
-        if jdbvar != "true" :
-            tab_count = int(vim.eval("tabpagenr('$')"))
-            for i in range(1,tab_count+1):
-                jdbvar = vim.eval('gettabvar('+str(i)+',"jdb_tab")')
-                if jdbvar == "true" :
-                    vim.command("tabn %s" % str(i)) 
-                    break
-
         self.switchSourceBuffer()
-        
         bufnr=str(vim.eval("bufnr('%')"))
         if os.path.exists(abs_path) or abs_path.startswith("jar:") :
             if not PathUtil.same_path(abs_path, vim.current.buffer.name):
