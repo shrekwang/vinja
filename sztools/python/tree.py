@@ -155,11 +155,11 @@ class TreeNode(object):
         names = []
         parentNode = self
         while True :
-            names.append(parentNode.name)
+            names.insert(0,parentNode.name)
             parentNode = parentNode.parent
             if parentNode == None :
                 break
-        return "/".join(names)
+        return "/".join(names[1:])
 
 
 class NormalDirNode(TreeNode):
@@ -183,7 +183,10 @@ class NormalDirNode(TreeNode):
             if self._default_hidden(file_name):
                 continue
             abpath = os.path.join(self.realpath, file_name)
-            relpath = self.get_rel_path() + "/" + file_name
+            if self.get_rel_path() == "" :
+                relpath = file_name
+            else :
+                relpath = self.get_rel_path() + "/" + file_name
             if not self.projectTree.node_visible(relpath):
                 self.hidden_nodes.add(file_name)
                 continue
@@ -476,6 +479,9 @@ class WorkSpaceRootNode(NormalDirNode):
         dirs.sort()
 
         for dir_name, abpath in dirs :
+            if not self.projectTree.node_visible(dir_name):
+                self.hidden_nodes.add(dir_name)
+                continue
             node = NormalDirNode(dir_name, abpath, self.projectTree)
             self.add_child(node)
         
@@ -553,31 +559,6 @@ class ProjectRootNode(NormalDirNode):
                 lib_src_node.add_child(node)
             except Exception , e:
                 logging.debug(basename+" not exists or is corrupted")
- 
-
-    def _build_file_nodes(self):
-        files, dirs = [], []
-        
-        for file_name in os.listdir(self.root_dir) :
-            if file_name.startswith(".") :
-                continue
-            abpath = os.path.join(self.root_dir,file_name)
-            if not self.projectTree.node_visible(file_name) :
-                self.hidden_nodes.add(file_name)
-                continue
-            if os.path.isdir(abpath) :
-                dirs.append((file_name, abpath))
-            else :
-                files.append((file_name, abpath))
-
-        dirs.sort()
-        files.sort()
-        for dir_name, abpath in dirs :
-            node = NormalDirNode(dir_name, abpath, self.projectTree)
-            self.add_child(node)
-        for file_name, abpath in files :
-            node = NormalFileNode(file_name, abpath, isDirectory=False)
-            self.add_child(node)
 
     def refresh(self):
         self._load_dir_content()
@@ -812,8 +793,6 @@ class ProjectTree(object):
     def filter_display_node(self):
         node = self.get_selected_node()
         relpath = node.get_rel_path()
-        if relpath == "." :
-            relpath = ""
         curdir_workset = []
         if os.path.exists(self.workset_config_path):
             lines = [line.strip() for line in file(self.workset_config_path) ]
@@ -892,8 +871,6 @@ class ProjectTree(object):
         
         workset = []
         node_relpath = parent_node.get_rel_path()
-        if node_relpath == "." :
-            node_relpath = ""
         if os.path.exists(self.workset_config_path):
             lines = [line.strip() for line in file(self.workset_config_path) ]
             workset =[line for line in lines if os.path.dirname(line) != node_relpath ]
@@ -902,7 +879,10 @@ class ProjectTree(object):
             file_name = file_name.strip()
             if file_name == "*" or file_name == "" : 
                 continue
-            relpath = node_relpath + "/" + file_name
+            if node_relpath != "" :
+                relpath = node_relpath + "/" + file_name
+            else :
+                relpath = file_name
             workset.append(relpath)
         workset_file = open(self.workset_config_path,"w") 
         for item in workset :
