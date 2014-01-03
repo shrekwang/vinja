@@ -31,6 +31,16 @@ class PathUtil(object):
         else :
             return False
 
+    @staticmethod
+    def in_directory(sub_path, dir_path):
+        #make both absolute    
+        dir_path = os.path.realpath(dir_path)
+        sub_path = os.path.realpath(sub_path)
+
+        #return true, if the common prefix of both is equal to dir_path
+        #e.g. /a/b/c/d.rst and dir_path is /a/b, the common prefix is /a/b
+        return os.path.commonprefix([sub_path, dir_path]) == dir_path
+
 class ZipUtil(object):
     @staticmethod
     def read_zip_cmd():

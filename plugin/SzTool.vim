@@ -408,7 +408,7 @@ function ProjectTree(...)
     map <silent><buffer> <C-j> :python projectTree.goto_next_sibling()<cr>
     map <silent><buffer> <C-k> :python projectTree.goto_prev_sibling()<cr>
 
-    map <silent><buffer> @     :python projectTree.gotoBookmark()<cr>
+    map <silent><buffer> #     :python projectTree.changeTreeType()<cr>
     map <silent><buffer> DD    :python projectTree.delete_node()<cr>
     map <silent><buffer> Dm    :python projectTree.delete_marked_node()<cr>
     map <silent><buffer> A     :python projectTree.add_node()<cr>

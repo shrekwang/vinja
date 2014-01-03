@@ -149,6 +149,19 @@ class TreeNode(object):
     def get_content(self,encoding=None):
         return ""
 
+    def get_rel_path(self):
+        if self.parent == None :
+            return ""
+        names = []
+        parentNode = self
+        while True :
+            names.append(parentNode.name)
+            parentNode = parentNode.parent
+            if parentNode == None :
+                break
+        return "/".join(names)
+
+
 class NormalDirNode(TreeNode):
 
     def __init__(self,dir_name,abpath,projectTree):
@@ -170,7 +183,8 @@ class NormalDirNode(TreeNode):
             if self._default_hidden(file_name):
                 continue
             abpath = os.path.join(self.realpath, file_name)
-            if not self.projectTree.node_visible(abpath):
+            relpath = self.get_rel_path() + "/" + file_name
+            if not self.projectTree.node_visible(relpath):
                 self.hidden_nodes.add(file_name)
                 continue
             if os.path.isdir(abpath) :
@@ -429,6 +443,44 @@ class ZipRootNode(TreeNode):
             else :
                 parentNode = sameChild
 
+class WorkSpaceRootNode(NormalDirNode):
+
+    def __init__(self, root_dir,projectTree):
+        super(WorkSpaceRootNode, self).__init__("workSpace",root_dir,projectTree)
+        self.name="workSpace"
+        self.root_dir = root_dir
+        self.projectTree = projectTree
+        self._load_workspace()
+        self.isOpen = True
+
+    def refresh(self):
+        self._load_workspace()
+
+    def _load_workspace(self) :
+        workspace_dirs = []
+
+        shext_bm_path = os.path.join(SzToolsConfig.getDataHome(), "shext-bm.txt")
+        lines = open(shext_bm_path).readlines()
+        for line in lines:
+            path_start = line.find(" ")
+            name = line[0:path_start]
+            path = line[path_start:-1].strip()
+            workspace_dirs.append(path)
+
+        self._children = []
+
+        dirs = []
+        for abpath in workspace_dirs :
+            if os.path.isdir(abpath) :
+                dirs.append((os.path.basename(abpath), abpath))
+        dirs.sort()
+
+        for dir_name, abpath in dirs :
+            node = NormalDirNode(dir_name, abpath, self.projectTree)
+            self.add_child(node)
+        
+        self.isLoaded = True
+
 class ProjectRootNode(NormalDirNode):
 
     def __init__(self,root_dir, projectTree):
@@ -510,7 +562,7 @@ class ProjectRootNode(NormalDirNode):
             if file_name.startswith(".") :
                 continue
             abpath = os.path.join(self.root_dir,file_name)
-            if not self.projectTree.node_visible(abpath) :
+            if not self.projectTree.node_visible(file_name) :
                 self.hidden_nodes.add(file_name)
                 continue
             if os.path.isdir(abpath) :
@@ -534,17 +586,25 @@ class ProjectRootNode(NormalDirNode):
 
 class ProjectTree(object):
 
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, treeType="currentDir"):
         self.yank_buffer = []
         self.remove_orignal = False 
         self.work_path_set = []
-        self.workset_config_path = os.path.join(root_dir, ".jde_work_set")
-        self.tree_state_path = os.path.join(root_dir, ".jde_tree_state")
+
+        workspace_root = os.path.join(SzToolsConfig.getDataHome(), "workspace")
+        if not os.path.exists(workspace_root):
+            os.mkdir(workspace_root)
+
+        self.root_dir = root_dir if treeType == "currentDir" else workspace_root
+        self.workset_config_path = os.path.join(self.root_dir, ".jde_work_set")
+        self.tree_state_path = os.path.join(self.root_dir, ".jde_tree_state")
         self.prefix_pat = re.compile(r"[^ \-+~`|]")
         self.tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
-        self.root_dir = root_dir
         self._load_project_workset()
-        self.root = ProjectRootNode(self.root_dir,self)
+        if treeType == "currentDir" :
+            self.root = ProjectRootNode(self.root_dir,self)
+        else :
+            self.root = WorkSpaceRootNode(self.root_dir,self)
         self.root_map = {}
         self.project_encoding = self._get_project_encoding()
 
@@ -568,7 +628,7 @@ class ProjectTree(object):
         self.work_path_set = []
         for line in open(self.workset_config_path):
             line = line.strip()
-            self.work_path_set.append(os.path.join(self.root_dir,line))
+            self.work_path_set.append(line)
 
     def _get_tab_id(self):
         cur_tab = vim.eval("tabpagenr()")
@@ -589,17 +649,17 @@ class ProjectTree(object):
             return self.root
         return node
     
-    def node_visible(self, abs_path):
+    def node_visible(self, rel_path):
         if len(self.work_path_set) == 0 :
             return True
         curdir_workset =[]
         for work_path in self.work_path_set :
-            if os.path.dirname(abs_path) == os.path.dirname(work_path) :
+            if os.path.dirname(rel_path) == os.path.dirname(work_path) :
                 curdir_workset.append(work_path)
         if len(curdir_workset) == 0 :
             return True
         for work_path in curdir_workset :
-            if fnmatch.fnmatch(abs_path, work_path) :
+            if fnmatch.fnmatch(rel_path, work_path) :
                 return True
         return False
 
@@ -751,8 +811,7 @@ class ProjectTree(object):
 
     def filter_display_node(self):
         node = self.get_selected_node()
-        relpath = os.path.relpath(node.realpath, self.root.realpath)
-        #the node is root node
+        relpath = node.get_rel_path()
         if relpath == "." :
             relpath = ""
         curdir_workset = []
@@ -831,29 +890,19 @@ class ProjectTree(object):
 
     def _save_display_info(self, parent_node, file_names):
         
-        """
-        if os.path.exists(self.workset_config_path):
-            workset = open(self.workset_config_path,"r").readlines()
-        parent_relpath = os.path.relpath(parent_node.realpath, self.root.realpath)
-        not_parent_filter = lambda path : not parent_relpath.startswith(path) \
-            and os.path.dirname(path) != parent_relpath
-        workset = [ line.strip() for line in workset if not_parent_filter(line.strip()) ]
-        """
-
         workset = []
-        relpath = os.path.relpath(parent_node.realpath, self.root.realpath)
-        if relpath == "." :
-            relpath = ""
+        node_relpath = parent_node.get_rel_path()
+        if node_relpath == "." :
+            node_relpath = ""
         if os.path.exists(self.workset_config_path):
             lines = [line.strip() for line in file(self.workset_config_path) ]
-            workset =[line for line in lines if os.path.dirname(line) != relpath ]
+            workset =[line for line in lines if os.path.dirname(line) != node_relpath ]
 
         for file_name in file_names :
             file_name = file_name.strip()
             if file_name == "*" or file_name == "" : 
                 continue
-            abpath = os.path.join(parent_node.realpath, file_name)
-            relpath = os.path.relpath(abpath, self.root.realpath)
+            relpath = node_relpath + "/" + file_name
             workset.append(relpath)
         workset_file = open(self.workset_config_path,"w") 
         for item in workset :
@@ -1156,6 +1205,11 @@ class ProjectTree(object):
     def open_path(self, path, node = None, abpath = True ):
         if node == None :
             node = self._get_render_root() 
+            if isinstance(node,WorkSpaceRootNode) :
+                for child in node.get_children():
+                    if PathUtil.in_directory(path,child.realpath): 
+                        node = child
+                        break
 
         if path.startswith("jar:") :
             zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
@@ -1203,6 +1257,13 @@ class ProjectTree(object):
     def find_node(self,path, node=None):
         if node == None :
             node = self.root
+            #workspaceRoot is just virtual node, search child nodes
+            if isinstance(node,WorkSpaceRootNode) :
+                for child in node.get_children():
+                    if PathUtil.in_directory(path,child.realpath): 
+                        node = child
+                        break
+
         if path == None :
             return None
 
@@ -1323,6 +1384,11 @@ class ProjectTree(object):
         return tree
 
     @staticmethod
+    def create_workspace_tree(projectRoot = None) :
+        tree = ProjectTree(projectRoot, "workSpace")
+        return tree
+
+    @staticmethod
     def set_file_edit(path, flag):
         if "projectTree" not in globals() :
             return 
@@ -1397,35 +1463,30 @@ class ProjectTree(object):
             vim.command("exec 'wincmd w'")
 
     @staticmethod
-    def gotoBookmark():
-        shext_bm_path = os.path.join(SzToolsConfig.getDataHome(), "shext-bm.txt")
-        lines = open(shext_bm_path).readlines()
-        options = []
-        bm_dict = {}
-        for line in lines:
-            path_start = line.find(" ")
-            name = line[0:path_start]
-            path = line[path_start:-1].strip()
-            options.append(name)
-            bm_dict[name] = path
-        selectedIndex = VimUtil.inputOption(options)
-        if (selectedIndex) :
-            global projectTree
-            if projectTree != None :
-                projectTree.save_status()
-            projectTree = None
-            del globals()["projectTree"]
-            vim.command("setlocal modifiable")
-            vim_buffer = vim.current.buffer
-            vim_buffer[:] = None
-            vim.command("setlocal nomodifiable")
-            treeRootName = options[int(selectedIndex)]
-            treeRootPath = bm_dict[treeRootName]
-            projectTree = ProjectTree.create_project_tree(treeRootPath)
+    def changeTreeType():
+        global projectTree
+        if projectTree == None :
+            return 
+        if isinstance(projectTree.root,WorkSpaceRootNode) :
+            oldTreeType = "workSpaceTree"
+        else :
+            oldTreeType = "projectTree"
+        projectTree.save_status()
+        projectTree = None
+        del globals()["projectTree"]
+        vim.command("setlocal modifiable")
+        vim_buffer = vim.current.buffer
+        vim_buffer[:] = None
+        vim.command("setlocal nomodifiable")
+        if oldTreeType == "workSpaceTree"  :
+            projectTree = ProjectTree.create_project_tree()
+        else :
+            projectTree = ProjectTree.create_workspace_tree()
+        projectTree.restore_status()
+        projectTree.render_tree()
 
-            projectTree.restore_status()
-            projectTree.render_tree()
-            
-            vim.command("exec 'wincmd w'")
-            projectTree.restore_status(node_type="file")
-            vim.command("exec 'wincmd w'")
+        vim.command("exec 'wincmd w'")
+        projectTree.restore_status(node_type="file")
+        vim.command("exec 'wincmd w'")
+
+
