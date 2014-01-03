@@ -1238,6 +1238,8 @@ class ProjectTree(object):
             return "/".join(tree_path)
 
     def find_node(self,path, node=None):
+        if path == None :
+            return None
         if node == None :
             node = self.root
             #workspaceRoot is just virtual node, search child nodes
@@ -1246,9 +1248,8 @@ class ProjectTree(object):
                     if PathUtil.in_directory(path,child.realpath): 
                         node = child
                         break
-
-        if path == None :
-            return None
+                if node.realpath == path :
+                    return node
 
         #TODO search in normal dir for jar first
         if path.startswith("jar:") :
