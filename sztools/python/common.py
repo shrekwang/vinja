@@ -838,9 +838,7 @@ class VimUtil(object):
     def writeToSzToolBuffer(name, text, append=False):
         if not text : return
         buf = VimUtil.getSzToolBuffer(name)
-        logging.debug("writeToSzToolBuffer1")
         VimUtil.outputText(text,buf, append)
-        logging.debug("writeToSzToolBuffer2")
         if append and VimUtil.isSzToolBufferVisible(name):
             endrow = len(buf)
             callback = lambda : VimUtil.scrollTo(endrow)
@@ -849,7 +847,6 @@ class VimUtil(object):
     @staticmethod
     def outputText(content,buffer=None,append=False):
 
-        logging.debug("outputText0")
         global endsWithNewLine 
 
         if buffer == None:
@@ -863,7 +860,6 @@ class VimUtil(object):
         if lines.endswith("\n") :
             lines = lines[:-1]
 
-        logging.debug("outputText1")
         rowList = str(lines).split("\n")
         for index,line in enumerate(rowList):  
             if index == 0 :
@@ -876,7 +872,6 @@ class VimUtil(object):
             else :
                 buffer.append(line)  
 
-        logging.debug("outputText2")
         if content.endswith("\n") :
             endsWithNewLine = True
         else :
