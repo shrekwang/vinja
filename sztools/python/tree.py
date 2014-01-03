@@ -587,7 +587,6 @@ class ProjectRootNode(NormalDirNode):
 class ProjectTree(object):
 
     def __init__(self, root_dir, treeType="currentDir"):
-        self.yank_buffer = []
         self.remove_orignal = False 
         self.work_path_set = []
 
@@ -717,7 +716,8 @@ class ProjectTree(object):
             node = self.get_selected_node(row_num)
             nodes.append(node)
         node = self.get_selected_node()
-        self.yank_buffer = nodes
+        global yank_buffer 
+        yank_buffer = nodes
         self.remove_orignal = remove_orignal
         print "visual selected node has been yanked"
 
@@ -1004,13 +1004,15 @@ class ProjectTree(object):
 
     def yank_selected_node(self, remove_orignal = False):
         node = self.get_selected_node()
-        self.yank_buffer = [node]
+        global yank_buffer 
+        yank_buffer = [node]
         self.remove_orignal = remove_orignal
         print "selected node has been yanked"
 
     def yank_marked_node(self, remove_orignal = False):
         nodes = self.get_marked_nodes()
-        self.yank_buffer = nodes
+        global yank_buffer 
+        yank_buffer = nodes
         self.remove_orignal = remove_orignal
         print "visible marked node has been yanked"
 
@@ -1052,7 +1054,8 @@ class ProjectTree(object):
             self.select_node(last_sub_node)
 
     def paste(self):
-        self._do_paste(self.yank_buffer,self.remove_orignal)
+        global yank_buffer 
+        self._do_paste(yank_buffer,self.remove_orignal)
 
     def paste_from_clipBoard(self):
         files = BasicTalker.getClipbordContent().split(";")
