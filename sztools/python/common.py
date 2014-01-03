@@ -36,10 +36,14 @@ class PathUtil(object):
         #make both absolute    
         dir_path = os.path.realpath(dir_path)
         sub_path = os.path.realpath(sub_path)
+        if dir_path == sub_path :
+            return True
 
-        #return true, if the common prefix of both is equal to dir_path
-        #e.g. /a/b/c/d.rst and dir_path is /a/b, the common prefix is /a/b
-        return os.path.commonprefix([sub_path, dir_path]) == dir_path
+        if os.path.commonprefix([sub_path, dir_path]) == dir_path :
+            sep = sub_path[len(dir_path)]
+            if sep == "/" or sep == "\\"  :
+                return True
+        return False
 
 class ZipUtil(object):
     @staticmethod
