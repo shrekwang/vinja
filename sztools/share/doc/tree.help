@@ -21,7 +21,7 @@ F     :search node content for content in the vim search register.
 <C-k> :jump to prev sibling
 e     :open select node with system default application(open directory in file explorer)
 E     :open select node in terminal 
-@     :goto bookmark
+#     :toggle between current dir tree and bookmarks(use bm* command to manage bookmarks in Shext)
 
 DD    :delete select dir or file
 Dm    :delete marked dir or file
