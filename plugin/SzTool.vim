@@ -436,6 +436,7 @@ function ProjectTree(...)
     vmap <silent><buffer> yy   :python projectTree.yank_visual_node(False)<cr>
     vmap <silent><buffer> dd   :python projectTree.yank_visual_node(True)<cr>
 	endif
+  exec 'wincmd w'
 endfunction
 
 function PlayDict(word)

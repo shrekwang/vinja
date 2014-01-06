@@ -570,6 +570,7 @@ class ProjectTree(object):
     def __init__(self, root_dir, treeType="currentDir"):
         self.remove_orignal = False 
         self.work_path_set = []
+        self.edit_history = []
 
         workspace_root = os.path.join(SzToolsConfig.getDataHome(), "workspace")
         if not os.path.exists(workspace_root):
@@ -1287,10 +1288,10 @@ class ProjectTree(object):
         return found_node
 
     def save_status(self, closeFile = True):
-        opened_nodes = []
+        opened_dir_nodes = []
         def _get_opened_nodes(current_node) :
             if current_node.isOpen :
-                opened_nodes.append(current_node.realpath)
+                opened_dir_nodes.append(current_node.realpath)
             if not current_node.isLoaded :
                 return
             for child in current_node.get_children():
@@ -1300,10 +1301,15 @@ class ProjectTree(object):
                     bufnr = vim.eval("bufnr('%s')" % child.realpath)    
                     if bufnr != "-1" and closeFile:
                         vim.command('Bclose %s' % bufnr)
-                    opened_nodes.append(child.realpath)
+                    #opened_dir_nodes.append(child.realpath)
         _get_opened_nodes(self._get_render_root())
+
         tree_state_file = open(self.tree_state_path,"w") 
-        for path in  opened_nodes :
+        for path in  opened_dir_nodes :
+            tree_state_file.write(path)
+            tree_state_file.write("\n")
+        rev_history = self.edit_history[::-1]
+        for path in  rev_history :
             tree_state_file.write(path)
             tree_state_file.write("\n")
         tree_state_file.close()
@@ -1384,6 +1390,10 @@ class ProjectTree(object):
         node = projectTree.find_node(path)
         if node != None :
             node.set_edit_flag(flag)
+            if path in projectTree.edit_history :
+                projectTree.edit_history.remove(path)
+            if flag :
+                projectTree.edit_history.insert(0,path)
         else : 
             return
 
