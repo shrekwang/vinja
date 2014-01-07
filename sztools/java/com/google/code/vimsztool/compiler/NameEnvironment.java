@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 
 import org.apache.commons.io.FilenameUtils;
@@ -111,22 +112,29 @@ public class NameEnvironment implements INameEnvironment {
         return null;
     }
 
-    private boolean isPackage(String result) {
-        if (targetClassNames.get(result) != null) {
-            return false;
-        }
-        String resourceName = result.replace('.', '/') + ".class";
-        try {
-	        ClassLoader classLoader=ctx.getClassLoader();
-	        InputStream is = classLoader.getResourceAsStream(resourceName);
-            if (is != null && isValidResource(classLoader.getResource(resourceName))) {
-            	return false;
-            }
-	        return true;
-        } catch (Exception e) {
-        }
-        return false;
-    }
+	private boolean isPackage(String result) {
+		if (targetClassNames.get(result) != null) {
+			return false;
+		}
+		String resourceName = result.replace('.', '/') + ".class";
+		try {
+			ClassLoader classLoader = ctx.getClassLoader();
+			// InputStream is = classLoader.getResourceAsStream(resourceName);
+			URL url = classLoader.getResource(resourceName);
+			if (url != null) {
+				URLConnection uc = url.openConnection();
+				uc.setUseCaches(false);
+				InputStream is = uc.getInputStream();
+				if (is != null && isValidResource(classLoader.getResource(resourceName))) {
+					return false;
+				}
+			}
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
 
     public boolean isPackage(char[][] parentPackageName, 
                              char[] packageName) {
