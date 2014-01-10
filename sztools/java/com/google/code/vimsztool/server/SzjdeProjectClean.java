@@ -43,6 +43,11 @@ public class SzjdeProjectClean extends SzjdeShextCommand {
 					}
 				}
 				
+				//close jar file opened by classLoader
+				out.println("closing jar files...");
+				out.println("");
+				cc.clean();
+				
 				out.println("reload classpath...");
 				out.println("");
 				CompilerContextManager ccm = CompilerContextManager.getInstnace();

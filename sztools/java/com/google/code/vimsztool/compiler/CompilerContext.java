@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +49,7 @@ public class CompilerContext {
 	private List<String> extOutputDirs = new ArrayList<String>();
 	
 	private List<URL> classPathUrls = new ArrayList<URL>();
+	private List<URLConnection> cachedJarConns = new ArrayList<URLConnection>();
 	private Preference pref = Preference.getInstance();
 	private PackageInfo packageInfo = new PackageInfo();
 	private ClassMetaInfoManager classMetaInfoManager = null;
@@ -90,7 +93,7 @@ public class CompilerContext {
 			this.projectRoot = abpath;
 			this.outputDir = abpath;
 			this.srcLocations.add(abpath);
-			try { classPathUrls.add(file.toURI().toURL()); } catch (Exception e) {}
+			addToClassPaths(file, -1);
 			String jdkSrc = FilenameUtils.concat(System.getenv("JAVA_HOME") , "src.zip");
 			if (jdkSrc != null ) {
 				 File jdkSrcFile = new File(jdkSrc);
@@ -222,10 +225,7 @@ public class CompilerContext {
 			if (jarPaths == null ) return;
 			for (String path : jarPaths) {
 				File libFile = new File(path);
-				try { classPathUrls.add(libFile.toURI().toURL()); } catch (Exception e) {
-					String errorMsg = VjdeUtil.getExceptionValue(e);
-		    		log.warn(errorMsg);
-				}
+				addToClassPaths(libFile,-1);
 			}
 		}
 	}
@@ -245,7 +245,7 @@ public class CompilerContext {
 			String entryAbsPath = FilenameUtils.concat(projectRoot, entry.path);
 			if (entry.kind.equals("lib")) {
 				File libFile = new File(entryAbsPath);
-				try { classPathUrls.add(libFile.toURI().toURL()); } catch (Exception e) {}
+				addToClassPaths(libFile, -1);
 				if (entry.sourcepath !=null) {
 					libSrcLocations.add(entry.sourcepath);
 				}
@@ -258,14 +258,14 @@ public class CompilerContext {
 					if (entry.output != null && !entry.output.trim().equals("")) {
 						String outputAbsPath = FilenameUtils.concat(projectRoot, entry.output);
 						File libFile = new File(outputAbsPath);
-						try { classPathUrls.add(0, libFile.toURI().toURL()); } catch (Exception e) {}
+						addToClassPaths(libFile, 0);
 						testSrcLocationMap.put(entryAbsPath, outputAbsPath);
 					}
 				}
 			} else if (entry.kind.equals("output")) {
 				File libFile = new File(entryAbsPath);
 				//output path should be searched first in classpath
-				try { classPathUrls.add(0, libFile.toURI().toURL()); } catch (Exception e) {}
+				addToClassPaths(libFile, 0);
 				if (entryAbsPath.endsWith("/") || entryAbsPath.endsWith("\\")) {
 					entryAbsPath = entryAbsPath.substring(0, entryAbsPath.length()-1);
 				}
@@ -300,7 +300,7 @@ public class CompilerContext {
 					log.info(entryPath + " in classpath not exists.");
 					continue;
 				}
-				try { classPathUrls.add(libFile.toURI().toURL()); } catch (Exception e) {}
+				addToClassPaths(libFile, -1);
 				if (sourcePath !=null && !sourcePath.equals("")) {
 					libSrcLocations.add(sourcePath);
 				}
@@ -333,7 +333,7 @@ public class CompilerContext {
 			} else if (entry.kind.equals("output")) {
 				File libFile = new File(entryAbsPath);
 				//add external project output dir to second search place in class path
-				try { classPathUrls.add(1, libFile.toURI().toURL()); } catch (Exception e) {}
+				addToClassPaths(libFile, 1);
 				extOutputDirs.add(libFile.getAbsolutePath());
 			} 
 		}
@@ -654,6 +654,40 @@ public class CompilerContext {
 			if (srcFile.indexOf(srcPath) == 0) return testSrcLocationMap.get(srcPath);
 		}
 		return outputDir;
+	}
+	private void addToClassPaths(File libFile, int index) {
+		try { 
+			URL url = null;
+			if (libFile.getName().endsWith(".jar")) {
+				url = new URL("jar", "", -1, libFile.toURI().toString() + "!/");
+				URLConnection conn = url.openConnection();
+				conn.setUseCaches(true);
+                cachedJarConns.add(conn);
+			} else {
+			    url = libFile.toURI().toURL();
+			}
+			if (index == -1) {
+			    classPathUrls.add(url); 
+			} else {
+			    classPathUrls.add(index,url); 
+			}
+        } catch (Exception e) {
+            String errorMsg = VjdeUtil.getExceptionValue(e);
+            log.warn(errorMsg);
+		}
+	}
+	
+	//close jar file opened by classloader etc.
+	public void clean() {
+		for (URLConnection c : this.cachedJarConns) {
+			try {
+				if (c instanceof JarURLConnection) {
+				    ((JarURLConnection) c).getJarFile().close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	/* =================================================================== */
