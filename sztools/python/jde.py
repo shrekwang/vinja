@@ -2219,7 +2219,16 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
             vim.command("nnoremap <buffer><silent>e   :python jdb.qevalCmd()<cr>")
-            vim.command("setlocal statusline=\ Jdb\ QuickStep")
+            vim.command("setlocal statusline=\ Jdb\ %2*QuickStep%*")
+            qs_help_file = open(os.path.join(SzToolsConfig.getShareHome(),"doc/quickstep.help"))
+            content = [line.rstrip() for line in qs_help_file.readlines()]
+            qs_help_file.close()
+            content.append(">")
+            output(content)
+
+            cur_buffer =vim.current.buffer
+            row_count = len(cur_buffer)
+            vim.current.window.cursor = (row_count, 1)
         else :
             self.quick_step = False
             vim.command("nunmap <buffer><silent>l")
@@ -2412,10 +2421,11 @@ class Jdb(object):
         vim.command("call SwitchToSzToolView('Jdb')")
 
     def untilCmd(self):
+        count = vim.eval("v:count1")
         self.switchSourceBuffer()
         mainClassName = Parser.getMainClass()
         vim.command("call SwitchToSzToolView('Jdb')")
-        cmd = "until %s %s" %(vim.eval("v:count1") ,mainClassName)
+        cmd = "until %s %s" %(count ,mainClassName)
         self.resumeSuspend()
         data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
 
