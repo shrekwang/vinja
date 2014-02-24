@@ -1,6 +1,5 @@
 package com.google.code.vimsztool.server;
 
-import java.net.URL;
 import java.util.List;
 
 import com.google.code.vimsztool.compiler.CompilerContext;
@@ -14,11 +13,10 @@ public class SzjdeLoadJarMetaInfoCommand extends SzjdeShextCommand {
 			public void run() {
 				String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
 				CompilerContext ctx = getCompilerContext(classPathXml);
-				List<URL> urls = ctx.getClassPathUrls();
+				List<String> urls = ctx.getFsClassPathUrls();
 				ClassMetaInfoManager cmm = ctx.getClassMetaInfoManager();
 				
-				for (URL url : urls) {
-					String path = url.getPath();
+				for (String path : urls) {
 					if (path.endsWith(".jar")) {
 						cmm.loadMetaInfoInJar(path);
 						out.println("loadding " +path + " ...");

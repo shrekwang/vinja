@@ -49,6 +49,7 @@ public class CompilerContext {
 	private List<String> extOutputDirs = new ArrayList<String>();
 	
 	private List<URL> classPathUrls = new ArrayList<URL>();
+	private List<String> fsClassPathUrls = new ArrayList<String>();
 	private List<URLConnection> cachedJarConns = new ArrayList<URLConnection>();
 	private Preference pref = Preference.getInstance();
 	private PackageInfo packageInfo = new PackageInfo();
@@ -346,8 +347,7 @@ public class CompilerContext {
 	
 	private void cachePackageInfo() {
 		packageInfo.cacheSystemRtJar();
-		for (URL url : classPathUrls) {
-			String path = url.getPath();
+		for (String path : fsClassPathUrls) {
 			if (path.endsWith(".jar")) {
 				packageInfo.cacheClassNameInJar(path);
 			}
@@ -490,8 +490,8 @@ public class CompilerContext {
 		return fullQualifiedName.toString();
 	}
 	
-	public List<URL> getClassPathUrls() {
-		return this.classPathUrls;
+	public List<String> getFsClassPathUrls() {
+	    return fsClassPathUrls;
 	}
 
 	public ReflectAbleClassLoader getClassLoader() {
@@ -671,6 +671,7 @@ public class CompilerContext {
 			} else {
 			    classPathUrls.add(index,url); 
 			}
+			fsClassPathUrls.add(libFile.getAbsolutePath());
         } catch (Exception e) {
             String errorMsg = VjdeUtil.getExceptionValue(e);
             log.warn(errorMsg);

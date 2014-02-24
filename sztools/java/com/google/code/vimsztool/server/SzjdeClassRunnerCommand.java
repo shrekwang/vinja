@@ -19,10 +19,10 @@ public class SzjdeClassRunnerCommand extends SzjdeCommand {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
 		String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
 		CompilerContext cc = getCompilerContext(classPathXml);
-		List<URL> urls = cc.getClassPathUrls();
+		List<String> urls = cc.getFsClassPathUrls();
 		StringBuilder cmd = new StringBuilder("java::-cp::");
-		for (URL url : urls) {
-			cmd.append(url.getPath()).append(File.pathSeparator);
+		for (String url : urls) {
+			cmd.append(url).append(File.pathSeparator);
 		}
 
 		cmd.append(" ::");

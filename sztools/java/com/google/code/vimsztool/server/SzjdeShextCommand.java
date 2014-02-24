@@ -2,7 +2,6 @@ package com.google.code.vimsztool.server;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;

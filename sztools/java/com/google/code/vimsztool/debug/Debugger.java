@@ -541,10 +541,10 @@ public class Debugger {
 		CompilerContextManager ccm = CompilerContextManager.getInstnace();
 		CompilerContext ctx = ccm.getCompilerContext(classPathXml);
 
-		List<URL> urls = ctx.getClassPathUrls();
+		List<String> urls = ctx.getFsClassPathUrls();
 		StringBuilder sb = new StringBuilder();
-		for (URL url : urls) {
-			sb.append(url.getPath()).append(File.pathSeparator);
+		for (String url : urls) {
+			sb.append(url).append(File.pathSeparator);
 		}
 		return sb.toString();
 	}
