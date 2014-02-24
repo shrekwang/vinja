@@ -2214,28 +2214,36 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>j   :<C-U>python jdb.stepCmd('step_over')<cr>")
             vim.command("nnoremap <buffer><silent>h   :<C-U>python jdb.stepCmd('step_return')<cr>")
             vim.command("nnoremap <buffer><silent>u   :<C-U>python jdb.stepCmd('step_out')<cr>")
-            vim.command("nnoremap <buffer><silent>c   :python jdb.stepCmd('resume')<cr>")
+            vim.command("nnoremap <buffer><silent>C   :python jdb.stepCmd('resume')<cr>")
             vim.command("nnoremap <buffer><silent>v   :python jdb.executeCmd(insertMode=False,cmdLine='>locals')<cr>")
             vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
             vim.command("nnoremap <buffer><silent>e   :python jdb.qevalCmd()<cr>")
             vim.command("setlocal statusline=\ Jdb\ %2*QuickStep%*")
+
+            cur_buffer =vim.current.buffer
+            old_lines = [line for line in cur_buffer]
             qs_help_file = open(os.path.join(SzToolsConfig.getShareHome(),"doc/quickstep.help"))
             content = [line.rstrip() for line in qs_help_file.readlines()]
             qs_help_file.close()
-            content.append(">")
             output(content)
+            output(old_lines,append=True)
 
-            cur_buffer =vim.current.buffer
             row_count = len(cur_buffer)
             vim.current.window.cursor = (row_count, 1)
         else :
             self.quick_step = False
+            cur_buffer =vim.current.buffer
+            while True :
+                if cur_buffer[0].startswith("+") or cur_buffer[0].startswith("|"):
+                    del cur_buffer[0]
+                else :
+                    break
             vim.command("nunmap <buffer><silent>l")
             vim.command("nunmap <buffer><silent>j")
             vim.command("nunmap <buffer><silent>h")
             vim.command("nunmap <buffer><silent>u")
-            vim.command("nunmap <buffer><silent>c")
+            vim.command("nunmap <buffer><silent>C")
             vim.command("nunmap <buffer><silent>v")
             vim.command("nunmap <buffer><silent>w")
             vim.command("nunmap <buffer><silent>G")
