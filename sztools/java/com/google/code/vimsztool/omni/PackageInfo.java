@@ -105,7 +105,8 @@ public class PackageInfo {
 				if (cache.get(className) != null ) continue;
 				
 				if (withLoc) {
-					String location = pkgLocationCache.get(pkgname);
+					String location = pkgLocationCache.get(className);
+					if (location == null) location = pkgLocationCache.get(pkgname);
 					result.add(getClassNameWithLoc(className, location));
 				} else {
 					result.add(className);
@@ -128,7 +129,8 @@ public class PackageInfo {
 		if (!withLoc) return tmpList;
 		
 		List<String> resultList = new ArrayList<String>();
-		String location = pkgLocationCache.get(pkgName);
+        String location = pkgLocationCache.get(name);
+        if (location == null) location = pkgLocationCache.get(pkgName);
 		for (String tmpClassName :tmpList) {
 			resultList.add(getClassNameWithLoc(tmpClassName, location));
 		}
@@ -207,6 +209,7 @@ public class PackageInfo {
 			if (count >= tokens.length - 1 ) break;
 			key = key+"."+tokens[count];
 		}
+		pkgLocationCache.put(className, classLocation);
 	}
 	
 	@SuppressWarnings("rawtypes")

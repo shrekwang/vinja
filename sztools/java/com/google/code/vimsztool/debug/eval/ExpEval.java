@@ -273,14 +273,16 @@ public class ExpEval {
 			Location loc = stackFrame.location();
 		    String abPath = ctx.findSourceFile(loc.sourcePath());
 		    JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(abPath,ctx);
-			StringBuilder sb = new StringBuilder();
 			
 			Set<String> evaluatedExp = new HashSet<String>();
 			
 			int count = 0;
 			int lineOffset = -1 ;
 	    	boolean currentLine = false;
+
 			//eval expressions in last three lines at suspend location.
+            List<VarNode> allNodes = new ArrayList<VarNode>();
+
 			while (count < 3 && loc.lineNumber()-lineOffset > 1 ) {
 				lineOffset++;
 		    	currentLine = (lineOffset == 0 ? true:false);
@@ -292,20 +294,14 @@ public class ExpEval {
 					if (evaluatedExp.contains(exp)) continue;
 					ParseResult result = AstTreeFactory.getExpressionAst(exp);
 					if (result.hasError()) continue; 
-					try {
-						sb.append(eval(exp));
-					} catch (Exception e) {
-						sb.append(exp+": eval error," +e.getMessage());
-						if (sb.charAt(sb.length()-1) != '\n') sb.append("\n");
-					}
+
+                    allNodes.addAll(createVarNodesFromExp(exp));
 					evaluatedExp.add(exp);
-				}
-				if (!sb.toString().endsWith(ExpEval.SEP_ROW_TXT)) {
-					sb.append(ExpEval.SEP_ROW_TXT);
 				}
 				count++;
 		    }
-			return sb.toString();
+            String v=XmlGenerate.generate(allNodes);
+			return v;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return e.getMessage();

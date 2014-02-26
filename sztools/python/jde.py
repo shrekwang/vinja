@@ -2210,6 +2210,7 @@ class Jdb(object):
     def toggleQuickStep(self):
         if not self.quick_step :
             self.quick_step = True
+            vim.command("nnoremap <buffer><silent>i   dd:python jdb.appendPrompt()<cr>")
             vim.command("nnoremap <buffer><silent>l   :python jdb.stepCmd('step_into')<cr>")
             vim.command("nnoremap <buffer><silent>j   :<C-U>python jdb.stepCmd('step_over')<cr>")
             vim.command("nnoremap <buffer><silent>h   :<C-U>python jdb.stepCmd('step_return')<cr>")
@@ -2239,6 +2240,7 @@ class Jdb(object):
                     del cur_buffer[0]
                 else :
                     break
+            vim.command("nunmap <buffer><silent>i")
             vim.command("nunmap <buffer><silent>l")
             vim.command("nunmap <buffer><silent>j")
             vim.command("nunmap <buffer><silent>h")
@@ -2380,7 +2382,8 @@ class Jdb(object):
     def qevalCmd(self):
         data = JdbTalker.submit("qeval",self.class_path_xml,self.serverName)
         if data : 
-            self.stdout(data)
+            varTree = VarTree.createVarTree(data)
+            self.stdout(varTree.renderToString())
 
     def breakCmd(self, cmdLine):
         global bp_data
@@ -2563,7 +2566,7 @@ class Jdb(object):
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
         if data : 
-            if cmdLine.startswith("eval") or cmdLine.startswith("print")  \
+            if cmdLine.startswith("eval") or cmdLine.startswith("print")  or cmdLine.startswith("qeval") \
                     or cmdLine.startswith("locals") or cmdLine.startswith("fields") \
                     or cmdLine.startswith("geval") or cmdLine.startswith("eval_display") :
 
@@ -2602,8 +2605,16 @@ class Jdb(object):
                 callback = lambda : VimUtil.scrollTo(matchedRow)
                 VimUtil.doCommandInSzToolBuffer("JdbStdOut",callback)
 
-        vim.command("call SwitchToSzToolView('Jdb')")
-        self.appendPrompt(insertMode)
+        if not self.quick_step :
+            vim.command("call SwitchToSzToolView('Jdb')")
+            self.appendPrompt(insertMode)
+        else :
+            vim.command("call SwitchToSzToolView('Jdb')")
+            work_buffer = vim.current.buffer
+            row,col = vim.current.window.cursor
+            work_buffer[row-1] = "> "
+            vim.current.window.cursor = [row,2]
+            
 
     def fetchJdbResult(self):
         resultText = JdbTalker.submit("fetchJdbResult",self.class_path_xml,self.serverName)
