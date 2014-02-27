@@ -678,7 +678,7 @@ public class ExpEval {
 	
 
 
-	public Object evalTreeNode(CommonTree node) {
+	public Value evalTreeNode(CommonTree node) {
 		
 		CommonTree subNode = null;
 		CommonTree leftOp = null;
@@ -693,7 +693,7 @@ public class ExpEval {
 			
 		case JavaParser.LOGICAL_NOT:
 			subNode = (CommonTree) node.getChild(0);
-			return LogicalNot.operate(this,subNode);
+			return getMirrorValue(LogicalNot.operate(this,subNode));
 			
 		case JavaParser.IDENT:
 			return evalJdiVar(node.getText());
@@ -727,21 +727,21 @@ public class ExpEval {
 		case JavaParser.OR:
 			leftOp = (CommonTree) node.getChild(0);
 			rightOp = (CommonTree) node.getChild(1);
-			return evalTreeNode(leftOp,rightOp,node.getType());
+			return getMirrorValue(evalTreeNode(leftOp,rightOp,node.getType()));
 			
 		case JavaParser.DECIMAL_LITERAL :
-			return Integer.valueOf(node.getText());
+			return getMirrorValue(Integer.valueOf(node.getText()));
 		case JavaParser.FLOATING_POINT_LITERAL:
-			return Float.valueOf(node.getText());
+			return getMirrorValue(Float.valueOf(node.getText()));
 		case JavaParser.CHARACTER_LITERAL:
-			return Character.valueOf(node.getText().charAt(1));
+			return getMirrorValue(Character.valueOf(node.getText().charAt(1)));
 		case JavaParser.STRING_LITERAL:
 			String text = node.getText(); 
-			return text.substring(1, text.length()-1);
+			return getMirrorValue(text.substring(1, text.length()-1));
 		case JavaParser.FALSE :
-			return Boolean.FALSE;
+			return getMirrorValue(Boolean.FALSE);
 		case JavaParser.TRUE :
-			return Boolean.TRUE;
+			return getMirrorValue(Boolean.TRUE);
 		case JavaParser.NULL :
 			return null;
 		case JavaParser.THIS:
@@ -752,7 +752,7 @@ public class ExpEval {
 		}
 	}
 	
-	private Object evalThisObject() {
+	private Value evalThisObject() {
 		try {
 			ThreadReference threadRef = checkAndGetCurrentThread();
 			SuspendThreadStack threadStack = debugger.getSuspendThreadStack();
