@@ -405,14 +405,14 @@ class EditHistoryManager(object):
             basename = os.path.basename(path)
             if pat.match(basename):
                 self.matched_item.append(path)
-                rows.append("%s %s" %(basename.ljust(maxlen),path))
+                rows.append("%s\t%s" %(basename.ljust(maxlen),path))
         return rows
 
     def open_content(self,line,mode="local"):
         line = line.strip()
         if line == "" :
             return
-        basename,path = re.split("\s+",line)
+        basename,path = re.split("\t",line)
 
         if mode == "local" :
             vim.command("edit %s "  %(path))
