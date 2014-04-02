@@ -1342,7 +1342,7 @@ class AutoImport(object):
 
     @staticmethod
     def addImportDef(line):
-        if line.strip() == "" : return
+        if line.strip() == "" : return False
         vim_buffer_text ="\n".join(vim.current.buffer)
         tmpDefs = line[:-1].split(";")
         hadImported = False
@@ -1362,6 +1362,8 @@ class AutoImport(object):
                 if (selectedIndex) :
                     insertText = "import %s;" % tmpDefs[int(selectedIndex)]
                     vim.command("call append(%s,'%s')" %(str(location),insertText))
+            return True
+        return False
 
     @staticmethod
     def autoImportVar():
@@ -1383,10 +1385,12 @@ class AutoImport(object):
 
         resultText = Talker.autoImport(classPathXml,tmp_path,currentPackage)
         lines = resultText.split("\n")
+        hadImported = False
         for line in lines :
-            AutoImport.addImportDef(line)
+            if AutoImport.addImportDef(line) :
+                hadImported = True
         location = AutoImport.getImportInsertLocation()
-        if location > 0 and vim_buffer[location-1].strip() != "" :
+        if hadImported and location > 0 and vim_buffer[location-1].strip() != "" :
             vim.command("call append(%s,'')" %(str(location)))
 
     @staticmethod
@@ -2210,6 +2214,7 @@ class Jdb(object):
     def toggleQuickStep(self):
         if not self.quick_step :
             self.quick_step = True
+            vim.command("nnoremap <buffer><silent>a   dd:python jdb.appendPrompt()<cr>")
             vim.command("nnoremap <buffer><silent>i   dd:python jdb.appendPrompt()<cr>")
             vim.command("nnoremap <buffer><silent>l   :python jdb.stepCmd('step_into')<cr>")
             vim.command("nnoremap <buffer><silent>j   :<C-U>python jdb.stepCmd('step_over')<cr>")
@@ -2223,23 +2228,24 @@ class Jdb(object):
             vim.command("setlocal statusline=\ Jdb\ %2*QuickStep%*")
 
             cur_buffer =vim.current.buffer
-            old_lines = [line for line in cur_buffer]
+            self.old_lines = [line for line in cur_buffer]
             qs_help_file = open(os.path.join(SzToolsConfig.getShareHome(),"doc/quickstep.help"))
             content = [line.rstrip() for line in qs_help_file.readlines()]
+            content.append(">")
             qs_help_file.close()
             output(content)
-            output(old_lines,append=True)
 
             row_count = len(cur_buffer)
             vim.current.window.cursor = (row_count, 1)
         else :
             self.quick_step = False
             cur_buffer =vim.current.buffer
-            while True :
-                if cur_buffer[0].startswith("+") or cur_buffer[0].startswith("|"):
-                    del cur_buffer[0]
-                else :
-                    break
+            if self.old_lines :
+                output(self.old_lines)
+                row_count = len(cur_buffer)
+                vim.current.window.cursor = (row_count, 1)
+            
+            vim.command("nunmap <buffer><silent>a")
             vim.command("nunmap <buffer><silent>i")
             vim.command("nunmap <buffer><silent>l")
             vim.command("nunmap <buffer><silent>j")
@@ -2378,6 +2384,9 @@ class Jdb(object):
         self.resumeSuspend()
         cmd = cmd +" " + vim.eval("v:count1")
         data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
+
+        if self.quick_step and cmd.startswith("resume") :
+            self.toggleQuickStep()
 
     def qevalCmd(self):
         data = JdbTalker.submit("qeval",self.class_path_xml,self.serverName)
