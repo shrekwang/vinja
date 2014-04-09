@@ -3,6 +3,8 @@ import fnmatch
 import os
 import re
 import vim
+import subprocess
+import os.path
 
 if "EditUtil" not in globals() :
     from jde import EditUtil
@@ -265,12 +267,24 @@ class FileContentManager(object):
         alias = fname[0: fname.find(os.path.sep)]
         rtl_path = fname[fname.find(os.path.sep)+1:]
         fname = os.path.join(self.start_dirs[alias], rtl_path)
-        if mode == "local" :
-            vim.command("edit %s "  %(fname))
-        elif mode == "buffer" :
-            vim.command("split %s "  %(fname))
-        elif mode == "tab" :
-            vim.command("tabedit %s "  %(fname))
+
+        bin_file_exts = ["doc","docx","ppt","xls","png","jpg","gif","bmp","zip","jar",\
+                "war","rar","pdf","psd"]
+        basename,ext = os.path.splitext(fname)
+        if  len(ext) > 1 and ext[1:] in bin_file_exts :
+            if sys.platform.startswith('darwin'):
+                subprocess.Popen('open "%s"' % fname,shell=True)
+            elif os.name == 'nt':
+                os.startfile(fname)
+            elif os.name == 'posix':
+                subprocess.Popen('xdg-open "%s"' % fname,shell=True)
+        else :
+            if mode == "local" :
+                vim.command("edit %s "  %(fname))
+            elif mode == "buffer" :
+                vim.command("split %s "  %(fname))
+            elif mode == "tab" :
+                vim.command("tabedit %s "  %(fname))
 
 class JavaMemberContentManager(object):
 
