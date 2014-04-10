@@ -58,12 +58,19 @@ public class SystemJob extends Thread {
 	public void run() {
 		try {
 			if (runInShell) {
-				String[] newCmdArray = new String[cmdArray.length+2];
+				String[] newCmdArray = new String[4];
 				newCmdArray[0] = "cmd.exe";
-				newCmdArray[1] = "/c";
+				newCmdArray[1] = "/s";
+				newCmdArray[2] = "/c";
+				newCmdArray[3] = this.origCmdLine;
+				/*
 				for (int i=0; i<cmdArray.length; i++) {
 					newCmdArray[i+2]=cmdArray[i];
+				    if (!cmdArray[i].startsWith("\"")) {
+                        newCmdArray[i+2]="\"" + cmdArray[i] + "\"";
+				    }
 				}
+				*/
 				process = Runtime.getRuntime().exec(newCmdArray,null, new File(workDir));
 			} else {
 				process = Runtime.getRuntime().exec(cmdArray,null, new File(workDir));
