@@ -23,9 +23,9 @@ call NERDTreeAddKeyMap({
        \ 'callback': 'NERDTreeRmNode',
        \ 'quickhelpText': 'remove current node recursively' })
 
-let g:SzToolNodeBuf = ""
-let g:SzToolOpType = ""
-let g:SzToolParentOfRmNode = {}
+let g:VinjaNodeBuf = ""
+let g:VinjaOpType = ""
+let g:VinjaParentOfRmNode = {}
 
 
 function! NERDTreeYankNode()
@@ -59,17 +59,17 @@ function! NERDTreePasteToNode()
       return
     endif 
     let curPath = curNode.path.str()
-    if g:SzToolNodeBuf != ""
-      if g:SzToolOpType == "yank" 
-        python FileUtil.fileOrDirCp(vim.eval("g:SzToolNodeBuf"),vim.eval("curPath"))
+    if g:VinjaNodeBuf != ""
+      if g:VinjaOpType == "yank" 
+        python FileUtil.fileOrDirCp(vim.eval("g:VinjaNodeBuf"),vim.eval("curPath"))
       else
-        python FileUtil.fileOrDirMv(vim.eval("g:SzToolNodeBuf"),vim.eval("curPath"))
+        python FileUtil.fileOrDirMv(vim.eval("g:VinjaNodeBuf"),vim.eval("curPath"))
       endif
       echomsg 'node: ' . curNode.path.str() . " pasted. "
-      let g:SzToolNodeBuf = ""
+      let g:VinjaNodeBuf = ""
       call curNode.refresh()
-      if g:SzToolParentOfRmNode != {}
-        call g:SzToolParentOfRmNode.refresh()
+      if g:VinjaParentOfRmNode != {}
+        call g:VinjaParentOfRmNode.refresh()
       endif
       call NERDTreeRender()
     endif
@@ -80,9 +80,9 @@ function! NodeToBuf(opType)
     let curNode = g:NERDTreeFileNode.GetSelected()
     if curNode != {}
         echomsg 'node: ' . curNode.path.str() . " yanked. "
-        let g:SzToolNodeBuf = curNode.path.str()
-        let g:SzToolOpType = a:opType
-        let g:SzToolParentOfRmNode = curNode.parent
+        let g:VinjaNodeBuf = curNode.path.str()
+        let g:VinjaOpType = a:opType
+        let g:VinjaParentOfRmNode = curNode.parent
     endif
 endfunction
 

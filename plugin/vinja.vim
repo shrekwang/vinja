@@ -59,8 +59,8 @@ endfunction
 
 function MyTitleString()
 
-  if exists("g:sztool_title")
-    return g:sztool_title
+  if exists("g:vinja_title")
+    return g:vinja_title
   endif
 
 	let v = MyTabLabel(tabpagenr()) 
@@ -88,7 +88,7 @@ function! GetBufList()
   return bufoutput
 endfunction
 
-function SetSzToolBuf()
+function SetVinjaBuf()
     exec "setlocal nowrap"    
     exec "setlocal buftype=nofile" 
     exec "setlocal noswapfile"
@@ -96,7 +96,7 @@ function SetSzToolBuf()
     exec "setlocal nobuflisted"
 endfunction
 
-function! SwitchToSzToolView(...)    
+function! SwitchToVinjaView(...)    
   let viewname = a:1
   let direct = "belowright"
   let height = winheight(0) / 2
@@ -107,29 +107,29 @@ function! SwitchToSzToolView(...)
     let height = a:3
   endif
   let s:cur_buf = bufnr("%")    
-  let s:szdb_result_buf=bufnr("SzToolView_" . viewname)    
+  let s:szdb_result_buf=bufnr("VinjaView_" . viewname)    
   if bufwinnr(s:szdb_result_buf) > 0    
     exec bufwinnr(s:szdb_result_buf) . "wincmd w"    
     "%d    
   else    
-    exec 'silent! '.direct.' '.height.'split SzToolView_' . viewname    
-    exec "e SzToolView_" . viewname    
+    exec 'silent! '.direct.' '.height.'split VinjaView_' . viewname    
+    exec "e VinjaView_" . viewname    
     exec 'setlocal statusline=\ '.viewname
-    call SetSzToolBuf()
+    call SetVinjaBuf()
   endif    
 endfunction    
 
-function! SwitchToSzToolViewVertical(viewname)    
+function! SwitchToVinjaViewVertical(viewname)    
   let s:cur_buf = bufnr("%")    
-  let s:szdb_result_buf=bufnr("SzToolView_" . a:viewname)    
+  let s:szdb_result_buf=bufnr("VinjaView_" . a:viewname)    
   if bufwinnr(s:szdb_result_buf) > 0    
     exec bufwinnr(s:szdb_result_buf) . "wincmd w"    
     "%d    
   else    
-    exec 'silent! belowright vsplit SzToolView_' . a:viewname    
-    exec "e SzToolView_" . a:viewname    
+    exec 'silent! belowright vsplit VinjaView_' . a:viewname    
+    exec "e VinjaView_" . a:viewname    
     exec 'setlocal statusline=\ '. a:viewname
-    call SetSzToolBuf()
+    call SetVinjaBuf()
   endif    
 endfunction    
 
@@ -145,24 +145,24 @@ function! SplitLeftPanel(splitSize,name)
     setlocal nospell
     setlocal cursorline
     setlocal nonumber
-    call SetSzToolBuf()
+    call SetVinjaBuf()
 endfunction
 
 
 function RunSzPyfile(filename)
-  exec "pyfile ".g:sztool_home."/python/".a:filename
+  exec "pyfile ".g:vinja_home."/python/".a:filename
 endfunction
 
 function! Shext()
-  if bufnr("SzToolView_cmd_buffer") > -1 
+  if bufnr("VinjaView_cmd_buffer") > -1 
     echo "Shext is already running."
     return
   endif
   call RunSzPyfile("shext.py")
-  file SzToolView_cmd_buffer
+  file VinjaView_cmd_buffer
   exec 'setlocal statusline=\ shext_cmd_buffer\ [%r%{getcwd()}%h]'
   call SetTabPageName("Shext")
-  call SetSzToolBuf()
+  call SetVinjaBuf()
   nnoremap <buffer><silent><cr>   :python shext.executeCmd(insertMode=False)<cr>
   imap <buffer><silent><cr>  <Esc>:python shext.executeCmd()<cr>
   ino <buffer><silent>/      <Esc>:python shext.tipDirName()<cr>a/
@@ -200,7 +200,7 @@ function! Dbext()
 
   let l:bufname = bufname("%")    
   if l:bufname == "" 
-    call SetSzToolBuf()
+    call SetVinjaBuf()
   endif    
 
   setlocal nobuflisted
@@ -243,12 +243,12 @@ function! CodeGen()
 endfunction
 
 function! Recite()
-  if bufnr("SzToolView_recite") > -1 
+  if bufnr("VinjaView_recite") > -1 
     echo "Recite is already running."
     return
   endif
-  file SzToolView_recite
-  call SetSzToolBuf()
+  file VinjaView_recite
+  call SetVinjaBuf()
   call RunSzPyfile("engext.py")
   map <silent><buffer> o  :python recite.wordDetail()<cr>
   map <silent><buffer> n  :python recite.listWords(20)<cr>
@@ -257,14 +257,14 @@ function! Recite()
 endfunction
 
 function! ClassicReader()
-  if bufnr("SzToolView_book_content") > -1 
+  if bufnr("VinjaView_book_content") > -1 
     echo "ClassicReader is already running."
     return
   endif
-  file SzToolView_book_content
+  file VinjaView_book_content
   call SetTabPageName("ClassicReader")
-  call SetSzToolBuf()
-  call SplitLeftPanel(43, 'SzToolView_book_index') 
+  call SetVinjaBuf()
+  call SplitLeftPanel(43, 'VinjaView_book_index') 
   call RunSzPyfile("engext.py")
   python ClassicReader.runApp()
   map <silent><buffer> <cr>  :python classicReader.updateContentView()<cr>
@@ -272,14 +272,14 @@ function! ClassicReader()
 endfunction
 
 function! Notext()
-  if bufnr("SzToolView_note_list") > -1 
+  if bufnr("VinjaView_note_list") > -1 
     echo "Notext is already running."
     return
   endif
-  file SzToolView_note_list
+  file VinjaView_note_list
   call SetTabPageName("Notext")
-  call SetSzToolBuf()
-  call SplitLeftPanel(20, 'SzToolView_tag_list') 
+  call SetVinjaBuf()
+  call SplitLeftPanel(20, 'VinjaView_tag_list') 
   map <silent><buffer> <cr>  :python notext.listCurrentTagItems()<cr>
   map <silent><buffer> o     :python notext.listCurrentTagItems()<cr>
   command! -nargs=0 ExitNote   :python notext.exit()
@@ -330,7 +330,7 @@ endfunction
 function! SzSudoku()  
 
   call RunSzPyfile("gamext.py")
-  call SetSzToolBuf()
+  call SetVinjaBuf()
   call SetTabPageName("Sudoku")
   python Sudoku.runApp()
   command! -nargs=0 CheckSudoku  :python sudoku.checkBufferMap()
@@ -371,10 +371,10 @@ endfunction
 
 function Javadoc()
   call RunSzPyfile("javadoc.py")
-  file SzToolView_jdoc_content
+  file VinjaView_jdoc_content
   call SetTabPageName("Javadoc")
-  call SetSzToolBuf()
-  call SplitLeftPanel(40, 'SzToolView_jdoc_index') 
+  call SetVinjaBuf()
+  call SplitLeftPanel(40, 'VinjaView_jdoc_index') 
   map <silent><buffer> <cr>  :python jdocviewer.showJavaDoc()<cr>
   map <silent><buffer> o     :python jdocviewer.showJavaDoc()<cr>
   command! -nargs=0 ExitNote   :python notext.exit()
@@ -383,7 +383,7 @@ endfunction
 
 function ProjectTree(...) 
   python ProjectTree.runApp()
-  if bufname('%') =~ 'SzTool.*ProjectTree.*$'
+  if bufname('%') =~ 'Vinja.*ProjectTree.*$'
 		"call SetTabPageName("ProjectExplorer")
     nnoremap <silent><buffer> <2-leftmouse> :python projectTree.open_selected_node()<cr>
     map <silent><buffer> <cr>  :python projectTree.open_selected_node()<cr>
@@ -593,7 +593,7 @@ function! Jdext()
   command! -nargs=*   HandleJdiEvent    :call HandleJdiEvent(<f-args>)
 
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>,   :python Runner.runCurrentFile()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeSzToolBuffer("JdeConsole")<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
   autocmd BufEnter  *.java    vmap <buffer><silent><leader>gs  :python EditUtil.generateGseter()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
@@ -608,24 +608,24 @@ function! Jdext()
   autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:python EditUtil.tipMethodDefinition()<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-8>       <c-o>:python EditUtil.tipMethodDefinition(True)<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-7>       <c-o>:python AutoImport.autoImportVar()<cr>
-  autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:python VimUtil.closeSzToolBuffer("JdeConsole")<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
 
   autocmd BufEnter  *.java    nmap <buffer><silent><M-9>       :python EditUtil.tipMethodDefinition()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><M-8>       :python EditUtil.tipMethodDefinition(True)<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeSzToolBuffer("JdeConsole")<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
   
-  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><leader>k     :python jdb.qevalCmd()<cr>
-  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F5>     :python jdb.stepCmd('step_into')<cr>
-  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F6>     :python jdb.stepCmd('step_over')<cr>
-  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F7>     :python jdb.stepCmd('step_return')<cr>
-  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><F8>     :python jdb.stepCmd('resume')<cr>
-  autocmd BufEnter  SzToolView_Jdb  nmap <buffer><silent><c-i>    :python jdb.toggleQuickStep()<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><leader>k     :python jdb.qevalCmd()<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F5>     :python jdb.stepCmd('step_into')<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F6>     :python jdb.stepCmd('step_over')<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F7>     :python jdb.stepCmd('step_return')<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F8>     :python jdb.stepCmd('resume')<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><c-i>    :python jdb.toggleQuickStep()<cr>
 
-  autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F5>     <c-o>:python jdb.stepCmd('step_into')<cr>
-  autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F6>     <c-o>:python jdb.stepCmd('step_over')<cr>
-  autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F7>     <c-o>:python jdb.stepCmd('step_return')<cr>
-  autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><F8>     <c-o>:python jdb.stepCmd('resume')<cr>
-  "autocmd BufEnter  SzToolView_Jdb  imap <buffer><silent><c-i>    <c-o>:python jdb.toggleQuickStep()<cr>
+  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F5>     <c-o>:python jdb.stepCmd('step_into')<cr>
+  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F6>     <c-o>:python jdb.stepCmd('step_over')<cr>
+  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F7>     <c-o>:python jdb.stepCmd('step_return')<cr>
+  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F8>     <c-o>:python jdb.stepCmd('resume')<cr>
+  "autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><c-i>    <c-o>:python jdb.toggleQuickStep()<cr>
   "load project java info in background
   python ProjectManager.projectOpen()
 endfunction
@@ -653,8 +653,8 @@ command! -nargs=0 SzMineSweeper  :call SzMineSweeper()
 
 command! -nargs=1 -range=% Transform :<line1>,<line2>call Transform('<args>')
 
-command! -nargs=0 StartAgent  :python SztoolAgent.startAgent()
-command! -nargs=0 StopAgent   :python SztoolAgent.stopAgent()
+command! -nargs=0 StartAgent  :python VinjaAgent.startAgent()
+command! -nargs=0 StopAgent   :python VinjaAgent.stopAgent()
 command! -nargs=0 Shext       :call Shext()
 command! -nargs=0 Jdext       :call Jdext()
 "select project to open in jde.
@@ -675,7 +675,7 @@ command! -nargs=0 ProjectTreeDispose   :python ProjectTree.dispose_tree()
 nmap <silent><leader>pt  :call ProjectTree()<cr>
 nmap <silent><leader>pf  :python ProjectTree.locate_buf_in_tree()<cr>
 
-"sztools mapping
+"vinja mapping
 nmap <silent><leader>zc  :python ScratchUtil.startScriptEdit()<cr>
 nmap <silent><leader>zd  :call SearchDict('<C-R><C-W>')<CR>
 vmap <silent><leader>zf  :python MiscUtil.simpleFormatSQL()<cr>
@@ -716,4 +716,4 @@ command! -nargs=1 Silent
 \ | execute ':silent !'.<q-args>
 \ | execute ':redraw!'
 
-python SztoolAgent.startAgent()
+python VinjaAgent.startAgent()

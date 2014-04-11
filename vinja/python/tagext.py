@@ -16,7 +16,7 @@ class TagExt(object):
 
     def edit_tag(self):
         self.file_path = vim.current.buffer.name
-        vim.command("call SwitchToSzToolView('tagedit')")    
+        vim.command("call SwitchToVinjaView('tagedit')")    
         vim.command("set bufhidden=delete")
         vim.command("autocmd BufLeave <buffer>  python tagext.save_tag()")
         tag, comment = self.load_tag()
@@ -121,7 +121,7 @@ class TagExt(object):
 
     def list_buf(self):
         buffers = vim.eval("GetBufList()")
-        vim.command("call SwitchToSzToolView('taglist')")    
+        vim.command("call SwitchToVinjaView('taglist')")    
         vim.command("set bufhidden=delete")
         vim.command("setlocal cursorline")
         vim.command("nnoremap <buffer><silent><cr>   :python tagext.open_buf()<cr>")
@@ -199,7 +199,7 @@ class TagDb(object):
     def __init__(self, data_file_name = None):
         if data_file_name == None :
             data_file_name = "tagext.dat"
-        self.data_file_path = os.path.join(SzToolsConfig.getDataHome(), data_file_name)
+        self.data_file_path = os.path.join(VinjaConf.getDataHome(), data_file_name)
         if not os.path.exists(self.data_file_path) :
             path=os.path.dirname(self.data_file_path)
             if not os.path.exists(path):

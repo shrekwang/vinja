@@ -13,10 +13,10 @@ class ClassicReader(object):
         classicReader.updateIndexView()
 
     def __init__(self):
-        self.content_cache_path = os.path.join(SzToolsConfig.getDataHome(), "classicBook")
+        self.content_cache_path = os.path.join(VinjaConf.getDataHome(), "classicBook")
         if not os.path.exists(self.content_cache_path) :
             os.makedirs(self.content_cache_path)
-        self.db_path = os.path.join(SzToolsConfig.getDataHome(), "classic_reader.dat")
+        self.db_path = os.path.join(VinjaConf.getDataHome(), "classic_reader.dat")
         self.url_dict={}
         self.current_book_url=None
         self.select_areas=[]
@@ -96,7 +96,7 @@ class ClassicReader(object):
         print "finished reading."
 
     def updateIndexView(self):
-        vim.command("call SwitchToSzToolView('book_index')" )
+        vim.command("call SwitchToVinjaView('book_index')" )
         selectSql="select distinct author from book_index "
         conn=sqlite.connect(self.db_path)
         cur=conn.cursor()
@@ -123,7 +123,7 @@ class ClassicReader(object):
         url = self.url_dict.get(row)
         self.current_book_url = url
         match=re.search("\d+",url)
-        self.content_cache_path = os.path.join(SzToolsConfig.getDataHome(), "classicBook")
+        self.content_cache_path = os.path.join(VinjaConf.getDataHome(), "classicBook")
         book_int_index= match.group()
         book_file=os.path.join(self.content_cache_path,str(book_int_index)+".txt")
         if os.path.exists(book_file) :
@@ -135,7 +135,7 @@ class ClassicReader(object):
             for line in content :
                 file_obj.write(line+"\n")
             file_obj.close()
-        vim.command("call SwitchToSzToolView('book_content')" )
+        vim.command("call SwitchToVinjaView('book_content')" )
         vim.command("exec 'setlocal buftype=nofile'") 
         vim.command("exec 'setlocal cursorline'") 
         vim.command("exec 'setlocal noswapfile'")
@@ -207,8 +207,8 @@ class Recite(object):
     @staticmethod
     def runApp():
         global recite
-        recite_work_dir=os.path.join(SzToolsConfig.getDataHome(), "recite")
-        recite_words_file=os.path.join(SzToolsConfig.getDataHome(),"recite/tofel.txt")
+        recite_work_dir=os.path.join(VinjaConf.getDataHome(), "recite")
+        recite_words_file=os.path.join(VinjaConf.getDataHome(),"recite/tofel.txt")
         recite=Recite(recite_work_dir,recite_words_file)
         recite.listWords(20)
 
@@ -325,7 +325,7 @@ class Recite(object):
             listwinnr=str(vim.eval("winnr('#')"))
             vim.command("exec '"+listwinnr+" wincmd w'")  
         else :
-            vim.command("call SwitchToSzToolView('dict')")    
+            vim.command("call SwitchToVinjaView('dict')")    
             output(detailExplain)
             listwinnr=str(vim.eval("winnr('#')"))
             vim.command("exec '"+listwinnr+" wincmd w'")  

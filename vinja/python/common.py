@@ -147,7 +147,7 @@ class FuzzyCompletion(object):
                     completeList.append(item)
         return completeList
 
-class SztoolAgent(object):
+class VinjaAgent(object):
 
     @staticmethod
     def agentHasStarted() :
@@ -163,10 +163,10 @@ class SztoolAgent(object):
     @staticmethod
     def startAgent():
 
-        if SztoolAgent.agentHasStarted() : return
+        if VinjaAgent.agentHasStarted() : return
 
-        sztool_home = vim.eval("g:sztool_home")
-        libpath = os.path.join(sztool_home,"lib")
+        vinja_home = vim.eval("g:vinja_home")
+        libpath = os.path.join(vinja_home,"lib")
         cps=[os.path.join(libpath,item) for item in os.listdir(libpath) if item.endswith(".jar") ]
         if os.name == "nt" :
             cmdArray=[os.path.join(os.getenv("JAVA_HOME"),"bin/javaw.exe")]
@@ -181,8 +181,8 @@ class SztoolAgent(object):
         cmdArray.append(os.path.pathsep.join(cps))
         cmdArray.append('-Djava.library.path=%s' % libpath )
         cmdArray.append("com.google.code.vimsztool.ui.JdtUI")
-        cmdArray.append("--sztool-home")
-        cmdArray.append(sztool_home)
+        cmdArray.append("--vinja-home")
+        cmdArray.append(vinja_home)
 
 
         if os.name == "posix" :
@@ -352,7 +352,7 @@ class MiscUtil(object):
 
     @staticmethod
     def watchExample(name):
-        examples_dir = os.path.join(SzToolsConfig.getShareHome(),"examples")
+        examples_dir = os.path.join(VinjaConf.getShareHome(),"examples")
         content = None
         example_file=None
         for file_name in os.listdir(examples_dir):
@@ -466,12 +466,12 @@ class MiscUtil(object):
     @staticmethod
     def startMailAgent():
 
-        sztool_home = vim.eval("g:sztool_home")
-        mail_app_path = os.path.join(sztool_home,"python/mailext.py")
+        vinja_home = vim.eval("g:vinja_home")
+        mail_app_path = os.path.join(vinja_home,"python/mailext.py")
         print mail_app_path
-        print sztool_home
+        print vinja_home
         try :
-            os.spawnlp(os.P_NOWAIT,"python","python", mail_app_path, "-p", sztool_home)
+            os.spawnlp(os.P_NOWAIT,"python","python", mail_app_path, "-p", vinja_home)
         except Exception as e :
             logging.debug(e)
             logging.debug("start ageng error")
@@ -494,7 +494,7 @@ class MiscUtil(object):
 
     @staticmethod
     def select_project_open():
-        project_cfg_path = os.path.join(SzToolsConfig.getDataHome(), "project.cfg")
+        project_cfg_path = os.path.join(VinjaConf.getDataHome(), "project.cfg")
         if not os.path.exists(project_cfg_path):
             return
         lines = open(project_cfg_path,"r").readlines()
@@ -520,7 +520,7 @@ class ScratchUtil(object):
     @staticmethod
     def startScriptEdit():
 
-        vim.command("call SwitchToSzToolView('script')")    
+        vim.command("call SwitchToVinjaView('script')")    
         vim.command("map <buffer><silent>,, :python ScratchUtil.runScript()<cr>")
         vim.command("set filetype=python")
         vim.command("set bufhidden=delete")
@@ -548,7 +548,7 @@ class ScratchUtil(object):
     @staticmethod
     def printScriptResult(result):
         """ output to result to a temp vim buffer named "scriptResult" """
-        vim.command("call SwitchToSzToolView('scriptResult')")    
+        vim.command("call SwitchToVinjaView('scriptResult')")    
         output(result)
 
     @staticmethod
@@ -560,8 +560,8 @@ class DictUtil(object):
     @staticmethod
     def playWordSound(word):
         initial_char=word[0]
-        word_tts_path=sztoolsCfg.get("word_tts_path")
-        word_player = sztoolsCfg.get("word_player")
+        word_tts_path=vinja_cfg.get("word_tts_path")
+        word_player = vinja_cfg.get("word_player")
         word_dir=os.path.join(word_tts_path,initial_char)
         word_file=os.path.join(word_dir,word+".wav")
         if os.path.exists(word_file):
@@ -599,7 +599,7 @@ class DictUtil(object):
         global stardict
         VimUtil.createOutputBuffer("dict")
         outbuffer=getOutputBuffer("dict")
-        dict_path = os.path.join(SzToolsConfig.getDataHome(), "dict")
+        dict_path = os.path.join(VinjaConf.getDataHome(), "dict")
         if not stardict :
             stardict = Dictionary(os.path.join(dict_path, 'stardict-dreye', 'DrEye4in1'))
         result=DictUtil.getWordDef(stardict, word)
@@ -612,7 +612,7 @@ class DictUtil(object):
             if not result :
                 result = "can't find the word definition"
         else :
-            dict_search_log_path = os.path.join(SzToolsConfig.getDataHome(), "dict/log.txt")
+            dict_search_log_path = os.path.join(VinjaConf.getDataHome(), "dict/log.txt")
             log_file=open(dict_search_log_path,"aw")
             log_file.write(word+"\n")
             log_file.close()
@@ -621,7 +621,7 @@ class DictUtil(object):
         result=result.encode(codepage,"replace")
         output(result,outbuffer)
 
-class SzToolsConfig(object):
+class VinjaConf(object):
 
     def _loadCfg(self,cfg_path):
         if not os.path.exists(cfg_path):
@@ -638,8 +638,8 @@ class SzToolsConfig(object):
     
     def __init__(self,cfg_path):
         self.cfg_dict={}
-        data_home = SzToolsConfig.getDataHome()
-        user_cfg_path=os.path.join(data_home , "sztools.cfg")
+        data_home = VinjaConf.getDataHome()
+        user_cfg_path=os.path.join(data_home , "vinja.cfg")
         self._loadCfg(cfg_path)
         self._loadCfg(user_cfg_path)
         
@@ -648,27 +648,27 @@ class SzToolsConfig(object):
 
     @staticmethod
     def getAppHome():
-        sztool_home=vim.eval("g:sztool_home")
-        sztool_app_home=os.path.join(sztool_home,"python")
-        return sztool_app_home
+        vinja_home=vim.eval("g:vinja_home")
+        app_home=os.path.join(vinja_home,"python")
+        return app_home
 
     @staticmethod
     def getDataHome():
         user_home = os.path.expanduser('~')
-        sztool_data_home=os.path.join(user_home,".sztools")
-        return sztool_data_home
+        data_home=os.path.join(user_home,".vinja")
+        return data_home
 
     @staticmethod
     def getShareHome():
-        sztool_home=vim.eval("g:sztool_home")
-        sztool_data_home=os.path.join(sztool_home,"share")
-        return sztool_data_home
+        vinja_home=vim.eval("g:vinja_home")
+        share_home=os.path.join(vinja_home,"share")
+        return share_home
 
-def initSztool():
-    data_home = SzToolsConfig.getDataHome()
+def initVinja():
+    data_home = VinjaConf.getDataHome()
     if not os.path.exists(data_home):
         os.mkdir(data_home)
-    log_filename = os.path.join(data_home, "sztools.log")
+    log_filename = os.path.join(data_home, "vinja.log")
     if not os.path.exists(log_filename) :
         open(log_filename,"w").close()
     logging.basicConfig(filename=log_filename,level=logging.DEBUG)
@@ -684,17 +684,17 @@ def initSztool():
     gscope["g_win_maxed"] = False
     gscope["edit_history"] = EditHistory()
     gscope["markSchemeInited"] = False
-    gscope["sztoolsCfg"]=SzToolsConfig(os.path.join(SzToolsConfig.getShareHome(),"conf/sztools.cfg"))
+    gscope["vinja_cfg"]=VinjaConf(os.path.join(VinjaConf.getShareHome(),"conf/vinja.cfg"))
 
     #append app path to sys.path
     import sys
-    sys.path.append(SzToolsConfig.getAppHome())
+    sys.path.append(VinjaConf.getAppHome())
 
 def fetchCallBack(args):
     guid,bufname = args
     resultText = BasicTalker.fetchResult(guid)
     #lines = resultText.split("\n")
-    VimUtil.writeToSzToolBuffer(bufname,resultText,append=True)
+    VimUtil.writeToVinjaBuffer(bufname,resultText,append=True)
 
 class BasicTalker(object):
 
@@ -821,17 +821,17 @@ class VimUtil(object):
         return index
 
     @staticmethod
-    def getSzToolBuffer(name, createNew = True):
+    def getVinjaBuffer(name, createNew = True):
         def _getConsoleBuffer():
             jde_console_buf = None
             for buffer in vim.buffers:
-                if buffer.name and buffer.name.find( "SzToolView_%s" % name) > -1 :
+                if buffer.name and buffer.name.find( "VinjaView_%s" % name) > -1 :
                     jde_console_buf = buffer
                     break
             return jde_console_buf
         buf = _getConsoleBuffer()
         if buf == None and createNew :
-            vim.command("call SwitchToSzToolView('%s')" % name )
+            vim.command("call SwitchToVinjaView('%s')" % name )
             listwinnr=str(vim.eval("winnr('#')"))
             vim.command("exec '%s wincmd w'" % listwinnr)
             buf = _getConsoleBuffer()
@@ -839,14 +839,14 @@ class VimUtil(object):
         return buf
 
     @staticmethod
-    def writeToSzToolBuffer(name, text, append=False):
+    def writeToVinjaBuffer(name, text, append=False):
         if not text : return
-        buf = VimUtil.getSzToolBuffer(name)
+        buf = VimUtil.getVinjaBuffer(name)
         VimUtil.outputText(text,buf, append)
-        if append and VimUtil.isSzToolBufferVisible(name):
+        if append and VimUtil.isVinjaBufferVisible(name):
             endrow = len(buf)
             callback = lambda : VimUtil.scrollTo(endrow)
-            VimUtil.doCommandInSzToolBuffer(name,callback)
+            VimUtil.doCommandInVinjaBuffer(name,callback)
 
     @staticmethod
     def outputText(content,buffer=None,append=False):
@@ -882,8 +882,8 @@ class VimUtil(object):
             endsWithNewLine = False
 
     @staticmethod
-    def closeSzToolBuffer(name):
-        bufnr = vim.eval("bufnr('SzToolView_%s')" % name)    
+    def closeVinjaBuffer(name):
+        bufnr = vim.eval("bufnr('VinjaView_%s')" % name)    
         if bufnr == "-1" :
             return 
         vim.command("bd %s" % bufnr)
@@ -898,16 +898,16 @@ class VimUtil(object):
             vim.command("normal z-")
 
     @staticmethod
-    def isSzToolBufferVisible(name):
-        bufnr = vim.eval("bufnr('SzToolView_%s')" % name)    
+    def isVinjaBufferVisible(name):
+        bufnr = vim.eval("bufnr('VinjaView_%s')" % name)    
         visibleBufList = vim.eval("tabpagebuflist()")
         if bufnr in visibleBufList :
             return True
         return False
 
     @staticmethod
-    def doCommandInSzToolBuffer(bufName, callback):
-        vim.command("call SwitchToSzToolView('%s')" % bufName )
+    def doCommandInVinjaBuffer(bufName, callback):
+        vim.command("call SwitchToVinjaView('%s')" % bufName )
         callback()
         listwinnr = str(vim.eval("winnr('#')"))
         vim.command("exec '"+listwinnr+" wincmd w'")
@@ -934,7 +934,7 @@ class VimUtil(object):
         setlocal nobuflisted"
 
         """
-        vim.command("call SwitchToSzToolView('%s')" % name )
+        vim.command("call SwitchToVinjaView('%s')" % name )
         resultbuf = vim.current.buffer
         if switch : 
             return resultbuf
@@ -946,7 +946,7 @@ class VimUtil(object):
     def getOutputBuffer(name):
         shext_buffer=None
         for buffer in vim.buffers:
-            if buffer.name and "SzToolView_%s" % name in buffer.name :
+            if buffer.name and "VinjaView_%s" % name in buffer.name :
                 shext_buffer=buffer
                 break
         return shext_buffer
@@ -1062,4 +1062,4 @@ class EditHistory(object):
                 if PathUtil.same_path(path1, filename):
                     file_list.remove(path1)
 
-initSztool()
+initVinja()

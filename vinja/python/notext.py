@@ -4,14 +4,14 @@ import vim,sys,os
 
 class NoteDb(object):
     def getConn(self):
-        conn=sqlite.connect(os.path.join(SzToolsConfig.getDataHome(), "note.dat"))
+        conn=sqlite.connect(os.path.join(VinjaConf.getDataHome(), "note.dat"))
         return conn
 
     def initDb(self):
         createNoteTableSql="create table sznote (id integer primary key ,  \
           create_date varchar(10),status char(1),title varchar(200), content varchar(5000))"
         createTagTableSql="create table tag(tag_name varchar(30), note_id integer)"
-        note_db_path = os.path.join(SzToolsConfig.getDataHome(), "note.dat")
+        note_db_path = os.path.join(VinjaConf.getDataHome(), "note.dat")
         path=os.path.dirname(note_db_path)
         if not os.path.exists(path):
           os.makedirs(path)
@@ -92,7 +92,7 @@ class Notext(object) :
               + "title:" +"\n" \
               + "tags:" +"\n" \
               + "=" * 50 + "\n"
-        vim.command("call SwitchToSzToolView('note_edit')")
+        vim.command("call SwitchToVinjaView('note_edit')")
         vim.command("call NoteItemSyntax()")
         output(template)
 
@@ -187,9 +187,9 @@ class Notext(object) :
         return maxId
 
     def updateTagListView(self):
-        vim.command("call SwitchToSzToolView('tag_list')" )
+        vim.command("call SwitchToVinjaView('tag_list')" )
         (row, col) = vim.current.window.cursor
-        note_db_path=os.path.join(SzToolsConfig.getDataHome(), "note.dat")
+        note_db_path=os.path.join(VinjaConf.getDataHome(), "note.dat")
         if not os.path.exists(note_db_path):
             initDb()
         selectSql="select  tag_name ,count(*) from tag group by tag_name"
@@ -215,7 +215,7 @@ class Notext(object) :
         self.updateNoteListView()
 
     def updateNoteListView(self):
-        vim.command("call SwitchToSzToolView('note_list')" )
+        vim.command("call SwitchToVinjaView('note_list')" )
         (row, col) = vim.current.window.cursor
         vim.command("exec 'setlocal buftype=nofile'") 
         vim.command("exec 'setlocal noswapfile'")
@@ -251,9 +251,9 @@ class Notext(object) :
         vim.current.window.cursor=(row,col)
 
     def exit(self):
-        vim.command("bw! SzToolView_note_edit")
-        vim.command("bw! SzToolView_note_list")
-        vim.command("bw! SzToolView_tag_list")
+        vim.command("bw! VinjaView_note_edit")
+        vim.command("bw! VinjaView_note_list")
+        vim.command("bw! VinjaView_tag_list")
         notext = None
 
     def queryDetail(self):
@@ -276,7 +276,7 @@ class Notext(object) :
             tags.append(dataRow[0])
         noteItem.tags=tags
 
-        vim.command("call SwitchToSzToolView('note_edit')")
+        vim.command("call SwitchToVinjaView('note_edit')")
         vim.command("call NoteItemSyntax()")
         vim.command("let b:currentNoteId=%s" % id)
         output(str(noteItem))

@@ -35,14 +35,14 @@ class LsCmd(object):
         self.pathResolver = pathResolver
 
     def colorOutput(self):
-        vim.command("call SwitchToSzToolView('shext')" )
+        vim.command("call SwitchToVinjaView('shext')" )
         vim.command("syntax clear")
         for item in self.colorInfos :
             vim.command(item)
 
-        dir_color = sztoolsCfg.get("dir_color")
-        exe_color = sztoolsCfg.get("exe_color")
-        cmp_color = sztoolsCfg.get("cmp_color")
+        dir_color = vinja_cfg.get("dir_color")
+        exe_color = vinja_cfg.get("exe_color")
+        cmp_color = vinja_cfg.get("cmp_color")
 
         vim.command("highlight shextdir guifg=%s" % dir_color)
         vim.command("highlight shextcmp guifg=%s" % cmp_color)
@@ -468,7 +468,7 @@ class JdeUtilCmd(object):
         elif cmd_array[0] == "project" :
             self.do_project_command(cmd_array[1:])
         elif cmd_array[0] == "title" :
-            vim.command("let g:sztool_title = \"%s\"" % cmd_array[1])
+            vim.command("let g:vinja_title = \"%s\"" % cmd_array[1])
             vim.command("let &titlestring = MyTitleString()")
         else :
             Shext.stdout("not recognized jde command,please run 'jde help' .")
@@ -596,10 +596,10 @@ class ShUtil(object):
 
     def __init__(self,screen_width,yank_buffer):
         self.findcmd = FindCmd()
-        self.shext_bm_path = os.path.join(SzToolsConfig.getDataHome(), "shext-bm.txt")
+        self.shext_bm_path = os.path.join(VinjaConf.getDataHome(), "shext-bm.txt")
         if not os.path.exists(self.shext_bm_path) :
             open(self.shext_bm_path, 'w').close()
-        shext_locatedb_path = os.path.join(SzToolsConfig.getDataHome(), "locate.db")
+        shext_locatedb_path = os.path.join(VinjaConf.getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
         self.zipcmd = ZipUtilCmd()
         self.jdecmd = JdeUtilCmd()
@@ -954,7 +954,7 @@ class Shext(object):
 
     @staticmethod
     def clearColorSyntax():
-        vim.command("call SwitchToSzToolView('shext')" )
+        vim.command("call SwitchToVinjaView('shext')" )
         vim.command("set filetype=")
         vim.command("syntax clear")
         listwinnr = str(vim.eval("winnr('#')"))
@@ -965,7 +965,7 @@ class Shext(object):
         self.shUtil = ShUtil(screen_width=80,yank_buffer=self.yank_buffer)
         self.pathResolver = PathResolver(self.shUtil)
         self.special_cmds = ["exit","edit","ledit","bmedit"]
-        self.extra_cmd_home= sztoolsCfg.get("extra_cmd_home")
+        self.extra_cmd_home= vinja_cfg.get("extra_cmd_home")
 
     def enoughArguments(self,tokens):
         cmdName = tokens[0]
@@ -1042,10 +1042,10 @@ class Shext(object):
     def exit(self):
         """
         for buffer in vim.buffers:
-            if buffer.name and buffer.name.find( "SzToolView_shext") > -1 :
+            if buffer.name and buffer.name.find( "VinjaView_shext") > -1 :
                 vim.command("bd! %s" %buffer.name)
         """
-        vim.command("bw! SzToolView_shext")
+        vim.command("bw! VinjaView_shext")
         vim.command("bw!")
         shext = None
 
@@ -1091,7 +1091,7 @@ class Shext(object):
 
     def listExtraCmds(self):
         if not os.path.exists(self.extra_cmd_home) :
-            Shext.stdout("no extra_cmd_home difined in sztools.cfg")
+            Shext.stdout("no extra_cmd_home difined in vinja.cfg")
             return 
         result = []
         for name in os.listdir(self.extra_cmd_home):
@@ -1110,7 +1110,7 @@ class Shext(object):
             Shext.stdout(msg)
 
     def help(self):
-        help_file = open(os.path.join(SzToolsConfig.getShareHome(),"doc/sztools.help"))
+        help_file = open(os.path.join(VinjaConf.getShareHome(),"doc/vinja.help"))
         content = [line.replace("\n","") for line in help_file.readlines()]
         help_file.close()
         Shext.stdout(content)
@@ -1187,7 +1187,7 @@ class Shext(object):
 
         resultFileType = self.findCmdFileType(cmd)
         if resultFileType != None :
-            vim.command("call SwitchToSzToolView('shext')" )
+            vim.command("call SwitchToVinjaView('shext')" )
             vim.command("set filetype=%s" % resultFileType )
             listwinnr = str(vim.eval("winnr('#')"))
             vim.command("exec '"+listwinnr+" wincmd w'")
@@ -1370,7 +1370,7 @@ class OutputNavigator(object):
 
     @staticmethod
     def highlightLine(ngt_index,length):
-        vim.command("call SwitchToSzToolView('shext')" )
+        vim.command("call SwitchToVinjaView('shext')" )
         vim.command("syntax clear")
         vim.command("highlight def MarkCurrentLine  ctermbg=Cyan     ctermfg=Black  guibg=#8CCBEA    guifg=Black")
         valueTuple=(ngt_index,0,length)

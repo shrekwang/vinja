@@ -462,7 +462,7 @@ class WorkSpaceRootNode(NormalDirNode):
     def _load_workspace(self) :
         workspace_dirs = []
 
-        shext_bm_path = os.path.join(SzToolsConfig.getDataHome(), "shext-bm.txt")
+        shext_bm_path = os.path.join(VinjaConf.getDataHome(), "shext-bm.txt")
         lines = open(shext_bm_path).readlines()
         for line in lines:
             path_start = line.find(" ")
@@ -502,9 +502,9 @@ class ProjectRootNode(NormalDirNode):
         self.isOpen = True
 
     def _load_class_path(self):
-        varConfig = os.path.expanduser("~/.sztools/vars.txt")
+        varConfig = os.path.expanduser("~/.vinja/vars.txt")
         if not os.path.exists(varConfig) :
-            varConfig = os.path.join(SzToolsConfig.getShareHome() , "conf/vars.txt")
+            varConfig = os.path.join(VinjaConf.getShareHome() , "conf/vars.txt")
         if os.path.exists(varConfig):
             for line in open(varConfig).readlines() :
                 if line.strip() != "" and not line.startswith("#") :
@@ -528,7 +528,7 @@ class ProjectRootNode(NormalDirNode):
                 var_key = sourcepath[0: sourcepath.find("/")]
                 var_path = self.var_dict.get(var_key)
                 if not var_path :
-                    logging.debug("var %s not exist in ~/.sztools/vars.txt" % var_key)
+                    logging.debug("var %s not exist in ~/.vinja/vars.txt" % var_key)
                 else :
                     abpath = sourcepath.replace(var_key, self.var_dict.get(var_key))
                     self.lib_srcs.append(abpath)
@@ -572,7 +572,7 @@ class ProjectTree(object):
         self.work_path_set = []
         self.edit_history = []
 
-        workspace_root = os.path.join(SzToolsConfig.getDataHome(), "workspace")
+        workspace_root = os.path.join(VinjaConf.getDataHome(), "workspace")
         if not os.path.exists(workspace_root):
             os.mkdir(workspace_root)
 
@@ -656,7 +656,7 @@ class ProjectTree(object):
     def preview_selected_node(self, edit_cmd = "edit"):
         self.open_selected_node(edit_cmd)
         tab_id = self._get_tab_id()
-        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
+        vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
 
     def open_selected_node(self, edit_cmd = "edit"):
         node = self.get_selected_node()
@@ -1056,7 +1056,7 @@ class ProjectTree(object):
         BasicTalker.doTreeCmd(file_path,"openInTerminal")
 
     def print_help(self):
-        help_file = os.path.join(SzToolsConfig.getShareHome(),"doc/tree.help")
+        help_file = os.path.join(VinjaConf.getShareHome(),"doc/tree.help")
         vim.command("exec 'wincmd w'")
         vim.command("%s %s" %("edit", help_file))
 
@@ -1344,7 +1344,7 @@ class ProjectTree(object):
             return 
 
         tab_id = projectTree._get_tab_id()
-        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
+        vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
         tree_path = projectTree.open_path(current_file_name)
         if tree_path == None :
             print "can't find node %s in ProjectTree" % current_file_name
@@ -1411,9 +1411,9 @@ class ProjectTree(object):
             return 
 
         tab_id = projectTree._get_tab_id()
-        if not VimUtil.isSzToolBufferVisible('ProjectTree_%s' % tab_id):
+        if not VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
             return 
-        vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
+        vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
         (row,col) = vim.current.window.cursor
         projectTree.render_tree()
         vim.current.window.cursor = (row,col)
@@ -1423,9 +1423,9 @@ class ProjectTree(object):
     def dispose_tree():
         global projectTree
         tab_id = projectTree._get_tab_id()
-        if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % tab_id):
+        if VimUtil.isVinjaBufferVisible("ProjectTree_%s" % tab_id):
             projectTree.save_status()
-            VimUtil.closeSzToolBuffer("ProjectTree_%s" % tab_id)
+            VimUtil.closeVinjaBuffer("ProjectTree_%s" % tab_id)
         projectTree = None
         del globals()["projectTree"]
 
@@ -1441,13 +1441,13 @@ class ProjectTree(object):
         current_file_name = vim_buffer.name
         
         tab_id = projectTree._get_tab_id()
-        if VimUtil.isSzToolBufferVisible("ProjectTree_%s" % tab_id):
-            VimUtil.closeSzToolBuffer("ProjectTree_%s" % tab_id)
+        if VimUtil.isVinjaBufferVisible("ProjectTree_%s" % tab_id):
+            VimUtil.closeVinjaBuffer("ProjectTree_%s" % tab_id)
         else :
-            vim.command("call SplitLeftPanel(30, 'SzToolView_ProjectTree_%s')" % tab_id )
+            vim.command("call SplitLeftPanel(30, 'VinjaView_ProjectTree_%s')" % tab_id )
             vim.command("set filetype=ztree")
             vim.command("setlocal statusline=\ ProjectTree")
-            vim.command("call SwitchToSzToolView('ProjectTree_%s')" % tab_id )
+            vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
             projectTree.restore_status()
             projectTree.render_tree()
             if current_file_name != None :

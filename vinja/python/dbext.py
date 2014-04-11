@@ -169,7 +169,7 @@ class Dbext(object):
     @staticmethod
     def getOutputBuffer():
         bufnum= vim.eval("bufnr('%')")
-        bufname = "SzToolView_dbext%s" %(bufnum)
+        bufname = "VinjaView_dbext%s" %(bufnum)
         dbext_output_buffer = None
         Dbext.createDbOutputBuffer(bufnum)
         for buffer in vim.buffers:
@@ -180,7 +180,7 @@ class Dbext(object):
 
     @staticmethod
     def createDbOutputBuffer(bufnum):
-        vim.command("call SwitchToSzToolView('dbext%s')" %(bufnum) )
+        vim.command("call SwitchToVinjaView('dbext%s')" %(bufnum) )
         vim.command("noremap <buffer> a 21zh")
         vim.command("noremap <buffer> f 21zl")
         vim.command("setlocal nostartofline")
@@ -263,7 +263,7 @@ class Dbext(object):
         return db_profile
 
     def promptDbOption(self):
-        dbconfs = self.loadConf(os.path.join(SzToolsConfig.getDataHome(), "db.conf"))
+        dbconfs = self.loadConf(os.path.join(VinjaConf.getDataHome(), "db.conf"))
         if dbconfs == None :
             return
         for index,item in enumerate(dbconfs):
@@ -300,7 +300,7 @@ class Dbext(object):
         if self.existsConnParameter():
             db_profile = self.getTempProfile()
             return db_profile
-        dbconfs = self.loadConf(os.path.join(SzToolsConfig.getDataHome(),"db.conf"))
+        dbconfs = self.loadConf(os.path.join(VinjaConf.getDataHome(),"db.conf"))
         if dbconfs == None : return
         if (len(dbconfs)==1) :
             db_profile = dbconfs[0]
@@ -439,7 +439,7 @@ class Dbext(object):
 
     def exit(self):
         bufnum= vim.eval("bufnr('%')")
-        bufname = "SzToolView_dbext%s" %(bufnum)
+        bufname = "VinjaView_dbext%s" %(bufnum)
         vim.command("bw! %s" %bufname)
         dbext = None
 

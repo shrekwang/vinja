@@ -40,7 +40,7 @@ public class JdtUI {
 		String sztoolHome = "";
 		while (i < args.length && args[i].startsWith("-")) {
 			String arg = args[i++];
-			if (arg.equals("--sztool-home") && ( i<args.length)) {
+			if (arg.equals("--vinja-home") && ( i<args.length)) {
 				sztoolHome = args[i++];
 			}
 		}

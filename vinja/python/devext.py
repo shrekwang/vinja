@@ -240,7 +240,7 @@ def generateCode():
             options[name.strip()]=value.strip()
         except :
             pass
-    vim.command("call SwitchToSzToolView('codegen')")
+    vim.command("call SwitchToVinjaView('codegen')")
 
     tableCols=getTableDefinition(options["table"])
 

@@ -9,7 +9,7 @@ import shutil
 from subprocess import Popen
 from string import Template
 import difflib
-from common import output,SzToolsConfig,MiscUtil,VimUtil,BasicTalker,ZipUtil,PathUtil
+from common import output,VinjaConf,MiscUtil,VimUtil,BasicTalker,ZipUtil,PathUtil
 
 from pyparsing import *
 from xml.etree.ElementTree import *
@@ -82,7 +82,7 @@ class ProjectManager(object):
     def projectInit():
         pwd = os.getcwd()
         projectName =  os.path.basename(os.getcwd())
-        examples_dir = os.path.join(SzToolsConfig.getShareHome(),"examples")
+        examples_dir = os.path.join(VinjaConf.getShareHome(),"examples")
         projectInitXml = os.path.join(examples_dir,"project.xml")
         classpathInitXml = os.path.join(examples_dir,"classpath.xml")
         jdeInitXml = os.path.join(examples_dir,"jde.xml")
@@ -441,7 +441,7 @@ class EditUtil(object):
         if not classPathXml : return
         allFullClassNames = Parser.getAllSuperClassFullNames()
         resultText = Talker.overideMethod(classPathXml,allFullClassNames)
-        VimUtil.writeToSzToolBuffer("JdeConsole",resultText)
+        VimUtil.writeToVinjaBuffer("JdeConsole",resultText)
 
     @staticmethod
     def locateDefinition(sourceType):
@@ -734,7 +734,7 @@ class EditUtil(object):
             classNameList = Parser.getFullClassNames(className)
             constructDefs = Talker.getConstructDefs(current_file_name,classNameList,classPathXml)
             if constructDefs == "" : return
-            VimUtil.writeToSzToolBuffer("JdeConsole",constructDefs)
+            VimUtil.writeToVinjaBuffer("JdeConsole",constructDefs)
             return 
 
 
@@ -789,7 +789,7 @@ class EditUtil(object):
             vim_buffer[row-1] = tmp
             vim.current.window.cursor = (row,idx)
         else :
-            VimUtil.writeToSzToolBuffer("JdeConsole",methodDefs)
+            VimUtil.writeToVinjaBuffer("JdeConsole",methodDefs)
         return
 
     @staticmethod
@@ -802,7 +802,7 @@ class EditUtil(object):
         if not classPathXml : return
         classNameList = Parser.getFullClassNames(classname)
         result = Talker.dumpClass(classPathXml,classNameList)
-        VimUtil.writeToSzToolBuffer("JdeConsole",result)
+        VimUtil.writeToVinjaBuffer("JdeConsole",result)
 
     @staticmethod
     def toggleBreakpoint():
@@ -1271,9 +1271,9 @@ class Compiler(object):
             if node != None :
                 node.set_error_flag(flag)
 
-        if not VimUtil.isSzToolBufferVisible('ProjectTree'):
+        if not VimUtil.isVinjaBufferVisible('ProjectTree'):
             return 
-        vim.command("call SwitchToSzToolView('ProjectTree')" )
+        vim.command("call SwitchToVinjaView('ProjectTree')" )
         (row,col) = vim.current.window.cursor
         projectTree.render_tree()
         vim.current.window.cursor = (row,col)
@@ -1288,7 +1288,7 @@ class Compiler(object):
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
         if not classPathXml : return
         resultText = Talker.copyResource(classPathXml,current_file_name)
-        VimUtil.writeToSzToolBuffer("JdeConsole",resultText)
+        VimUtil.writeToVinjaBuffer("JdeConsole",resultText)
 
 class Runner(object):
 
@@ -1302,7 +1302,7 @@ class Runner(object):
         if not classPathXml : return
         serverName = vim.eval("v:servername")
         resultText = Talker.runFile(classPathXml,current_file_name,serverName,"JdeConsole",runCmd)
-        VimUtil.writeToSzToolBuffer("JdeConsole",resultText)
+        VimUtil.writeToVinjaBuffer("JdeConsole",resultText)
 
     @staticmethod
     def runAntBuild(target=None):
@@ -1378,7 +1378,7 @@ class AutoImport(object):
             currentPackage = ""
 
         searchText = "\n".join(vim_buffer)
-        tmp_path = os.path.join(SzToolsConfig.getDataHome(),"autoimp.tmp")
+        tmp_path = os.path.join(VinjaConf.getDataHome(),"autoimp.tmp")
         tmp_src_file = open(tmp_path,"w")
         tmp_src_file.write(searchText)
         tmp_src_file.close()
@@ -2092,7 +2092,7 @@ class Jdb(object):
         self.out_buf_list = []
         self.ivp = InspectorVarParser()
         self.quick_step = False
-        alias_text = file(os.path.join(SzToolsConfig.getShareHome(),"conf/jdb_alias.cfg")).read()
+        alias_text = file(os.path.join(VinjaConf.getShareHome(),"conf/jdb_alias.cfg")).read()
         self.alias_table = [item.split() for item in alias_text.split("\n") if item.strip() != "" ]
 
     def initDebugProject(self):
@@ -2105,10 +2105,10 @@ class Jdb(object):
         self.display = True
         # 30% height
         height = vim.eval("winheight(0) / 10 * 3")
-        #vim.command("call SwitchToSzToolView('JdeConsole','belowright','%s')" % height)
-        #vim.command("call SwitchToSzToolView('Jdb','aboveleft','7')")
-        vim.command("call SwitchToSzToolView('Jdb','belowright','%s')" % height)
-        vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
+        #vim.command("call SwitchToVinjaView('JdeConsole','belowright','%s')" % height)
+        #vim.command("call SwitchToVinjaView('Jdb','aboveleft','7')")
+        vim.command("call SwitchToVinjaView('Jdb','belowright','%s')" % height)
+        vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
         vim.command("nnoremap <buffer><silent>o      :python VarTree.open_selected_node()<cr>")
         vim.command("setlocal cursorline")
         vim.command("call SetTabPageName('Jdb')")
@@ -2116,7 +2116,7 @@ class Jdb(object):
 
         if self.out_buf_list :
             output(self.out_buf_list)
-        vim.command("call SwitchToSzToolView('Jdb')")
+        vim.command("call SwitchToVinjaView('Jdb')")
         vim.command("vertical resize 65")
         buffer=vim.current.buffer
 
@@ -2159,16 +2159,16 @@ class Jdb(object):
         if args[0] == "suspend" :
             self.handleSuspend(args[1],args[2],args[3],args[4])
         elif args[0] == "msg" :
-            buffer = VimUtil.getSzToolBuffer("JdbStdOut", createNew = False )
+            buffer = VimUtil.getVinjaBuffer("JdbStdOut", createNew = False )
             if (buffer == None ) :
                 print args[1]
                 return
-            vim.command("call SwitchToSzToolView('JdbStdOut')")
+            vim.command("call SwitchToVinjaView('JdbStdOut')")
             self.stdout(args[1])
             buffer=vim.current.buffer
             row = len(buffer)
             vim.current.window.cursor = (row, 0)
-            vim.command("call SwitchToSzToolView('Jdb')")
+            vim.command("call SwitchToVinjaView('Jdb')")
             if "process terminated" in args[1] and self.quick_step :
                 self.toggleQuickStep()
             vim.command("redraw")
@@ -2229,7 +2229,7 @@ class Jdb(object):
 
             cur_buffer =vim.current.buffer
             self.old_lines = [line for line in cur_buffer]
-            qs_help_file = open(os.path.join(SzToolsConfig.getShareHome(),"doc/quickstep.help"))
+            qs_help_file = open(os.path.join(VinjaConf.getShareHome(),"doc/quickstep.help"))
             content = [line.rstrip() for line in qs_help_file.readlines()]
             content.append(">")
             qs_help_file.close()
@@ -2293,7 +2293,7 @@ class Jdb(object):
         if (self.display == False ) :
             self.show()
         else :
-            vim.command("call SwitchToSzToolView('Jdb')")
+            vim.command("call SwitchToVinjaView('Jdb')")
 
         data = JdbTalker.submit("eval_display",self.class_path_xml,self.serverName)
         if data : 
@@ -2338,30 +2338,30 @@ class Jdb(object):
         jdb.show()
 
     def stdout(self,msg):
-        buffer = VimUtil.getSzToolBuffer("JdbStdOut")
+        buffer = VimUtil.getVinjaBuffer("JdbStdOut")
         output(msg,buffer,False)
         vim.command("redraw")
 
     def editBufOut(self,msg):
-        buffer = VimUtil.getSzToolBuffer("Jdb")
+        buffer = VimUtil.getVinjaBuffer("Jdb")
         output(msg,buffer,True)
 
     def printHelp(self):
-        help_file = open(os.path.join(SzToolsConfig.getShareHome(),"doc/jdb.help"))
+        help_file = open(os.path.join(VinjaConf.getShareHome(),"doc/jdb.help"))
         content = [line.rstrip() for line in help_file.readlines()]
         help_file.close()
         self.stdout(content)
 
     def printAlias(self):
-        alias_file = open(os.path.join(SzToolsConfig.getShareHome(),"conf/jdb_alias.cfg"))
+        alias_file = open(os.path.join(VinjaConf.getShareHome(),"conf/jdb_alias.cfg"))
         content = [line.rstrip() for line in alias_file.readlines()]
         alias_file.close()
         self.stdout(content)
 
     def closeBuffer(self):
         self.display = False
-        vim.command("bw! SzToolView_Jdb")
-        vim.command("bw! SzToolView_JdbStdOut")
+        vim.command("bw! VinjaView_Jdb")
+        vim.command("bw! VinjaView_JdbStdOut")
 
     def getCmdLine(self):
         work_buffer = vim.current.buffer
@@ -2438,13 +2438,13 @@ class Jdb(object):
                     bp_set.remove(row)
                 HighlightManager.removeSign(file_name,row,"B")
         self.stdout(data)
-        vim.command("call SwitchToSzToolView('Jdb')")
+        vim.command("call SwitchToVinjaView('Jdb')")
 
     def untilCmd(self):
         count = vim.eval("v:count1")
         self.switchSourceBuffer()
         mainClassName = Parser.getMainClass()
-        vim.command("call SwitchToSzToolView('Jdb')")
+        vim.command("call SwitchToVinjaView('Jdb')")
         cmd = "until %s %s" %(count ,mainClassName)
         self.resumeSuspend()
         data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
@@ -2462,7 +2462,7 @@ class Jdb(object):
         vim.command("normal %sG" % str(lineNum))
         vim.command("normal z.")
         vim.command("redraw")
-        vim.command("call SwitchToSzToolView('Jdb')")
+        vim.command("call SwitchToVinjaView('Jdb')")
 
     def removeDuplicate(self):
         curBuf = vim.current.buffer
@@ -2549,10 +2549,10 @@ class Jdb(object):
             return
 
         if cmdLine.startswith("hide"):
-            vim.command("call SwitchToSzToolView('Jdb')")
+            vim.command("call SwitchToVinjaView('Jdb')")
             lines = [line.strip() for line in vim.current.buffer]
             self.cmd_buf_list = lines
-            vim.command("call SwitchToSzToolViewVertical('JdbStdOut')")
+            vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
             lines = [line.strip() for line in vim.current.buffer]
             self.out_buf_list = lines
             self.closeBuffer()
@@ -2563,7 +2563,7 @@ class Jdb(object):
             self.switchSourceBuffer()
             # 30% height
             height = vim.eval("winheight(0) / 10 * 3")
-            vim.command("call SwitchToSzToolView('JdeConsole','belowright','%s')" % height)
+            vim.command("call SwitchToVinjaView('JdeConsole','belowright','%s')" % height)
             #clear buffer content
             vim.current.buffer[:] = None
 
@@ -2612,13 +2612,13 @@ class Jdb(object):
                     break
             if matchedRow > 0 :
                 callback = lambda : VimUtil.scrollTo(matchedRow)
-                VimUtil.doCommandInSzToolBuffer("JdbStdOut",callback)
+                VimUtil.doCommandInVinjaBuffer("JdbStdOut",callback)
 
         if not self.quick_step :
-            vim.command("call SwitchToSzToolView('Jdb')")
+            vim.command("call SwitchToVinjaView('Jdb')")
             self.appendPrompt(insertMode)
         else :
-            vim.command("call SwitchToSzToolView('Jdb')")
+            vim.command("call SwitchToVinjaView('Jdb')")
             work_buffer = vim.current.buffer
             row,col = vim.current.window.cursor
             work_buffer[row-1] = "> "
@@ -2629,13 +2629,13 @@ class Jdb(object):
         resultText = JdbTalker.submit("fetchJdbResult",self.class_path_xml,self.serverName)
         if resultText == "" :
             return 
-        VimUtil.writeToSzToolBuffer("JdeConsole",resultText,append=True)
+        VimUtil.writeToVinjaBuffer("JdeConsole",resultText,append=True)
 
     def fetchAutocmdResult(self):
         resultText = JdbTalker.submit("fetchAutocmdResult",self.class_path_xml,self.serverName)
         if resultText == "" :
             return 
-        VimUtil.writeToSzToolBuffer("JdbStdOut",resultText,append=True)
+        VimUtil.writeToVinjaBuffer("JdbStdOut",resultText,append=True)
 
     def replaceAlias(self, cmdLine):
         alias = ""
@@ -2704,7 +2704,7 @@ class InspectorVarParser():
             if vim.eval("&buftype") == "" :
                 break
         fullName = Parser.getFullClassNames(name)
-        vim.command("call SwitchToSzToolView('Jdb')")
+        vim.command("call SwitchToVinjaView('Jdb')")
         return fullName
 
 
