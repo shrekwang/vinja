@@ -2109,6 +2109,7 @@ class Jdb(object):
         #vim.command("call SwitchToVinjaView('Jdb','aboveleft','7')")
         vim.command("call SwitchToVinjaView('Jdb','belowright','%s')" % height)
         vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
+        vim.command("nnoremap <buffer><silent>o      :python VarTree.open_selected_node()<cr>")
         vim.command("setlocal cursorline")
         vim.command("call SetTabPageName('Jdb')")
         vim.command("set filetype=jdb")
