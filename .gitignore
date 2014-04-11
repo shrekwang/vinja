@@ -1,5 +1,5 @@
-sztools/classes
-sztools/lib/szjde.jar
+vinja/classes
+vinja/lib/szjde.jar
 *.pyc
 .classpath
 .project
