@@ -514,6 +514,13 @@ class MiscUtil(object):
         if (selectedIndex) :
             projectName = options[int(selectedIndex)]
             vim.command("silent lcd %s" % prj_dict[projectName].replace(" ",r"\ "))
+            vim.command("silent call Shext()")
+            vim.command("silent tabnew")
+            vim.command("silent call Jdext()")
+            vim.command("silent call ProjectTree()")
+            vim.command("let g:vinja_title = \"%s\"" % projectName)
+            vim.command("let &titlestring = MyTitleString()")
+        
 
 class ScratchUtil(object):
 
