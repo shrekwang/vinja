@@ -37,18 +37,18 @@ public class JdtUI {
 	public static void main(String[] args) {
 
 		int i = 0;
-		String sztoolHome = "";
+		String vinjaHome = "";
 		while (i < args.length && args[i].startsWith("-")) {
 			String arg = args[i++];
 			if (arg.equals("--vinja-home") && ( i<args.length)) {
-				sztoolHome = args[i++];
+				vinjaHome = args[i++];
 			}
 		}
-		instance = new JdtUI(sztoolHome);
+		instance = new JdtUI(vinjaHome);
 		instance.run();
 	}
-	public JdtUI(String sztoolHome) {
-		pref.init(sztoolHome);
+	public JdtUI(String vinjaHome) {
+		pref.init(vinjaHome);
 	}
 	
 	public Display getDisplay() {
@@ -63,7 +63,7 @@ public class JdtUI {
 		initUserLibConfig();
 		initFsWatcher();
 		shell.setSize(700, 500);
-		shell.setText("SzTool"); //$NON-NLS-1$
+		shell.setText("Vinja"); //$NON-NLS-1$
 
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())
@@ -120,7 +120,7 @@ public class JdtUI {
 		img = new Image(Display.getDefault(), is);
 
 		systemTrayItem.setImage(img);
-		systemTrayItem.setToolTipText("SzTool"); //$NON-NLS-1$
+		systemTrayItem.setToolTipText("Vinja"); //$NON-NLS-1$
 
 		systemTrayItem.addListener(SWT.MenuDetect, new Listener() {
 			public void handleEvent(Event event) {

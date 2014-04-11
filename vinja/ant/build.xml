@@ -1,4 +1,4 @@
-<project name="szjde" basedir=".." default="jar">
+<project name="vinja" basedir=".." default="jar">
 
   <property name="src" value="java" />
   <property name="dist" value="classes" />
@@ -30,19 +30,19 @@
   </target>
 
   <target name="jar" depends="build">
-    <jar jarfile="${lib}/szjde.jar" basedir="${dist}" />
+    <jar jarfile="${lib}/vinja.jar" basedir="${dist}" />
   </target>
 	
   <target name="release" depends="jar">
     <tstamp>
       <format property="builtat" pattern="yyyy-MM-dd" />
     </tstamp>   
-    <zip zipfile="${rootDir}/vim-sztools-${builtat}.zip" basedir="${rootDir}" >
+    <zip zipfile="${rootDir}/vinja-${builtat}.zip" basedir="${rootDir}" >
     	<include name="doc/*.pdf"/>
         <include name="ftplugin/**" />
         <include name="syntax/**" />
     	<include name="plugin/**"/>
-    	<include name="sztools/**"/>
+    	<include name="vinja/**"/>
   	</zip>
   </target>
 

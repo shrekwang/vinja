@@ -37,12 +37,12 @@ public class StepFilterConfiger {
 	}
 
 	private static File getConfigFile() {
-		String sztoolHome = Preference.getInstance().getSztoolHome();
+		String vinjaHome = Preference.getInstance().getVinjaHome();
 		String userCfgPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(), "stepfilters.txt");
 		File tmpFile = new File(userCfgPath);
 		if (tmpFile.exists()) return tmpFile;
 		
-		String defaultCfgPath = FilenameUtils.concat(sztoolHome, "share/conf/stepfilters.txt");
+		String defaultCfgPath = FilenameUtils.concat(vinjaHome, "share/conf/stepfilters.txt");
 		tmpFile = new File(defaultCfgPath);
 		if (tmpFile.exists()) return tmpFile;
 		

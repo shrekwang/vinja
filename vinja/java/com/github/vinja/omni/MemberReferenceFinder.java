@@ -124,24 +124,5 @@ public class MemberReferenceFinder {
 		}
 	}
 
-
-    public static void main( String[] args ) {
-        try {
-            MemberReferenceFinder app = new MemberReferenceFinder();
-
-            String jar = "E:\\work\\vim-sztool\\sztools\\lib\\szjde.jar";
-            String targetClass = "com/google/code/vimsztool/omni/ClassInfo";
-            app.findCallingMethodsInJar(jar, targetClass,"String getName()");
-
-            for (ReferenceLocation c : app.locations) {
-                System.out.println(c.source+":"+c.line+" "+c.className+" "+c.methodName+" "+c.methodDesc);
-            }
-
-            System.out.println("--\n"+app.locations.size()+" methods invoke "+
-                    app.targetClass+" "+
-                    app.targetMethod.getName()+" "+app.targetMethod.getDescriptor());
-        } catch(Exception x) {
-            x.printStackTrace();
-        }
-    }
+    
 }

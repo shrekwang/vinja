@@ -19,8 +19,8 @@
 
 编译
 
-![jie tu](https://raw.github.com/shrekwang/vim-sztool/master/doc/meta/compile.jpg)
+![jie tu](https://raw.github.com/shrekwang/vinja/master/doc/meta/compile.jpg)
 
 调试
 
-![jie tu](https://raw.github.com/shrekwang/vim-sztool/master/doc/meta/jdb-print2.jpg)
+![jie tu](https://raw.github.com/shrekwang/vinja/master/doc/meta/jdb-print2.jpg)

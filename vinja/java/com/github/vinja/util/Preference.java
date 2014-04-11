@@ -13,7 +13,7 @@ public class Preference {
 	
 	private static Preference instance  = new Preference();
 	private Map<String,String> config  = new HashMap<String,String>();
-	private String sztoolHome = null;
+	private String vinjaHome = null;
 	
 	private Preference() {}
 	
@@ -34,11 +34,11 @@ public class Preference {
 		return instance;
 	}
 	
-	public void init(String sztoolHome) {
-		this.sztoolHome = sztoolHome;
-		String defaultCfgPath = FilenameUtils.concat(sztoolHome, "share/conf/sztools.cfg");
+	public void init(String vinjaHome) {
+		this.vinjaHome = vinjaHome;
+		String defaultCfgPath = FilenameUtils.concat(vinjaHome, "share/conf/vinja.cfg");
 		loadPrefFromFile(defaultCfgPath);
-		String userCfgPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(), "sztools.cfg");
+		String userCfgPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(), "vinja.cfg");
 		loadPrefFromFile(userCfgPath);
 	}
 	
@@ -57,8 +57,8 @@ public class Preference {
 		}
 	}
 	
-	public String getSztoolHome() {
-		return sztoolHome;
+	public String getVinjaHome() {
+		return vinjaHome;
 	}
 	
 	public String getValue(String key) {

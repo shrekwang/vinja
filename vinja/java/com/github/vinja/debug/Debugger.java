@@ -599,8 +599,8 @@ public class Debugger {
 	public VirtualMachine launch(String mainClass, String classPathXml,
 			List<String> opts,List<String> args,boolean runAsTest) {
 		
-		String sztoolHome = Preference.getInstance().getSztoolHome();
-		String objInspectorPath = FilenameUtils.concat(sztoolHome, "lib/object-inspector-1.0.jar");
+		String vinjaHome = Preference.getInstance().getVinjaHome();
+		String objInspectorPath = FilenameUtils.concat(vinjaHome, "lib/object-inspector-1.0.jar");
 		File file = new File(objInspectorPath);
 		String urlPath = file.toURI().getPath();
 		

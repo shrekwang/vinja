@@ -20,7 +20,7 @@ public class VjdeUtil {
 
 	public static String getToolDataHome() {
 		String userHome = System.getProperty("user.home");
-		File file = new File(FilenameUtils.concat(userHome, ".sztools"	));
+		File file = new File(FilenameUtils.concat(userHome, ".vinja"	));
 		if (!file.exists()) file.mkdir();
 		return file.getPath();
 	}
