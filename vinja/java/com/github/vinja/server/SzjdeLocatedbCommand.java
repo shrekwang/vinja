@@ -1,5 +1,7 @@
 package com.github.vinja.server; 
 
+import java.io.File;
+
 import com.github.vinja.locate.FileSystemDb;
 
 
@@ -18,7 +20,7 @@ public class SzjdeLocatedbCommand extends SzjdeCommand {
 		String[] args = params.get(SzjdeConstants.PARAM_ARGS	).split(";");
 		dir = params.get(SzjdeConstants.PARAM_PWD);
 		action = args[0];
-		if (args.length < 2 && ! action.equals("list")) {
+		if (args.length < 2 && ! ( action.equals("list") || action.equals("help")) ) {
 			return "not enough arguments.";
 		}
 		if (!isActionValid(action)) {
@@ -26,29 +28,40 @@ public class SzjdeLocatedbCommand extends SzjdeCommand {
 		}
 		
 		if (args.length > 1) {
-			name = args[1];
+			name = args[args.length-1];
+            parseArgument(args);
 		}
-		parseArgument(args);
 		boolean indexed = fileSystemDb.alreadyIndexed(name, dir);
+
 		if (action.equals("add")) {
 			if (indexed) return "dir or name already exists.";
 			fileSystemDb.addIndexedDir(name, dir, excludes, depth);
-		} else if (action.equals("remove")) {
+            return "locatedb add succeeded";
+		} else if (action.equals("rm")) {
 			if (!indexed) return "dir or name not exists.";
 			fileSystemDb.removeIndexedDir(name);
-		} else if (action.equals("refresh")) {
+            return "locatedb rm succeeded";
+		} else if (action.equals("update")) {
 			if (!indexed) return "dir or name not exists.";
 			fileSystemDb.refreshIndex(name);
+            return "locatedb update succeeded";
 		} else if (action.equals("list")) {
 			return fileSystemDb.listIndexedDir();
+		} else if (action.equals("help")) {
+		    String help= "Usage:\n"
+		                + "\tlocatedb add [--depth n] [--excludes pattern] [--dir path] \n" 
+                        + "\tlocatedb {refresh|remove} name\n"
+		                + "\tlocatedb list";
+		    return help;
 		}
+        return "no such locatedb command";
 		
-		return "locatedb command succeeded";
 	}
 	
 	
 	private void parseArgument(String[] args) {
-		int i = 0;
+		//args[0] is locatedb action
+		int i = 1;
 		while (i < args.length && args[i].startsWith("-")) {
 			String arg = args[i++];
 			if (arg.equals("--depth") && ( i<args.length)	) {
@@ -62,14 +75,14 @@ public class SzjdeLocatedbCommand extends SzjdeCommand {
 				excludes = args[i++];
 			}
 			if (arg.equals("--dir")) {
-				dir = args[i++];
+				dir = args[i++].replace("/", File.separator);
 			}
 		}
 	}
 	
 	
 	private boolean isActionValid(String action) {
-		String[] validActions = new String[] {"add","remove","refresh","list"};
+		String[] validActions = new String[] {"add","rm","update","list","help"};
 		for (String name : validActions) {
 			if (name.equals(action)) return true;
 		}
