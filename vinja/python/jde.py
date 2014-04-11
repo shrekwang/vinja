@@ -2109,7 +2109,6 @@ class Jdb(object):
         #vim.command("call SwitchToVinjaView('Jdb','aboveleft','7')")
         vim.command("call SwitchToVinjaView('Jdb','belowright','%s')" % height)
         vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
-        vim.command("nnoremap <buffer><silent>o      :python VarTree.open_selected_node()<cr>")
         vim.command("setlocal cursorline")
         vim.command("call SetTabPageName('Jdb')")
         vim.command("set filetype=jdb")
@@ -2209,11 +2208,19 @@ class Jdb(object):
         logging.debug("min_normal_buf is %s" % str(min_normal_buf) )
         """
 
-
+    def emptyFunc(self):
+        pass
 
     def toggleQuickStep(self):
         if not self.quick_step :
             self.quick_step = True
+
+            printables = """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"""
+            mapcmd = "nnoremap <silent><buffer>"
+            for byte in printables :
+                vim.command("%s %s :python jdb.emptyFunc()<CR>" % (mapcmd, byte))
+
+            vim.command("inoremap <buffer><silent><ESC> <ESC>^ld$a <ESC>")
             vim.command("nnoremap <buffer><silent>a   dd:python jdb.appendPrompt()<cr>")
             vim.command("nnoremap <buffer><silent>i   dd:python jdb.appendPrompt()<cr>")
             vim.command("nnoremap <buffer><silent>l   :python jdb.stepCmd('step_into')<cr>")
@@ -2244,18 +2251,14 @@ class Jdb(object):
                 output(self.old_lines)
                 row_count = len(cur_buffer)
                 vim.current.window.cursor = (row_count, 1)
+
+            printables = """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"""
+            mapcmd = "nunmap <silent><buffer>"
+            for byte in printables :
+                vim.command("%s %s" % (mapcmd, byte))
             
-            vim.command("nunmap <buffer><silent>a")
-            vim.command("nunmap <buffer><silent>i")
-            vim.command("nunmap <buffer><silent>l")
-            vim.command("nunmap <buffer><silent>j")
-            vim.command("nunmap <buffer><silent>h")
-            vim.command("nunmap <buffer><silent>u")
-            vim.command("nunmap <buffer><silent>C")
-            vim.command("nunmap <buffer><silent>v")
-            vim.command("nunmap <buffer><silent>w")
-            vim.command("nunmap <buffer><silent>G")
-            vim.command("nunmap <buffer><silent>e")
+            vim.command("iunmap <buffer><silent><ESC>")
+            vim.command("nnoremap <buffer><silent>o      :python jdb.appendPrompt()<cr>")
             vim.command("setlocal statusline=\ Jdb")
 
     def handleSuspend(self,abs_path,lineNum,className,appendOperate):
