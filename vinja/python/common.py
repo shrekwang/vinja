@@ -180,7 +180,7 @@ class VinjaAgent(object):
         cmdArray.append("-classpath")
         cmdArray.append(os.path.pathsep.join(cps))
         cmdArray.append('-Djava.library.path=%s' % libpath )
-        cmdArray.append("com.google.code.vimsztool.ui.JdtUI")
+        cmdArray.append("com.github.vinja.ui.JdtUI")
         cmdArray.append("--vinja-home")
         cmdArray.append(vinja_home)
 
