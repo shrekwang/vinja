@@ -737,6 +737,10 @@ class ShUtil(object):
                         or bufname.endswith(".temp_src") \
                         or bufname.endswith(".java") :
                     break
+            filename= os.path.basename(name)
+            filename = vim.eval("fnameescape(\"%s\")" % filename)
+            dirname = os.path.dirname(name)
+            name = os.path.join(dirname,filename)
             vim.command("edit %s" %(name))
             vim.command("tabprevious")
 
@@ -985,7 +989,16 @@ class Shext(object):
         #cmdLine = cmdLine.replace("\ ","$$").strip()
         #cmdArray = [ item.replace("$$"," ") for item in re.split(r"\s+",cmdLine)]
         cmdLine = cmdLine.replace("\\","/").strip()
-        cmdArray = shlex.split(cmdLine)
+
+        try :
+            lexer = shlex.shlex(cmdLine)
+            lexer.quotes = '"'
+            lexer.wordchars += '\''
+            lexer.whitespace_split = True
+            cmdArray = list(lexer)
+        except :
+            cmdArray = [ item.replace("$$"," ") for item in re.split(r"\s+",cmdLine)]
+
         result = []
         varPat = re.compile(r".*(#|\$)\[(\d+)(:\d+)?\].*")
         for item in cmdArray :
