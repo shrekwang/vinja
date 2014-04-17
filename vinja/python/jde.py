@@ -2859,6 +2859,9 @@ class VarNode(object):
     def get_node_repr(self):
         if self.javatype :
             return self.name + ":  " + self.value + "  (" + self.javatype + ")"
+        #seperator line
+        if self.name == "----" :
+            return "---------------------------------"
         return self.name + ":  " + self.value 
 
     def renderToString(self,depth,  vertMap, isLastChild):

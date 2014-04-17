@@ -289,17 +289,30 @@ public class ExpEval {
 		    	
 				Set<String> exps = searcher.searchNearByExps(loc.lineNumber()-lineOffset, currentLine);
 				if (exps ==null || exps.size() == 0)  continue; 
+				boolean addedExp = false;
 				for (String exp : exps) {
 					if (exp ==null || exp.trim().equals("")) continue;
 					if (evaluatedExp.contains(exp)) continue;
 					ParseResult result = AstTreeFactory.getExpressionAst(exp);
 					if (result.hasError()) continue; 
 
-                    allNodes.addAll(createVarNodesFromExp(exp));
+					List<VarNode> varNodes = createVarNodesFromExp(exp);
+					if (varNodes.size() > 0 ) {
+                        allNodes.addAll(createVarNodesFromExp(exp));
+                        addedExp = true;
+					}
 					evaluatedExp.add(exp);
+				}
+				if (addedExp ) {
+				    //add seperator node
+				    VarNode varNode = new VarNode("----",VAR_NODE_LEAF,"","");
+				    allNodes.add(varNode);
 				}
 				count++;
 		    }
+			if (allNodes.size()>0 && allNodes.get(allNodes.size()-1).getName().equals("----")) {
+			    allNodes.remove(allNodes.size()-1);
+			}
             String v=XmlGenerate.generate(allNodes);
 			return v;
 		} catch (Exception e) {

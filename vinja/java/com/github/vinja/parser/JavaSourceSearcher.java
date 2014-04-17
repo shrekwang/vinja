@@ -272,7 +272,10 @@ public class JavaSourceSearcher {
 			
 			if (currentLine ) {
 				tmpNode = (CommonTree)node.getChild(1);
-				exps.addAll(getNodeText(tmpNode,false));
+				CommonTree tmpChildNode = (CommonTree)tmpNode.getChild(0);
+				if (tmpChildNode !=null && tmpChildNode.getType() != JavaParser.CLASS_CONSTRUCTOR_CALL) {
+                    exps.addAll(getNodeText(tmpNode,false));
+				}
 			} else {
 				tmpNode = (CommonTree)node.getChild(0);
 				exps.addAll(getNodeText(tmpNode,false));
