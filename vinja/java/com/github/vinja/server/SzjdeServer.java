@@ -123,6 +123,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeLocateSourceCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_LOAD_JAR_META)) {
 		   szjdeCommand = new SzjdeLoadJarMetaInfoCommand();
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_CLASS_PATH)) {
+		   szjdeCommand = new SzjdePrintClassPathCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_SEARCH_REF)) {
 		   szjdeCommand = new SzjdeSearchReferenceCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_CLIPBOARD)) {

@@ -354,6 +354,18 @@ class Talker(BasicTalker):
         data = Talker.send(params)
         return data
 
+
+    @staticmethod
+    def printClassPath(xmlPath):
+        params = dict()
+        params["cmd"]="classpath"
+        params["classPathXml"] = xmlPath
+        params["bufname"] = "shext"
+        serverName = vim.eval("v:servername")
+        params["vimServer"] = serverName
+        data = Talker.send(params)
+        return data
+
 class EditUtil(object):
 
     @staticmethod

@@ -21,6 +21,7 @@ public class SzjdeConstants {
 	public final static String CMD_PROJECT_CLEAN="projectClean";
 	public final static String CMD_PROJECT_OPEN="projectOpen";
 	public final static String CMD_LOAD_JAR_META="loadJarMeta";
+	public final static String CMD_CLASS_PATH="classpath";
 	public final static String CMD_TYPE_HIIRARCHY="typeHierarchy";
 	public final static String CMD_LOCATE_SOURCE="locateSource";
 	public final static String CMD_SEARCH_REF="searchRef";

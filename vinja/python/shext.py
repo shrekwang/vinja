@@ -493,6 +493,14 @@ class JdeUtilCmd(object):
                 return
             Talker.loadJarMeta(classPathXml)
 
+        elif cmd_array[0] == "classpath" :
+            Shext.stdout("")
+            classPathXml = os.path.join(os.getcwd(),".classpath")
+            if not os.path.exists(classPathXml):
+                Shext.stdout("no .classpath file in current dir, not a valid project")
+                return
+            Talker.printClassPath(classPathXml)
+
         elif cmd_array[0] == "clean" :
             Shext.stdout("")
             classPathXml = os.path.join(os.getcwd(),".classpath")
@@ -993,6 +1001,7 @@ class Shext(object):
         try :
             lexer = shlex.shlex(cmdLine)
             lexer.quotes = '"'
+            lexer.commenters = ''
             lexer.wordchars += '\''
             lexer.whitespace_split = True
             cmdArray = list(lexer)
