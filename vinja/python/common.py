@@ -412,6 +412,8 @@ class MiscUtil(object):
         split_char = VimUtil.getInput("please input the split char:")
         if not split_char :
             pat = re.compile("\s+")
+        elif split_char[0] == "\\":
+            pat = re.compile(split_char)
         else :
             pat = re.compile("\\"+split_char)
         rows = []
@@ -797,6 +799,9 @@ class BasicTalker(object):
         params["cmd"]="locatedb"
         params["args"] = ";".join(args)
         params["pwd"] = os.getcwd()
+        params["bufname"] = "shext"
+        serverName = vim.eval("v:servername")
+        params["vimServer"] = serverName
         data = BasicTalker.send(params)
         return data
 

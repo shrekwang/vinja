@@ -43,7 +43,7 @@ public class PatternUtil {
 	}
 	
 	private static boolean isVcsMetaData(File file) {
-		String[] metaPatterns = new String[] {".svn",".hg",".git",".cvs"};
+		String[] metaPatterns = new String[] {".svn",".hg",".git",".cvs",".setting",".tmp"};
 		String path = file.getPath();
 		for (String pat : metaPatterns ) {
 			if (path.indexOf(pat) > -1) return true;

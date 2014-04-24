@@ -2,6 +2,7 @@ package com.github.vinja.locate;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -15,6 +16,11 @@ public class RecordCollector extends DirectoryWalker<Record> {
 	private static JdeLogger log = JdeLogger.getLogger("RecordCollector");
 	private String startPath;
 	private String excludes;
+	private PrintWriter out;
+	
+	public void setProgressTracker(PrintWriter out) {
+	    this.out = out;
+	}
 	
 
     public List<Record> collect(String startPath,String excludes) {
@@ -22,7 +28,9 @@ public class RecordCollector extends DirectoryWalker<Record> {
       this.startPath = startPath;
       this.excludes = excludes;
       try {
+          out.println("indexing " +  startPath );
     	  File startDirectory = new File(startPath);
+
 	      walk(startDirectory, results);
       } catch (Exception e) {
     	  String errorMsg = VjdeUtil.getExceptionValue(e);
@@ -36,7 +44,11 @@ public class RecordCollector extends DirectoryWalker<Record> {
 			Collection<Record> results) throws IOException {
     	if (! directory.getPath().equals(startPath)
     			&& ! PatternUtil.isExclude(this.excludes, directory)) {
-	    	results.add(buildRecord(directory));
+    	    Record record = buildRecord(directory);
+	    	results.add(record);
+	    	if (depth < 6) {
+                out.println("indexing subdir " +  record.getRelativePath() + " .. ");
+	    	}
     	}
     	return true;
 	}

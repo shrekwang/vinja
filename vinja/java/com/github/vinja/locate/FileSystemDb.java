@@ -1,6 +1,7 @@
 package com.github.vinja.locate;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -122,7 +123,7 @@ public class FileSystemDb  implements JNotifyListener {
   
    
     
-    public void refreshIndex(String alias) {
+    public void refreshIndex(String alias,PrintWriter out) {
     	String sql = " select start_dir,excludes,depth from fsdb_dirs where alias='"+alias+"'";
     	List<String[]> values = sqliteManager.query(sql);
     	if (values.size()==0) return;
@@ -130,8 +131,8 @@ public class FileSystemDb  implements JNotifyListener {
     	String startDir = valueArray[0];
     	String excludes = valueArray[1];
     	String depth = valueArray[2];
-    	this.removeIndexedDir(alias);
-    	addIndexedDir(alias, startDir, excludes, Integer.parseInt(depth));
+    	removeIndexedDir(alias,out);
+    	addIndexedDir(alias, startDir, excludes, Integer.parseInt(depth),out);
     }
     
     public String listIndexedDir() {
@@ -157,7 +158,7 @@ public class FileSystemDb  implements JNotifyListener {
     	return false;
     }
     
-    public void removeIndexedDir(String alias) {
+    public void removeIndexedDir(String alias,PrintWriter out) {
     	String sql = " select start_dir from fsdb_dirs where alias='"+alias+"'";
     	List<String[]> values = sqliteManager.query(sql);
     	if (values.size()==0) return;
@@ -173,13 +174,16 @@ public class FileSystemDb  implements JNotifyListener {
     	sql = "delete from fsdb_files where start_dir = ? ";
     	sqliteManager.batchUpdate(sql, params);
     	
+    	out.println("rm the index of " + alias );
+    	
     	removeWatch(path);
     }
     
    
     
-    public void addIndexedDir(String alias, String dir,String excludes, int depth) {
+    public void addIndexedDir(String alias, String dir,String excludes, int depth,PrintWriter out) {
     	RecordCollector recordCollector=new RecordCollector();
+    	recordCollector.setProgressTracker(out);
     	String defaultExcludes = pref.getValue(Preference.DEFAULT_EXCLUDE_PATTERN);
     	
     	if (excludes == null ) {
@@ -202,6 +206,9 @@ public class FileSystemDb  implements JNotifyListener {
     	values = new ArrayList<String[]>();
     	values.add(new String[]{alias,dir,excludes,String.valueOf(depth)});
     	sqliteManager.batchUpdate(sql, values);
+    	
+    	out.println("write index to sqlite db .. " ); 
+    	out.println("");
     	
     	WatchedDirInfo info = new WatchedDirInfo();
     	info.setAlias(alias);
