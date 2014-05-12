@@ -1,7 +1,6 @@
 
 package com.github.vinja.compiler;
 
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Locale;
@@ -61,17 +60,17 @@ public class JDTCompiler  {
         if(ctx.getSrcVM() != null ) {
             settings.put(CompilerOptions.OPTION_Source, ctx.getSrcVM());
         } else {
-            // Default to 1.5
-            settings.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_1_5);
+            // Default to 1.6
+            settings.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_1_6);
         }
         
         // Target JVM
         if(ctx.getDstVM() != null ) {
             settings.put(CompilerOptions.OPTION_TargetPlatform, ctx.getDstVM());
         } else {
-            // Default to 1.5
-            settings.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_1_5);
-            settings.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_1_5);
+            // Default to 1.6
+            settings.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_1_6);
+            settings.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_1_6);
         }
 
         final IProblemFactory problemFactory = 
