@@ -396,7 +396,6 @@ class JavaClassNameContentManager(object):
 
 class EditHistoryManager(object):
     def __init__(self):
-        self.file_history = edit_history.get_history()
         self.matched_item = []
         self.show_on_open = True
         self.cur_buf = vim.current.buffer.name
@@ -406,6 +405,7 @@ class EditHistoryManager(object):
 
     def search_content(self,search_pat):
         rows = []
+        self.file_history = edit_history.get_history()
         self.matched_item = []
         if self.file_history == None or len(self.file_history)==0 :
             self.matched_item = []

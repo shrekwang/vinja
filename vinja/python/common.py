@@ -1034,14 +1034,14 @@ class EditHistory(object):
         self.history = {}
 
     def _get_win_id(self):
-        exists = vim.eval("exists('w:id')")
+        exists = vim.eval("exists('t:id')")
         if exists == "0" :
             return None
-        return  vim.eval("w:id")
+        return  vim.eval("t:id")
 
     def create_win_id(self):
         if self._get_win_id() == None :
-            vim.command('let w:id="%s"' % uuid.uuid4())
+            vim.command('let t:id="%s"' % uuid.uuid4())
 
     def record_current_buf(self):
         if vim.eval("&buftype") != "" :
@@ -1062,6 +1062,8 @@ class EditHistory(object):
     def get_history(self):
         uuid_str = self._get_win_id()
         records = self.history.get(uuid_str)
+        records[:] = [item for item in records if os.path.exists(item) \
+                or ( len(item)> 4 and item[0:4] in ["jar:", "zip:", "war:"] )]
         return records
 
     def remove_from_history(self,filename):
