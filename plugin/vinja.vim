@@ -408,7 +408,10 @@ function ProjectTree(...)
     map <silent><buffer> <C-j> :python projectTree.goto_next_sibling()<cr>
     map <silent><buffer> <C-k> :python projectTree.goto_prev_sibling()<cr>
 
-    map <silent><buffer> #     :python projectTree.changeTreeType()<cr>
+    map <silent><buffer> !     :python projectTree.load_java_classpath()<cr>
+    map <silent><buffer> #     :python projectTree.toggleTreeType("workSpaceTree")<cr>
+    map <silent><buffer> @     :python projectTree.toggleTreeType("workSetTree")<cr>
+    map <silent><buffer> %     :python projectTree.toggleTreeType("projectTree")<cr>
     map <silent><buffer> DD    :python projectTree.delete_node()<cr>
     map <silent><buffer> Dm    :python projectTree.delete_marked_node()<cr>
     map <silent><buffer> A     :python projectTree.add_node()<cr>
@@ -568,7 +571,7 @@ function InitJavaSetting()
   endif
 endfunction
 
-function! Jdext()
+function! JdeInit()
   call RunSzPyfile("jde.py")
   set completeopt=menuone
   autocmd BufEnter     *.java     call InitJavaSetting()
@@ -626,7 +629,10 @@ function! Jdext()
   autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F7>     <c-o>:python jdb.stepCmd('step_return')<cr>
   autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F8>     <c-o>:python jdb.stepCmd('resume')<cr>
   "autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><c-i>    <c-o>:python jdb.toggleQuickStep()<cr>
-  "load project java info in background
+endfunction
+
+function! Jdext()
+  call JdeInit()
   python ProjectManager.projectOpen()
 endfunction
 

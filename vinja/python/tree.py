@@ -175,6 +175,11 @@ class NormalDirNode(TreeNode):
         return False
 
     def _load_dir_content(self):
+
+        if not os.path.exists(self.realpath):
+            self.isLoaded = True
+            return
+
         old_children = self._children
         self._children = []
         self.hidden_nodes = set()
@@ -446,12 +451,102 @@ class ZipRootNode(TreeNode):
             else :
                 parentNode = sameChild
 
+class WorkSetNode(NormalDirNode):
+    def __init__(self, work_set_name ,work_set, projectTree):
+        super(WorkSetNode, self).__init__(work_set_name,"",projectTree)
+        self.name = work_set_name
+        self.work_set = work_set
+        self.projectTree = projectTree
+        self._load_workset()
+        self.isOpen = True
+
+    def refresh(self):
+        self._load_workset()
+
+    def _load_workset(self) :
+        for line in self.work_set :
+            split_index= line.find ("=")
+            if split_index < 0 : continue 
+            dir_name = line[0:split_index].strip()
+            abpath = line[split_index+1:].strip()
+            node = NormalDirNode(dir_name, abpath, self.projectTree)
+            self.add_child(node)
+        
+        self.isLoaded = True
+
+class WorkSetRootNode(NormalDirNode):
+
+    @staticmethod
+    def get_root_path():
+        workset_root_dir = os.path.join(VinjaConf.getDataHome(), "workset")
+        if not os.path.exists(workset_root_dir):
+            os.mkdir(workset_root_dir)
+        return workset_root_dir
+
+
+    def __init__(self, projectTree):
+        workset_root_dir = WorkSetRootNode.get_root_path()
+        super(WorkSetRootNode, self).__init__("workset",workset_root_dir,projectTree)
+
+        self.name="workset"
+        self.root_dir = workset_root_dir
+        self.projectTree = projectTree
+
+        self.workset_all = {}
+        self.workset_cfg_path = os.path.join(VinjaConf.getDataHome(), "workset.cfg")
+
+        self._load_all_workset()
+        self.isOpen = True
+
+    def refresh(self):
+        self._load_all_workset()
+
+    def _load_all_workset(self) :
+
+        import codecs
+        fp = codecs.open(self.workset_cfg_path, "r", "utf-8")
+        lines = fp.read().split("\n")
+        #lines = open(self.workset_cfg_path,"r").readlines()
+        currentSetName = ""
+        currentSet = []
+
+        for line in lines:
+            if not line.strip() : continue
+            if line[0] == "#" : continue
+            if line.startswith("  ") :
+                line = line.strip()
+                currentSet.append(line)
+            else :
+                if len(currentSet) > 0  :
+                    self.workset_all[currentSetName] = currentSet
+                currentSetName = line.strip() 
+                currentSet = []
+
+        if len(currentSet) > 0  :
+            self.workset_all[currentSetName] = currentSet
+
+        for workset_name  in self.workset_all.keys() :
+            node = WorkSetNode(workset_name, self.workset_all[workset_name], self.projectTree)
+            self.add_child(node)
+
+        self.isLoaded = True
+    
 class WorkSpaceRootNode(NormalDirNode):
 
-    def __init__(self, root_dir,projectTree):
-        super(WorkSpaceRootNode, self).__init__("workSpace",root_dir,projectTree)
+    @staticmethod
+    def get_root_path():
+        workspace_root = os.path.join(VinjaConf.getDataHome(), "workspace")
+        if not os.path.exists(workspace_root):
+            os.mkdir(workspace_root)
+        return workspace_root
+
+    def __init__(self, projectTree):
+        
+        workspace_root = WorkSpaceRootNode.get_root_path()
+        super(WorkSpaceRootNode, self).__init__("workSpace",workspace_root,projectTree)
+
         self.name="workSpace"
-        self.root_dir = root_dir
+        self.root_dir = workspace_root
         self.projectTree = projectTree
         self._load_workspace()
         self.isOpen = True
@@ -460,29 +555,18 @@ class WorkSpaceRootNode(NormalDirNode):
         self._load_workspace()
 
     def _load_workspace(self) :
-        workspace_dirs = []
-
-        shext_bm_path = os.path.join(VinjaConf.getDataHome(), "shext-bm.txt")
-        lines = open(shext_bm_path).readlines()
-        for line in lines:
-            path_start = line.find(" ")
-            name = line[0:path_start]
-            path = line[path_start:-1].strip()
-            workspace_dirs.append(path)
 
         self._children = []
-
-        dirs = []
-        for abpath in workspace_dirs :
-            if os.path.isdir(abpath) :
-                dirs.append((os.path.basename(abpath), abpath))
-        dirs.sort()
-
-        for dir_name, abpath in dirs :
-            if not self.projectTree.node_visible(dir_name):
-                self.hidden_nodes.add(dir_name)
+        project_cfg_path = os.path.join(VinjaConf.getDataHome(), "project.cfg")
+        lines = open(project_cfg_path).readlines()
+        for line in lines:
+            path_start = line.find("=")
+            project_name = line[0:path_start]
+            project_path = line[path_start+1:].strip()
+            if not self.projectTree.node_visible(project_name):
+                self.hidden_nodes.add(project_name)
                 continue
-            node = NormalDirNode(dir_name, abpath, self.projectTree)
+            node = NormalDirNode(project_name, project_path, self.projectTree)
             self.add_child(node)
         
         self.isLoaded = True
@@ -572,21 +656,26 @@ class ProjectTree(object):
         self.work_path_set = []
         self.edit_history = []
 
-        workspace_root = os.path.join(VinjaConf.getDataHome(), "workspace")
-        if not os.path.exists(workspace_root):
-            os.mkdir(workspace_root)
+        if treeType == "workSetTree" :
+            root_dir = WorkSetRootNode.get_root_path()
+        elif treeType == "workSpaceTree":
+            root_dir = WorkSpaceRootNode.get_root_path()
+        self.root_dir = root_dir
 
-        self.root_dir = root_dir if treeType == "currentDir" else workspace_root
         self.workset_config_path = os.path.join(self.root_dir, ".jde_work_set")
         self.tree_state_path = os.path.join(self.root_dir, ".jde_tree_state")
         self.prefix_pat = re.compile(r"[^ \-+~`|]")
         self.tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
         self._load_project_workset()
-        if treeType == "currentDir" :
-            self.root = ProjectRootNode(self.root_dir,self)
-        else :
-            self.root = WorkSpaceRootNode(self.root_dir,self)
         self.root_map = {}
+
+        if treeType == "currentDir" :
+            self.root = ProjectRootNode(root_dir,self)
+        elif treeType == "workSetTree":
+            self.root = WorkSetRootNode(self)
+        else :
+            self.root = WorkSpaceRootNode(self)
+        
         self.project_encoding = self._get_project_encoding()
 
     def _get_project_encoding(self):
@@ -1055,6 +1144,10 @@ class ProjectTree(object):
         file_path = self.get_selected_node().realpath
         BasicTalker.doTreeCmd(file_path,"openInTerminal")
 
+    def load_java_classpath(self):
+        file_path = self.get_selected_node().realpath
+        ProjectManager.projectOpen(file_path)
+
     def print_help(self):
         help_file = os.path.join(VinjaConf.getShareHome(),"doc/tree.help")
         vim.command("exec 'wincmd w'")
@@ -1194,6 +1287,12 @@ class ProjectTree(object):
                     if PathUtil.in_directory(path,child.realpath): 
                         node = child
                         break
+            if isinstance(node,WorkSetRootNode) :
+                for child in node.get_children():
+                    for childs_child in child.get_children():
+                        if PathUtil.in_directory(path,childs_child.realpath): 
+                            node = childs_child
+                            break
 
         if path.startswith("jar:") :
             zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
@@ -1206,6 +1305,9 @@ class ProjectTree(object):
             else :
                 path = inner_path
                 zip_file_node = self.find_node(zip_file_path)
+
+            if zip_file_node == None :
+                return None
             
             if not zip_file_node.isLoaded : 
                 zip_file_node.load_childrend()
@@ -1249,6 +1351,15 @@ class ProjectTree(object):
                     if PathUtil.in_directory(path,child.realpath): 
                         node = child
                         break
+                if node.realpath == path :
+                    return node
+
+            if isinstance(node,WorkSetRootNode) :
+                for child in node.get_children():
+                    for childs_child in child.get_children():
+                        if PathUtil.in_directory(path,childs_child.realpath): 
+                            node = childs_child
+                            break
                 if node.realpath == path :
                     return node
 
@@ -1375,7 +1486,12 @@ class ProjectTree(object):
 
     @staticmethod
     def create_workspace_tree(projectRoot = None) :
-        tree = ProjectTree(projectRoot, "workSpace")
+        tree = ProjectTree(projectRoot, "workSpaceTree")
+        return tree
+
+    @staticmethod
+    def create_workset_tree(projectRoot = None) :
+        tree = ProjectTree(projectRoot, "workSetTree")
         return tree
 
     @staticmethod
@@ -1457,14 +1573,11 @@ class ProjectTree(object):
             vim.command("exec 'wincmd w'")
 
     @staticmethod
-    def changeTreeType():
+    def toggleTreeType(treeType):
         global projectTree
         if projectTree == None :
             return 
-        if isinstance(projectTree.root,WorkSpaceRootNode) :
-            oldTreeType = "workSpaceTree"
-        else :
-            oldTreeType = "projectTree"
+
         projectTree.save_status()
         projectTree = None
         del globals()["projectTree"]
@@ -1472,15 +1585,17 @@ class ProjectTree(object):
         vim_buffer = vim.current.buffer
         vim_buffer[:] = None
         vim.command("setlocal nomodifiable")
-        if oldTreeType == "workSpaceTree"  :
-            projectTree = ProjectTree.create_project_tree()
-        else :
+
+        if treeType == "workSpaceTree"  :
             projectTree = ProjectTree.create_workspace_tree()
+        elif treeType == "workSetTree" :
+            projectTree = ProjectTree.create_workset_tree()
+        else:
+            projectTree = ProjectTree.create_project_tree()
         projectTree.restore_status()
         projectTree.render_tree()
 
         vim.command("exec 'wincmd w'")
         projectTree.restore_status(node_type="file")
         vim.command("exec 'wincmd w'")
-
 

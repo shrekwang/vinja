@@ -110,8 +110,10 @@ class ProjectManager(object):
         Talker.projectClean(classPathXml)
 
     @staticmethod
-    def projectOpen():
-        classPathXml = os.path.join(os.getcwd(),".classpath")
+    def projectOpen(projectRootPath = None):
+        if projectRootPath == None :
+            projectRootPath = os.getcwd()
+        classPathXml = os.path.join(projectRootPath,".classpath")
         if not os.path.exists(classPathXml) :
             vim_buffer = vim.current.buffer
             current_file_name = vim_buffer.name

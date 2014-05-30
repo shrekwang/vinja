@@ -994,7 +994,7 @@ class Shext(object):
         return True
 
     def parseCmd(self,cmdLine):
-        #cmdLine = cmdLine.replace("\ ","$$").strip()
+        cmdLine = cmdLine.replace("\ ","$$").strip()
         #cmdArray = [ item.replace("$$"," ") for item in re.split(r"\s+",cmdLine)]
         cmdLine = cmdLine.replace("\\","/").strip()
 
@@ -1005,7 +1005,8 @@ class Shext(object):
             lexer.wordchars += '\''
             lexer.whitespace_split = True
             cmdArray = list(lexer)
-        except :
+            cmdArray = [ item.replace("$$"," ") for item in cmdArray ]
+        except:
             cmdArray = [ item.replace("$$"," ") for item in re.split(r"\s+",cmdLine)]
 
         result = []
