@@ -994,6 +994,9 @@ public class JavaSourceSearcher {
             case JavaParser.OCTAL_LITERAL:
                 typename = "int";
                 break;
+            case JavaParser.CHARACTER_LITERAL:
+                typename = "char";
+                break;
             case JavaParser.STRING_LITERAL :
                 typename = "String";
                 break;
@@ -1111,19 +1114,51 @@ public class JavaSourceSearcher {
     	//TODO : search in super class 
     	List<MemberInfo> paramCountMatchedList = new ArrayList<MemberInfo>();
     	
+    	 for (MemberInfo member: memberInfos) { 
+             if (member.getName().equals(methodName) 
+                     && member.getParamList() != null 
+                     && member.getParamList().size() == argTypes.size()) {
+                 paramCountMatchedList.add(member);
+             }
+        }
+
         for (MemberInfo member: memberInfos) { 
             if (member.getName().equals(methodName) 
-                    && member.getParamList() != null 
-                    && member.getParamList().size() == argTypes.size()) {
+                    && member.getParamList() != null ) {
+
                 List<String[]> memberParamList = member.getParamList();
-                paramCountMatchedList.add(member);
+                int matchedCount = memberParamList.size();
+
+                boolean hasVarArg = false;
+                String lastDefType = null;
+                if (memberParamList.size() > 0) {
+                    lastDefType = memberParamList.get(memberParamList.size()-1)[0];
+                    //vararg 
+                    if (lastDefType.endsWith("...")) {
+                        matchedCount = memberParamList.size() - 1 ;
+                        hasVarArg = true;
+                        lastDefType = lastDefType.substring(0,lastDefType.length()-3);
+                    }
+                }
                 boolean noMatch = false;
-                for (int i=0; i<argTypes.size(); i++) {
+                int i;
+                for (i=0; i<matchedCount; i++) {
                     String actTypeName = argTypes.get(i);
                     String defTypeName = memberParamList.get(i)[0];
                     if (!arguMatch(defTypeName, actTypeName)) {
                         noMatch = true;
                         break;
+                    }
+                }
+                if (hasVarArg) {
+                    while (true ) {
+                        if (i >= argTypes.size()) break;
+                        String actTypeName = argTypes.get(i);
+                        if (!arguMatch(lastDefType,actTypeName)) {
+                            noMatch = true;
+                            break;
+                        }
+                        i = i + 1;
                     }
                 }
                 if (! noMatch) return member;
@@ -1443,7 +1478,7 @@ public class JavaSourceSearcher {
                 param = parseFormalParamStdDecl(c);
             }
             if (c.getType() == JavaParser.FORMAL_PARAM_VARARG_DECL) {
-                param = parseFormalParamStdDecl(c);
+                param = parseFormalParamVarargDecl(c);
             }
             paramList.add(param);
         }
@@ -1464,6 +1499,26 @@ public class JavaSourceSearcher {
                 	if (tmpTree.getType() == JavaParser.ARRAY_DECLARATOR_LIST){
                 		param[0] = param[0] + parseArrayDeclaratorList(tmpTree);
                 	}
+                }
+            }
+        }
+        return param;
+    }
+   
+    private String[] parseFormalParamVarargDecl(CommonTree t) {
+        String[] param = new String[2];
+        for (int i=0; i<t.getChildCount(); i++) {
+            CommonTree c = (CommonTree) t.getChild(i);
+            if (c.getType() == JavaParser.LOCAL_MODIFIER_LIST) continue;
+            if (c.getType() == JavaParser.TYPE) {
+                param[0] = parseType(c) + "...";
+            } else {
+                param[1] = c.getText();
+                if (c.getChildren()!=null) {
+                    CommonTree tmpTree = (CommonTree)c.getChild(0);
+                    if (tmpTree.getType() == JavaParser.ARRAY_DECLARATOR_LIST){
+                        param[0] = param[0] + parseArrayDeclaratorList(tmpTree);
+                    }
                 }
             }
         }
