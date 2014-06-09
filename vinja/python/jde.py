@@ -2023,37 +2023,36 @@ class SzJdeCompletion(object):
                 #try get work complete in scope visible lines.
                 result = SzJdeCompletion.getWordCompleteResult(base)
 
-                #try get member complete in buffer.
-                pat = re.compile("^%s.*" % base.replace("*",".*"), re.IGNORECASE)
-                if base[0].isupper():
-                    pat = re.compile("^%s.*" % base.replace("*",".*"))
-                members = Parser.parseAllMemberInfo(vim_buffer)
-                memberInfos = [(mtype,name,param,rtntype) for name,mtype,rtntype,param,lineNum in members]
-                bufmembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
+            #try get member complete in buffer.
+            pat = re.compile("^%s.*" % base.replace("*",".*"), re.IGNORECASE)
+            if base[0].isupper():
+                pat = re.compile("^%s.*" % base.replace("*",".*"))
+            members = Parser.parseAllMemberInfo(vim_buffer)
+            memberInfos = [(mtype,name,param,rtntype) for name,mtype,rtntype,param,lineNum in members]
+            bufmembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
 
-                for item in bufmembers :
-                    if item["word"] in result :
-                        result.remove(item["word"])
+            for item in bufmembers :
+                if item["word"] in result :
+                    result.remove(item["word"])
 
-                bufmembers.extend(result)
-                result = bufmembers
+            bufmembers.extend(result)
+            result = bufmembers
 
-                #try get member complete in supper class 
-                if len(bufmembers) == 0 :
-                    completionType = "inheritmember"
-                    classNameList = ["this"]
-                    expTokens = []
-                    params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
-                    memberInfos = []
-                    memberInfoLines = Talker.getMemberList(params).split("\n")
-                    
-                    for line in memberInfoLines :
-                        if line == "" : continue
-                        mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
-                        memberInfos.append( (mtype,mname,mparams,mreturntype) )
-                    inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
-                    for item in inheritMembers :
-                        result.append(item)
+            #try get member complete in supper class 
+            completionType = "inheritmember"
+            classNameList = ["this"]
+            expTokens = []
+            params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
+            memberInfos = []
+            memberInfoLines = Talker.getMemberList(params).split("\n")
+            
+            for line in memberInfoLines :
+                if line == "" : continue
+                mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
+                memberInfos.append( (mtype,mname,mparams,mreturntype) )
+            inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
+            for item in inheritMembers :
+                result.append(item)
 
 
             if len(result) == 0 :

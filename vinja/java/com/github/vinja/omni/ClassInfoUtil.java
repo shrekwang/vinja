@@ -247,6 +247,7 @@ public class ClassInfoUtil {
 			Class tmpClass =  aClass;
 			while (true) {
 				classList.add(tmpClass);
+                addInterfaceToList(classList, tmpClass);
 				tmpClass =  tmpClass.getSuperclass();
 				if (tmpClass == null) break;
 				if (tmpClass.getName().equals("java.lang.Object")) break;
