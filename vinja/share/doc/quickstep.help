@@ -1,5 +1,5 @@
 +------------+------------+--------------+------------+
 | l:step_into| j:step_over| h:step_return| u:step_out |
-| C:resume   | v:locals   | w:frames     | nG:until n |
-| e:qeval    | i:insert   |              |            |
+| C:resume   | v:locals   | f:fields     | nG:until n |
+| e:qeval    | i:insert   | w:frames     |            |
 +------------+------------+--------------+------------+

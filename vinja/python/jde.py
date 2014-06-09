@@ -2243,6 +2243,7 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>u   :<C-U>python jdb.stepCmd('step_out')<cr>")
             vim.command("nnoremap <buffer><silent>C   :python jdb.stepCmd('resume')<cr>")
             vim.command("nnoremap <buffer><silent>v   :python jdb.executeCmd(insertMode=False,cmdLine='>locals')<cr>")
+            vim.command("nnoremap <buffer><silent>f   :python jdb.executeCmd(insertMode=False,cmdLine='>fields')<cr>")
             vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
             vim.command("nnoremap <buffer><silent>e   :python jdb.qevalCmd()<cr>")
