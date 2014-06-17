@@ -82,14 +82,19 @@ public class DebugCommand  extends SzjdeCommand {
 			actionResult = debugger.attach(host,port);
 		} else if (debugCmd.equals("breakpoint_add")) {
 			actionResult = bpMgr.addBreakpoint(debugCmdLine);
+
+		} else if (debugCmd.equals("breakpoint_remove")) {
+            String mainClass = args[2];
+            String lineNums = args[1];
+            actionResult = bpMgr.removeBreakpoint(mainClass, lineNums);
 		} else if (debugCmd.equals("until")) {
 			int lineNum = Integer.parseInt(args[1]);
 			String mainClass = args[2];
 			actionResult = bpMgr.addTempBreakpoint(mainClass, lineNum,true);
 		} else if (debugCmd.equals("tbreak")) {
-			int lineNum = Integer.parseInt(args[1]);
+            String lineNums = args[1];
 			String mainClass = args[2];
-			actionResult = bpMgr.addTempBreakpoint(mainClass, lineNum,false);
+			actionResult = bpMgr.addTempBreakpoint(mainClass, lineNums,false);
 		} else if (debugCmd.equals("watch")) {
 			String fieldName = args[1];
 			String mainClass = args[2];
@@ -106,10 +111,6 @@ public class DebugCommand  extends SzjdeCommand {
 			String fieldName = args[1];
 			String mainClass = args[2];
 			actionResult = bpMgr.removeWatchpoint(mainClass, fieldName);
-		} else if (debugCmd.equals("breakpoint_remove")) {
-			String mainClass = args[2];
-			int lineNum = Integer.parseInt(args[1]);
-			actionResult = bpMgr.removeBreakpoint(mainClass, lineNum);
 		} else if (debugCmd.equals("enable")) {
 			String mainClass = args[2];
 			String loc = args[1];

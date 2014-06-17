@@ -2416,13 +2416,13 @@ class Jdb(object):
         global bp_data
         condition = ""
 
-        pat = re.compile(r"^(?P<cmd>.*?)\s+(?P<row>\d+|all)(\s+if\s+(?P<condition>{.*?}))?(\s+do\s+{(?P<autocmds>.*?)})?")
+        pat = re.compile(r"^(?P<cmd>.*?)\s+(?P<rows>\d+(,\d+)*|all)(\s+if\s+(?P<condition>{.*?}))?(\s+do\s+{(?P<autocmds>.*?)})?")
         search_res = pat.search(cmdLine)
         if search_res == None :
             self.stdout("parse break command error.")
             return
         cmd = search_res.group("cmd")
-        row = search_res.group("row")
+        rows = search_res.group("rows")
         condition = search_res.group("condition")
         autocmds = search_res.group("autocmds")
 
@@ -2434,7 +2434,7 @@ class Jdb(object):
         if bp_set == None :
             bp_set = set()
 
-        cmdLine = "%s %s %s " % (cmd, row,mainClassName )
+        cmdLine = "%s %s %s " % (cmd, rows,mainClassName )
 
         if condition != None :
             cmdLine = cmdLine + " if " + condition 
@@ -2444,17 +2444,21 @@ class Jdb(object):
 
         data = JdbTalker.submit(cmdLine,self.class_path_xml,self.serverName)
 
-        if "success" in data :
-            if cmd == "breakpoint_add" or cmd == "tbreak" :
-                row = int(row.strip())
-                bp_set.add(row)
-                bp_data[file_name] = bp_set
-                HighlightManager.addSign(file_name,row, "B")
-            elif cmd == "breakpoint_remove" :
-                row = int(row.strip())
-                if row in bp_set: 
-                    bp_set.remove(row)
-                HighlightManager.removeSign(file_name,row,"B")
+        row_array = rows.split(",")
+        for idx,result in enumerate(data.split("\n")):
+            if result.strip() == "" : break
+            row = row_array[idx]
+            if "success" in result :
+                if cmd == "breakpoint_add" or cmd == "tbreak" :
+                    row = int(row.strip())
+                    bp_set.add(row)
+                    bp_data[file_name] = bp_set
+                    HighlightManager.addSign(file_name,row, "B")
+                elif cmd == "breakpoint_remove" :
+                    row = int(row.strip())
+                    if row in bp_set: 
+                        bp_set.remove(row)
+                    HighlightManager.removeSign(file_name,row,"B")
         self.stdout(data)
         vim.command("call SwitchToVinjaView('Jdb')")
 

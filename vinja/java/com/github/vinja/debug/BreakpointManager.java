@@ -74,6 +74,16 @@ public class BreakpointManager {
 		return false;
 	}
 	
+
+    public String addTempBreakpoint(String mainClass, String lineNums,boolean resumeThread) {
+        StringBuilder sb = new StringBuilder();
+        for (String lineNumStr : lineNums.split(",")) {
+            int lineNum = Integer.parseInt(lineNumStr);
+            sb.append(addTempBreakpoint(mainClass, lineNum,resumeThread)).append("\n");
+        }
+        return sb.toString();
+    }
+	
 	public String addTempBreakpoint(String mainClass, int lineNum,boolean resumeThread) {
 		ThreadReference threadRef = null;
 		SuspendThreadStack threadStack = null;
@@ -123,37 +133,47 @@ public class BreakpointManager {
 	}
 	
 	public String addBreakpoint(String cmdLine) {
-		Pattern pat = Pattern.compile("^(.*?)\\s+(\\d+)\\s+(.*?)(\\s+if\\s+\\{.*?\\})?(\\s+do\\s+\\{.*?\\})?\\s*" );
+		Pattern pat = Pattern.compile("^(.*?)\\s+(\\d+(,\\d+)*)\\s+(.*?)(\\s+if\\s+\\{.*?\\})?(\\s+do\\s+\\{.*?\\})?\\s*" );
         Matcher matcher = pat.matcher(cmdLine);
 		if (! matcher.matches()) return "parse do command error";
 		
-		int lineNum = Integer.parseInt(matcher.group(2));
-		String mainClass = matcher.group(3);
-		
-		Breakpoint breakpoint = createBreakpoint(mainClass, lineNum);
-		if (breakpoint == null) {
-			return "no source line " + lineNum +" in class \"" + mainClass+"\"";
-		}
-		
-		String ifClause = matcher.group(4);
-		if (ifClause !=null) {
-			ifClause = ifClause.trim();
-			String condition = ifClause.substring(ifClause.indexOf("{")+1, ifClause.length()-1);
-			breakpoint.setConExp(condition);
-		}
-		String doClause = matcher.group(5);
-		if (doClause != null) {
-			doClause =doClause.trim();
-			String[] cmds = doClause.substring(doClause.indexOf("{")+1, doClause.length()-1).split(";");
-			for (String cmd: cmds) {
-				cmd = cmd.trim();
-				if (cmd.equals("")) continue;
-				breakpoint.addAutoCmd(cmd);
-			}
-		}
-		
-		tryCreateRequest(breakpoint);
-		return Debugger.CMD_SUCCESS + ": add breakpoint at class \"" + mainClass + "\", line " + lineNum;
+        String rowNums = matcher.group(2);
+        List<String> results = new ArrayList<String>();
+        for (String lineNumStr : rowNums.split(",")) {
+            int lineNum = Integer.parseInt(lineNumStr);
+            String mainClass = matcher.group(4);
+            
+            Breakpoint breakpoint = createBreakpoint(mainClass, lineNum);
+            if (breakpoint == null) {
+                results.add(Debugger.CMD_FAIL + ":no source line " + lineNum +" in class \"" + mainClass+"\"");
+                continue;
+            }
+            
+            String ifClause = matcher.group(5);
+            if (ifClause !=null) {
+                ifClause = ifClause.trim();
+                String condition = ifClause.substring(ifClause.indexOf("{")+1, ifClause.length()-1);
+                breakpoint.setConExp(condition);
+            }
+            String doClause = matcher.group(6);
+            if (doClause != null) {
+                doClause =doClause.trim();
+                String[] cmds = doClause.substring(doClause.indexOf("{")+1, doClause.length()-1).split(";");
+                for (String cmd: cmds) {
+                    cmd = cmd.trim();
+                    if (cmd.equals("")) continue;
+                    breakpoint.addAutoCmd(cmd);
+                }
+            }
+            
+            tryCreateRequest(breakpoint);
+            results.add(Debugger.CMD_SUCCESS + ": add breakpoint at class \"" + mainClass + "\", line " + lineNum);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String item : results) {
+            sb.append(item).append("\n");
+        }
+        return sb.toString();
 	}
 
 	public String addBreakpoint(String mainClass, int lineNum,String conExp,boolean temp) {
@@ -202,6 +222,15 @@ public class BreakpointManager {
 			allBreakpoints.add(breakpoint);
 		}
 		return breakpoint;
+	}
+	
+	public String removeBreakpoint(String mainClass, String lineNums) {
+        StringBuilder sb = new StringBuilder();
+        for (String lineNumStr : lineNums.split(",")) {
+            int lineNum = Integer.parseInt(lineNumStr);
+            sb.append(removeBreakpoint(mainClass, lineNum)).append("\n");
+        }
+	    return sb.toString();
 	}
 
 	public String removeBreakpoint(String mainClass, int lineNum) {
