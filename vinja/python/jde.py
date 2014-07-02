@@ -20,6 +20,8 @@ END_TOKEN = "==end=="
 MAX_CPT_COUNT = 200
 bp_data = {}
 lastProjectRoot = None
+last_complete_type = None
+last_complete_start_col = 0
 
 class ProjectManager(object):
     @staticmethod
@@ -291,6 +293,16 @@ class Talker(BasicTalker):
         params["cmd"]="autoimport"
         params["classPathXml"] = xmlPath
         params["tmpFilePath"] = tmpFilePath
+        params["pkgName"] = pkgName
+        data = Talker.send(params)
+        return data
+
+    @staticmethod
+    def importAfterCompletion(xmlPath,pkgName,completedClass):
+        params = dict()
+        params["cmd"]="importAfterCompletion"
+        params["classPathXml"] = xmlPath
+        params["completedClass"] = completedClass
         params["pkgName"] = pkgName
         data = Talker.send(params)
         return data
@@ -1408,6 +1420,36 @@ class AutoImport(object):
             vim.command("call append(%s,'')" %(str(location)))
 
     @staticmethod
+    def importAfterCompletion():
+        vim_buffer = vim.current.buffer
+        current_file_name = vim_buffer.name
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+        if not classPathXml : return
+
+
+        global last_complete_type
+        if last_complete_type != "Class" :
+            return
+
+        currentPackage = Parser.getPackage()
+        if not currentPackage :
+            currentPackage = ""
+
+        (row,col) = vim.current.window.cursor
+        curLineText = vim.current.buffer[row-1]
+        completedClass = curLineText[last_complete_start_col:col]
+        resultText = Talker.importAfterCompletion(classPathXml,currentPackage,completedClass)
+
+        lines = resultText.split("\n")
+        hadImported = False
+        for line in lines :
+            if AutoImport.addImportDef(line) :
+                hadImported = True
+        location = AutoImport.getImportInsertLocation()
+        if hadImported and location > 0 and vim_buffer[location-1].strip() != "" :
+            vim.command("call append(%s,'')" %(str(location)))
+
+    @staticmethod
     def removeUnusedImport():
         vim_buffer = vim.current.buffer
         rowIndex = 0
@@ -1750,6 +1792,8 @@ class SzJdeCompletion(object):
                 if char in " =;,.'()!^+-/<>[]@\"\t" :
                     index = i + 1
                     break
+            global last_complete_start_col
+            last_complete_start_col = index
             cmd = "let g:SzJdeCompletionIndex = %s" %str(index)
         else:
             try :
@@ -1997,6 +2041,10 @@ class SzJdeCompletion(object):
         if not classPathXml :
             return str([])
         completionType = SzJdeCompletion.getCompleteType(line[0:col])
+
+        global last_complete_type
+        last_complete_type = completionType
+
         result = []
         if completionType == "package" :
             pkgname = SzJdeCompletion.getContextName(line)
@@ -2007,7 +2055,10 @@ class SzJdeCompletion(object):
         elif completionType == "word" :
             classNameMenus = []
             if base[0].isupper():
+                last_complete_type = "Class"
                 classNameList = Talker.getClassList(base,classPathXml).split("\n")
+                if len(classNameList) == 0 :
+                    last_complete_type = None
                 for className in classNameList :
                     menu = dict()
                     shortName = className[ className.rfind(".") + 1 : ]

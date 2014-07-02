@@ -821,9 +821,11 @@ class VimUtil(object):
     @staticmethod
     def inputOption(options):
         vim.command("redraw")
+        result_arr = []
         for index,line in enumerate(options) :
-            print " %s : %s " % (str(index), line)
-        vim.command("let b:vjde_option_index = input('please enter a selection')")
+            result_arr.append(" %s : %s " % (str(index), line))
+
+        vim.command("let b:vjde_option_index = inputlist(" + str(result_arr) + ")")
         exists = vim.eval("exists('b:vjde_option_index')")
         if exists  ==  "1" :
             index = vim.eval("b:vjde_option_index")

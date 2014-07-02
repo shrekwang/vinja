@@ -608,14 +608,16 @@ function! JdeInit()
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gt  :call LocateHierarchy()<cr>
   autocmd BufEnter  *         nmap <buffer><silent><leader>gc  :call LocateClass()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>td  :python Jdb.runApp()<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:python EditUtil.tipMethodDefinition()<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-8>       <c-o>:python EditUtil.tipMethodDefinition(True)<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-7>       <c-o>:python AutoImport.autoImportVar()<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
-
   autocmd BufEnter  *.java    nmap <buffer><silent><M-9>       :python EditUtil.tipMethodDefinition()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><M-8>       :python EditUtil.tipMethodDefinition(True)<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
+
+  autocmd CompleteDone *.java  :python AutoImport.importAfterCompletion()
   
   autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><leader>k     :python jdb.qevalCmd()<cr>
   autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F5>     :python jdb.stepCmd('step_into')<cr>
