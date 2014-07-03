@@ -1111,22 +1111,17 @@ public class JavaSourceSearcher {
     private MemberInfo findMatchedMethod(String methodName, List<String> argTypes, 
             List<MemberInfo> memberInfos) {
     	
-    	//TODO : search in super class 
     	List<MemberInfo> paramCountMatchedList = new ArrayList<MemberInfo>();
     	
-    	 for (MemberInfo member: memberInfos) { 
-             if (member.getName().equals(methodName) 
-                     && member.getParamList() != null 
-                     && member.getParamList().size() == argTypes.size()) {
-                 paramCountMatchedList.add(member);
-             }
-        }
-
         for (MemberInfo member: memberInfos) { 
-            if (member.getName().equals(methodName) 
-                    && member.getParamList() != null ) {
-
+            if (member.getName().equals(methodName)) {
+                
                 List<String[]> memberParamList = member.getParamList();
+                if ( (argTypes == null || argTypes.size() == 0 )
+                        && ( memberParamList == null || memberParamList.size() ==0)) {
+                    return member;
+                }
+                
                 int matchedCount = memberParamList.size();
 
                 boolean hasVarArg = false;
@@ -1140,6 +1135,15 @@ public class JavaSourceSearcher {
                         lastDefType = lastDefType.substring(0,lastDefType.length()-3);
                     }
                 }
+                if (!hasVarArg) {
+                    //如果没有变参,同时参数个数又不匹配,则匹配不成功
+                    if (matchedCount != argTypes.size()) {
+                        continue;
+                    } else {
+                        paramCountMatchedList.add(member);
+                    }
+                }
+                
                 boolean noMatch = false;
                 int i;
                 for (i=0; i<matchedCount; i++) {
@@ -1172,6 +1176,7 @@ public class JavaSourceSearcher {
 
     private boolean arguMatch(String defTypeName, String actTypeName) {
     	if (defTypeName == null) return true;
+    	if (actTypeName.equals("String") && defTypeName.equals("java.lang.String")) return true;
         if (defTypeName.equals(actTypeName)) return true;
         if (actTypeName.equals(NULL_TYPE)) return true;
         return false;
