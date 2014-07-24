@@ -248,26 +248,33 @@ public class JavaSourceSearcher {
 			
 			if (currentLine ) {
 				tmpNode = (CommonTree)node.getChild(1);
-				exps.addAll(getNodeText(tmpNode,false));
+				if (tmpNode.getType() != JavaParser.METHOD_CALL) {
+					exps.addAll(getNodeText(tmpNode,false));
+				}
 			} else {
 				tmpNode = (CommonTree)node.getChild(0);
-				exps.addAll(getNodeText(tmpNode,false));
+				if (tmpNode.getType() != JavaParser.METHOD_CALL) {
+					exps.addAll(getNodeText(tmpNode,false));
+				}
 			}
 		} else if (node.getType() == JavaParser.METHOD_CALL) {
 			
 			//invoke obj
+		    /* do not invoke method when doing a quick eval
 			tmpNode = (CommonTree)node.getChild(0);
 			if (tmpNode.getType() == JavaParser.DOT) {
 				tmpNode = (CommonTree)tmpNode.getChild(0);
 				exps.addAll(getNodeText(tmpNode,false));
 			}
-			
+			*/
 			//arg list
 			tmpNode = (CommonTree)node.getChild(1);
 			exps.addAll(getNodeText(tmpNode,false));
 		} else if (node.getType() == JavaParser.RETURN) {
 			tmpNode = (CommonTree)node.getChild(0);
-			exps.addAll(getNodeText(tmpNode));
+			if (tmpNode.getType() != JavaParser.METHOD_CALL) {
+				exps.addAll(getNodeText(tmpNode));
+			}
 		} else if (node.getType() == JavaParser.VAR_DECLARATOR) {
 			
 			if (currentLine ) {
@@ -278,7 +285,9 @@ public class JavaSourceSearcher {
 				}
 			} else {
 				tmpNode = (CommonTree)node.getChild(0);
-				exps.addAll(getNodeText(tmpNode,false));
+				if (tmpNode.getType() != JavaParser.METHOD_CALL) {
+					exps.addAll(getNodeText(tmpNode,false));
+				}
 			}
 			
 		} else if (node.getType() ==  JavaParser.NOT_EQUAL
@@ -289,9 +298,13 @@ public class JavaSourceSearcher {
 				|| node.getType() == JavaParser.LESS_OR_EQUAL) {
 			
 			tmpNode = (CommonTree)node.getChild(0);
-			exps.addAll(getNodeText(tmpNode));
+			if (tmpNode.getType() != JavaParser.METHOD_CALL) {
+				exps.addAll(getNodeText(tmpNode));
+			}
 			
-			tmpNode = (CommonTree)node.getChild(1);
+			if (tmpNode.getType() != JavaParser.METHOD_CALL) {
+				tmpNode = (CommonTree)node.getChild(1);
+			}
 			exps.addAll(getNodeText(tmpNode,false));
 		}
 		for (int i=0; i<node.getChildCount(); i++) {
