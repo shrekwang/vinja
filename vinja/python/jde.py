@@ -2454,8 +2454,8 @@ class Jdb(object):
         cmd = cmd +" " + vim.eval("v:count1")
         data = JdbTalker.submit(cmd,self.class_path_xml,self.serverName)
 
-        if self.quick_step and cmd.startswith("resume") :
-            self.toggleQuickStep()
+        #if self.quick_step and cmd.startswith("resume") :
+        #    self.toggleQuickStep()
 
     def qevalCmd(self):
         data = JdbTalker.submit("qeval",self.class_path_xml,self.serverName)
@@ -2623,8 +2623,12 @@ class Jdb(object):
 
         if cmdLine.startswith("hide"):
             vim.command("call SwitchToVinjaView('Jdb')")
+            if  self.quick_step :
+                self.toggleQuickStep()
+
             lines = [line.strip() for line in vim.current.buffer]
             self.cmd_buf_list = lines
+
             vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
             lines = [line.strip() for line in vim.current.buffer]
             self.out_buf_list = lines
@@ -2666,6 +2670,8 @@ class Jdb(object):
             EditUtil.addConditionalBreakpoint(args[2])
 
         if cmdLine == "exit" :
+            if  self.quick_step :
+                self.toggleQuickStep()
             self.closeBuffer()
             return 
         if cmdLine.startswith("clear"):
