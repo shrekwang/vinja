@@ -27,7 +27,10 @@ DD    :delete select dir or file
 Dm    :delete marked dir or file
 A     :prompt to add a dir or a file
 
-ya    :yank select node path to vim register
+ya    :yank select node absolute path to vim register
+yr    :yank select node relative path to vim register
+yn    :yank select node name to vim register
+
 cc    :rename current file or dir
 yy    :yank current file or dir
 dd    :cut current file or dir
@@ -41,3 +44,5 @@ C     :change root to select node
 B     :change root back
 U     :change root to upper dir
 QQ    :dispse the project tree
+
+DD,m,yy,dd maps also work in visual mode.

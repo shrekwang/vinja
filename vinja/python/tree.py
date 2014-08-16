@@ -945,8 +945,13 @@ class ProjectTree(object):
                 if node.isEdited :
                     bufnr = vim.eval("bufnr('%s')" % node.realpath)    
                     bang = "!" if discard_change else ""
+                    if node.realpath in self.edit_history :
+                        self.edit_history.remove(node.realpath)
                     if bufnr != "-1" :
-                        vim.command('Bclose%s %s' % (bang,bufnr))
+                        try :
+                            vim.command('Bclose%s %s' % (bang,bufnr))
+                        except Exception as e :
+                            logging.debug("close buffer %s error: %s" % (str(bufnr),str(e)))
                 return
             elif node.isLoaded :
                 for child in node.get_children() :
@@ -990,6 +995,16 @@ class ProjectTree(object):
         node = self.get_selected_node()
         vim.command("let @\" = '%s' " % node.realpath)
         print "node path yanked"
+
+    def yank_node_rel_path(self):
+        node = self.get_selected_node()
+        vim.command("let @\" = '%s' " % node.get_rel_path())
+        print "node relative path yanked"
+
+    def yank_node_name(self):
+        node = self.get_selected_node()
+        vim.command("let @\" = '%s' " % node.name)
+        print "node name yanked"
 
     def get_selected_node(self, row = None ):
         if row == None :
@@ -1506,10 +1521,11 @@ class ProjectTree(object):
         node = projectTree.find_node(path)
         if node != None :
             node.set_edit_flag(flag)
+            normed_path = os.path.normpath(path)
             if path in projectTree.edit_history :
-                projectTree.edit_history.remove(path)
+                projectTree.edit_history.remove(normed_path)
             if flag :
-                projectTree.edit_history.insert(0,path)
+                projectTree.edit_history.insert(0,normed_path)
         else : 
             return
 

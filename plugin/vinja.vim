@@ -417,6 +417,8 @@ function ProjectTree(...)
     map <silent><buffer> A     :python projectTree.add_node()<cr>
 
     map <silent><buffer> ya    :python projectTree.yank_node_path()<cr>
+    map <silent><buffer> yr    :python projectTree.yank_node_rel_path()<cr>
+    map <silent><buffer> yn    :python projectTree.yank_node_name()<cr>
     map <silent><buffer> cc    :python projectTree.rename_node()<cr>
     map <silent><buffer> yy    :python projectTree.yank_selected_node(False)<cr>
     map <silent><buffer> dd    :python projectTree.yank_selected_node(True)<cr>

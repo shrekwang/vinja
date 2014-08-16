@@ -810,7 +810,8 @@ class EditUtil(object):
         if generateTmpVar :
             line = vim_buffer[row-1]
             rtntype = methodDefs.split(" ")[0]
-            tmp = re.sub('(?P<white>\s*)(?P<text>.+)', lambda m: m.group("white") + rtntype +" t = " + m.group('text'), line) 
+            varname = rtntype[0].lower() + rtntype[1:]
+            tmp = re.sub('(?P<white>\s*)(?P<text>.+)', lambda m: m.group("white") + rtntype +" " + varname + " = " + m.group('text'), line) 
             idx = tmp.find(" = ")
             vim_buffer[row-1] = tmp
             vim.current.window.cursor = (row,idx)
