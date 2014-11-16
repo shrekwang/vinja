@@ -2239,18 +2239,19 @@ class Jdb(object):
             vim.command("redraw")
 
     def switchSourceBuffer(self):
-        for i in range(1,5):
-            bufname = vim.eval("bufname(winbufnr(%s))" % str(i))
-            if bufname == None or bufname.strip() == "" or bufname.endswith(".temp_src")  or bufname.endswith(".java") :
-                #found java buf
-                vim.command("noautocmd %swincmd w" % str(i))    
-                vim.command("noautocmd normal kj")
-                return
+        # for i in range(1,5):
+        #     bufname = vim.eval("bufname(winbufnr(%s))" % str(i))
+        #     if bufname == None or bufname.strip() == "" or bufname.endswith(".temp_src")  or bufname.endswith(".java") :
+        #         #found java buf
+        #         vim.command("noautocmd %swincmd w" % str(i))    
+        #         vim.command("noautocmd normal kj")
+        #         return
 
-        bufwin = 1
-        bufname = vim.eval("bufname(winbufnr(1))")
-        if "ProjectTree" in bufname : 
-            bufwin = 2
+        # bufwin = 1
+        # bufname = vim.eval("bufname(winbufnr(1))")
+        # if "ProjectTree" in bufname : 
+        #     bufwin = 2
+        bufwin = 2
         #don't remove the log, or the vim will go bad
         logging.debug("bufwin is %s" % str(bufwin))
         vim.command("noautocmd %swincmd w" % str(bufwin))    

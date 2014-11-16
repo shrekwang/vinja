@@ -606,19 +606,33 @@ class ProjectRootNode(NormalDirNode):
         for entry in  entries :
             kind = entry.get("kind")
             sourcepath = entry.get("sourcepath")
-            if kind == "var" and sourcepath :
-                if sourcepath.startswith("/"):
-                    sourcepath = sourcepath[1:]
-                var_key = sourcepath[0: sourcepath.find("/")]
-                var_path = self.var_dict.get(var_key)
-                if not var_path :
-                    logging.debug("var %s not exist in ~/.vinja/vars.txt" % var_key)
+            path = entry.get("path")
+            if kind == "var" :
+                if sourcepath :
+                    if sourcepath.startswith("/"):
+                        sourcepath = sourcepath[1:]
+                    var_key = sourcepath[0: sourcepath.find("/")]
+                    var_path = self.var_dict.get(var_key)
+                    if not var_path :
+                        logging.debug("var %s not exist in ~/.vinja/vars.txt" % var_key)
+                    else :
+                        abpath = sourcepath.replace(var_key, self.var_dict.get(var_key))
+                        self.lib_srcs.append(abpath)
                 else :
-                    abpath = sourcepath.replace(var_key, self.var_dict.get(var_key))
+                    var_key = path[0: path.find("/")]
+                    var_path = self.var_dict.get(var_key)
+                    if not var_path :
+                        logging.debug("var %s not exist in ~/.vinja/vars.txt" % var_key)
+                    else :
+                        abpath = path.replace(var_key, self.var_dict.get(var_key))
+                        self.lib_srcs.append(abpath)
+            elif kind == "lib" :
+                if sourcepath :
+                    abpath = os.path.normpath(os.path.join(self.root_dir,sourcepath))
                     self.lib_srcs.append(abpath)
-            elif kind == "lib" and sourcepath :
-                abpath = os.path.normpath(os.path.join(self.root_dir,sourcepath))
-                self.lib_srcs.append(abpath)
+                else :
+                    abpath = os.path.normpath(os.path.join(self.root_dir,path))
+                    self.lib_srcs.append(abpath)
 
     def _build_virtual_noes(self):
         if not self.is_java_project :

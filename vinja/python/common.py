@@ -60,20 +60,23 @@ class ZipUtil(object):
     @staticmethod
     def read_zip_entry(path):
         zip_file_path, inner_path = ZipUtil.split_zip_scheme(path)
-        zipFile = zipfile.ZipFile(zip_file_path)  
-        try:
-            all_the_text = zipFile.open(inner_path).read()
-        finally:
-            zipFile.close()
-        
-        file_encoding = chardet.detect(all_the_text).get("encoding")
-        if file_encoding != None :
-            all_the_text = all_the_text.decode(file_encoding, "ignore")
+        if inner_path.endswith(".class") :
+            content = BasicTalker.doDecompileCommand(zip_file_path,inner_path)
+        else :
+            zipFile = zipfile.ZipFile(zip_file_path)  
+            try:
+                all_the_text = zipFile.open(inner_path).read()
+            finally:
+                zipFile.close()
+            
+            file_encoding = chardet.detect(all_the_text).get("encoding")
+            if file_encoding != None :
+                all_the_text = all_the_text.decode(file_encoding, "ignore")
 
-        if file_encoding != sys.getdefaultencoding() :
-            all_the_text = all_the_text.encode(sys.getdefaultencoding(), "replace")
+            if file_encoding != sys.getdefaultencoding() :
+                all_the_text = all_the_text.encode(sys.getdefaultencoding(), "replace")
 
-        content = [line.rstrip() for line in all_the_text.split("\n")]
+            content = [line.rstrip() for line in all_the_text.split("\n")]
         return content
 
     @staticmethod
@@ -802,6 +805,15 @@ class BasicTalker(object):
         params["bufname"] = "shext"
         serverName = vim.eval("v:servername")
         params["vimServer"] = serverName
+        data = BasicTalker.send(params)
+        return data
+
+    @staticmethod
+    def doDecompileCommand(jarPath,innerPath):
+        params = dict()
+        params["cmd"]="decompile"
+        params["jarPath"] = jarPath
+        params["innerPath"] = innerPath
         data = BasicTalker.send(params)
         return data
 

@@ -135,6 +135,8 @@ public class SzjdeServer extends Thread {
 		   szjdeCommand = new SzjdeTreeCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_IMPORT_AFTER_COMPLETION)) {
 		   szjdeCommand = new SzjdeAfterCompletionImportCommand();
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_DECOMPILE)) {
+		   szjdeCommand = new SzjdeDecompileCommannd();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_QUIT)) {
 		   Display.getDefault().syncExec(new Runnable() {
 				public void run() {

@@ -539,6 +539,23 @@ public class CompilerContext {
 		return findSourceFile(rtlPathName);
 	}
 	
+	public String findClassBinPath(String className) {
+		if (className == null) return "None";
+		String rtlPathName = className.replace(".", "/") + ".class";
+		
+		for (String path : fsClassPathUrls) {
+			if (path.endsWith(".jar")) {
+				if ( hasEntry(path, rtlPathName)) {
+					//extractContentToTemp(libSrcLoc,rtlPathName,tmpPath);
+					String tmpPath = "jar://" + path + "!" +rtlPathName;
+					return tmpPath;
+	            }
+			}
+		}
+		
+		return "None";
+	}
+	
 	/**
 	 * search in source dir and jar file and other locations .
 	 * @param rtlPathName
@@ -605,6 +622,7 @@ public class CompilerContext {
 		lastSearchResult = "None";
 		return "None";
 	}
+	
 	
 	public static boolean hasEntry(String zipFileName, String rtlPath) {
 		try {
