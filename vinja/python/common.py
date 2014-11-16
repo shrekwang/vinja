@@ -170,7 +170,7 @@ class VinjaAgent(object):
 
         vinja_home = vim.eval("g:vinja_home")
         libpath = os.path.join(vinja_home,"lib")
-        cps=[os.path.join(libpath,item) for item in os.listdir(libpath) if item.endswith(".jar") ]
+        cps=[os.path.join(libpath,item) for item in os.listdir(libpath) if ( item.endswith(".jar")  and item != "vinja.jar" ) ]
         if os.name == "nt" :
             cmdArray=[os.path.join(os.getenv("JAVA_HOME"),"bin/javaw.exe")]
             swtLibPath = os.path.join(libpath,"swt-win\\swt.jar")
@@ -180,6 +180,7 @@ class VinjaAgent(object):
         cps.append(swtLibPath)
         toolsJarPath = os.path.join(os.getenv("JAVA_HOME"),"lib/tools.jar")
         cps.append(toolsJarPath)
+        cps.insert(0, os.path.join(libpath,"vinja.jar"))
         cmdArray.append("-classpath")
         cmdArray.append(os.path.pathsep.join(cps))
         cmdArray.append('-Djava.library.path=%s' % libpath )
