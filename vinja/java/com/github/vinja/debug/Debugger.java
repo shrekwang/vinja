@@ -633,16 +633,6 @@ public class Debugger {
 				cmd.append(arg).append(" ");
 			}
 		}
-		
-		String projectRoot = new File(classPathXml).getParent();
-
-		try {
-			File workingDir = new File(projectRoot);
-			process = Runtime.getRuntime().exec(cmd.toString(),null,workingDir);
-		} catch (Exception err) {
-			err.printStackTrace();
-		}
-		
 		ListeningConnector connector = getListeningConnector();
 		Map<String, Connector.Argument> connectArgs = connector.defaultArguments();
 		Connector.Argument portArg = connectArgs.get("port");
@@ -650,6 +640,19 @@ public class Debugger {
 		portArg.setValue(port);
 		hostArg.setValue("localhost"); 
 		try {
+			connector.startListening(connectArgs);
+		} catch (Exception e) {
+			return null;
+		}
+		
+		String projectRoot = new File(classPathXml).getParent();
+
+		try {
+			File workingDir = new File(projectRoot);
+			process = Runtime.getRuntime().exec(cmd.toString(),null,workingDir);
+		
+			Thread.sleep(100);
+			
 			return connector.accept(connectArgs);
 		} catch (Exception e) {
 			e.printStackTrace();
