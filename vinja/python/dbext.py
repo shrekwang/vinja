@@ -264,6 +264,7 @@ class Dbext(object):
 
     def promptDbOption(self):
         dbconfs = self.loadConf(os.path.join(VinjaConf.getDataHome(), "db.conf"))
+        logging.debug("dbcons is %s " ,str(dbconfs))
         if dbconfs == None :
             return
         for index,item in enumerate(dbconfs):
@@ -409,18 +410,17 @@ class Dbext(object):
                 value = value.encode(codepage, 'replace')
             value = str(value).rstrip().translate(trantab)
             return value
-
         resultset = [columns]
         for row in rows :
             row = [convert(field) for field in row]
             for index,field in enumerate(row):
-                if (len(field)>maxlens[index]):
-                    maxlens[index] = len(field)
+                if (MiscUtil.displayWidth(field)>maxlens[index]):
+                    maxlens[index] = MiscUtil.displayWidth(field)
             resultset.append(row)
 
         for index,field in enumerate(columns):
-            if (len(str(field))>maxlens[index]):
-                maxlens[index] = len(str(field))
+            if (MiscUtil.displayWidth(str(field))>maxlens[index]):
+                maxlens[index] = MiscUtil.displayWidth(str(field))
 
         headline = ""
         for item in maxlens:
@@ -430,7 +430,7 @@ class Dbext(object):
         for rowindex,row in enumerate(resultset):
             line = ""
             for index,field in enumerate(row):
-                line = line+ "| " + field.ljust(maxlens[index] + 1)
+                line = line+ "| " + field +  (maxlens[index]+1 - MiscUtil.displayWidth(field)) * " "
             if rowindex<2: result.append(headline)
             result.append(line + "|")
         result.append(headline)
