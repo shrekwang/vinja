@@ -2596,17 +2596,17 @@ class Jdb(object):
             self.appendPrompt(insertMode)
             return 
 
-        if cmdLine == "run" or cmdLine == "runtest" :
-            self.switchSourceBuffer()
-            mainClassName = Parser.getMainClass()
-            self.lastRunClass = mainClassName
-            cmdLine = cmdLine  +" " + mainClassName
-
-        if cmdLine == "runlast":
-            if self.lastRunClass == None :
-                self.stdout("please execute 'run' first.")
-                return
-            cmdLine = "run"  +" " + self.lastRunClass
+        if cmdLine.startswith("run") :
+            if cmdLine == "runlast":
+                if self.lastRunClass == None :
+                    self.stdout("please execute 'run' first.")
+                    return
+                cmdLine = "run"  +" " + self.lastRunClass
+            else :
+                self.switchSourceBuffer()
+                mainClassName = Parser.getMainClass()
+                self.lastRunClass = mainClassName
+                cmdLine = cmdLine  +" " + mainClassName
 
         change_suspend_cmds = ["step_into","step_over","step_return","step_out","resume",
                 "exit","shutdown","frame","disconnect","until","up","down","thread","resume_all"]
