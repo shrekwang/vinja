@@ -363,6 +363,7 @@ public class CompilerContext {
 		
 		for (String dirPath : extOutputDirs) {
 			packageInfo.cacheClassNameInDist(dirPath,true);
+			classMetaInfoManager.cacheAllInfo(dirPath);
 		}
 	}
 	

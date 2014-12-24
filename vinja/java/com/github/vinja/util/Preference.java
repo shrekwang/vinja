@@ -28,6 +28,8 @@ public class Preference {
 	
 	public static final String TOMCAT_HOME = "tomcat_home";
 	public static final String TOMCAT_VERSION = "tomcat_version";
+	
+	public static final String VIM_CMD = "vim_cmd";
 
 	
 	public static Preference getInstance() {

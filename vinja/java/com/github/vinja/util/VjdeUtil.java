@@ -33,7 +33,8 @@ public class VjdeUtil {
 				sb.append(arg).append(" ");
 			}
 			String vimCmdCall="<esc><esc>:"+sb.toString()+"<cr>";
-			String[] vimRemoteCmdArray = new String[] {"gvim","--servername",serverName,"--remote-send",	vimCmdCall};
+			String vimCmd = Preference.getInstance().getValue(Preference.VIM_CMD);
+			String[] vimRemoteCmdArray = new String[] {vimCmd,"--servername",serverName,"--remote-send",	vimCmdCall};
 			//String[] vimRemoteCmdArray = new String[] {"C:\\Program Files\\Vim\\vim73\\gvim.exe","--servername",serverName,"--remote-send",	vimCmdCall};
 			Runtime.getRuntime().exec(vimRemoteCmdArray);
 		} catch (IOException e) {
@@ -84,7 +85,8 @@ public class VjdeUtil {
 				}
 			}
 			sb.append(")");
-			String[] vimRemoteCmdArray = new String[] {"vim","--servername",serverName,"--remote-expr",sb.toString()};
+			String vimCmd = Preference.getInstance().getValue(Preference.VIM_CMD);
+			String[] vimRemoteCmdArray = new String[] {vimCmd,"--servername",serverName,"--remote-expr",sb.toString()};
 			Runtime.getRuntime().exec(vimRemoteCmdArray);
 			//prevent call vim command in multi thread simultaneously
 			Thread.sleep(20);
@@ -93,6 +95,12 @@ public class VjdeUtil {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static void main(String[] args) throws Exception {
+		System.out.println("sdfk");
+		String[] vimRemoteCmdArray = new String[] {"mvim","--servername","VIM"};
+		Runtime.getRuntime().exec(vimRemoteCmdArray);
 	}
 	
 
