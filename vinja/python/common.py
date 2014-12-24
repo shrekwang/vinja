@@ -176,14 +176,20 @@ class VinjaAgent(object):
             swtLibPath = os.path.join(libpath,"swt-win\\swt.jar")
         else :
             cmdArray=[os.path.join(os.getenv("JAVA_HOME"),"bin/java")]
-            swtLibPath = os.path.join(libpath,"swt-linux/swt.jar")
+            import platform
+            if platform.system() == "Darwin":
+                swtLibPath = os.path.join(libpath,"swt-osx/swt.jar")
+            else :
+                swtLibPath = os.path.join(libpath,"swt-linux/swt.jar")
         cps.append(swtLibPath)
         toolsJarPath = os.path.join(os.getenv("JAVA_HOME"),"lib/tools.jar")
         cps.append(toolsJarPath)
         cps.insert(0, os.path.join(libpath,"vinja.jar"))
+        #cps.insert(0, "/Users/wangsn/github/vinja/vinja/classes")
+        cmdArray.append('-XstartOnFirstThread')
+        cmdArray.append('-Djava.library.path=%s' % libpath )
         cmdArray.append("-classpath")
         cmdArray.append(os.path.pathsep.join(cps))
-        cmdArray.append('-Djava.library.path=%s' % libpath )
         cmdArray.append("com.github.vinja.ui.JdtUI")
         cmdArray.append("--vinja-home")
         cmdArray.append(vinja_home)
