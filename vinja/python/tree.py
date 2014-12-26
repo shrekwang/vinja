@@ -934,12 +934,30 @@ class ProjectTree(object):
         if sibling != None :
             self.select_node(sibling)
 
+    def get_next_marked_node(self):
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        for row_num in range(row+1,len(vim_buffer)+1):
+            node = self.get_selected_node(row_num)
+            if node.isMarked:
+                vim.current.window.cursor = (row_num,col)
+                break
+
+    def get_prev_marked_node(self):
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        for row_num in range(row-1,0,-1):
+            node = self.get_selected_node(row_num)
+            if  node.isMarked:
+                vim.current.window.cursor = (row_num,col)
+                break
+
     def get_next_open_node(self):
         (row,col) = vim.current.window.cursor
         vim_buffer = vim.current.buffer
         for row_num in range(row+1,len(vim_buffer)+1):
             node = self.get_selected_node(row_num)
-            if node.isEdited or node.isError or node.isMarked:
+            if node.isEdited or node.isError :
                 vim.current.window.cursor = (row_num,col)
                 break
 
@@ -948,7 +966,7 @@ class ProjectTree(object):
         vim_buffer = vim.current.buffer
         for row_num in range(row-1,0,-1):
             node = self.get_selected_node(row_num)
-            if node.isEdited or node.isError or node.isMarked:
+            if node.isEdited or node.isError :
                 vim.current.window.cursor = (row_num,col)
                 break
 
