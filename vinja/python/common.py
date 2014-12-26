@@ -10,6 +10,7 @@ from StringIO import StringIO
 from distutils import dir_util
 from distutils import file_util
 import zipfile
+import platform
 
 HOST = 'localhost'
 PORT = 9527
@@ -176,7 +177,6 @@ class VinjaAgent(object):
             swtLibPath = os.path.join(libpath,"swt-win\\swt.jar")
         else :
             cmdArray=[os.path.join(os.getenv("JAVA_HOME"),"bin/java")]
-            import platform
             if platform.system() == "Darwin":
                 swtLibPath = os.path.join(libpath,"swt-osx/swt.jar")
             else :
@@ -186,7 +186,8 @@ class VinjaAgent(object):
         cps.append(toolsJarPath)
         cps.insert(0, os.path.join(libpath,"vinja.jar"))
         #cps.insert(0, "/Users/wangsn/github/vinja/vinja/classes")
-        cmdArray.append('-XstartOnFirstThread')
+        if platform.system() == "Darwin":
+            cmdArray.append('-XstartOnFirstThread')
         cmdArray.append('-Djava.library.path=%s' % libpath )
         cmdArray.append("-classpath")
         cmdArray.append(os.path.pathsep.join(cps))
