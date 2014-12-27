@@ -182,9 +182,12 @@ public class CompilerContext {
 			for (String className : classNames ) {
 				packageInfo.addClassNameToCache(className,"src path");
 				packageInfo.addClasstoDstClass(className);
-				String classPath = getOutputDir() + "/" + className.replace('.', '/') + ".class";
-				File outFile = new File(classPath);
-				classMetaInfoManager.loadSingleMetaInfo(outFile);
+				//String classPath = getOutputDir() + "/" + className.replace('.', '/') + ".class";
+				//File outFile = new File(classPath);
+				
+				String classAsPath = className.replace('.', '/') + ".class";
+				InputStream stream = this.getClassLoader().getResourceAsStream(classAsPath);
+				classMetaInfoManager.loadSingleMetaInfo(stream);
 				bpmgr.verifyBreakpoint(className);
 			}
 		}
