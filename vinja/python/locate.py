@@ -28,6 +28,7 @@ class Prompt(object) :
         self.key_strokes = self.key_strokes[0:-1]
 
     def show(self):
+        vim.command("redraw")
         vim.command("echo '%s%s'" % (">> ", self.get_name() ))
 
 class QuickLocater(object) :
@@ -217,11 +218,11 @@ class QuickLocater(object) :
 class FileContentManager(object):
 
     def __init__(self, locateType):
-        self.bound_chars = """/\?%*:|"<>(), \t\n"""
+        self.bound_chars = """/\?%*:|"<>(), \t\n.;@"""
         shext_locatedb_path = os.path.join(VinjaConf.getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
         self.locateType = locateType
-        self.show_on_open = False
+        self.show_on_open = True
 
     def get_init_prompt(self):
         buf = vim.current.buffer
@@ -240,7 +241,11 @@ class FileContentManager(object):
             if char in self.bound_chars :
                 break
             result.append(char)
-        return "".join(result)
+        v =  "".join(result)
+        if len(v.strip()) < 3 :
+            v = "" 
+        return v
+
 
     def search_content(self,search_pat):
         cur_dir = os.getcwd()
