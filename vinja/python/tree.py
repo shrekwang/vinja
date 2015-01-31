@@ -373,6 +373,9 @@ class NormalFileNode(TreeNode):
 class ZipFileItemNode(TreeNode):
 
     def plainText(self):
+        ext = os.path.splitext(self.realpath)[1]
+        if ext in [".jar",".zip",".war",".rar",".jpg",".png",".gif",".class"] :
+            return False
         return True
 
     def set_zip_file(self,zip_file_path) :
@@ -864,12 +867,16 @@ class ProjectTree(object):
         re_type = type(re.compile(""))
         def _search_node(node,text) :
             if not node.isDirectory and node.plainText() :
-                content = node.get_content(self.project_encoding)
-                file_path = node.get_uri_path()
-                for index,line in enumerate(content) :
-                    if (isinstance(text,str) and line.find(text) > -1 ) \
-                            or (isinstance(text,re_type) and text.search(line)) :
-                            result.append([file_path,str(index+1),line.replace("\n","")])
+                # logging.debug("search content of %s " % node.realpath)
+                try :
+                    content = node.get_content(self.project_encoding)
+                    file_path = node.get_uri_path()
+                    for index,line in enumerate(content) :
+                        if (isinstance(text,str) and line.find(text) > -1 ) \
+                                or (isinstance(text,re_type) and text.search(line)) :
+                                result.append([file_path,str(index+1),line.replace("\n","")])
+                except Exception as e :
+                    logging.debug("error when reading content of %s " % node.realpath)
             else :
                 for subnode in node.get_children():
                     _search_node(subnode, text)
@@ -885,7 +892,13 @@ class ProjectTree(object):
             qflist_str = "[" + ",".join([EditUtil.reprDictInDoubleQuote(item) for item in qflist])+"]" 
             vim_encoding= vim.eval("&encoding")
             if vim_encoding :
-                vim.command("call setqflist(%s)" % qflist_str.encode(vim_encoding))
+                try :
+                    vim.command("call setqflist(%s)" % qflist_str.encode(vim_encoding))
+                except Exception as e:
+                    try :
+                        vim.command("call setqflist(%s)" % qflist_str)
+                    except Exception as e:
+                        logging.debug("set qflist_str error: %s " %  qflist_str)
             else :
                 vim.command("call setqflist(%s)" % qflist_str)
 

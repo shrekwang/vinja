@@ -65,6 +65,10 @@ class ZipUtil(object):
             content = BasicTalker.doDecompileCommand(zip_file_path,inner_path)
         else :
             zipFile = zipfile.ZipFile(zip_file_path)  
+            entry_size = zipFile.getinfo(inner_path).file_size
+            #logging.debug("entry_size is %s" % str(entry_size))
+            if entry_size > 1024 * 1024 * 2:
+                return ["too large zip entry size"]
             try:
                 all_the_text = zipFile.open(inner_path).read()
             finally:

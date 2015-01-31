@@ -357,10 +357,13 @@ class Dbext(object):
 
         global conn_pool
         bufnum= vim.eval("bufnr('%')")
-        conn = conn_pool.get(bufnum)
-        if conn == None :
-            conn = self.createConn(db_profile)
-            conn_pool[bufnum] = conn
+        conn = self.createConn(db_profile)
+
+        #conn = conn_pool.get(bufnum)
+        #if conn == None :
+        #    conn = self.createConn(db_profile)
+        #    conn_pool[bufnum] = conn
+
 
         server_type = db_profile["servertype"]
         if server_type == "mysql" :
