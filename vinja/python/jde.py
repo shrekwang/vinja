@@ -2289,6 +2289,7 @@ class Jdb(object):
 
             vim.command("inoremap <buffer><silent><ESC> <ESC>^ld$a <ESC>")
             vim.command("nnoremap <buffer><silent>a   dd:python jdb.appendPrompt()<cr>")
+            vim.command("nnoremap <buffer><silent>b   :python jdb.toggleBpAtSuspendLine()<cr>")
             vim.command("nnoremap <buffer><silent>i   dd:python jdb.appendPrompt()<cr>")
             vim.command("nnoremap <buffer><silent>l   :python jdb.stepCmd('step_into')<cr>")
             vim.command("nnoremap <buffer><silent>j   :<C-U>python jdb.stepCmd('step_over')<cr>")
@@ -2298,6 +2299,7 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>v   :python jdb.executeCmd(insertMode=False,cmdLine='>locals')<cr>")
             vim.command("nnoremap <buffer><silent>f   :python jdb.executeCmd(insertMode=False,cmdLine='>fields')<cr>")
             vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
+            vim.command("nnoremap <buffer><silent>r   :python jdb.executeCmd(insertMode=False,cmdLine='>run')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
             vim.command("nnoremap <buffer><silent>e   :python jdb.qevalCmd()<cr>")
             vim.command("setlocal statusline=\ Jdb\ %2*QuickStep%*")
@@ -2324,35 +2326,40 @@ class Jdb(object):
             mapcmd = "nunmap <silent><buffer>"
             for byte in printables :
                 vim.command("%s %s" % (mapcmd, byte))
-            
+
             vim.command("iunmap <buffer><silent><ESC>")
             vim.command("nnoremap <buffer><silent>o      :python jdb.appendPrompt()<cr>")
             vim.command("setlocal statusline=\ Jdb")
 
-    def handleSuspend(self,abs_path,lineNum,className,appendOperate):
+    def handleSuspend(self,absPath,lineNum,className,appendOperate):
         self.switchSourceBuffer()
         bufnr=str(vim.eval("bufnr('%')"))
-        if os.path.exists(abs_path) or abs_path.startswith("jar:") :
-            if not PathUtil.same_path(abs_path, vim.current.buffer.name):
-                #if abs_path != vim.current.buffer.name :
-                vim.command("edit %s" % abs_path)
+        if os.path.exists(absPath) or absPath.startswith("jar:") :
+            if not PathUtil.same_path(absPath, vim.current.buffer.name):
+                #if absPath != vim.current.buffer.name :
+                vim.command("edit %s" % absPath)
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
                 vim.command(signcmd)
-            
+
             HighlightManager.addSign(vim.current.buffer.name,lineNum,"S")
             if appendOperate == "remove_breakpoint" :
                 HighlightManager.removeSign(vim.current.buffer.name,lineNum,"B")
             self.suspendRow = lineNum
             self.suspendBufnr = bufnr
             self.suspendBufName = vim.current.buffer.name
-           
+
             winStartRow = int(vim.eval("line('w0')"))
             winEndRow = int(vim.eval("line('w$')"))
             lineNum = int(lineNum)
             if lineNum < winStartRow or lineNum > winEndRow :
                 vim.command("normal %sG" % str(lineNum))
                 vim.command("normal zt")
+
+            global currentSuspendLine
+            global currentSuspendPath
+            currentSuspendLine = lineNum
+            currentSuspendPath = absPath
 
         else :
             vim.command("edit .temp_src")
@@ -2402,7 +2409,7 @@ class Jdb(object):
                 vim.command('call settabvar('+str(i)+',"jdb_tab","true")')
             else :
                 vim.command('call settabvar('+str(i)+',"jdb_tab","false")')
-        
+
         if "jdb" not in globals() :
             jdb = Jdb()
         jdb.initDebugProject()
@@ -2464,6 +2471,20 @@ class Jdb(object):
         if data : 
             varTree = VarTree.createVarTree(data)
             self.stdout(varTree.renderToString())
+
+    def toggleBpAtSuspendLine(self):
+        global bp_data
+        global currentSuspendLine
+        global currentSuspendPath
+
+        bp_set = bp_data.get(currentSuspendPath)
+        if bp_set == None :
+            bp_set = set()
+
+        if currentSuspendLine in bp_set :
+            self.breakCmd("breakpoint_remove " + str(currentSuspendLine))
+        else :
+            self.breakCmd("breakpoint_add " + str(currentSuspendLine))
 
     def breakCmd(self, cmdLine):
         global bp_data
