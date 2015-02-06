@@ -2149,7 +2149,7 @@ class Jdb(object):
         self.bp_data = {}
         self.serverName = vim.eval("v:servername")
         self.suspendRow = -1
-        self.lastRunClass = None
+        self.lastRunCmd = None
         self.suspendBufnr = -1
         self.suspendBufName = ""
         self.display = True
@@ -2282,7 +2282,7 @@ class Jdb(object):
         if not self.quick_step :
             self.quick_step = True
 
-            printables = """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"""
+            printables = """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz?"""
             mapcmd = "nnoremap <silent><buffer>"
             for byte in printables :
                 vim.command("%s %s :python jdb.emptyFunc()<CR>" % (mapcmd, byte))
@@ -2300,6 +2300,11 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>f   :python jdb.executeCmd(insertMode=False,cmdLine='>fields')<cr>")
             vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
             vim.command("nnoremap <buffer><silent>r   :python jdb.executeCmd(insertMode=False,cmdLine='>run')<cr>")
+            vim.command("nnoremap <buffer><silent>d   :python jdb.executeCmd(insertMode=False,cmdLine='>disconnect')<cr>")
+            vim.command("nnoremap <buffer><silent>t   :python jdb.executeCmd(insertMode=False,cmdLine='>runtest')<cr>")
+            vim.command("nnoremap <buffer><silent>R   :python jdb.executeCmd(insertMode=False,cmdLine='>runlast')<cr>")
+            vim.command("nnoremap <buffer><silent>s   :python jdb.executeCmd(insertMode=False,cmdLine='>shutdown')<cr>")
+            vim.command("nnoremap <buffer><silent>?   :python jdb.executeCmd(insertMode=False,cmdLine='>help')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
             vim.command("nnoremap <buffer><silent>e   :python jdb.qevalCmd()<cr>")
             vim.command("setlocal statusline=\ Jdb\ %2*QuickStep%*")
@@ -2423,6 +2428,7 @@ class Jdb(object):
             jdb = Jdb()
         jdb.initDebugProject()
         jdb.show()
+        jdb.toggleQuickStep()
 
     def stdout(self,msg):
         buffer = VimUtil.getVinjaBuffer("JdbStdOut")
@@ -2642,15 +2648,15 @@ class Jdb(object):
 
         if cmdLine.startswith("run") :
             if cmdLine == "runlast":
-                if self.lastRunClass == None :
+                if self.lastRunCmd == None :
                     self.stdout("please execute 'run' first.")
                     return
-                cmdLine = "run"  +" " + self.lastRunClass
+                cmdLine = self.lastRunCmd
             else :
                 self.switchSourceBuffer()
                 mainClassName = Parser.getMainClass()
-                self.lastRunClass = mainClassName
                 cmdLine = cmdLine  +" " + mainClassName
+                self.lastRunCmd = cmdLine
 
         change_suspend_cmds = ["step_into","step_over","step_return","step_out","resume",
                 "exit","shutdown","frame","disconnect","until","up","down","thread","resume_all"]
