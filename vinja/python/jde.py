@@ -2399,6 +2399,15 @@ class Jdb(object):
                     HighlightManager.removeSign(self.suspendBufName,row,"S",bufnr=self.suspendBufnr)
         self.suspendRow = -1
 
+
+    @staticmethod
+    def toggleDebug():
+        global jdb
+        if "jdb" not in globals() or (jdb.display == False) :
+            Jdb.runApp()
+        else :
+            jdb.hideDebugConsole()
+
     @staticmethod
     def runApp():
         global jdb
@@ -2583,6 +2592,20 @@ class Jdb(object):
         col = len(curBuf[row-1])
         vim.current.window.cursor = (row, col)
 
+    def hideDebugConsole(self):
+        vim.command("call SwitchToVinjaView('Jdb')")
+        if  self.quick_step :
+            self.toggleQuickStep()
+
+        lines = [line.strip() for line in vim.current.buffer]
+        self.cmd_buf_list = lines
+
+        vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
+        lines = [line.strip() for line in vim.current.buffer]
+        self.out_buf_list = lines
+        self.closeBuffer()
+
+
     def executeCmd(self, insertMode = True, cmdLine = None):
         
         #if self.project_root == None or not os.path.exists(self.project_root) :
@@ -2645,18 +2668,20 @@ class Jdb(object):
             return
 
         if cmdLine.startswith("hide"):
-            vim.command("call SwitchToVinjaView('Jdb')")
-            if  self.quick_step :
-                self.toggleQuickStep()
-
-            lines = [line.strip() for line in vim.current.buffer]
-            self.cmd_buf_list = lines
-
-            vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
-            lines = [line.strip() for line in vim.current.buffer]
-            self.out_buf_list = lines
-            self.closeBuffer()
+            self.hideDebugConsole()
             return 
+            #vim.command("call SwitchToVinjaView('Jdb')")
+            #if  self.quick_step :
+            #    self.toggleQuickStep()
+
+            #lines = [line.strip() for line in vim.current.buffer]
+            #self.cmd_buf_list = lines
+
+            #vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
+            #lines = [line.strip() for line in vim.current.buffer]
+            #self.out_buf_list = lines
+            #self.closeBuffer()
+            #return 
 
         # run or runtomcat or runtest command.
         if cmdLine.startswith("run"):
