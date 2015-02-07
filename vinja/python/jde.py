@@ -2234,8 +2234,8 @@ class Jdb(object):
             row = len(buffer)
             vim.current.window.cursor = (row, 0)
             vim.command("call SwitchToVinjaView('Jdb')")
-            if "process terminated" in args[1] and self.quick_step :
-                self.toggleQuickStep()
+            #if "process terminated" in args[1] and self.quick_step :
+            #    self.toggleQuickStep()
             vim.command("redraw")
 
     def switchSourceBuffer(self):
@@ -2676,18 +2676,6 @@ class Jdb(object):
         if cmdLine.startswith("hide"):
             self.hideDebugConsole()
             return 
-            #vim.command("call SwitchToVinjaView('Jdb')")
-            #if  self.quick_step :
-            #    self.toggleQuickStep()
-
-            #lines = [line.strip() for line in vim.current.buffer]
-            #self.cmd_buf_list = lines
-
-            #vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
-            #lines = [line.strip() for line in vim.current.buffer]
-            #self.out_buf_list = lines
-            #self.closeBuffer()
-            #return 
 
         # run or runtomcat or runtest command.
         if cmdLine.startswith("run"):
@@ -2762,7 +2750,22 @@ class Jdb(object):
         resultText = JdbTalker.submit("fetchJdbResult",self.class_path_xml,self.serverName)
         if resultText == "" :
             return 
+
+        jdeConsoleBuf = None
+        for buffer in vim.buffers:
+            if buffer.name and buffer.name.find( "VinjaView_JdeConsole") > -1 :
+                jdeConsoleBuf = buffer
+                break
+        if jdeConsoleBuf == None :
+            self.switchSourceBuffer()
+            height = vim.eval("winheight(0) / 10 * 3")
+            vim.command("call SwitchToVinjaView('JdeConsole','belowright','%s')" % height)
+
         VimUtil.writeToVinjaBuffer("JdeConsole",resultText,append=True)
+
+        if self.display == True :
+            vim.command("call SwitchToVinjaView('Jdb')")
+
 
     def fetchAutocmdResult(self):
         resultText = JdbTalker.submit("fetchAutocmdResult",self.class_path_xml,self.serverName)
