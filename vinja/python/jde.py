@@ -2160,6 +2160,10 @@ class Jdb(object):
         alias_text = file(os.path.join(VinjaConf.getShareHome(),"conf/jdb_alias.cfg")).read()
         self.alias_table = [item.split() for item in alias_text.split("\n") if item.strip() != "" ]
 
+        env_cfg_path = os.path.join(VinjaConf.getDataHome(), "env.cfg")
+        self.env_map = dict(MiscUtil.loadMapFromFile(env_cfg_path))
+
+
     def initDebugProject(self):
         bufname = vim.current.buffer.name
         #fake_path = os.path.join(self.cur_dir,"fake")
@@ -2299,6 +2303,7 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>v   :python jdb.executeCmd(insertMode=False,cmdLine='>locals')<cr>")
             vim.command("nnoremap <buffer><silent>f   :python jdb.executeCmd(insertMode=False,cmdLine='>fields')<cr>")
             vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
+            vim.command("nnoremap <buffer><silent>W   :python jdb.executeCmd(insertMode=False,cmdLine='>threads')<cr>")
             vim.command("nnoremap <buffer><silent>r   :python jdb.executeCmd(insertMode=False,cmdLine='>run')<cr>")
             vim.command("nnoremap <buffer><silent>d   :python jdb.executeCmd(insertMode=False,cmdLine='>disconnect')<cr>")
             vim.command("nnoremap <buffer><silent>t   :python jdb.executeCmd(insertMode=False,cmdLine='>runtest')<cr>")
@@ -2646,6 +2651,23 @@ class Jdb(object):
             self.appendPrompt(insertMode)
             return 
 
+
+        if cmdLine=="set" or cmdLine.startswith("set "):
+            split_index= cmdLine.find ("=")
+            if split_index > -1 :
+                name = cmdLine[0:split_index].strip()
+                value = cmdLine[split_index+1:].strip()
+                if value.strip() == "":
+                    self.env_map.pop(name,None)
+                else :
+                    self.env_map[name]=value
+            msgs = []
+            for item in self.env_map :
+                msgs.append("%s=%s" % (item, self.env_map[item]))
+            self.stdout(msgs)
+            self.appendPrompt(insertMode)
+            return
+
         if cmdLine.startswith("run") :
             if cmdLine == "runlast":
                 if self.lastRunCmd == None :
@@ -2655,7 +2677,10 @@ class Jdb(object):
             else :
                 self.switchSourceBuffer()
                 mainClassName = Parser.getMainClass()
-                cmdLine = cmdLine  +" " + mainClassName
+                java_options = ""
+                if self.env_map.get("JAVA_OPTS") != None :
+                    java_options = self.env_map.get("JAVA_OPTS")
+                cmdLine = cmdLine  +" " +java_options + " " + mainClassName
                 self.lastRunCmd = cmdLine
 
         change_suspend_cmds = ["step_into","step_over","step_return","step_out","resume",

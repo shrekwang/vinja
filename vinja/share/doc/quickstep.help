@@ -1,7 +1,7 @@
-+------------+------------+--------------+------------+
-| l:step_into| j:step_over| h:step_return| u:step_out |
-| C:resume   | v:locals   | f:fields     | nG:until n |
-| e:qeval    | i:insert   | w:frames     | ?:help     |
-| b:toggle break point    | s:shutdown   | d:detach   |
-| r:run      | t:runtest  | R:runlast    |            |
-+------------+------------+--------------+------------+
++--------------+------------+--------------+------------+
+| l:step_into  | j:step_over| h:step_return| u:step_out |
+| C:resume     | v:locals   | f:fields     | nG:until n |
+| e:qeval      | i:insert   | w:frames     | W:threads  |
+| b:breakpoint | d:detach   | s:shutdown   | ?:help     |
+| r:run        | t:runtest  | R:runlast    |            |
++--------------+------------+--------------+------------+

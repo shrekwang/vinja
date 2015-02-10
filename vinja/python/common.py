@@ -378,6 +378,23 @@ class MiscUtil(object):
             example_file.replace(" ","\ ")
             vim.command("exec 'silent! belowright split %s '" % example_file)
 
+
+    @staticmethod
+    def loadMapFromFile(file_path):
+        result_dict = {}
+        if not os.path.exists(file_path):
+            return result_dict
+        lines = open(file_path,"r").readlines()
+        for line in lines:
+            if not line.strip() : continue
+            if line[0] == "#" : continue
+            split_index= line.find ("=")
+            if split_index < 0 : continue 
+            name = line[0:split_index].strip()
+            value = line[split_index+1:].strip()
+            result_dict[name] = value
+        return result_dict
+
     @staticmethod
     def displayWidth(value):
         if value == None : return 0
