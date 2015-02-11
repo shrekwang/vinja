@@ -2169,6 +2169,20 @@ class Jdb(object):
         #fake_path = os.path.join(self.cur_dir,"fake")
         self.project_root = ProjectManager.getProjectRoot(bufname)
         self.class_path_xml = ProjectManager.getClassPathXml(bufname)
+        self.history_cmds = []
+        if os.path.isdir(self.project_root):
+            history_file = os.path.join(self.project_root, ".jde_jdb_his")
+            if os.path.exists(history_file) :
+                self.history_cmds = [line.rstrip() for line in open(history_file).readlines()]
+
+    def addCommandToHis(self,cmd):
+        if cmd in self.history_cmds :
+            return
+        self.history_cmds.append(cmd)
+        history_path = os.path.join(self.project_root, ".jde_jdb_his")
+        with open(history_path, 'aw') as his_file:
+            his_file.write(cmd)
+            his_file.write("\n")
 
     def show(self):
         self.display = True
@@ -2597,8 +2611,11 @@ class Jdb(object):
 
     def retainLines(self):
         curBuf = vim.current.buffer
-        if len(curBuf) > 8 :
-            del curBuf[0]
+        delLine = 0
+        if  self.quick_step :
+            delLine = 7
+        while len(curBuf) > 9 :
+            del curBuf[delLine]
         row = len(curBuf)
         col = len(curBuf[row-1])
         vim.current.window.cursor = (row, col)
@@ -2617,7 +2634,7 @@ class Jdb(object):
         self.closeBuffer()
 
 
-    def executeCmd(self, insertMode = True, cmdLine = None):
+    def executeCmd(self, insertMode = True, cmdLine = None, expanded=False):
         
         #if self.project_root == None or not os.path.exists(self.project_root) :
         #    return 
@@ -2651,8 +2668,20 @@ class Jdb(object):
             self.appendPrompt(insertMode)
             return 
 
+        if cmdLine == "his" :
+            trim = lambda cmd : cmd if len(cmd) < 80 else cmd[0:40] + " .... " + cmd[-40:]
+            msgs = [ "%s: %s" % (str(index),trim(item)) for index,item in enumerate(self.history_cmds)]
+            self.stdout(msgs)
+            self.appendPrompt(insertMode)
+            return
+
+        if cmdLine.startswith("do "):
+            index = int(cmdLine.strip().split(" ")[1])
+            cmdLine =  self.history_cmds[index]
+            return self.executeCmd(insertMode,cmdLine=">"+cmdLine,expanded=True)
 
         if cmdLine=="set" or cmdLine.startswith("set "):
+            self.addCommandToHis(cmdLine)
             split_index= cmdLine.find ("=")
             if split_index > -1 :
                 cmdLine = cmdLine[4:]
@@ -2676,13 +2705,15 @@ class Jdb(object):
                     return
                 cmdLine = self.lastRunCmd
             else :
-                self.switchSourceBuffer()
-                mainClassName = Parser.getMainClass()
-                java_options = ""
-                if self.env_map.get("JAVA_OPTS") != None :
-                    java_options = self.env_map.get("JAVA_OPTS")
-                cmdLine = cmdLine  +" " +java_options + " " + mainClassName
-                self.lastRunCmd = cmdLine
+                if not expanded :
+                    self.switchSourceBuffer()
+                    mainClassName = Parser.getMainClass()
+                    java_options = ""
+                    if self.env_map.get("JAVA_OPTS") != None :
+                        java_options = self.env_map.get("JAVA_OPTS")
+                    cmdLine = cmdLine  +" " +java_options + " " + mainClassName
+                    self.lastRunCmd = cmdLine
+                    self.addCommandToHis(cmdLine)
 
         change_suspend_cmds = ["step_into","step_over","step_return","step_out","resume",
                 "exit","shutdown","frame","disconnect","until","up","down","thread","resume_all"]
@@ -2724,6 +2755,7 @@ class Jdb(object):
                     or cmdLine.startswith("locals") or cmdLine.startswith("fields") \
                     or cmdLine.startswith("geval") or cmdLine.startswith("eval_display") :
 
+                self.addCommandToHis(cmdLine)
                 varTree = VarTree.createVarTree(data)
                 self.stdout(varTree.renderToString())
             else :
@@ -2761,15 +2793,18 @@ class Jdb(object):
                 callback = lambda : VimUtil.scrollTo(matchedRow)
                 VimUtil.doCommandInVinjaBuffer("JdbStdOut",callback)
 
-        if not self.quick_step :
-            vim.command("call SwitchToVinjaView('Jdb')")
-            self.appendPrompt(insertMode)
-        else :
-            vim.command("call SwitchToVinjaView('Jdb')")
-            work_buffer = vim.current.buffer
-            row,col = vim.current.window.cursor
-            work_buffer[row-1] = "> "
-            vim.current.window.cursor = [row,2]
+        vim.command("call SwitchToVinjaView('Jdb')")
+        self.appendPrompt(insertMode)
+
+        #if not self.quick_step :
+        #    vim.command("call SwitchToVinjaView('Jdb')")
+        #    self.appendPrompt(insertMode)
+        #else :
+        #    vim.command("call SwitchToVinjaView('Jdb')")
+        #    work_buffer = vim.current.buffer
+        #    row,col = vim.current.window.cursor
+        #    work_buffer[row-1] = "> "
+        #    vim.current.window.cursor = [row,2]
             
 
     def fetchJdbResult(self):
