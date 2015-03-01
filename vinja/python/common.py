@@ -289,6 +289,27 @@ class MiscUtil(object):
         os.startfile(line)
 
     @staticmethod
+    def selectColumn():
+        (row, col) = vim.current.window.cursor  
+        lineCount = len(vim.current.buffer)
+        sectionEndRow = lineCount
+
+        for index in range(row, lineCount):
+            if len(vim.current.buffer[index]) < col+1 :
+                sectionEndRow = index  
+                break
+            else :
+                if vim.current.buffer[index][col] == " " :
+                    sectionEndRow = index  
+                    break
+
+        offset = sectionEndRow - row
+        if offset > 0 :
+            command = "call feedkeys(',zv" + str(offset) + "j')"
+            vim.command(command)
+        
+
+    @staticmethod
     def openInFirefox():
         """ open current editing file in firefox browser """
         import subprocess

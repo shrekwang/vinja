@@ -697,6 +697,7 @@ nmap <silent><leader>rc  :python MiscUtil.remove_comment()<cr>
 nmap <silent><leader>ya  :python MiscUtil.copy_buffer_path()<cr>
 nmap <silent><leader>mm  :python VimUtil.toggleMaxWin()<cr>
 nmap <silent><leader>mw  :python VimUtil.zoomWinWidth()<cr>
+nmap <silent><leader>bc  :python MiscUtil.selectColumn()<cr>
 
 nmap <silent><leader>zs  :python MiscUtil.startfile()<cr>
 nmap <silent><leader>zv  <C-Q>
