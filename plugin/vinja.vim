@@ -621,6 +621,7 @@ function! JdeInit()
   autocmd BufEnter  *.java    nmap <buffer><silent><M-8>       :python EditUtil.tipMethodDefinition(True)<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>de  :python Jdb.toggleDebug()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>sc  :python EditUtil.showJdeConsoleOut()<cr>
   
 
   autocmd CompleteDone *.java  :python AutoImport.importAfterCompletion()
@@ -638,6 +639,9 @@ function! JdeInit()
   autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F7>     <c-o>:python jdb.stepCmd('step_return')<cr>
   autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F8>     <c-o>:python jdb.stepCmd('resume')<cr>
   "autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><c-i>    <c-o>:python jdb.toggleQuickStep()<cr>
+
+  autocmd BufLeave  VinjaView_JdeConsole  python EditUtil.saveJdeConsoleOut()
+
 endfunction
 
 function! Jdext()

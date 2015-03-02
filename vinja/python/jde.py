@@ -383,6 +383,21 @@ class Talker(BasicTalker):
 class EditUtil(object):
 
     @staticmethod
+    def saveJdeConsoleOut():
+        global jde_console_buf
+        jde_console_buf = [] 
+        for line in vim.current.buffer :
+            jde_console_buf.append(line.replace("\n",""))
+
+    @staticmethod
+    def showJdeConsoleOut():
+        global jde_console_buf
+        height = vim.eval("winheight(0) / 10 * 3")
+        vim.command("call SwitchToVinjaView('JdeConsole','belowright','%s')" % height)
+        output(jde_console_buf)
+        
+
+    @staticmethod
     def createSkeleton():
         vim_buffer = vim.current.buffer
         if len(vim_buffer) > 10 :
@@ -2170,19 +2185,20 @@ class Jdb(object):
         self.project_root = ProjectManager.getProjectRoot(bufname)
         self.class_path_xml = ProjectManager.getClassPathXml(bufname)
         self.history_cmds = []
-        if os.path.isdir(self.project_root):
-            history_file = os.path.join(self.project_root, ".jde_jdb_his")
-            if os.path.exists(history_file) :
-                self.history_cmds = [line.rstrip() for line in open(history_file).readlines()]
+        #if os.path.isdir(self.project_root):
+        #    history_file = os.path.join(self.project_root, ".jde_jdb_his")
+        #    if os.path.exists(history_file) :
+        #        self.history_cmds = [line.rstrip() for line in open(history_file).readlines()]
 
     def addCommandToHis(self,cmd):
-        if cmd in self.history_cmds :
-            return
-        self.history_cmds.append(cmd)
-        history_path = os.path.join(self.project_root, ".jde_jdb_his")
-        with open(history_path, 'aw') as his_file:
-            his_file.write(cmd)
-            his_file.write("\n")
+        pass
+        # if cmd in self.history_cmds :
+        #     return
+        # self.history_cmds.append(cmd)
+        # history_path = os.path.join(self.project_root, ".jde_jdb_his")
+        # with open(history_path, 'aw') as his_file:
+        #     his_file.write(cmd)
+        #     his_file.write("\n")
 
     def show(self):
         self.display = True
