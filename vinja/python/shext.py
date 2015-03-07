@@ -196,7 +196,12 @@ class LsCmd(object):
             abspath = os.path.join(path, item)
             basename = os.path.basename(abspath)
             time_info= time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime(os.path.getmtime(abspath)))
-            size_info= " %0.1f kb" % float(os.path.getsize(abspath)/1024)
+            file_size = os.path.getsize(abspath)
+            if (file_size > 1024 ) :
+                size_info= " %0.2f kb" % float(os.path.getsize(abspath)/1024.0)
+            else :
+                size_info= " %s" % str(os.path.getsize(abspath))
+
             infos.append( "%s %s %s" %( basename.ljust(max), time_info, size_info ) )
 
             filetype = self.file_types.get(item)
