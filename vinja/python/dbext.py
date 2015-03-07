@@ -110,7 +110,7 @@ class QueryUtil(object):
                         and a.table_schema+'.'+a.table_name = '%s' """ % (name,name)
 
         elif server_type == "mysql":
-            sql = """ SELECT COLUMN_NAME, DATA_TYPE,  CHARACTER_MAXIMUM_LENGTH , IS_NULLABLE
+            sql = """ select COLUMN_NAME, COLUMN_TYPE,   IS_NULLABLE , COLUMN_DEFAULT, COLUMN_KEY, COLUMN_COMMENT
                           FROM INFORMATION_SCHEMA.COLUMNS
                           WHERE table_name = '%s' and table_schema=database() """ % name
 
