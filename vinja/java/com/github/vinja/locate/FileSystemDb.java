@@ -30,10 +30,10 @@ public class FileSystemDb  implements JNotifyListener {
   	private RecordBatchUpdater batchUpdater = null;
 	
   	private void initTable() {
-         String sql1 = " create table fsdb_dirs  ( integer primary key, alias varchar(60), "
- 	        +"start_dir varchar(160) , excludes varchar(500) , depth integer ) ";
-         String sql2 = " create table fsdb_files ( integer primary key ,  start_dir varchar(200), "
-             +" name varchar(80),   rtl_path varchar(160) )  ";
+         String sql1 = "create table fsdb_dirs ( alias varchar(60), start_dir varchar(160) , excludes varchar(500) , "
+             + "depth integer, UNIQUE(start_dir) ON CONFLICT REPLACE ) ";
+         String sql2 = "create table fsdb_files ( start_dir varchar(200), name varchar(80),    "
+             +"rtl_path varchar(160) , UNIQUE(start_dir, rtl_path) ON CONFLICT REPLACE ) ";
          sqliteManager.executeUpdate(sql1);
          sqliteManager.executeUpdate(sql2);
     }
@@ -60,8 +60,8 @@ public class FileSystemDb  implements JNotifyListener {
 				.newSingleThreadScheduledExecutor();
 
 		batchUpdater = new RecordBatchUpdater(sqliteManager);
-		//update index per  second.
-		scheduler.scheduleAtFixedRate(batchUpdater, 0, 1, TimeUnit.SECONDS);
+		//update index per 2 second.
+		scheduler.scheduleAtFixedRate(batchUpdater, 0, 2, TimeUnit.SECONDS);
 	}
 	
 	public static FileSystemDb getInstance() {
@@ -220,6 +220,7 @@ public class FileSystemDb  implements JNotifyListener {
     }
 	
     public void fileCreated(int wd, String rootPath, String name) {
+        log.info("file created:" + rootPath + ", " + name);
     	String absPath = FilenameUtils.concat(rootPath, name);
     	File file = new File(absPath);
     	if (file.isDirectory()) return ;
@@ -238,6 +239,7 @@ public class FileSystemDb  implements JNotifyListener {
     }
     
     public void fileDeleted(int wd, String rootPath, String name) {
+        log.info("file delete:" + rootPath + ", " + name);
     	String absPath = FilenameUtils.concat(rootPath, name);
     	String[] indexedData = getIndexedData(absPath);
     	if  (indexedData == null ) return ;
@@ -247,6 +249,7 @@ public class FileSystemDb  implements JNotifyListener {
     }
     
     public void fileRenamed(int wd, String rootPath, String oldName, String newName) {
+        log.info("file renamed:" + rootPath + ", " + oldName + ", " + newName);
     	fileDeleted(wd, rootPath, oldName);
     	fileCreated(wd, rootPath, newName);
     }

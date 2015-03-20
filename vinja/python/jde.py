@@ -2698,9 +2698,9 @@ class Jdb(object):
 
         if cmdLine=="set" or cmdLine.startswith("set "):
             self.addCommandToHis(cmdLine)
+            cmdLine = cmdLine[4:]
             split_index= cmdLine.find ("=")
             if split_index > -1 :
-                cmdLine = cmdLine[4:]
                 name = cmdLine[0:split_index].strip()
                 value = cmdLine[split_index+1:].strip()
                 if value.strip() == "":
