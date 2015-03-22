@@ -641,6 +641,7 @@ function! JdeInit()
   "autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><c-i>    <c-o>:python jdb.toggleQuickStep()<cr>
 
   autocmd BufLeave  VinjaView_JdeConsole  python EditUtil.saveJdeConsoleOut()
+  autocmd BufEnter  VinjaView_JdeConsole  nmap <buffer><silent><leader>de  :python Jdb.toggleDebug()<cr>
 
 endfunction
 

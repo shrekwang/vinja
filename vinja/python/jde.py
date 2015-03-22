@@ -2443,7 +2443,7 @@ class Jdb(object):
     @staticmethod
     def toggleDebug():
         global jdb
-        if "jdb" not in globals() or (jdb.display == False) :
+        if "jdb" not in globals() or (jdb.display == False) or not VimUtil.isVinjaBufferVisible("Jdb") :
             Jdb.runApp()
         else :
             jdb.hideDebugConsole()
@@ -2463,6 +2463,7 @@ class Jdb(object):
             jdb = Jdb()
         jdb.initDebugProject()
         jdb.show()
+        jdb.quick_step = False
         jdb.toggleQuickStep()
 
     def stdout(self,msg):
