@@ -153,6 +153,13 @@ class QuickLocater(object) :
         vim.command("%s  <C-Y>    :python quickLocater.yank_content()<cr>" %(mapcmd ))
         vim.command("%s  <C-v>    :python quickLocater.on_paste_content()<cr>" %(mapcmd ))
 
+        if isinstance(self.content_manager,FileContentManager):
+            vim.command("syn match LocateName #^.* #")
+            vim.command("hi def link LocateName Identifier")
+            fg = vim.eval("""synIDattr(synIDtrans(hlID("Identifier")), "fg")""")
+            vim.command("highlight Cursor guifg=%s guibg=%s" % (fg,bg))
+
+
     def on_paste_content(self):
         content = vim.eval("getreg('+')")
         content = content.replace("\n","").strip()
