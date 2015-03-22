@@ -45,7 +45,7 @@ public class RecordCollector extends DirectoryWalker<Record> {
     	if (! directory.getPath().equals(startPath)
     			&& ! PatternUtil.isExclude(this.excludes, directory)) {
     	    Record record = buildRecord(directory);
-	    	results.add(record);
+	    	//results.add(record);
 	    	if (depth < 6) {
                 out.println("indexing subdir " +  record.getRelativePath() + " .. ");
 	    	}

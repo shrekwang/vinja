@@ -255,18 +255,32 @@ class FileContentManager(object):
         self.start_dirs = {}
         for apath,alias,start_dir in result :
             if self.locateType == "all" :
-                rows.append(apath)
+                #rows.append(apath)
+                rows.append(self.path_to_dis(apath))
             else :
                 rtl_path = apath[apath.find(os.path.sep)+1:]
                 abpath = os.path.join(start_dir, rtl_path)
                 if cur_dir in abpath :
-                    rows.append(apath)
+                    rows.append(self.path_to_dis(abpath))
+                    #rows.append(apath)
             self.start_dirs[alias] = start_dir
         rows = rows[0:30]
         return rows
 
+    def path_to_dis(self,abpath):
+        base_name = os.path.basename(abpath)
+        dir_name = os.path.dirname(abpath)
+        return base_name + " (" +dir_name + ")"
+
+    def dis_to_path(self,line):
+        index = line.find("(")
+        abpath = os.path.join(line[index+1:-1],line[0:index])
+        return abpath
+        
+
     def open_content(self,line,mode="local"):
         fname = line.strip()
+        fname = self.dis_to_path(fname)
         if not fname : return 
 
         alias = fname[0: fname.find(os.path.sep)]

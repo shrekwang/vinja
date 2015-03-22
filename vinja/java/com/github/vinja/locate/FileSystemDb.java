@@ -221,6 +221,8 @@ public class FileSystemDb  implements JNotifyListener {
 	
     public void fileCreated(int wd, String rootPath, String name) {
     	String absPath = FilenameUtils.concat(rootPath, name);
+    	File file = new File(absPath);
+    	if (file.isDirectory()) return ;
     	String[] indexedData = getIndexedData(absPath);
     	if  (indexedData == null ) return ;
     	String startDir = indexedData[0];
