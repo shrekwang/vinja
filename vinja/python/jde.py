@@ -1568,6 +1568,7 @@ class Parser(object):
                     rtntype = search_res.group("rtntype")
                     if mtype == "method" :
                         param = search_res.group("param")
+                        param = re.sub(' +', ' ', param.strip())
                     else :
                         param = ""
                     memberInfo.append((name,mtype,rtntype,param,lineNum+1))
