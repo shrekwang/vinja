@@ -161,6 +161,11 @@ class QuickLocater(object) :
         elif isinstance(self.content_manager,JavaMemberContentManager):
             vim.command("syn match MethodName #^.*\((\)\@=#")
             vim.command("hi def link MethodName Identifier")
+        elif isinstance(self.content_manager,EditHistoryManager):
+            vim.command("syn match LocateName #^.*\s#")
+            vim.command("hi def link LocateName Identifier")
+            fg = vim.eval("""synIDattr(synIDtrans(hlID("Identifier")), "fg")""")
+            vim.command("highlight Cursor guifg=%s guibg=%s" % (fg,bg))
 
 
     def on_paste_content(self):
