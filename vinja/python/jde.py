@@ -2727,9 +2727,13 @@ class Jdb(object):
                     self.switchSourceBuffer()
                     mainClassName = Parser.getMainClass()
                     java_options = ""
+                    methodName = ""
                     if self.env_map.get("JAVA_OPTS") != None :
                         java_options = self.env_map.get("JAVA_OPTS")
-                    cmdLine = cmdLine  +" " +java_options + " " + mainClassName
+                    if cmdLine.find("#") > 0 :
+                        methodName = cmdLine[cmdLine.find("#"):]
+                        cmdLine = cmdLine[0:cmdLine.find("#")]
+                    cmdLine = cmdLine  +" " +java_options + " " + mainClassName + methodName
                     self.lastRunCmd = cmdLine
                     self.addCommandToHis(cmdLine)
 

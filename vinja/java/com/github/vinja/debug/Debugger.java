@@ -603,6 +603,8 @@ public class Debugger {
 		String objInspectorPath = FilenameUtils.concat(vinjaHome, "lib/object-inspector-1.0.jar");
 		File file = new File(objInspectorPath);
 		String urlPath = file.toURI().getPath();
+
+		String junitSingleMethodJarPath = FilenameUtils.concat(vinjaHome, "lib/junit-method.jar");
 		
 		
 		String port = String.valueOf(getAvailPort());
@@ -610,6 +612,8 @@ public class Debugger {
 			+port+",suspend=y");
 		cmd.append(" -cp " + getClassPath(classPathXml));
 		cmd.append(urlPath);
+        cmd.append(File.separator);
+        cmd.append(junitSingleMethodJarPath);
 		cmd.append(" ");
 		
 		//append aget for object size calc
@@ -624,7 +628,11 @@ public class Debugger {
 			}
 		}
 		if (runAsTest) {
-			cmd.append("org.junit.runner.JUnitCore").append(" ");
+            if (mainClass.indexOf("#") < 0 ) {
+                cmd.append("org.junit.runner.JUnitCore").append(" ");
+            } else {
+                cmd.append("com.github.vinja.SingleJUnitTestRunner").append(" ");
+            }
 		}
 		cmd.append(mainClass).append(" ");
 		
