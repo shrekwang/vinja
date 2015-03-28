@@ -612,7 +612,7 @@ public class Debugger {
 			+port+",suspend=y");
 		cmd.append(" -cp " + getClassPath(classPathXml));
 		cmd.append(urlPath);
-        cmd.append(File.separator);
+        cmd.append(File.pathSeparator);
         cmd.append(junitSingleMethodJarPath);
 		cmd.append(" ");
 		
