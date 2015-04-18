@@ -237,6 +237,19 @@ def output(content,buffer=None,append=False):
 class MiscUtil(object):
 
     @staticmethod
+    def redirCommand(cmdtext, visual=None):
+        vim.command("redir => g:redir_output")
+        vim.command("silent " + cmdtext)
+        vim.command("redir END")
+        vim.command("call SwitchToVinjaView('redir-out')")    
+        buf_lines = vim.eval("g:redir_output").split("\n")
+        buf_lines = [item for item in buf_lines if item.strip() !=  "No matching autocommands"]
+        output(buf_lines)
+        lastwin = str(vim.eval("winnr('#')"))
+        vim.command("exec '"+lastwin+" wincmd w'")
+
+
+    @staticmethod
     def operateVisualContext():
         vim.command("normal gvo")
         line1 = int(vim.eval("line('.')"))
