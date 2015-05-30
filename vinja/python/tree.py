@@ -1,5 +1,6 @@
 import zipfile, os  
 import shutil
+import sys
 import logging
 import chardet
 import fnmatch
@@ -339,7 +340,10 @@ class NormalFileNode(TreeNode):
         if file_encoding == None :
             file_encoding = chardet.detect(all_the_text).get("encoding")
         if file_encoding != None :
-            all_the_text = all_the_text.decode(file_encoding, "ignore")
+            try :
+                all_the_text = all_the_text.decode(file_encoding)
+            except Exception as e :
+                all_the_text = ""
 
         filecontent = all_the_text.split("\n")
         return filecontent
@@ -865,12 +869,14 @@ class ProjectTree(object):
         result = []
 
         re_type = type(re.compile(""))
+        sysencoding = sys.getdefaultencoding()
         def _search_node(node,text) :
             if not node.isDirectory and node.plainText() :
                 # logging.debug("search content of %s " % node.realpath)
                 try :
                     content = node.get_content(self.project_encoding)
                     file_path = node.get_uri_path()
+                    file_path = file_path.decode(sysencoding)
                     for index,line in enumerate(content) :
                         if (isinstance(text,str) and line.find(text) > -1 ) \
                                 or (isinstance(text,re_type) and text.search(line)) :
@@ -883,13 +889,14 @@ class ProjectTree(object):
         _search_node(node,text)
         qflist = []
         for filename,lineNum,lineText in result :
-            qfitem = dict(filename=str(self.relpath(filename)),lnum=lineNum,text=lineText.strip())
+            qfitem = dict(filename=self.relpath(filename).decode(sysencoding),lnum=lineNum,text=lineText.strip())
             qflist.append(qfitem)
 
         if len(qflist) > 0 :
             #since vim use single quote string as literal string, the escape char will not
             #been handled, so repr the dict in a double quoted string
             qflist_str = "[" + ",".join([EditUtil.reprDictInDoubleQuote(item) for item in qflist])+"]" 
+
             vim_encoding= vim.eval("&encoding")
             if vim_encoding :
                 try :
