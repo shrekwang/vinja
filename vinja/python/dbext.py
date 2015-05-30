@@ -286,12 +286,12 @@ class Dbext(object):
         if db_profile["servertype"] == "sqlite" :
             strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ File:'%s'\ "
             strValue = (db_profile["file"],)
-        elif db_profile["servertype"] == "sqlite" :
+        elif db_profile["servertype"] == "oracle" :
             strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ SID:'%s'"
             strValue = (db_profile["host"],db_profile["sid"])
         else :
             strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ Database:'%s'"
-            strValue = (db_profile["host"],db_profile["user"])
+            strValue = (db_profile["host"],db_profile["database"])
 
         vim.command(strTemplate % strValue )
         return
@@ -359,11 +359,10 @@ class Dbext(object):
         bufnum= vim.eval("bufnr('%')")
         conn = self.createConn(db_profile)
 
-        #conn = conn_pool.get(bufnum)
-        #if conn == None :
-        #    conn = self.createConn(db_profile)
-        #    conn_pool[bufnum] = conn
-
+        conn = conn_pool.get(bufnum)
+        if conn == None :
+            conn = self.createConn(db_profile)
+            conn_pool[bufnum] = conn
 
         server_type = db_profile["servertype"]
         if server_type == "mysql" :
