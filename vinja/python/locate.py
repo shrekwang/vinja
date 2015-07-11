@@ -47,7 +47,6 @@ class QuickLocater(object) :
         if isinstance(self.content_manager,EditHistoryManager):
             self.content_manager.cursor_current_buf()
 
-
     def save_env(self):
         self.timeoutlen = vim.eval("&timeoutlen")
         self.insertmode = vim.eval("&insertmode")
@@ -104,9 +103,19 @@ class QuickLocater(object) :
             quickLocater.prompt.show()
             quickLocater.show_matched_result()
 
+    def get_buffer_name(self):
+        if isinstance(self.content_manager,FileContentManager):
+            return "File\ Locate"
+        elif isinstance(self.content_manager,EditHistoryManager):
+            return "Edit\ History\ Locate"
+        elif isinstance(self.content_manager,JavaMemberContentManager):
+            return "Class\ Member\ Locate"
+        else :
+            return "Explorer\ Buffer"
+
     def create_explorer_buffer(self) :
         self.save_env()
-        vim.command("silent! keepalt botright 1split explorer_buffer")
+        vim.command("silent! keepalt botright 1split " + self.get_buffer_name())
         vim.command("setlocal bufhidden=delete")
         vim.command("setlocal buftype=nofile")
         vim.command("setlocal noswapfile")

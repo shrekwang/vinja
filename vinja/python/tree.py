@@ -433,6 +433,11 @@ class ZipRootNode(TreeNode):
             self.load_childrend()
         return self._children
 
+    def dispose(self):
+        FileUtil.fileOrDirRm(self.realpath)
+        self.parent.remove_child(self)
+        return True
+
     def add_tree_entry(self,line, edited):
         sections = line.strip().split("/")
         parentNode = self
@@ -763,6 +768,14 @@ class ProjectTree(object):
                 node = node.get_child(section)
             return node
 
+    def _restore_cursor(self, row) :
+        vim_buffer = vim.current.buffer
+        if len(vim_buffer) < row :
+            row = len(vim_buffer)
+        vim.current.window.cursor = (row,0)
+        vim.command("silent normal ^")
+
+
     def preview_selected_node(self, edit_cmd = "edit"):
         self.open_selected_node(edit_cmd)
         tab_id = self._get_tab_id()
@@ -814,6 +827,7 @@ class ProjectTree(object):
         print "visual selected node has been yanked"
 
     def delete_visual_node(self):
+        (row,col) = vim.current.window.cursor
         _,_,startLine,endLine=MiscUtil.getVisualArea()
         nodes = []
         for row_num in range(startLine, endLine+1):
@@ -829,7 +843,8 @@ class ProjectTree(object):
         for node in nodes :
             suc = node.dispose()
         self.render_tree()
-        self.select_node(parent)
+        #self.select_node(parent)
+        self._restore_cursor(row)
 
     def recursive_open_node(self):
         node = self.get_selected_node()
@@ -1127,6 +1142,7 @@ class ProjectTree(object):
             print "rename operation failed"
 
     def delete_node(self):
+        (row,col) = vim.current.window.cursor
         node = self.get_selected_node()
         prompt = "Are you sure you with to delete the node \n" + node.realpath +" (yN):"
         answer = VimUtil.getInput(prompt)
@@ -1137,7 +1153,8 @@ class ProjectTree(object):
         suc = node.dispose()
         if suc :
             self.render_tree()
-            self.select_node(parent)
+            self._restore_cursor(row)
+            #self.select_node(parent)
 
     def yank_selected_node(self, remove_orignal = False):
         node = self.get_selected_node()

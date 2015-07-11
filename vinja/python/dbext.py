@@ -365,12 +365,22 @@ class Dbext(object):
             conn_pool[bufnum] = conn
 
         server_type = db_profile["servertype"]
+        if server_type == "mysql" and conn.open == 0:
+            logging.debug("auto reconnected")
+            conn = self.createConn(db_profile)
+            conn_pool[bufnum] = conn
+
+        import MySQLdb
         if server_type == "mysql" :
             codepage = sys.getdefaultencoding()
             sql = sql.decode(codepage, 'ignore')
 
         cur = None
         try :
+            cur = conn.cursor()
+            cur.execute(sql)
+        except (AttributeError, MySQLdb.OperationalError):
+            conn = self.createConn(db_profile)
             cur = conn.cursor()
             cur.execute(sql)
         except Exception, reason:
