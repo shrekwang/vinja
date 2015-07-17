@@ -219,7 +219,7 @@ function! Dbext()
   map <buffer><silent>,la :python QueryUtil.queryTables(False)<cr>
   map <buffer><silent>,ld :python QueryUtil.queryDataBases()<cr>
   map <buffer><silent>,dt :python QueryUtil.descTable()<cr>
-  map <buffer><silent>,gg :python QueryUtil.generateSQL()<cr>
+  map <buffer><silent>,gg :python dbext.exportResultToSQL()<cr>
 endfunction
 
 function! SzDtdCompletion(findstart,base)

@@ -151,6 +151,13 @@ class QueryUtil(object):
             col_names = [row[0] for row in dbext.query(sql)[1]]
             sql = "select top 1 * from %s " % name
             values = [str(v)[0:30] for v in dbext.query(sql)[1][0] ]
+        elif server_type == "mysql":
+            sql = """select column_name, data_type,  character_maximum_length  
+                        from information_schema.columns where table_name = '%s' and table_schema=database() """ % name
+
+            col_names = [row[0] for row in dbext.query(sql)[1]]
+            sql = "select * from %s limit 1" % name 
+            values = [str(v)[0:30] for v in dbext.query(sql)[1][0] ]
 
         params = (name, ",".join(col_names),"'" + "','".join(values) + "'")
         insertSql = "insert into %s (%s) \n values (%s) \n" % params
@@ -199,6 +206,14 @@ class Dbext(object):
         if columns :
             result = dbext.format(columns,result)
         output(result,outBuffer,False)
+
+
+    def exportResultToSQL(self):
+        sql = MiscUtil.getVisualBlock()
+        outBuffer = Dbext.getOutputBuffer()
+        columns,rows, colTypes = dbext.query(sql, returnColType=True)
+        result = dbext.exportToSqlInternal(columns,rows, colTypes)
+        output(result,outBuffer)
 
     def queryVisualSQL(self):
         sql = MiscUtil.getVisualBlock()
@@ -350,7 +365,7 @@ class Dbext(object):
             conn = sqlite.connect(profile["file"])
         return conn
 
-    def query(self, sql):
+    def query(self, sql, returnColType = False):
 
         db_profile = self.getDbOption()
         if db_profile == None :  return (None,"")
@@ -393,16 +408,56 @@ class Dbext(object):
                 return (None,str(reason))
         columns = []
         result = []
+        colTypes = [] 
         if cur.description:
-            for column in cur.description:
-                columns.append(column[0])
+            for desc in cur.description:
+                columns.append(desc[0])
+                colTypes.append(desc[1])
             result = cur.fetchmany(MAX_ROW_COUNT)
         else :
             result.append("affected " + str(cur.rowcount) + " rows.")
 
         conn.commit()
         cur.close()
-        return columns,result
+        if returnColType :
+            return columns,result , colTypes
+        else :
+            return columns,result
+
+    def convertForDis(self, value):
+        codepage = sys.getdefaultencoding()
+        if isinstance(value,unicode) :
+            value = value.encode(codepage, 'replace')
+        value = str(value).rstrip().replace("\n","\\n")
+        value = value.replace("\r","\\r")
+        value = value.replace("\t","\\t")
+        return value
+
+    def convertForSQL(self, v, colType):
+        if v == None:
+            return "NULL"
+        if colType in (1, 2, 3, 8,9) :
+            return self.convertForDis(v) 
+        else :
+            return "'" + self.convertForDis(v) +  "'"
+
+    def chunkStr(self,values,chunkSize, joinStr, padStr):
+        r = ",\n".join([padStr + joinStr.join(values[i:i + chunkSize]) for i in range(0, len(values), chunkSize)])
+        return r
+
+    def exportToSqlInternal(self,columns,rows, colTypes):
+        name = "xxx"
+        col_str =  self.chunkStr(columns, 4, ",", "    ")
+        sqls = []
+        for row in rows :
+            values = [self.convertForSQL(field, colTypes[index])  for index,field in enumerate(row)]
+            vals_str = self.chunkStr(values, 4, ",", "    ")  
+            insertSql = "insert into %s (\n%s) \n values (\n%s) \n" % (name, col_str , vals_str)
+            sqls.append(insertSql)
+        return sqls
+
+    def exportToJsonInternal(self,columns,rows):
+        pass
 
     def format(self,columns,rows):
         result = []
@@ -410,21 +465,9 @@ class Dbext(object):
         for column in columns :
             maxlens.append(0)
 
-
-        codepage = sys.getdefaultencoding()
-        #translate some control characters
-        intab = "\x00\x01\x0d\x0a\x09"
-        outtab = "01   "
-        trantab = maketrans(intab, outtab)
-
-        def convert(value):
-            if isinstance(value,unicode) :
-                value = value.encode(codepage, 'replace')
-            value = str(value).rstrip().translate(trantab)
-            return value
         resultset = [columns]
         for row in rows :
-            row = [convert(field) for field in row]
+            row = [self.convertForDis(field) for field in row]
             for index,field in enumerate(row):
                 if (MiscUtil.displayWidth(field)>maxlens[index]):
                     maxlens[index] = MiscUtil.displayWidth(field)
