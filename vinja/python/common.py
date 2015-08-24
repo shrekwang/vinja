@@ -241,7 +241,10 @@ class MiscUtil(object):
         vim.command("redir => g:redir_output")
         vim.command("silent " + cmdtext)
         vim.command("redir END")
-        vim.command("call SwitchToVinjaView('redir-out')")    
+
+        height = vim.eval("winheight(0) / 10 * 3")
+        vim.command("call SwitchToVinjaView('redir-out','belowright','%s')" % height)
+
         buf_lines = vim.eval("g:redir_output").split("\n")
         buf_lines = [item for item in buf_lines if item.strip() !=  "No matching autocommands"]
         output(buf_lines)

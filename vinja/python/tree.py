@@ -251,12 +251,21 @@ class NormalDirNode(TreeNode):
         return self._children
 
     def add_sub_node(self, name):
-        abspath = os.path.join(self.realpath, name)
-        if name.endswith("/") :
-            os.makedirs(abspath)
-            node = NormalDirNode(name[:-1], abspath[:-1], self.projectTree)
+        if name.find("/") > 0 :
+            if name.endswith("/") :
+                os.makedirs(os.path.join(self.realpath, name))
+            else :
+                dirname = os.path.dirname(name)
+                os.makedirs(os.path.join(self.realpath, dirname))
+                abspath = os.path.join(self.realpath, name)
+                open(abspath, 'a').close()
+
+            name = name[0: name.find("/")]
+            subnode_abpath = os.path.join(self.realpath, name)
+            node = NormalDirNode(name, subnode_abpath, self.projectTree)
             self.add_child(node)
         else :
+            abspath = os.path.join(self.realpath, name)
             open(abspath, 'a').close()
             os.utime(abspath, None)
             node = NormalFileNode(name, abspath, isDirectory=False)
@@ -275,6 +284,10 @@ class NormalDirNode(TreeNode):
         else :
             node_paths = nodes
         commonprefix = os.path.commonprefix(node_paths)
+        if not os.path.exists(commonprefix) :
+            commonprefix = os.path.dirname(commonprefix)
+        #logging.debug("node_paths is %s"  % str(node_paths))
+        #logging.debug("commonprefix is %s"  % str(commonprefix))
 
         added_nodes = []
         for node in nodes :
@@ -1115,8 +1128,9 @@ class ProjectTree(object):
             return
         suc = node.add_sub_node(added_file)
         node_name = added_file
-        if added_file.endswith("/") :
-            node_name = added_file[:-1]
+        if added_file.find("/") > 0  :
+            node_name = added_file[0:added_file.find("/")]
+        logging.debug("node_name is %s" % node_name)
         if suc :
             self.render_tree()
             self.select_node(node.get_child(node_name))
