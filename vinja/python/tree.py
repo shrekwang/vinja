@@ -2,6 +2,7 @@ import zipfile, os
 import shutil
 import sys
 import logging
+import traceback
 import chardet
 import fnmatch
 from common import ZipUtil,FileUtil,VimUtil,PathUtil
@@ -425,6 +426,7 @@ class ZipRootNode(TreeNode):
         self.isLoaded = False
 
     def load_childrend(self):
+        #logging.debug("stack:" + ''.join(traceback.format_stack()))
         zipFile = None
         try :
             opened_buf_list = VimUtil.getOpenedBufList(self.realpath)
@@ -453,6 +455,11 @@ class ZipRootNode(TreeNode):
         if not self.isLoaded : 
             self.load_childrend()
  
+        return self._get_child(name)
+        
+
+    def _get_child(self,name):
+ 
         for node in self._children :
             if node.name == name :
                 return node
@@ -471,7 +478,12 @@ class ZipRootNode(TreeNode):
         for index, item in enumerate(sections):
             if item == "" :
                 continue
-            sameChild = parentNode.get_child(item)
+            # invoke _get_child to avoid recursion
+            if isinstance(parentNode,ZipRootNode) :
+                sameChild = parentNode._get_child(item)
+            else :
+                sameChild = parentNode.get_child(item)
+
             if sameChild == None :
                 isDirectory = True
                 if index == len(sections)-1 and not line.endswith("/"):
@@ -1482,6 +1494,9 @@ class ProjectTree(object):
         def _find_jar_in_lib(node,zip_file_path) :
 
             if not node.isDirectory :
+                return None
+
+            if isinstance(node,ZipRootNode) :
                 return None
 
             lib_node = node.get_child("Referenced Libraries")
