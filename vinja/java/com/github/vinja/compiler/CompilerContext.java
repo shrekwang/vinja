@@ -528,6 +528,12 @@ public class CompilerContext {
 		return null;
 	}
 	
+	public String findSourceOrBinPath(String className) {
+		String path = findSourceClass(className);
+		if ("None".equals(path)) path = findClassBinPath(className);
+		return path;
+	}
+	
 	public String findSourceClass(String className) {
 		if (className == null) return "None";
 		ClassInfo classInfo = classMetaInfoManager.getMetaInfo(className);

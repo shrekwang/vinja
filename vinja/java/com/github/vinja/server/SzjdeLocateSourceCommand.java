@@ -24,10 +24,7 @@ public class SzjdeLocateSourceCommand extends SzjdeCommand {
 				}
 			}
 		}
-		String sourcePath = cc.findSourceClass(className);
-		if (sourcePath.equals("None")) {
-			sourcePath = cc.findClassBinPath(className);
-		}
+		String sourcePath = cc.findSourceOrBinPath(className);
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(sourcePath).append("\n");

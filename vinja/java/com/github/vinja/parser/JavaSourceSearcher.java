@@ -1,7 +1,9 @@
 package com.github.vinja.parser;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -20,6 +22,7 @@ import com.github.vinja.omni.ClassInfo;
 import com.github.vinja.omni.ClassInfoUtil;
 import com.github.vinja.omni.ClassMetaInfoManager;
 import com.github.vinja.omni.JavaExpUtil;
+import com.github.vinja.util.DecompileUtil;
 import com.github.vinja.util.LRUCache;
 import com.github.vinja.util.ModifierFilter;
 
@@ -79,7 +82,13 @@ public class JavaSourceSearcher {
 				String entryName = filename .substring(filename.lastIndexOf("!") + 1);
 				entryName = entryName.replace("\\", "/");
 				ZipEntry zipEntry = jarFile.getEntry(entryName);
-				InputStream is = jarFile.getInputStream(zipEntry);
+                InputStream is = null;
+				if (entryName.endsWith(".java")) {
+                    is = jarFile.getInputStream(zipEntry);
+				} else {
+					String classContent = DecompileUtil.decompile(jarPath, entryName);
+					is = new ByteArrayInputStream(classContent.getBytes(StandardCharsets.UTF_8));
+				}
 				parseResult = AstTreeFactory.getJavaSourceAst(is, this.ctx.getEncoding());
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -431,14 +440,14 @@ public class JavaSourceSearcher {
 
     @SuppressWarnings("all")
     private String getClassFilePath(String className) {
-    	String path = ctx.findSourceClass(className);
+    	String path = ctx.findSourceOrBinPath(className);
     	
     	//try same package class
     	if (path.equals("None")) {
 	    	String classFullName  = ctx.buildClassName(this.currentFileName);
 	    	if (classFullName !=null && classFullName.lastIndexOf(".") > -1 ) {
 	    		String packageName = classFullName.substring(0,classFullName.lastIndexOf("."));
-	    		path = ctx.findSourceClass(packageName+"."+className);
+	    		path = ctx.findSourceOrBinPath(packageName+"."+className);
 	    	}
     	}
     	// try inner class
@@ -447,7 +456,7 @@ public class JavaSourceSearcher {
 	    	while (true) {
 	    		Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{classFullName}, null);
 		    	classFullName = classFullName +"$"+className;
-	    		path = ctx.findSourceClass(classFullName);
+	    		path = ctx.findSourceOrBinPath(classFullName);
 	    		if (!path.equals("None")) break;
 	    		if (aClass == null || aClass.equals("java.lang.Object")) break;
 	    		aClass = aClass.getSuperclass();
@@ -459,7 +468,7 @@ public class JavaSourceSearcher {
     	//try class under the java.lang package
     	if (path.equals("None")) {
     		className = "java.lang." + className;
-    		path = ctx.findSourceClass(className);
+    		path = ctx.findSourceOrBinPath(className);
     	}
         return path;
     }
@@ -676,7 +685,7 @@ public class JavaSourceSearcher {
 	   String classFullName  = ctx.buildClassName(this.currentFileName);
 	    	if (classFullName.lastIndexOf(".") > -1 ) {
 	    		String packageName = classFullName.substring(0,classFullName.lastIndexOf("."));
-	    		String path = ctx.findSourceClass(packageName+"."+node.getText());
+	    		String path = ctx.findSourceOrBinPath(packageName+"."+node.getText());
 	    		if (!path.equals("None")) {
 	    			info.setFilePath(path);
 	                JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
@@ -687,7 +696,7 @@ public class JavaSourceSearcher {
 	    	} 
        }
        if (!found) {
-    	   String path = ctx.findSourceClass("java.lang."+node.getText());
+    	   String path = ctx.findSourceOrBinPath("java.lang."+node.getText());
 	    		if (!path.equals("None")) {
 	    			info.setFilePath(path);
 	                JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
