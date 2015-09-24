@@ -11,3 +11,4 @@ doc/meta/*.log
 doc/meta/*.out
 doc/meta/*.pdf
 doc/tags*
+.pydevproject
