@@ -494,8 +494,8 @@ class MiscUtil(object):
         for row in rows :
             for index,field in enumerate(row):
                 field = str(field).rstrip()
-                if (len(field)>maxlens[index]):
-                    maxlens[index] = len(field)
+                if (MiscUtil.displayWidth(field)>maxlens[index]):
+                    maxlens[index] = MiscUtil.displayWidth(field)
         headline = ""
         for item in maxlens:
             headline = headline + "+" + ("-"*item) + "--"
@@ -505,7 +505,7 @@ class MiscUtil(object):
             line = ""
             for index,field in enumerate(row):
                 field = str(field).rstrip().replace("\n","")
-                line = line+ "| " + field.ljust(maxlens[index] + 1)
+                line = line+ "| " + field +  (maxlens[index]+1 - MiscUtil.displayWidth(field)) * " "
             if rowindex<2: result.append(headline)
             result.append(line + "|")
         result.append(headline)
