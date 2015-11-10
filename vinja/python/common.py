@@ -514,6 +514,51 @@ class MiscUtil(object):
             vim.command('call append(%s,"%s")' %(str(startLine-1),line))
 
     @staticmethod
+    def arrange():
+        (curRow,curCol)=vim.current.window.cursor
+        startCol,endCol,startLine,endLine=MiscUtil.getVisualArea()
+        buffer=vim.current.buffer
+        pat = re.compile("\s+")
+
+        firstRow = buffer[startLine-1]
+        count = 0
+        for ch in firstRow :
+            if ch == ' ' :
+                count += 1
+            elif ch == '\t' :
+                count += 4 
+            else :
+                break
+
+        indent = " " * count
+
+        rows = []
+        for row in buffer[startLine-1:endLine]:
+            fields = pat.split(row.strip())
+            rows.append(fields)
+        result = []
+        maxlens = [0] * len(rows[0])
+        for row in rows :
+            for index,field in enumerate(row):
+                field = str(field).rstrip()
+                if (MiscUtil.displayWidth(field)>maxlens[index]):
+                    maxlens[index] = MiscUtil.displayWidth(field)
+
+
+        for rowindex,row in enumerate(rows):
+            line = indent
+            for index,field in enumerate(row):
+                field = str(field).rstrip().replace("\n","")
+                line = line + field +  (maxlens[index]+1 - MiscUtil.displayWidth(field)) * " "
+            result.append(line + "")
+        del buffer[startLine-1:endLine]
+        for line in result[::-1] :
+            vim.command('call append(%s,"%s")' %(str(startLine-1),line))
+
+        vim.current.window.cursor=(curRow,curCol)
+
+
+    @staticmethod
     def copy_buffer_path():
         buffer_name=vim.current.buffer.name
         vim.command("let @\" = '%s' " % buffer_name)
