@@ -200,7 +200,7 @@ public class CompilerContext {
 			if (ctx.getExtOutputDirs().contains(this.getOutputDir())) {
 				ctx.refreshClassInfo(classNames);
 			}
-		}	}
+		}	}
 	
 	
 	private void initJdeProperty(String jdeXmlPath) {
