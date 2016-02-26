@@ -188,8 +188,8 @@ class Dbext(object):
     @staticmethod
     def createDbOutputBuffer(bufnum):
         vim.command("call SwitchToVinjaView('dbext%s')" %(bufnum) )
-        vim.command("noremap <buffer> a 21zh")
-        vim.command("noremap <buffer> f 21zl")
+        #vim.command("noremap <buffer> a 21zh")
+        #vim.command("noremap <buffer> f 21zl")
         vim.command("setlocal nostartofline")
         listwinnr = str(vim.eval("winnr('#')"))
         vim.command("exec '" + listwinnr + " wincmd w'")
@@ -306,7 +306,8 @@ class Dbext(object):
             strValue = (db_profile["host"],db_profile["sid"])
         else :
             strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ Database:'%s'"
-            strValue = (db_profile["host"],db_profile["database"])
+            #strValue = (db_profile["host"],db_profile["database"])
+            strValue = (db_profile["host"],"adf")
 
         vim.command(strTemplate % strValue )
         return
@@ -354,12 +355,16 @@ class Dbext(object):
                         uid=profile["user"],  pwd = profile["password"] )
         elif server_type == "mysql":
             import MySQLdb
+            port = "3306"
+            if profile.get("port") != None:
+                port = profile.get("port")
+
             if profile.get("database") != None:
                 conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
-                    db=profile["database"], passwd = profile["password"], charset = "utf8", use_unicode = True )
+                    port=int(port),db=profile["database"], passwd = profile["password"], charset = "utf8", use_unicode = True )
             else :
                 conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
-                    passwd = profile["password"], charset = "utf8", use_unicode = True )
+                    port=int(port), passwd = profile["password"], charset = "utf8", use_unicode = True )
         elif server_type == "sqlite":
             import sqlite3 as sqlite
             conn = sqlite.connect(profile["file"])

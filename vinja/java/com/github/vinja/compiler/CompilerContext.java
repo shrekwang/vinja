@@ -58,6 +58,7 @@ public class CompilerContext {
 	private String lastSearchedRtlName = "";
 	private String lastSearchResult = "";
 	
+    private boolean mvnProject = false;
 	private boolean flatProject = false;
 	private boolean classInfoCached = false;
 	

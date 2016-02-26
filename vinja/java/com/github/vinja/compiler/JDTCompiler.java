@@ -61,7 +61,7 @@ public class JDTCompiler  {
             settings.put(CompilerOptions.OPTION_Source, ctx.getSrcVM());
         } else {
             // Default to 1.6
-            settings.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_1_6);
+            settings.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_1_7);
         }
         
         // Target JVM
@@ -69,8 +69,8 @@ public class JDTCompiler  {
             settings.put(CompilerOptions.OPTION_TargetPlatform, ctx.getDstVM());
         } else {
             // Default to 1.6
-            settings.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_1_6);
-            settings.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_1_6);
+            settings.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_1_7);
+            settings.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_1_7);
         }
 
         final IProblemFactory problemFactory = 
