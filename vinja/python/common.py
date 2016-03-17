@@ -192,6 +192,7 @@ class VinjaAgent(object):
         #cps.insert(0, "/Users/wangsn/github/vinja/vinja/classes")
         if platform.system() == "Darwin":
             cmdArray.append('-XstartOnFirstThread')
+            cmdArray.append('-Dapple.awt.UIElement="true"')
         cmdArray.append('-Djava.library.path=%s' % libpath )
         cmdArray.append("-classpath")
         cmdArray.append(os.path.pathsep.join(cps))
@@ -269,7 +270,7 @@ class MiscUtil(object):
         vim_mode = vim.eval("mode()")
         #logging.debug("startCol is %s , endCol is %s " % (str(startCol), str(endCol)))
         #logging.debug("current mode is %s " % vim_mode)
-        operateCode = VimUtil.getInput("choose an operation(sum,join,avg,inc):")
+        operateCode = VimUtil.getInput("choose an operation(sum,join,avg,inc,sqlin):")
         result_list = []
         inbuf=vim.current.buffer
         for row_num in range(startLine, endLine+1, 1) :
@@ -290,7 +291,10 @@ class MiscUtil(object):
             vim.command('call append(%s,"avg result: %s")' %(str(endLine),str(avg)))
         elif operateCode == "join" : 
             join_text = ",".join(result_list)
-            vim.command('call append(%s,"join result: %s")' %(str(endLine),join_text))
+            vim.command('call append(%s," %s")' %(str(endLine),join_text))
+        elif operateCode == "sqlin" : 
+            join_text = ",".join(["'" + item +"'" for item in result_list])
+            vim.command('call append(%s," (%s) ")' %(str(endLine),join_text))
         elif operateCode == "inc":
             start_num = int(result_list[0]) 
             for row_num in range(startLine, endLine+1, 1) :
