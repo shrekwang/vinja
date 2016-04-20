@@ -194,6 +194,9 @@ class Dbext(object):
         listwinnr = str(vim.eval("winnr('#')"))
         vim.command("exec '" + listwinnr + " wincmd w'")
 
+    def __init__(self):
+        self.dbname="none"
+
     def executeOneStatement(self, sql_type):
         if sql_type == "visual" :
             sql = MiscUtil.getVisualBlock()
@@ -277,9 +280,25 @@ class Dbext(object):
                 return {}
         return db_profile
 
+
+    def renderStatusLine(self,db_profile):
+        if db_profile["servertype"] == "sqlite" :
+            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ File:'%s'\ "
+            strValue = (db_profile["file"],)
+        elif db_profile["servertype"] == "oracle" :
+            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ SID:'%s'"
+            strValue = (db_profile["host"],db_profile["sid"])
+        else :
+            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ Database:'%s'"
+            strValue = (db_profile["host"],self.dbname)
+
+        vim.command(strTemplate % strValue )
+        vim.command("redraw!")
+        return
+
+
     def promptDbOption(self):
         dbconfs = self.loadConf(os.path.join(VinjaConf.getDataHome(), "db.conf"))
-        logging.debug("dbcons is %s " ,str(dbconfs))
         if dbconfs == None :
             return
         for index,item in enumerate(dbconfs):
@@ -298,18 +317,12 @@ class Dbext(object):
         db_profile = self.getDbOption()
         if db_profile == None :  return
 
-        if db_profile["servertype"] == "sqlite" :
-            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ File:'%s'\ "
-            strValue = (db_profile["file"],)
-        elif db_profile["servertype"] == "oracle" :
-            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ SID:'%s'"
-            strValue = (db_profile["host"],db_profile["sid"])
-        else :
-            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ Database:'%s'"
-            #strValue = (db_profile["host"],db_profile["database"])
-            strValue = (db_profile["host"],"adf")
+        self.dbname="none"
+        if db_profile.get("database") != None:
+            self.dbname=db_profile["database"]
+        self.renderStatusLine(db_profile)
 
-        vim.command(strTemplate % strValue )
+        self.renderStatusLine(db_profile)
         return
 
     def getDbOption(self):
@@ -317,6 +330,7 @@ class Dbext(object):
         if self.existsConnParameter():
             db_profile = self.getTempProfile()
             return db_profile
+
         dbconfs = self.loadConf(os.path.join(VinjaConf.getDataHome(),"db.conf"))
         if dbconfs == None : return
         if (len(dbconfs)==1) :
@@ -334,6 +348,7 @@ class Dbext(object):
         vim.command("let b:profile_index = input('please enter a selection')")
         selection = vim.eval("b:profile_index")
         db_profile = dbconfs[int(selection)]
+
         return db_profile
 
     def createConn(self,profile):
@@ -368,6 +383,7 @@ class Dbext(object):
         elif server_type == "sqlite":
             import sqlite3 as sqlite
             conn = sqlite.connect(profile["file"])
+
         return conn
 
     def query(self, sql, returnColType = False):
@@ -389,6 +405,10 @@ class Dbext(object):
             logging.debug("auto reconnected")
             conn = self.createConn(db_profile)
             conn_pool[bufnum] = conn
+
+        if sql.strip().startswith("use "):
+            self.dbname = sql[4:].strip().replace(";","")
+            self.renderStatusLine(db_profile)
 
         import MySQLdb
         if server_type == "mysql" :
