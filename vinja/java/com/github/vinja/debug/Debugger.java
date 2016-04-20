@@ -448,7 +448,8 @@ public class Debugger {
 		int lineNum = loc.lineNumber();
 		String abPath = "None";
 		try {
-			abPath = compilerContext.findSourceFile(loc.sourcePath());
+			String locClassName = loc.sourcePath().replace("/",".").replace(".java","");
+			abPath = compilerContext.findSourceOrBinPath(locClassName);
 		} catch (Throwable e) {
 		}
 		String funcName = "HandleJdiEvent";

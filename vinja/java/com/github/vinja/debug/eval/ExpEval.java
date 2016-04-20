@@ -271,7 +271,8 @@ public class ExpEval {
 		try {
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			Location loc = stackFrame.location();
-		    String abPath = ctx.findSourceFile(loc.sourcePath());
+			String locClassName = loc.sourcePath().replace("/",".").replace(".java","");
+		    String abPath = ctx.findSourceOrBinPath(locClassName);
 		    JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(abPath,ctx);
 			
 			Set<String> evaluatedExp = new HashSet<String>();
@@ -1093,7 +1094,8 @@ public class ExpEval {
 		BufferedReader br = null;
 		try {
 			CompilerContext ctx = debugger.getCompilerContext();
-			String abPath = ctx.findSourceFile(javaSourcePath);
+			String locClassName = javaSourcePath.replace("/",".").replace(".java","");
+			String abPath = ctx.findSourceOrBinPath(locClassName);
 			br = new BufferedReader(new FileReader(abPath));
 			Pattern pat = Pattern.compile("import\\s+static\\s+(.*)\\."+ memberName + "\\s*;\\s*$");
 			String qualifiedClass = null;
@@ -1347,7 +1349,8 @@ public class ExpEval {
 				return refTypes.get(0);
 			}
 			String locSourcePath = stackFrame.location().sourcePath();
-			String abPath = ctx.findSourceFile(locSourcePath);
+			String locClassName = locSourcePath.replace("/",".").replace(".java","");
+			String abPath = ctx.findSourceOrBinPath(locClassName);
 			List<String> lines = getResourceLines(abPath);
 			Pattern pat = Pattern.compile("import\\s+(.*\\."+className+")\\s*;\\s*$");
 			String qualifiedClass = null;

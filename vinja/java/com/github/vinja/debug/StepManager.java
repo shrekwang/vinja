@@ -63,7 +63,10 @@ public class StepManager {
 			ThreadReference threadRef = threadStack.getCurThreadRef();
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			Location loc = stackFrame.location();
-		    String abPath = ctx.findSourceFile(loc.sourcePath());
+			
+			String locClassName = loc.sourcePath().replace("/",".").replace(".java","");
+		    String abPath = ctx.findSourceOrBinPath(locClassName);
+
 		    JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(abPath,ctx);
 		    int currentLine = loc.lineNumber();
 		    int outLine = searcher.searchLoopOutLine(currentLine);

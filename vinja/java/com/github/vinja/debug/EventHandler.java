@@ -200,7 +200,8 @@ public class EventHandler extends Thread {
 		CompilerContext ctx = debugger.getCompilerContext();
 		String abPath = "None";
 		try {
-			abPath = ctx.findSourceFile(loc.sourcePath());
+			String locClassName = loc.sourcePath().replace("/",".").replace(".java","");
+			abPath = ctx.findSourceOrBinPath(locClassName);
 		} catch (Throwable e) {
 		}
 		
