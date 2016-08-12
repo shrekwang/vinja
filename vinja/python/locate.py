@@ -285,7 +285,7 @@ class FileContentManager(object):
                 rtl_path = apath[apath.find(os.path.sep)+1:]
                 abpath = os.path.join(start_dir, rtl_path)
                 if cur_dir in abpath :
-                    rows.append(self.path_to_dis(abpath))
+                    rows.append(self.path_to_dis(apath))
                     #rows.append(apath)
             self.start_dirs[alias] = start_dir
         rows = rows[0:30]
