@@ -220,7 +220,6 @@ public class FileSystemDb  implements JNotifyListener {
     }
 	
     public void fileCreated(int wd, String rootPath, String name) {
-        log.info("file created:" + rootPath + ", " + name);
     	String absPath = FilenameUtils.concat(rootPath, name);
     	File file = new File(absPath);
     	if (file.isDirectory()) return ;
@@ -239,7 +238,6 @@ public class FileSystemDb  implements JNotifyListener {
     }
     
     public void fileDeleted(int wd, String rootPath, String name) {
-        log.info("file delete:" + rootPath + ", " + name);
     	String absPath = FilenameUtils.concat(rootPath, name);
     	String[] indexedData = getIndexedData(absPath);
     	if  (indexedData == null ) return ;
@@ -249,7 +247,6 @@ public class FileSystemDb  implements JNotifyListener {
     }
     
     public void fileRenamed(int wd, String rootPath, String oldName, String newName) {
-        log.info("file renamed:" + rootPath + ", " + oldName + ", " + newName);
     	fileDeleted(wd, rootPath, oldName);
     	fileCreated(wd, rootPath, newName);
     }

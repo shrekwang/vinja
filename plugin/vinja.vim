@@ -503,6 +503,15 @@ set completefunc=FuzzyCompletion
 set tabline=%!MyTabLine()
 autocmd BufEnter * let &titlestring = MyTitleString()
 
+function! SzJdbCompletion(findstart, base)
+  python Jdb.completion(vim.eval("a:findstart"),vim.eval("a:base"))
+  if a:findstart
+    return g:SzJdbCompletionIndex
+  endif
+    return g:SzJdbCompletionResult
+endfunction
+
+
 function! SzJdeCompletion(findstart, base)
   python SzJdeCompletion.completion(vim.eval("a:findstart"),vim.eval("a:base"))
   if a:findstart
@@ -603,15 +612,26 @@ function! JdeInit()
   autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
   autocmd BufEnter  *.java    vmap <buffer><silent><leader>gs  :python EditUtil.generateGseter()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
+
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
+  autocmd BufEnter  *.class   nmap <buffer><silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
+
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gi  :python EditUtil.locateDefinition("impl")<cr>
+  autocmd BufEnter  *.class   nmap <buffer><silent><leader>gi  :python EditUtil.locateDefinition("impl")<cr>
+
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gh  :python EditUtil.searchRef()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>ai  :python AutoImport.autoImportVar()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>pt  :python ProjectManager.projectTree()<cr>
+
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>go  :call LocateMember()<cr>
+  autocmd BufEnter  *.class   nmap <buffer><silent><leader>go  :call LocateMember()<cr>
+
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gt  :call LocateHierarchy()<cr>
   autocmd BufEnter  *         nmap <buffer><silent><leader>gc  :call LocateClass()<cr>
+
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
+  autocmd BufEnter  *.class   nmap <buffer><silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
+
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>td  :python Jdb.runApp()<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:python EditUtil.tipMethodDefinition()<cr>
   autocmd BufEnter  *.java    imap <buffer><silent><M-8>       <c-o>:python EditUtil.tipMethodDefinition(True)<cr>

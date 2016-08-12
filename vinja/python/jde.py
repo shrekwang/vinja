@@ -1531,12 +1531,15 @@ class Parser(object):
     def parseAllMemberInfo(lines):
         memberInfo = []
         scopeCount = 0
-        methodPat = re.compile(r"(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)")
+        methodPat = re.compile(ur"(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)",re.UNICODE)
         assignPat = re.compile("(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*=")
         defPat = re.compile("(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*;")
         commentLine = False
+        fileencoding = vim.eval("&fileencoding")
+        if fileencoding == "":
+            fileencoding = "utf-8"
         for lineNum,line in enumerate(lines) :
-            line = line.strip()
+            line = line.strip().decode(fileencoding)
             if (line.startswith("/*") and not line.endswith("*/") ) :
                 commentLine = True
                 continue
@@ -1822,6 +1825,7 @@ class SzJdeCompletion(object):
                 logging.debug(message)
                 result = []
             cmd = "let g:SzJdeCompletionResult = %s" % result
+            logging.debug("result is %s" % str(result))
         vim.command(cmd)
 
     @staticmethod
@@ -2025,6 +2029,10 @@ class SzJdeCompletion(object):
     @staticmethod
     def buildCptMenu(mtype,mname,mparams,mreturntype,needParenthesis):
         menu = dict()
+
+        mname = mname.encode("utf-8","replace")
+        mreturntype = mreturntype.encode("utf-8","replace")
+        mparams = mparams.encode("utf-8","replace")
         padStr = ""
         if needParenthesis :
             padStr = "("
@@ -2036,6 +2044,7 @@ class SzJdeCompletion(object):
         else :
             menu["word"] = mname
             menu["abbr"] = "%s : %s " % (mname,mreturntype)
+
         return menu
 
     @staticmethod
@@ -2160,6 +2169,33 @@ class JdbTalker(object):
 
 class Jdb(object):
 
+    @staticmethod
+    def completion(findstart,base):
+        if str(findstart)=="1":
+            (row,col)=vim.current.window.cursor
+            line=vim.current.buffer[row-1]
+
+            index=0
+            for i in range(col-1,-1, -1):
+                char=line[i]
+                if char == " " or char=="#":
+                    index=i+1
+                    break
+        
+            cmd="let g:SzJdbCompletionIndex=%s" %str(index)
+        else:
+            jdb.switchSourceBuffer()
+            members = Parser.parseAllMemberInfo(vim.current.buffer)
+            vim.command("call SwitchToVinjaView('Jdb')")
+            completeList = []
+            for name,mtype,rtntype,param,lineNum in members :
+                if mtype == "method" and name.startswith(base):
+                    completeList.append(name)
+
+            liststr="['"+ "','".join(completeList)+"']"
+            cmd="let g:SzJdbCompletionResult=%s" % liststr
+        vim.command(cmd)
+
     def __init__(self):
         self.cur_dir = os.getcwd()
         self.bp_data = {}
@@ -2205,6 +2241,10 @@ class Jdb(object):
         self.display = True
         # 30% height
         height = vim.eval("winheight(0) / 10 * 3")
+        if int(height) < 12 :
+            height = "12"
+        
+        #logging.debug("height is %s" % str(height))
         #vim.command("call SwitchToVinjaView('JdeConsole','belowright','%s')" % height)
         #vim.command("call SwitchToVinjaView('Jdb','aboveleft','7')")
         vim.command("call SwitchToVinjaView('Jdb','belowright','%s')" % height)
@@ -2235,6 +2275,7 @@ class Jdb(object):
         vim.command("inoremap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>")
         vim.command("nnoremap <buffer><silent><cr>   :python jdb.executeCmd(insertMode=False)<cr>")
         vim.command("nnoremap <buffer><silent>o      :python jdb.appendPrompt()<cr>")
+        vim.command("set omnifunc=SzJdbCompletion")
 
     def __str__(self):
 
@@ -2287,8 +2328,7 @@ class Jdb(object):
         # if "ProjectTree" in bufname : 
         #     bufwin = 2
         bufwin = 2
-        #don't remove the log, or the vim will go bad
-        logging.debug("bufwin is %s" % str(bufwin))
+        #logging.debug("bufwin is %s" % str(bufwin))
         vim.command("noautocmd %swincmd w" % str(bufwin))    
         vim.command("noautocmd normal kj")
         return
@@ -2410,7 +2450,10 @@ class Jdb(object):
             vim.current.buffer.append("the current line is " + lineNum)
 
         if (self.display == False ) :
+            if VimUtil.isVinjaBufferVisible("JdeConsole"):
+                vim.command("call SwitchToVinjaView('JdeConsole')")
             self.show()
+            self.toggleQuickStep()
         else :
             vim.command("call SwitchToVinjaView('Jdb')")
 
@@ -2463,6 +2506,8 @@ class Jdb(object):
         if "jdb" not in globals() :
             jdb = Jdb()
         jdb.initDebugProject()
+        if VimUtil.isVinjaBufferVisible("JdeConsole"):
+            vim.command("call SwitchToVinjaView('JdeConsole')")
         jdb.show()
         jdb.quick_step = False
         jdb.toggleQuickStep()
