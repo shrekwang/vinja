@@ -2381,6 +2381,8 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>R   :python jdb.executeCmd(insertMode=False,cmdLine='>runlast')<cr>")
             vim.command("nnoremap <buffer><silent>s   :python jdb.executeCmd(insertMode=False,cmdLine='>shutdown')<cr>")
             vim.command("nnoremap <buffer><silent>?   :python jdb.executeCmd(insertMode=False,cmdLine='>help')<cr>")
+            vim.command("nnoremap <buffer><silent>K   :python jdb.executeCmd(insertMode=False,cmdLine='>up')<cr>")
+            vim.command("nnoremap <buffer><silent>J   :python jdb.executeCmd(insertMode=False,cmdLine='>down')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
             vim.command("nnoremap <buffer><silent>e   :python jdb.qevalCmd()<cr>")
             vim.command("setlocal statusline=\ Jdb\ %2*QuickStep%*")
@@ -2853,7 +2855,7 @@ class Jdb(object):
             lines = data.split("\n")
             matchedRow = -1
             for rowNum,line in enumerate(lines) :
-                if "current frame" in line :
+                if "(#)" in line :
                     matchedRow = rowNum + 1
                     break
             if matchedRow > 0 :

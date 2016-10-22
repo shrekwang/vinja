@@ -1,5 +1,5 @@
-syn match SzjdeCurrentFrame "current frame"
-syn match SzjdeCurrentThread "current thread"
+syn match SzjdeCurrentFrame "^\s\+(#)"
+syn match SzjdeCurrentThread "^\s\+(*)"
 "syn match SzjdeVarName "^\s*[_$a-zA-Z0-9][^:]*\s*\(:\)\@="
 
 highlight link SzjdeCurrentFrame Title

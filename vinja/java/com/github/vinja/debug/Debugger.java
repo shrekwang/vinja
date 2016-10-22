@@ -230,10 +230,14 @@ public class Debugger {
 				String frameInfo = name + " line: " + loc.lineNumber();
 				if (i == suspendThreadStack.getCurFrame()
 						&& threadRef.uniqueID() == currentSuspendId ) {
-					frameInfo = frameInfo + "  (current frame) ";
+                    String num = padStr(3,"#"+i);
+                    num = "(#)" + num;
+                    result.add( num +":  " + frameInfo );
+				} else {
+                    String num = padStr(3,"#"+i);
+                    num = "   " + num;
+                    result.add( num +":  " + frameInfo );
 				}
-				String num = padStr(3,"#"+i);
-				result.add( num +":  " + frameInfo );
 			}
 		} catch (Throwable e) {
 		}
