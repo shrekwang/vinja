@@ -67,11 +67,14 @@ public class JDTCompiler  {
         // Target JVM
         if(ctx.getDstVM() != null ) {
             settings.put(CompilerOptions.OPTION_TargetPlatform, ctx.getDstVM());
+            settings.put(CompilerOptions.OPTION_Compliance, ctx.getDstVM());
         } else {
             // Default to 1.6
             settings.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_1_7);
             settings.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_1_7);
         }
+        
+        
 
         final IProblemFactory problemFactory = 
             new DefaultProblemFactory(Locale.getDefault());
@@ -99,5 +102,9 @@ public class JDTCompiler  {
         
     }
     
+	
+	public static void main(String[] args) {
+		System.out.println(CompilerOptions.VERSION_1_7);
+	}
     
 }
