@@ -1212,6 +1212,10 @@ class Compiler(object):
         if not classPathXml :
             return
 
+        #TODO remove this
+        if "btrace" in current_file_name:
+            return
+
         need_compiled = False
         src_locs = ProjectManager.getSrcLocations(current_file_name)
         for abs_src in src_locs :
