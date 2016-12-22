@@ -94,6 +94,7 @@ function SetVinjaBuf()
     exec "setlocal noswapfile"
     exec "setlocal bufhidden=wipe"
     exec "setlocal nobuflisted"
+    exec "setlocal nolist"
 endfunction
 
 function! SwitchToVinjaView(...)    
