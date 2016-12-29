@@ -1064,6 +1064,11 @@ public class ExpEval {
 				}
 			}
 			Field field = refType.fieldByName(name);
+
+			//for inner class to refer outer method's final parameter
+			if (field == null ) {
+				field = refType.fieldByName("val$" + name);
+			}
 			if (field == null ) {
 				String javaSourcePath = stackFrame.location().sourcePath();
 				String staticImportedClass = findStaticImported(javaSourcePath, name);
