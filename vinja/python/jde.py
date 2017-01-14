@@ -1767,10 +1767,18 @@ class Parser(object):
         pkgPat = re.compile("\s*package\s+(?P<package>[\w.]+)\s*;")
         return  Parser.searchPattern(pkgPat,"package")
 
+
+    @staticmethod
+    def copyMainClassToRegister():
+        className = Parser.getMainClass()
+        vim.command("let @\"='%s'" % className)
+        vim.command("echo 'class named copied to vim register.....'")
+        return None
+
     @staticmethod
     def getMainClass():
         pkgName = Parser.getPackage()
-        clsPat = re.compile(r"\s*public\s+(\w+\s+)?class\s(?P<className>\w+)\b")
+        clsPat = re.compile(r"\s*public\s+(\w+\s+)?(class)|(interface)\s(?P<className>\w+)\b")
         className = Parser.searchPattern(clsPat,"className")
 
         if className == None :

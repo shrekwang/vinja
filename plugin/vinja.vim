@@ -627,6 +627,9 @@ function! JdeInit()
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>go  :call LocateMember()<cr>
   autocmd BufEnter  *.class   nmap <buffer><silent><leader>go  :call LocateMember()<cr>
 
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>cq  :python Parser.copyMainClassToRegister()<cr>
+  autocmd BufEnter  *.class   nmap <buffer><silent><leader>cq  :python Parser.copyMainClassToRegister()<cr>
+
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gt  :call LocateHierarchy()<cr>
   autocmd BufEnter  *         nmap <buffer><silent><leader>gc  :call LocateClass()<cr>
 
