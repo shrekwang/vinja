@@ -116,6 +116,34 @@ public class PackageInfo {
 		return result;
 	}
 	
+	public List<String> findClass(String nameStart,boolean ignoreCase,boolean withLoc, Set<String> fullClassNames) {
+		
+		List<String> result = new ArrayList<String>();
+        Pattern pattern = getPattern(nameStart,ignoreCase);
+
+		for (String fullClassName : fullClassNames) {
+			String[] splits = splitClassName(fullClassName);
+			String pkgName = splits[0];
+			String className = splits[1];
+	        
+			Set<String> classNames = new HashSet<String>();
+			classNames.add(className);
+
+			List<String> tmpList =getMatchedClassName(classNames, nameStart, pattern, pkgName);
+			
+			for (String matchedName : tmpList) {
+				if (withLoc) {
+					String location = pkgLocationCache.get(matchedName);
+					if (location == null) location = pkgLocationCache.get(pkgName);
+					result.add(getClassNameWithLoc(className, location));
+				} else {
+					result.add(matchedName);
+				}
+			}
+		}
+		return result;
+	}
+	
 	public List<String> findClassByQualifiedName(String name,boolean ignoreCase,boolean withLoc) {
 		String[] splits = splitClassName(name);
 		String pkgName = splits[0];

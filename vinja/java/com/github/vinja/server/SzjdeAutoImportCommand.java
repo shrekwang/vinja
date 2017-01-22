@@ -8,6 +8,7 @@ import org.antlr.runtime.tree.CommonErrorNode;
 import org.antlr.runtime.tree.CommonTree;
 
 import com.github.vinja.compiler.CompilerContext;
+import com.github.vinja.omni.ClassInfoUtil;
 import com.github.vinja.omni.PackageInfo;
 import com.github.vinja.parser.AstTreeFactory;
 import com.github.vinja.parser.JavaParser;
@@ -16,11 +17,16 @@ import com.github.vinja.parser.ParseResult;
 public class SzjdeAutoImportCommand extends SzjdeCommand  {
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public String execute() {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
 		String currentPkg = params.get(SzjdeConstants.PARAM_PKG_NAME);
 		String tmpFilePath = params.get(SzjdeConstants.PARAM_TMP_FILE_PATH);
 		
+		String[] classNameList = params.get("classnames").split(",");
+	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
+		Class aClass = ClassInfoUtil.getExistedClass(classPathXml, classNameList, sourceFile);
+
 		CompilerContext ctx = getCompilerContext(classPathXml);
 		PackageInfo packageInfo =ctx.getPackageInfo();
 		Set<String> varNames = new HashSet<String>();
@@ -28,6 +34,7 @@ public class SzjdeAutoImportCommand extends SzjdeCommand  {
 		ParseResult result = AstTreeFactory.getJavaSourceAst(tmpFilePath);
 		searchImportedTokens(result.getTree(),varNames);
 		
+		Set<Class> declaredClass = ClassInfoUtil.getAllDeclaredClass(aClass);
 		
 		StringBuilder sb = new StringBuilder();
 		for (String varName : varNames ) {
@@ -46,6 +53,13 @@ public class SzjdeAutoImportCommand extends SzjdeCommand  {
 				}
 				tmpSb.append(binClassName).append(";");
 			}
+			
+			for (Class clazz : declaredClass) {
+				if (clazz.getCanonicalName().indexOf(varName) > -1) {
+					noNeedImport = true;
+				}
+			}
+			
 			if (noNeedImport) continue;
 			sb.append(tmpSb.toString()).append("\n");
 		}

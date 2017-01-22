@@ -147,7 +147,7 @@ class Talker(BasicTalker):
         return data
 
     @staticmethod
-    def getClassList(classNameStart,xmlPath,ignoreCase="false",withLoc="false"):
+    def getClassList(classNameStart,xmlPath,ignoreCase="false",withLoc="false", mainClassName=""):
         params = dict()
         params["cmd"]="completion"
         params["completionType"] = "class"
@@ -155,6 +155,7 @@ class Talker(BasicTalker):
         params["classPathXml"] = xmlPath
         params["ignoreCase"] = ignoreCase
         params["withLoc"] = withLoc
+        params["mainClass"] = mainClassName
         data = Talker.send(params)
         return data
 
@@ -288,12 +289,15 @@ class Talker(BasicTalker):
         return data
 
     @staticmethod
-    def autoImport(xmlPath,tmpFilePath,pkgName):
+    def autoImport(xmlPath,tmpFilePath,pkgName, sourceFile,classnameList):
         params = dict()
         params["cmd"]="autoimport"
         params["classPathXml"] = xmlPath
         params["tmpFilePath"] = tmpFilePath
         params["pkgName"] = pkgName
+        params["sourceFile"] = sourceFile
+        params["classnames"] = ",".join(classnameList)
+
         data = Talker.send(params)
         return data
 
@@ -1387,6 +1391,17 @@ class AutoImport(object):
         return pkgLocation
 
     @staticmethod
+    def hadImported(className):
+        if className.strip() == "" : return False
+        vim_buffer_text ="\n".join(vim.current.buffer)
+        hadImported = False
+
+        pat = r"import\s+%s\b|import\s+%s" % (className, className[0:className.rfind(".")]+"\.\*")
+        if re.search(pat,vim_buffer_text) :
+            hadImported = True
+        return hadImported
+
+    @staticmethod
     def addImportDef(line):
         if line.strip() == "" : return False
         vim_buffer_text ="\n".join(vim.current.buffer)
@@ -1429,7 +1444,8 @@ class AutoImport(object):
         tmp_src_file.write(searchText)
         tmp_src_file.close()
 
-        resultText = Talker.autoImport(classPathXml,tmp_path,currentPackage)
+        classNameList = [Parser.getMainClass()]
+        resultText = Talker.autoImport(classPathXml,tmp_path,currentPackage,current_file_name,classNameList)
         lines = resultText.split("\n")
         hadImported = False
         for line in lines :
@@ -1455,10 +1471,17 @@ class AutoImport(object):
         if not currentPackage :
             currentPackage = ""
 
-        (row,col) = vim.current.window.cursor
-        curLineText = vim.current.buffer[row-1]
-        completedClass = curLineText[last_complete_start_col:col]
-        resultText = Talker.importAfterCompletion(classPathXml,currentPackage,completedClass)
+
+        completed_item = vim.eval("v:completed_item")
+        if completed_item != None and completed_item.get("menu") != None :
+            resultText = completed_item.get("menu") + ";"
+        else :
+            return
+
+        #(row,col) = vim.current.window.cursor
+        #curLineText = vim.current.buffer[row-1]
+        #completedClass = curLineText[last_complete_start_col:col]
+        #resultText = Talker.importAfterCompletion(classPathXml,currentPackage,completedClass)
 
         lines = resultText.split("\n")
         hadImported = False
@@ -1837,7 +1860,7 @@ class SzJdeCompletion(object):
                 logging.debug(message)
                 result = []
             cmd = "let g:SzJdeCompletionResult = %s" % result
-            logging.debug("result is %s" % str(result))
+            #logging.debug("result is %s" % str(result))
         vim.command(cmd)
 
     @staticmethod
@@ -2094,9 +2117,11 @@ class SzJdeCompletion(object):
             classNameMenus = []
             if base[0].isupper():
                 last_complete_type = "Class"
-                classNameList = Talker.getClassList(base,classPathXml).split("\n")
+                mainClassName = Parser.getMainClass()
+                classNameList = Talker.getClassList(base,classPathXml,"false", "false", mainClassName).split("\n")
                 if len(classNameList) == 0 :
                     last_complete_type = None
+                tempMenus = []
                 for className in classNameList :
                     menu = dict()
                     shortName = className[ className.rfind(".") + 1 : ]
@@ -2106,7 +2131,12 @@ class SzJdeCompletion(object):
                     menu["dup"] = "1"
                     menu["word"] = shortName
                     menu["menu"] = className
-                    classNameMenus.append(menu)
+                    if AutoImport.hadImported(className) :
+                        classNameMenus.append(menu)
+                    else :
+                        tempMenus.append(menu)
+
+                classNameMenus.extend(tempMenus)
                 result.extend(classNameMenus)
             else :
                 #try get work complete in scope visible lines.

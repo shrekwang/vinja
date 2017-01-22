@@ -15,8 +15,10 @@ import static com.github.vinja.server.SzjdeConstants.PARAM_WITH_LOCATION;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.compiler.ReflectAbleClassLoader;
@@ -24,6 +26,8 @@ import com.github.vinja.omni.ClassInfoUtil;
 import com.github.vinja.omni.JavaExpUtil;
 import com.github.vinja.omni.MemberInfo;
 import com.github.vinja.omni.PackageInfo;
+import com.github.vinja.parser.AstTreeFactory;
+import com.github.vinja.parser.ParseResult;
 import com.github.vinja.util.ClassNameComparator;
 import com.github.vinja.util.MemberInfoResolver;
 import com.github.vinja.util.ModifierFilter;
@@ -49,6 +53,8 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 			String ignoreCaseParam = params.get(PARAM_IGNORE_CASE);
 			String withLocationParam = params.get(PARAM_WITH_LOCATION);
 			
+			String mainClass = params.get("mainClass");
+			
 			
 			boolean ignoreCase = false;
 			if (ignoreCaseParam != null && ignoreCaseParam.equals("true")) {
@@ -58,12 +64,12 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 			if (withLocationParam != null && withLocationParam.equals("true")) {
 				withLoc = true;
 			}
-			return completeClass(classPathXml,nameStart,ignoreCase,withLoc);
+			return completeClass(classPathXml,nameStart,ignoreCase,withLoc,mainClass);
 		}
 		return "";
 	}
 	public String completeClass(String classPathXml, String nameStart,
-			boolean ignoreCase, boolean withLoc) {
+			boolean ignoreCase, boolean withLoc,String mainClass) {
 		if (classPathXml ==null || nameStart == null) return "";
 		CompilerContext ctx = getCompilerContext(classPathXml);
 		PackageInfo packageInfo = ctx.getPackageInfo();
@@ -76,6 +82,18 @@ public class SzjdeCompletionCommand extends SzjdeCommand {
 		} else {
 			classNameList=packageInfo.findClass(nameStart,ignoreCase,withLoc);
 		}
+		
+		if (mainClass != null && !mainClass.trim().equals("")) {
+			Class aClass = ClassInfoUtil.getExistedClass(classPathXml, new String[]{mainClass}, null);
+			Set<Class> declaredClass = ClassInfoUtil.getAllDeclaredClass(aClass);
+			Set<String> declaredClassNames = new HashSet<String>();
+			for (Class tmpClass : declaredClass) {
+				declaredClassNames.add(tmpClass.getCanonicalName());
+			}
+			List<String> matchedDeclaredNames=packageInfo.findClass(nameStart,ignoreCase,withLoc, declaredClassNames);
+			classNameList.addAll(matchedDeclaredNames);
+		}
+		
 		Collections.sort(classNameList, new ClassNameComparator());
 		StringBuilder sb=new StringBuilder();
 		for (String name : classNameList) {

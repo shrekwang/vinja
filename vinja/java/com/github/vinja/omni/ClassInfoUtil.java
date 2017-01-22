@@ -6,8 +6,10 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.compiler.CompilerContextManager;
@@ -255,6 +257,21 @@ public class ClassInfoUtil {
 		}
 		addInterfaceToList(classList, aClass);
 		return classList;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public static Set<Class> getAllDeclaredClass(Class aClass) {
+		LinkedList<Class> classList  = getAllSuperClass(aClass);
+		Set<Class> declaredClassSet = new HashSet<Class>();
+		for (Class clazz: classList) {
+			Class<?>[] tmpClasses = clazz.getDeclaredClasses();
+			if (tmpClasses != null && tmpClasses.length > 0) {
+				for (Class declaredClass: tmpClasses) {
+					declaredClassSet.add(declaredClass);
+				}
+			}
+		}
+		return declaredClassSet;
 	}
 	
 	@SuppressWarnings("rawtypes")
