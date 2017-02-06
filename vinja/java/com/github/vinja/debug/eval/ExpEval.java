@@ -533,41 +533,41 @@ public class ExpEval {
 		
 		Value value = evalContext.get(uuid);
 		
-		if (value instanceof ArrayReference) {
-			try {
-				ArrayReference array = (ArrayReference)value;
-				int loopCount = array.length() > MAX_VAR_NODE ? MAX_VAR_NODE : array.length();
-				for (int i=0; i<loopCount; i++) {
-					Value cellValue = array.getValue(i);
-					VarNode varNode = createVarNode("["+String.valueOf(i)+"]", cellValue);
-					varNodes.add(varNode);
+		try {
+			if (value instanceof ArrayReference) {
+					ArrayReference array = (ArrayReference)value;
+					int loopCount = array.length() > MAX_VAR_NODE ? MAX_VAR_NODE : array.length();
+					for (int i=0; i<loopCount; i++) {
+						Value cellValue = array.getValue(i);
+						VarNode varNode = createVarNode("["+String.valueOf(i)+"]", cellValue);
+						varNodes.add(varNode);
+					}
+			} else if (isRefType(getCollectionRefType(),value)) {
+				varNodes = getCollectionNodes(value);
+			} else if (isRefType(getMapRefType(),value)) {
+				varNodes = getMapNodes(value);
+			} else if (value instanceof ObjectReference) {
+				
+				ObjectReference objRef = (ObjectReference) value;
+				Map<Field, Value> values = objRef.getValues(objRef.referenceType().visibleFields());
+				List<String> fieldNames = new ArrayList<String>();
+				for (Field field : values.keySet()) {
+					if ( !field.isStatic() ) {
+						fieldNames.add(field.name());
+					}
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} else if (isRefType(getCollectionRefType(),value)) {
-			varNodes = getCollectionNodes(value);
-		} else if (isRefType(getMapRefType(),value)) {
-			varNodes = getMapNodes(value);
-		} else if (value instanceof ObjectReference) {
-			
-			ObjectReference objRef = (ObjectReference) value;
-			Map<Field, Value> values = objRef.getValues(objRef.referenceType().visibleFields());
-			List<String> fieldNames = new ArrayList<String>();
-			for (Field field : values.keySet()) {
-				if ( !field.isStatic() ) {
-					fieldNames.add(field.name());
-				}
-			}
-			int maxLen = getMaxLength(fieldNames)+2;
-			for (Field field : values.keySet()) {
-				if ( !field.isStatic() ) {
-					String varNodeName = padStr(maxLen,field.name());
-					Value fieldValue = values.get(field);
-					VarNode varNode = createVarNode(varNodeName, fieldValue);
-					varNodes.add(varNode);
+				int maxLen = getMaxLength(fieldNames)+2;
+				for (Field field : values.keySet()) {
+					if ( !field.isStatic() ) {
+						String varNodeName = padStr(maxLen,field.name());
+						Value fieldValue = values.get(field);
+						VarNode varNode = createVarNode(varNodeName, fieldValue);
+						varNodes.add(varNode);
+					}
 				}
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		
 		String v=XmlGenerate.generate(varNodes);
@@ -584,7 +584,12 @@ public class ExpEval {
 			varJavaType = value.type().name();
 			if (varJavaType.indexOf(".") > -1 ) varJavaType = varJavaType.substring(varJavaType.lastIndexOf(".")+1);
 		}
-		String repr = getPrettyPrintStr(value);
+		String repr = "";
+		try {
+			repr = getPrettyPrintStr(value);
+		} catch (ExpressionEvalException e) {
+			repr = e.getMessage();
+		}
 		repr = repr.replaceAll("\n", "\\\\n");
 		/*
 		if (repr.length() > VAR_NODE_VALUE_LEN) {
