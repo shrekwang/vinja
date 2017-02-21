@@ -149,6 +149,7 @@ function! SplitLeftPanel(splitSize,name)
     call SetVinjaBuf()
 endfunction
 
+let g:vinja_home = fnamemodify(expand("<sfile>"), ':p:h:h') . '/vinja'
 
 function RunSzPyfile(filename)
   exec "pyfile ".g:vinja_home."/python/".a:filename
