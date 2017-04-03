@@ -1499,6 +1499,9 @@ class AutoImport(object):
         while True :
             line = vim_buffer[rowIndex].strip()
             if line.startswith("import") :
+                if line.find(" static ") > 0 :
+                    rowIndex += 1
+                    continue
                 lastName = line[7:-1].split(".")[-1]
                 if lastName == "*" : 
                     del vim_buffer[rowIndex]
