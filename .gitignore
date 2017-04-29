@@ -12,3 +12,4 @@ doc/meta/*.out
 doc/meta/*.pdf
 doc/tags*
 .pydevproject
+.idea*

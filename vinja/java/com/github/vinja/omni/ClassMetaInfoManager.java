@@ -108,7 +108,7 @@ public class ClassMetaInfoManager  {
 	
 	private void loadSingleMetaInfo(ClassReader cr) {
 		ClassInfo classInfo = new ClassInfo();
-		ClassMetaInfoReader classInfoReader = new ClassMetaInfoReader(classInfo, ctx);
+		VinjaClassVisitor classInfoReader = new VinjaClassVisitor(classInfo, ctx);
 		cr.accept(classInfoReader, 0);
 		if (metaInfos.get(classInfo.getName()) != null) {
 			ClassInfo oldInfo = metaInfos.get(classInfo.getName());

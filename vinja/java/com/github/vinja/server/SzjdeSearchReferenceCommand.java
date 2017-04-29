@@ -6,8 +6,6 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import com.github.vinja.compiler.CompilerContext;
-import com.github.vinja.omni.MemberReferenceFinder;
-import com.github.vinja.omni.ReferenceLocation;
 
 public class SzjdeSearchReferenceCommand extends SzjdeCommand {
 	
@@ -30,19 +28,20 @@ public class SzjdeSearchReferenceCommand extends SzjdeCommand {
 	}
 	
 	public String search(CompilerContext ctx , String targetClass, String memberDesc) {
-		 MemberReferenceFinder app = new MemberReferenceFinder();
-         try {
-	         app.findCallingMethodInDir(ctx.getOutputDir(), targetClass,memberDesc);
-         } catch (Exception e) {
-        	 e.printStackTrace();
-         }
-         StringBuilder sb = new StringBuilder();
-         for (ReferenceLocation loc : app.getReferenceLocations() ) {
-        	 sb.append(getSourcePath(ctx,loc.className,loc.source)).append(SEPERATOR);
-        	 sb.append(loc.line).append(SEPERATOR);
-        	 sb.append(getSourceLine(ctx,loc.className,loc.source,loc.line)).append("\n");
-         }
-         return sb.toString();
+//		 MemberReferenceFinder app = new MemberReferenceFinder();
+//         try {
+//	         app.findCallingMethodInDir(ctx.getOutputDir(), targetClass,memberDesc);
+//         } catch (Exception e) {
+//        	 e.printStackTrace();
+//         }
+//         StringBuilder sb = new StringBuilder();
+//         for (ReferenceLocation loc : app.getReferenceLocations() ) {
+//        	 sb.append(getSourcePath(ctx,loc.className,loc.source)).append(SEPERATOR);
+//        	 sb.append(loc.line).append(SEPERATOR);
+//        	 sb.append(getSourceLine(ctx,loc.className,loc.source,loc.line)).append("\n");
+//         }
+//         return sb.toString();
+		return "";
 	}
 	
 	public String getSourcePath(CompilerContext ctx ,String className,String sourceName) {
