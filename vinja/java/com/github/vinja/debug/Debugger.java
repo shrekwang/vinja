@@ -605,10 +605,6 @@ public class Debugger {
 			List<String> opts,List<String> args,boolean runAsTest) {
 		
 		String vinjaHome = Preference.getInstance().getVinjaHome();
-		String objInspectorPath = FilenameUtils.concat(vinjaHome, "lib/object-inspector-1.0.jar");
-		File file = new File(objInspectorPath);
-		String urlPath = file.toURI().getPath();
-
 		String junitSingleMethodJarPath = FilenameUtils.concat(vinjaHome, "lib/junit-method.jar");
 		
 		
@@ -616,16 +612,8 @@ public class Debugger {
 		StringBuilder cmd = new StringBuilder("java -agentlib:jdwp=transport=dt_socket,address=localhost:"
 			+port+",suspend=y");
 		cmd.append(" -cp " + getClassPath(classPathXml));
-		cmd.append(urlPath);
-        cmd.append(File.pathSeparator);
         cmd.append(junitSingleMethodJarPath);
 		cmd.append(" ");
-		
-		//append aget for object size calc
-		cmd.append("-javaagent:");
-		cmd.append(objInspectorPath);
-		cmd.append(" ");
-
 		
 		if (opts !=null && opts.size() > 0) {
 			for (String opt : opts ) {

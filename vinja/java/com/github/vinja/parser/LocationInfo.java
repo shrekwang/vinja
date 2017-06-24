@@ -37,4 +37,14 @@ public class LocationInfo {
 		this.memberInfo = memberInfo;
 	}
 
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		if (this.filePath != null) {
+			sb.append("filePath:").append(this.filePath).append("\n");
+			sb.append("line:").append(this.line).append("\n");
+			sb.append("col:").append(this.col).append("\n");
+		}
+		return sb.toString();
+	}
+
 }

@@ -1,5 +1,6 @@
 package com.github.vinja.parser;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,11 +32,35 @@ public class MemberInfo {
     public void setRtnType(String rtnType) {
         this.rtnType=rtnType;
     }
+
+    public List<String[]> getGenericInfoErasedParamList() {
+    	if (paramList == null || paramList.size() == 0 )  return paramList;
+    	List<String[]> result = new ArrayList<String[]>();
+    	for (String[] paramPair : paramList) {
+    		String[] newPair = new String[] {paramPair[0] , unstripGegericInfo(paramPair[1])};
+    		result.add(newPair);
+    	}
+    	return result;
+    }
+
+    public String getGenericInfoErasedRtnType() {
+		if (rtnType == null) return "void";
+		return unstripGegericInfo(rtnType);
+	}
+    
+    private String unstripGegericInfo(String type) {
+		if (type.indexOf("<") < 0 ) return type;
+        String tempType = type.substring(0, type.indexOf("<"));
+        if ( type.lastIndexOf(">")  < type.length() - 1 ) {
+        	tempType = tempType + type.substring(type.lastIndexOf(">")+1);
+        }
+        return tempType;
+    }
+
     public String getRtnType() {
     	if (rtnType == null) return "void";
-    	if (rtnType.indexOf("<") < 0 ) return rtnType;
-        return rtnType.substring(0, rtnType.indexOf("<"));
-    }
+    	return rtnType;
+	}
 
     public String getShortRtnType() {
     	if (rtnType == null) return "void";

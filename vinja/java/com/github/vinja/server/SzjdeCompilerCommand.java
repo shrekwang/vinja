@@ -6,7 +6,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +16,7 @@ import com.github.vinja.compiler.JDTCompiler;
 import com.github.vinja.debug.BreakpointManager;
 import com.github.vinja.debug.Debugger;
 import com.github.vinja.omni.ClassMetaInfoManager;
-import com.github.vinja.parser.JavaSourceSearcher;
+import com.github.vinja.parser.VinjaJavaSourceSearcher;
 import com.github.vinja.util.BufferStore;
 import com.github.vinja.util.HotSwapUtil;
 import com.github.vinja.util.IdGenerator;
@@ -120,7 +119,7 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 			}
 			
 			for (String srcFileName : allSrcFiles) {
-				JavaSourceSearcher.clearSearcher(srcFileName);
+				VinjaJavaSourceSearcher.clearSearcher(srcFileName);
 			}
 			
 			CompileResultInfo resultInfo =compiler.generateClass(allSrcFiles,out);

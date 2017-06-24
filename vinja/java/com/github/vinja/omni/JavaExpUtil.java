@@ -37,6 +37,7 @@ public class JavaExpUtil {
 			String memberType, ModifierFilter modifierFilter, boolean classType) {
 		Class fClass = null;
 		boolean foundField = false;
+		List<Class> itfList  =  new ArrayList<Class>();
 		while (true) {
 			Member[] members = null;
 			if (memberType.equals("field")) {
@@ -72,10 +73,55 @@ public class JavaExpUtil {
 				}
 			}
 			if (foundField) break;
+			Class[] interfaces = aClass.getInterfaces();
+			for (Class itf : interfaces) {
+				itfList.add(itf);
+			}
+
 			aClass = aClass.getSuperclass();
 			if (aClass == null || aClass.getName().equals("java.lang.Object")) {
 				break;
 			}
+			
+		}
+		if ( fClass != null ) return fClass;
+
+		for (Class itf : itfList) {
+			
+			Member[] members = null;
+			if (memberType.equals("field")) {
+				 members = itf.getDeclaredFields();
+			} else {
+				members = itf.getDeclaredMethods();
+			}
+			for (Member tf : members) {
+				if (tf.getName().equals(memberName)) {
+					if (classType) {
+						fClass = aClass;
+					} else {
+						if (memberType.equals("field")) {
+							fClass = ((Field)tf).getType();
+						} else {
+							fClass = ((Method)tf).getReturnType();
+						}
+					}
+					foundField = true;
+					break;
+				}
+			}
+			if (foundField) break;
+			//try inner class
+			if (memberType.equals("field")) {
+				Class[] classes =aClass.getDeclaredClasses();
+				for (Class clazz: classes) {
+					if (clazz.getSimpleName().equals(memberName)) {
+						foundField = true;
+						fClass = clazz;
+						break;
+					}
+				}
+			}
+			if (foundField) break;
 		}
 		return fClass;
 	}

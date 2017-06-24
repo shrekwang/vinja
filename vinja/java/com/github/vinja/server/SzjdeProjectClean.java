@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 
@@ -13,7 +12,7 @@ import com.github.vinja.compiler.CompileResultInfo;
 import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.compiler.CompilerContextManager;
 import com.github.vinja.compiler.JDTCompiler;
-import com.github.vinja.parser.JavaSourceSearcher;
+import com.github.vinja.parser.VinjaJavaSourceSearcher;
 import com.github.vinja.util.BufferStore;
 import com.github.vinja.util.IdGenerator;
 import com.github.vinja.util.VjdeUtil;
@@ -110,7 +109,7 @@ public class SzjdeProjectClean extends SzjdeShextCommand {
 				String[] allSrcFiles = cc.getAllSourceFiles();
 				
 				for (String srcFileName : allSrcFiles) {
-					JavaSourceSearcher.clearSearcher(srcFileName);
+					VinjaJavaSourceSearcher.clearSearcher(srcFileName);
 				}
 				
 				CompileResultInfo resultInfo =compiler.generateClass(allSrcFiles,out);

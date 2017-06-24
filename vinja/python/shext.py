@@ -1225,6 +1225,8 @@ class Shext(object):
             vim.command("startinsert")
 
     def findCmdFileType(self, cmd):
+        if len(cmd)> 1 and cmd[0] == "git" and cmd[1] == "show" :
+            return "diff"
         if len(cmd)> 1 and cmd[1] == "diff" :
             return "diff"
         if len(cmd)> 1 and cmd[0] == "xxd" :

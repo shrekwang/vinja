@@ -1565,7 +1565,7 @@ class ProjectTree(object):
         for path in  opened_dir_nodes :
             tree_state_file.write(path)
             tree_state_file.write("\n")
-        rev_history = self.edit_history[::-1]
+        rev_history = self.edit_history[0:18]
         for path in  rev_history :
             tree_state_file.write(path)
             tree_state_file.write("\n")
@@ -1577,6 +1577,7 @@ class ProjectTree(object):
         if not os.path.exists(self.tree_state_path):
             return
         lines = open(self.tree_state_path,"r").readlines()
+        edit_count = 0
         for line in lines :
             path = line.strip()
             if node_type == "dir" :
@@ -1587,8 +1588,10 @@ class ProjectTree(object):
                     else :
                         node.isEdited = True
             elif node_type !="dir" and os.path.isfile(path):
-                edit_cmd = "edit"
-                vim.command("%s %s" %(edit_cmd, path))
+                edit_count = edit_count + 1
+                if edit_count < 18 :
+                    edit_cmd = "edit"
+                    vim.command("%s %s" %(edit_cmd, path))
 
     @staticmethod
     def locate_buf_in_tree(current_file_name = None):

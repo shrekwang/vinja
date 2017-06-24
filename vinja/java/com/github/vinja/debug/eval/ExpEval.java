@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,9 +25,10 @@ import com.github.vinja.debug.SuspendThreadStack;
 import com.github.vinja.exception.ExpressionEvalException;
 import com.github.vinja.exception.VariableOrFieldNotFoundException;
 import com.github.vinja.parser.AstTreeFactory;
+import com.github.vinja.parser.IJavaSourceSearcher;
 import com.github.vinja.parser.JavaParser;
-import com.github.vinja.parser.JavaSourceSearcher;
 import com.github.vinja.parser.ParseResult;
+import com.github.vinja.parser.VinjaJavaSourceSearcher;
 import com.github.vinja.util.IdGenerator;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
@@ -273,7 +273,7 @@ public class ExpEval {
 			Location loc = stackFrame.location();
 			String locClassName = loc.sourcePath().replace("/",".").replace(".java","");
 		    String abPath = ctx.findSourceOrBinPath(locClassName);
-		    JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(abPath,ctx);
+		    IJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(abPath,ctx);
 			
 			Set<String> evaluatedExp = new HashSet<String>();
 			

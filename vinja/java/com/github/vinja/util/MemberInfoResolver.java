@@ -11,7 +11,8 @@ import java.util.List;
 import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.omni.ClassInfoUtil;
 import com.github.vinja.omni.MemberInfo;
-import com.github.vinja.parser.JavaSourceSearcher;
+import com.github.vinja.parser.IJavaSourceSearcher;
+import com.github.vinja.parser.VinjaJavaSourceSearcher;
 
 public class MemberInfoResolver {
 	
@@ -33,7 +34,7 @@ public class MemberInfoResolver {
 		String sourcePath = resolveInSource(ctx, cls);
 		
 		if (sourcePath != null ) {
-			JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(sourcePath, ctx);
+			IJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(sourcePath, ctx);
 			tmpInfoList = searcher.getMemberInfo(cls,false,true);
 		} else {
 			tmpInfoList=ClassInfoUtil.getMemberInfo(cls,false,true);
@@ -47,7 +48,7 @@ public class MemberInfoResolver {
 		ArrayList<MemberInfo> memberInfos = null;
 		String sourcePath = resolveInSource(ctx, cls);
 		if (sourcePath != null) {
-			JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(sourcePath, ctx);
+			IJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(sourcePath, ctx);
 			memberInfos = searcher.getConstructorInfo();
 		} else {
 			memberInfos = ClassInfoUtil.getConstructorInfo(cls);
@@ -60,7 +61,7 @@ public class MemberInfoResolver {
 		List<MemberInfo> tmpInfoList = null;
 	    String sourcePath = resolveInSource(ctx, cls);
 		if (sourcePath != null ) {
-			JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(sourcePath, ctx);
+			IJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(sourcePath, ctx);
 			tmpInfoList = getMemberList(searcher, completionType, hasDotExp, cls);
 		} else {
 			tmpInfoList = getMemberList(completionType, hasDotExp, cls);
@@ -70,7 +71,7 @@ public class MemberInfoResolver {
 	}
 	
 	@SuppressWarnings("all")
-	private static List<MemberInfo> getMemberList(JavaSourceSearcher searcher , String completionType,boolean hasDotExp,Class cls) {
+	private static List<MemberInfo> getMemberList(IJavaSourceSearcher searcher , String completionType,boolean hasDotExp,Class cls) {
 		List<MemberInfo> tmpInfoList = null;
 		if (completionType.equals(CPT_TYPE_OBJECTMEMBER) || hasDotExp ) {
 			tmpInfoList=searcher.getMemberInfo(cls,false,false);

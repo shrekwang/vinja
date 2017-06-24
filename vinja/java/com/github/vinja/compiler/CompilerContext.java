@@ -186,6 +186,9 @@ public class CompilerContext {
 				//String classPath = getOutputDir() + "/" + className.replace('.', '/') + ".class";
 				//File outFile = new File(classPath);
 				
+				String resourceName = className.replace('.', '/') + ".class";
+				this.getClassLoader().clearResourceByteCache(resourceName);
+
 				String classAsPath = className.replace('.', '/') + ".class";
 				InputStream stream = this.getClassLoader().getResourceAsStream(classAsPath);
 				classMetaInfoManager.loadSingleMetaInfo(stream);

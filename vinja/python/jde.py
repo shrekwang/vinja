@@ -491,6 +491,7 @@ class EditUtil(object):
     @staticmethod
     def locateDefinition(sourceType):
         (row,col) = vim.current.window.cursor
+        col = col + 1
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
@@ -511,7 +512,7 @@ class EditUtil(object):
         vim.command("normal m'")
         if not PathUtil.same_path(abs_path, vim.current.buffer.name):
             vim.command("keepjumps edit %s" % abs_path)
-        vim.current.window.cursor = (row,col)
+        vim.current.window.cursor = (row,col-1)
 
     @staticmethod
     def locateDefinition_old(sourceType):
@@ -764,6 +765,7 @@ class EditUtil(object):
     @staticmethod
     def tipMethodDefinition(generateTmpVar = False):
         (row,col) = vim.current.window.cursor
+        col = col + 1
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]
         current_file_name = vim_buffer.name

@@ -27,7 +27,7 @@ import com.github.vinja.util.LRUCache;
 import com.github.vinja.util.ModifierFilter;
 
 
-public class JavaSourceSearcher {
+public class JavaSourceSearcher implements IJavaSourceSearcher {
     
     public static final String NULL_TYPE = "NULL";
 
@@ -44,13 +44,24 @@ public class JavaSourceSearcher {
     
     private int classScopeLine = 1;
     
-    public List<MemberInfo> getMemberInfos() {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#getMemberInfos()
+	 */
+    @Override
+	public List<MemberInfo> getMemberInfos() {
     	return this.memberInfos;
     }
-    public List<String> getImportedNames() {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#getImportedNames()
+	 */
+	public List<String> getImportedNames() {
     	return this.importedNames;
     }
-    public int getClassScopeLine() {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#getClassScopeLine()
+	 */
+    @Override
+	public int getClassScopeLine() {
     	return classScopeLine;
     }
     
@@ -133,6 +144,10 @@ public class JavaSourceSearcher {
 		return tmp;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#getMemberInfo(java.lang.Class, boolean, boolean)
+	 */
+	@Override
 	@SuppressWarnings("all")
 	public ArrayList<com.github.vinja.omni.MemberInfo> getMemberInfo(Class aClass,
 			boolean staticMember, boolean protectedMember) {
@@ -168,6 +183,10 @@ public class JavaSourceSearcher {
 
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#getConstructorInfo()
+	 */
+	@Override
 	@SuppressWarnings("all")
 	public  ArrayList<com.github.vinja.omni.MemberInfo> getConstructorInfo() {
 		ArrayList<com.github.vinja.omni.MemberInfo> memberInfos=new ArrayList<com.github.vinja.omni.MemberInfo>();
@@ -196,6 +215,10 @@ public class JavaSourceSearcher {
 		return false;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchLoopOutLine(int)
+	 */
+	@Override
 	public int searchLoopOutLine(int currentLine) {
 		CommonTree tree = parseResult.getTree();
 		LinkedList<CommonTree> currentLineNodes = new LinkedList<CommonTree>();
@@ -237,6 +260,10 @@ public class JavaSourceSearcher {
 	}
 	
 
+	/* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchNearByExps(int, boolean)
+	 */
+	@Override
 	public Set<String> searchNearByExps(int lineNum, boolean currentLine) {
 		CommonTree tree = parseResult.getTree();
 		
@@ -421,7 +448,11 @@ public class JavaSourceSearcher {
 		return result;
 	}
 	
-    public LocationInfo searchDefLocation(int line, int col,String sourceType) {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchDefLocation(int, int, java.lang.String)
+	 */
+    @Override
+	public LocationInfo searchDefLocation(int line, int col,String sourceType) {
     	
         CommonTree tree = parseResult.getTree();
         CommonTree node = searchMatchedNode(tree,line,col);
@@ -474,7 +505,10 @@ public class JavaSourceSearcher {
     }
 
 
-    public LocationInfo searchNodeDefLocation(CommonTree node,String sourceType) {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchNodeDefLocation(org.antlr.runtime.tree.CommonTree, java.lang.String)
+	 */
+	public LocationInfo searchNodeDefLocation(CommonTree node,String sourceType) {
         LocationInfo info = new LocationInfo();
 
         if (node.getType() == JavaParser.IDENT) {
@@ -586,7 +620,10 @@ public class JavaSourceSearcher {
         return info;
     }
     
-    public LocationInfo searchInnerClassDefLocation(CommonTree node) {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchInnerClassDefLocation(org.antlr.runtime.tree.CommonTree)
+	 */
+	public LocationInfo searchInnerClassDefLocation(CommonTree node) {
     	LocationInfo info = new LocationInfo();
     	CommonTree outterClassNode = (CommonTree)node.getChild(0);
     	CommonTree innerClassNode = (CommonTree)node.getChild(1);
@@ -605,7 +642,10 @@ public class JavaSourceSearcher {
         return info;
     }
     
-    public LocationInfo searchConstructorDefLocation(String className, CommonTree node) {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchConstructorDefLocation(java.lang.String, org.antlr.runtime.tree.CommonTree)
+	 */
+	public LocationInfo searchConstructorDefLocation(String className, CommonTree node) {
     	LocationInfo info = new LocationInfo();
     	
         String classPath = getClassFilePath(className);
@@ -630,7 +670,7 @@ public class JavaSourceSearcher {
         if (className.indexOf(".") > -1 ) {
         	constructName = className.substring(className.lastIndexOf(".")+1);
         }
-        JavaSourceSearcher searcher = createSearcher(classPath, ctx);
+        IJavaSourceSearcher searcher = createSearcher(classPath, ctx);
         List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
         MemberInfo memberInfo = findMatchedMethod(constructName, typenameList,leftClassMembers);
         if (memberInfo != null ) {
@@ -640,7 +680,10 @@ public class JavaSourceSearcher {
         return info;
     }
     
-    public LocationInfo searchIdentDefLocation(CommonTree node) {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchIdentDefLocation(org.antlr.runtime.tree.CommonTree)
+	 */
+	public LocationInfo searchIdentDefLocation(CommonTree node) {
     	LocationInfo info = new LocationInfo();
         //searching order
     	//1: local variable and fields (done)
@@ -672,7 +715,7 @@ public class JavaSourceSearcher {
         			String path = this.getClassFilePath(matchedName);
         			if (path != null && !path.equals("None")) {
 	        			info.setFilePath(path);
-	                    JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
+	                    IJavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
 	        			info.setLine(searcher.getClassScopeLine());
 	        			info.setCol(1);
 	        			found = true ;
@@ -688,7 +731,7 @@ public class JavaSourceSearcher {
 	    		String path = ctx.findSourceOrBinPath(packageName+"."+node.getText());
 	    		if (!path.equals("None")) {
 	    			info.setFilePath(path);
-	                JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
+	                IJavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
 	    			info.setLine(searcher.getClassScopeLine());
 	    			info.setCol(1);
 	    			found = true;
@@ -699,7 +742,7 @@ public class JavaSourceSearcher {
     	   String path = ctx.findSourceOrBinPath("java.lang."+node.getText());
 	    		if (!path.equals("None")) {
 	    			info.setFilePath(path);
-	                JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
+	                IJavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
 	    			info.setLine(searcher.getClassScopeLine());
 	    			info.setCol(1);
 	    			found = true;
@@ -711,7 +754,7 @@ public class JavaSourceSearcher {
        		if (node.getText().equals(lastName)) {
        			importedName = importedName.substring(0, importedName.lastIndexOf("."));
        			info.setFilePath(this.getClassFilePath(importedName));
-                JavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
+                IJavaSourceSearcher searcher = createSearcher(info.getFilePath(), ctx);
                 MemberInfo memberInfo = findMatchedField(node.getText(), searcher.getMemberInfos());
 				if (memberInfo != null) {
 					info.setLine(memberInfo.getLineNum());
@@ -730,7 +773,10 @@ public class JavaSourceSearcher {
     
     }
     
-    public void searchMethod(String methodName,List<String> typenameList, LocationInfo info) {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchMethod(java.lang.String, java.util.List, com.github.vinja.parser.LocationInfo)
+	 */
+	public void searchMethod(String methodName,List<String> typenameList, LocationInfo info) {
         boolean isStaticImported = false;
         for (String importedName: this.staticImportedNames) {
        		String lastName = importedName.substring(importedName.lastIndexOf(".")+1);
@@ -747,6 +793,9 @@ public class JavaSourceSearcher {
         }
     }
     
+	/* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchMemberInHierachy(java.lang.String, com.github.vinja.parser.MemberType, java.lang.String, java.util.List, com.github.vinja.parser.LocationInfo)
+	 */
 	@SuppressWarnings("rawtypes")
 	public boolean searchMemberInHierachy(String className,
 			MemberType memberType, String memberName, 
@@ -775,6 +824,9 @@ public class JavaSourceSearcher {
 	
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#searchMemberInClass(java.lang.String, com.github.vinja.parser.MemberType, java.lang.String, java.util.List, com.github.vinja.parser.LocationInfo)
+	 */
 	public boolean searchMemberInClass(String className,
 			MemberType memberType, String memberName, 
 			List<String> typenameList,LocationInfo info ) {
@@ -783,7 +835,7 @@ public class JavaSourceSearcher {
 		if (classFilePath == null || classFilePath.equals("None"))
 			throw new LocationNotFoundException();
 
-		JavaSourceSearcher searcher = createSearcher(classFilePath, ctx);
+		IJavaSourceSearcher searcher = createSearcher(classFilePath, ctx);
 		List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
 		
 		//if classname not equals to filename, find member in subclass or inner enum .
@@ -823,6 +875,9 @@ public class JavaSourceSearcher {
 		return false;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#findFiledDefInItf(java.lang.String, java.lang.String)
+	 */
 	@SuppressWarnings("rawtypes")
 	public LocationInfo findFiledDefInItf(String className,String fieldName) {
 		Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[]{className},null);
@@ -831,7 +886,7 @@ public class JavaSourceSearcher {
 			for (Class itfClazz : interfaces) {
 				String itfName = itfClazz.getCanonicalName();
 				String classFilePath = getClassFilePath(itfName);
-				JavaSourceSearcher searcher = createSearcher(classFilePath, ctx);
+				IJavaSourceSearcher searcher = createSearcher(classFilePath, ctx);
 				List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
 				MemberInfo memberInfo = findMatchedField(fieldName, leftClassMembers);
 				if (memberInfo != null) {
@@ -847,7 +902,10 @@ public class JavaSourceSearcher {
 		return null;
 	}
 
-    public void readClassInfo(CommonTree t,List<MemberInfo> memberInfos) {
+    /* (non-Javadoc)
+	 * @see com.github.vinja.parser.IJavaSourceSearcher#readClassInfo(org.antlr.runtime.tree.CommonTree, java.util.List)
+	 */
+	public void readClassInfo(CommonTree t,List<MemberInfo> memberInfos) {
         if ( t != null ) {
         	boolean needGoDeeper = true;
             if (t.getType() == JavaParser.CLASS_TOP_LEVEL_SCOPE
@@ -1229,7 +1287,7 @@ public class JavaSourceSearcher {
    			importedName = importedName.substring(0, importedName.lastIndexOf("."));
 			if (varName.equals(lastName)) {
 				String filePath = this.getClassFilePath(importedName);
-				JavaSourceSearcher searcher = createSearcher(filePath, ctx);
+				IJavaSourceSearcher searcher = createSearcher(filePath, ctx);
 				MemberInfo memberInfo = findMatchedField(varName, searcher.getMemberInfos());
 				return memberInfo.getRtnType();
 			}

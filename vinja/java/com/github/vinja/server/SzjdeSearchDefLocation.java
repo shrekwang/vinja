@@ -3,8 +3,9 @@ package com.github.vinja.server;
 import static com.github.vinja.server.SzjdeConstants.PARAM_CLASSPATHXML;
 
 import com.github.vinja.compiler.CompilerContext;
-import com.github.vinja.parser.JavaSourceSearcher;
+import com.github.vinja.parser.IJavaSourceSearcher;
 import com.github.vinja.parser.LocationInfo;
+import com.github.vinja.parser.VinjaJavaSourceSearcher;
 
 
 public class SzjdeSearchDefLocation extends SzjdeCommand {
@@ -19,7 +20,7 @@ public class SzjdeSearchDefLocation extends SzjdeCommand {
 		int col = Integer.parseInt(params.get("col"));
 		
 		CompilerContext ctx = getCompilerContext(classPathXml);
-		JavaSourceSearcher searcher = JavaSourceSearcher.createSearcher(sourceFile,ctx);
+		IJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(sourceFile,ctx);
 		LocationInfo info = searcher.searchDefLocation(row,col,sourceType);
 		
 		//can't find the location
