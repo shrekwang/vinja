@@ -10,6 +10,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -33,18 +39,23 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.CharLiteralExpr;
 import com.github.javaparser.ast.expr.ClassExpr;
+import com.github.javaparser.ast.expr.ConditionalExpr;
 import com.github.javaparser.ast.expr.DoubleLiteralExpr;
+import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.LongLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
@@ -56,6 +67,7 @@ import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.nodeTypes.NodeWithType;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForeachStmt;
 import com.github.javaparser.ast.type.ArrayType;
@@ -71,12 +83,20 @@ import com.github.vinja.omni.ClassInfo;
 import com.github.vinja.omni.ClassInfoUtil;
 import com.github.vinja.omni.ClassMetaInfoManager;
 import com.github.vinja.util.DecompileUtil;
-import com.github.vinja.util.LRUCache;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 @SuppressWarnings("all")
 public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 
-	public static LRUCache<String, VinjaJavaSourceSearcher> cache = new LRUCache<String, VinjaJavaSourceSearcher>(2000);
+	private static Cache<String, Future<VinjaJavaSourceSearcher>> cacheNew = CacheBuilder.newBuilder()
+		    .maximumSize(2000)
+		    .build(); 
+	
+
+	private static  PriorityBlockingQueue queue = new PriorityBlockingQueue();
+	private static ExecutorService es = new ThreadPoolExecutor(20, 50,
+				 30L, TimeUnit.SECONDS, queue);
 
 	public static final String NULL_TYPE = "NULL";
 
@@ -84,13 +104,19 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	private CompilerContext ctx = null;
 	private String currentFileName;
 	private String curFullClassName;
+	private boolean parseImport;
+	
+	private int classNameLine = 0;
+	private int classNameCol = 0;
 
 	private List<String> importedNames = new ArrayList<String>();
 	private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
 	private List<String> staticImportedNames = new ArrayList<String>();
 	private CompilationUnit compileUnit;
+	
+	public enum NameType {CLASS, FILE};
 
-	private CompilerContext findProperContext(String fileName, CompilerContext ctx) {
+	private static CompilerContext findProperContext(String fileName, CompilerContext ctx) {
 
 		if (fileName.startsWith("jar:")) {
 			return ctx;
@@ -118,24 +144,53 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 
 		return tmp;
 	}
+	
+	public static Future<VinjaJavaSourceSearcher> loadJavaSourceSearcher(final String name, final CompilerContext ctx, final NameType nameType, boolean parseImport, VinjaSourceLoadPriority priority) {
+		System.out.println("start loading " + name);
+		String className = name;
+		CompilerContext tempCtx = findProperContext(name, ctx);
 
-	public static VinjaJavaSourceSearcher createSearcher(String filename, CompilerContext ctx) {
-		VinjaJavaSourceSearcher result = cache.get(filename);
-		if (result == null) {
-			result = new VinjaJavaSourceSearcher(filename, ctx);
-			cache.put(filename, result);
+		if (nameType == NameType.FILE ) {
+			className = tempCtx.buildClassName(name);
 		}
-		return result;
+
+		Future<VinjaJavaSourceSearcher> f = cacheNew.getIfPresent(className);
+		
+        if (f == null) {
+        	f = new VinjaSourceSearcherLoaderFutureTask(new VinjaSourceSearcherLoader(name,ctx,nameType,parseImport, priority));
+			es.execute((FutureTask)f);
+			cacheNew.put(className, f);
+        }
+        return f;
+	}
+	
+	
+	public static VinjaJavaSourceSearcher createSearcher(String filename, CompilerContext ctx) {
+		Future<VinjaJavaSourceSearcher> sourceSearcherFuture = loadJavaSourceSearcher(filename,ctx, NameType.FILE, true, VinjaSourceLoadPriority.HIGH);
+		try {
+			return sourceSearcherFuture.get();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
-	public static void clearSearcher(String filename) {
-		cache.remove(filename);
+	public static void clearSearcher(String filename, CompilerContext ctx) {
+		CompilerContext tempCtx = findProperContext(filename, ctx);
+		String className = tempCtx.buildClassName(filename);
+		cacheNew.invalidate(className);
+	}
+	
+	public VinjaJavaSourceSearcher(String filename, CompilerContext ctx) {
+		this(filename,ctx, true);
 	}
 
-	private VinjaJavaSourceSearcher(String filename, CompilerContext ctx) {
+	public VinjaJavaSourceSearcher(String filename, CompilerContext ctx, boolean parseImport) {
+		System.out.println("start parsing " + filename);
 		this.ctx = findProperContext(filename, ctx);
 		this.currentFileName = filename;
 		this.curFullClassName = this.ctx.buildClassName(filename);
+		this.parseImport = parseImport;
 
 		// filename could be a jar entry path like below
 		// jar://C:\Java\jdk1.6.0_29\src.zip!java/lang/String.java
@@ -143,6 +198,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		InputStream is = null;
 		JarFile jarFile = null;
 		try {
+
 			if (filename.startsWith("jar:")) {
 				String jarPath = filename.substring(6, filename.lastIndexOf("!"));
 				jarFile = new JarFile(jarPath);
@@ -156,6 +212,11 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 					is = new ByteArrayInputStream(classContent.getBytes(StandardCharsets.UTF_8));
 				}
 			} else {
+				File file = new File(filename);
+				if (!file.exists()) {
+					System.out.print(filename + " not exits");
+					return;
+				}
 				is = new FileInputStream(filename);
 			}
 			readClassInfo(is);
@@ -182,7 +243,25 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		this.compileUnit = JavaParser.parse(is);
 		TypeDeclaration<?> firstClass = compileUnit.getTypes().get(0);
 		
+		Range classNameRange = firstClass.getName().getRange().get();
+		classNameCol = classNameRange.begin.column;
+		classNameLine = classNameRange.begin.line;
+		
+		NodeList<ImportDeclaration> imports = this.compileUnit.getImports();
+		
+		//cache the parse Result
+		if (this.parseImport) {
+			for (ImportDeclaration importDec : imports) {
+				if (!importDec.isAsterisk()) {
+					String importName = importDec.getNameAsString();
+					VinjaJavaSourceSearcher.loadJavaSourceSearcher(importName, this.ctx, NameType.CLASS, false, VinjaSourceLoadPriority.LOW);
+				}
+			}
+		}
+		
 		if (firstClass instanceof ClassOrInterfaceDeclaration) {
+			ClassOrInterfaceDeclaration classDeclare = (ClassOrInterfaceDeclaration)firstClass;
+
 			NodeList<TypeParameter> typeParameters = ((ClassOrInterfaceDeclaration)firstClass).getTypeParameters();
 			for (TypeParameter pam : typeParameters ) {
 			}
@@ -633,6 +712,12 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 						return var;
 					}
 				}
+			} else if (parentNode instanceof CatchClause) {
+				CatchClause catchExpr = (CatchClause) parentNode;
+				Parameter parameter = catchExpr.getParameter();
+				if (parameter.getNameAsString().equals(name)) {
+					return parameter;
+				}
 			}
 			node = parentNode;
 		}
@@ -771,6 +856,8 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				}
 				return className;
 			}
+		} else if (node instanceof EnclosedExpr) {
+			return getNodeJavaType(((EnclosedExpr) node).getInner().get());
 		} else if (node instanceof ClassExpr) {
 			return "java.lang.Class";
 		} else if (node instanceof ThisExpr) {
@@ -778,6 +865,12 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		} else if (node instanceof SuperExpr) {
 			Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[] { curFullClassName }, null);
 			return aClass.getSuperclass().getCanonicalName();
+		} else if (node instanceof ArrayAccessExpr) {
+			ArrayAccessExpr arrayAccessExpr = (ArrayAccessExpr) node;
+			return getNodeJavaType(arrayAccessExpr.getName());
+		} else if (node instanceof ConditionalExpr) {
+			ConditionalExpr condExpr = (ConditionalExpr) node;
+			return getNodeJavaType(condExpr.getThenExpr());
 		}
 
 		return null;
@@ -797,7 +890,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		List<MemberInfo> paramCountMatchedList = new ArrayList<MemberInfo>();
 
 		for (MemberInfo member : memberInfos) {
-			if (member.getName().equals(methodName)) {
+			if (member.getMemberType() == MemberType.METHOD &&  member.getName().equals(methodName)) {
 
 				List<String[]> memberParamList = member.getParamList();
 				if ((argTypes == null || argTypes.size() == 0)
@@ -905,18 +998,21 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	private MemberInfo findFieldInfo(FieldAccessExpr fieldExpr) {
 
 		MemberInfo info = new MemberInfo();
-		Optional<Expression> scope = fieldExpr.getScope();
+		Expression scope = fieldExpr.getScope();
 		String fieldName = fieldExpr.getNameAsString();
 
 		List<MemberInfo> tempMemberInfo = null;
-		if (scope.isPresent()) {
-			String javaType = this.getNodeJavaType(scope.get());
-			String path = this.getClassFilePath(javaType);
-			VinjaJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(path, ctx);
-			tempMemberInfo = searcher.getMemberInfos();
-		} else {
-			tempMemberInfo = this.getMemberInfos();
-		}
+
+		String javaType = this.getNodeJavaType(scope);
+		if (javaType.endsWith("[]") && fieldName.equals("length")) {
+			MemberInfo memberInfo = new MemberInfo();
+			memberInfo.setRtnType("int");
+			return memberInfo;
+		} 
+		String path = this.getClassFilePath(javaType);
+		VinjaJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(path, ctx);
+		tempMemberInfo = searcher.getMemberInfos();
+		
 		MemberInfo memberInfo = this.findMatchedField(fieldName, tempMemberInfo);
 		return memberInfo;
 	}
@@ -926,6 +1022,20 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	
 
 	private LocationInfo getLocationInfo(Node node, String sourceType) {
+		if ((node instanceof Name) && node.getParentNode().get() instanceof AnnotationExpr) {
+			LocationInfo info = new LocationInfo();
+			AnnotationExpr annoExpr = (AnnotationExpr)node.getParentNode().get();
+			ClassLocInfo refClass = findReferencedClass(annoExpr.getNameAsString());
+			if (refClass.getClassName() != null && refClass.getSourcePath() != null) {
+				VinjaJavaSourceSearcher searcher = createSearcher(refClass.getSourcePath(), ctx);
+				info.setFilePath(refClass.getSourcePath());
+				info.setLine(searcher.classNameLine);
+				info.setCol(searcher.classNameCol);
+				return info;
+			}
+		}
+		
+		
 		if (!(node instanceof SimpleName)) {
 			System.out.println("not simplename");
 			return null;
@@ -939,9 +1049,18 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 			NameExpr nameExpr = (NameExpr) parentNode;
 			String nodeName = nameExpr.getNameAsString();
 			return this.findVarNameLocation(node, nameExpr.getNameAsString());
+		} else if (parentNode instanceof ClassOrInterfaceType) {
+			ClassLocInfo refClass = findReferencedClass(((ClassOrInterfaceType)parentNode).getNameAsString());
+			if (refClass.getClassName() != null && refClass.getSourcePath() != null) {
+				VinjaJavaSourceSearcher searcher = createSearcher(refClass.getSourcePath(), ctx);
+				info.setFilePath(refClass.getSourcePath());
+				info.setLine(searcher.classNameLine);
+				info.setCol(searcher.classNameCol);
+				return info;
+			}
 		} else if (parentNode instanceof FieldAccessExpr) {
 			FieldAccessExpr fieldAccessExpr = (FieldAccessExpr) parentNode;
-			String scopeJavaClass = this.getNodeJavaType(fieldAccessExpr.getScope().get());
+			String scopeJavaClass = this.getNodeJavaType(fieldAccessExpr.getScope());
 			this.searchMemberInHierachy(scopeJavaClass, MemberType.FIELD, fieldAccessExpr.getNameAsString(), null, info);
 			return info;
 		} else if (parentNode instanceof MethodCallExpr) {

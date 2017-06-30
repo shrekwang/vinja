@@ -2,6 +2,7 @@ package com.github.vinja.server;
 
 public class SzjdeConstants {
 	
+	public final static String CMD_PRELOAD="preload";
 	public final static String CMD_DEBUG="debug";
 	public final static String CMD_COMPILE="compile";
 	public final static String CMD_COMPLETE="completion";

@@ -289,6 +289,16 @@ class Talker(BasicTalker):
         return data
 
     @staticmethod
+    def preloadFile(xmlPath,sourceFile,vimServer):
+        params = dict()
+        params["cmd"]="preload"
+        params["classPathXml"] = xmlPath
+        params["sourceFile"] = sourceFile
+        params["vimServer"] = vimServer
+        data = Talker.send(params)
+        return data
+
+    @staticmethod
     def autoImport(xmlPath,tmpFilePath,pkgName, sourceFile,classnameList):
         params = dict()
         params["cmd"]="autoimport"
@@ -491,8 +501,10 @@ class EditUtil(object):
     @staticmethod
     def locateDefinition(sourceType):
         (row,col) = vim.current.window.cursor
-        col = col + 1
+        #col = col + 1
         vim_buffer = vim.current.buffer
+        line = vim_buffer[row-1]
+        col = len(unicode(line[0:col])) + 1
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
 
@@ -1206,6 +1218,17 @@ class Compiler(object):
             return os.path.relpath(path)
         else :
             return path
+
+    @staticmethod
+    def preloadAstInfo():
+        (row,col) = vim.current.window.cursor
+        vim_buffer = vim.current.buffer
+        current_file_name = vim_buffer.name
+        classPathXml = ProjectManager.getClassPathXml(current_file_name)
+        if not classPathXml : return
+        serverName = vim.eval("v:servername")
+        resultText = Talker.preloadFile(classPathXml,current_file_name,serverName)
+        return
 
     @staticmethod
     def compileCurrentFile():

@@ -595,6 +595,8 @@ function! JdeInit()
   autocmd BufWritePost  *.java    python Compiler.compileCurrentFile()
   autocmd BufWritePost  *         python Compiler.copyResource()
 
+  autocmd BufRead     *.java     python Compiler.preloadAstInfo()
+
   autocmd CursorHold *.java  :python HighlightManager.displayMsg()
   autocmd CursorMoved *.java :python HighlightManager.displayMsg()
 

@@ -119,7 +119,7 @@ public class SzjdeCompilerCommand extends SzjdeCommand {
 			}
 			
 			for (String srcFileName : allSrcFiles) {
-				VinjaJavaSourceSearcher.clearSearcher(srcFileName);
+				VinjaJavaSourceSearcher.clearSearcher(srcFileName,cc);
 			}
 			
 			CompileResultInfo resultInfo =compiler.generateClass(allSrcFiles,out);

@@ -85,6 +85,8 @@ public class SzjdeServer extends Thread {
 	   SzjdeCommand szjdeCommand = null;
 	   if (cmdStr.equals(SzjdeConstants.CMD_COMPILE)) {
 		   szjdeCommand = new SzjdeCompilerCommand();
+	   } else if (cmdStr.equals(SzjdeConstants.CMD_PRELOAD)) {
+		   szjdeCommand = new SzjdePreloadCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_COMPLETE)) {
 		   szjdeCommand = new SzjdeCompletionCommand();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_AUTOIMPORT)) {
