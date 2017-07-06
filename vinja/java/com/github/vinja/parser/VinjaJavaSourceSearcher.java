@@ -385,15 +385,11 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 
 	public Node searchDefLocation(Node node, int line, int col) {
 		if (node.getChildNodes() == null || node.getChildNodes().size() == 0) {
-			Range range = node.getRange().get();
-			if (range.begin.line == line) {
-				Node parent = node.getParentNode().get();
-				if (parent instanceof MethodCallExpr) {
-					((MethodCallExpr) parent).getScope();
+			if (node.getRange().isPresent()) {
+				Range range = node.getRange().get();
+				if (range.begin.line == line && range.begin.column <= col && range.end.column >= col) {
+					return node;
 				}
-			}
-			if (range.begin.line == line && range.begin.column <= col && range.end.column >= col) {
-				return node;
 			}
 		} else {
 			for (Node subNode : node.getChildNodes()) {
