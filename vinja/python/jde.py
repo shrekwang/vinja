@@ -1674,6 +1674,7 @@ class Parser(object):
             if commentLine :
                 continue
 
+            lineText = re.sub(r'"(.*)"', '', lineText)
             if "}" in lineText :
                 scopeCount = scopeCount - 1
                 scopeUnvisible = True

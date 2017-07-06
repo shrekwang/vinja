@@ -94,9 +94,12 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		    .build(); 
 	
 
-	private static  PriorityBlockingQueue queue = new PriorityBlockingQueue();
-	private static ExecutorService es = new ThreadPoolExecutor(20, 50,
-				 30L, TimeUnit.SECONDS, queue);
+	private static  PriorityBlockingQueue backQueue = new PriorityBlockingQueue();
+	private static ExecutorService backEs = new ThreadPoolExecutor(20, 50, 30L, TimeUnit.SECONDS, backQueue);
+
+	private static  PriorityBlockingQueue frontQueue = new PriorityBlockingQueue();
+	private static ExecutorService frontEs = new ThreadPoolExecutor(4, 8, 5L, TimeUnit.SECONDS, frontQueue);
+
 
 	public static final String NULL_TYPE = "NULL";
 
@@ -104,7 +107,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	private CompilerContext ctx = null;
 	private String currentFileName;
 	private String curFullClassName;
-	private boolean parseImport;
+	private boolean frontParse;
 	
 	private int classNameLine = 0;
 	private int classNameCol = 0;
@@ -145,7 +148,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		return tmp;
 	}
 	
-	public static Future<VinjaJavaSourceSearcher> loadJavaSourceSearcher(final String name, final CompilerContext ctx, final NameType nameType, boolean parseImport, VinjaSourceLoadPriority priority) {
+	public static Future<VinjaJavaSourceSearcher> loadJavaSourceSearcher(final String name, final CompilerContext ctx, final NameType nameType, boolean frontParse, VinjaSourceLoadPriority priority) {
 		System.out.println("start loading " + name);
 		String className = name;
 		CompilerContext tempCtx = findProperContext(name, ctx);
@@ -157,8 +160,12 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		Future<VinjaJavaSourceSearcher> f = cacheNew.getIfPresent(className);
 		
         if (f == null) {
-        	f = new VinjaSourceSearcherLoaderFutureTask(new VinjaSourceSearcherLoader(name,ctx,nameType,parseImport, priority));
-			es.execute((FutureTask)f);
+        	f = new VinjaSourceSearcherLoaderFutureTask(new VinjaSourceSearcherLoader(name,ctx,nameType,frontParse, priority));
+        	if (frontParse) {
+				frontEs.execute((FutureTask)f);
+        	} else {
+				backEs.execute((FutureTask)f);
+        	}
 			cacheNew.put(className, f);
         }
         return f;
@@ -166,7 +173,8 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	
 	
 	public static VinjaJavaSourceSearcher createSearcher(String filename, CompilerContext ctx) {
-		Future<VinjaJavaSourceSearcher> sourceSearcherFuture = loadJavaSourceSearcher(filename,ctx, NameType.FILE, true, VinjaSourceLoadPriority.HIGH);
+		boolean frontParse = true;
+		Future<VinjaJavaSourceSearcher> sourceSearcherFuture = loadJavaSourceSearcher(filename,ctx, NameType.FILE, frontParse, VinjaSourceLoadPriority.HIGH);
 		try {
 			return sourceSearcherFuture.get();
 		} catch (Exception e) {
@@ -185,12 +193,12 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		this(filename,ctx, true);
 	}
 
-	public VinjaJavaSourceSearcher(String filename, CompilerContext ctx, boolean parseImport) {
+	public VinjaJavaSourceSearcher(String filename, CompilerContext ctx, boolean frontParse) {
 		System.out.println("start parsing " + filename);
 		this.ctx = findProperContext(filename, ctx);
 		this.currentFileName = filename;
 		this.curFullClassName = this.ctx.buildClassName(filename);
-		this.parseImport = parseImport;
+		this.frontParse = frontParse;
 
 		// filename could be a jar entry path like below
 		// jar://C:\Java\jdk1.6.0_29\src.zip!java/lang/String.java
@@ -250,11 +258,13 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		NodeList<ImportDeclaration> imports = this.compileUnit.getImports();
 		
 		//cache the parse Result
-		if (this.parseImport) {
+		if (this.frontParse) {
+
 			for (ImportDeclaration importDec : imports) {
 				if (!importDec.isAsterisk()) {
 					String importName = importDec.getNameAsString();
-					VinjaJavaSourceSearcher.loadJavaSourceSearcher(importName, this.ctx, NameType.CLASS, false, VinjaSourceLoadPriority.LOW);
+					boolean frontParse =false;
+					VinjaJavaSourceSearcher.loadJavaSourceSearcher(importName, this.ctx, NameType.CLASS, frontParse, VinjaSourceLoadPriority.LOW);
 				}
 			}
 		}

@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -33,6 +35,8 @@ import com.github.vinja.util.JdeLogger;
 import com.github.vinja.util.Preference;
 import com.github.vinja.util.UserLibConfig;
 import com.github.vinja.util.VjdeUtil;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 public class CompilerContext {
 	private static JdeLogger log = JdeLogger.getLogger("CompilerContext");
@@ -63,6 +67,9 @@ public class CompilerContext {
 	private boolean classInfoCached = false;
 	
 	private enum ResourceType { Java, Other };
+	
+	Cache<String, String> clsSourcePathCache = CacheBuilder.newBuilder().maximumSize(3000).build(); 
+	Cache<String, String> clsBinPathCache =    CacheBuilder.newBuilder().maximumSize(5000).build(); 
 	
 	private Map<String,String> testSrcLocationMap = new HashMap<String,String>();
 	
@@ -188,6 +195,9 @@ public class CompilerContext {
 				
 				String resourceName = className.replace('.', '/') + ".class";
 				this.getClassLoader().clearResourceByteCache(resourceName);
+				
+				this.clsBinPathCache.invalidate(className);
+				this.clsSourcePathCache.invalidate(className);
 
 				String classAsPath = className.replace('.', '/') + ".class";
 				InputStream stream = this.getClassLoader().getResourceAsStream(classAsPath);
@@ -537,37 +547,59 @@ public class CompilerContext {
 		if ("None".equals(path)) path = findClassBinPath(className);
 		return path;
 	}
-	
-	public String findSourceClass(String className) {
-		if (className == null) return "None";
-		ClassInfo classInfo = classMetaInfoManager.getMetaInfo(className);
-		String rtlPathName = className.replace(".", "/") + ".java";
-		if (classInfo!=null && classInfo.getSourceName() !=null ) {
-			int dotIndex = className.lastIndexOf(".");
-			String packagePath = "";
-			if (dotIndex > -1) {
-				packagePath = className.substring(0,dotIndex+1).replace(".", "/");  
-			} 
-			rtlPathName = packagePath + classInfo.getSourceName();
+
+	public String findSourceClass(final String className) {
+		try {
+			String result = clsSourcePathCache.get(className, new Callable<String>() {
+				@Override
+				public String call() {
+					if (className == null)
+						return "None";
+					ClassInfo classInfo = classMetaInfoManager.getMetaInfo(className);
+					String rtlPathName = className.replace(".", "/") + ".java";
+					if (classInfo != null && classInfo.getSourceName() != null) {
+						int dotIndex = className.lastIndexOf(".");
+						String packagePath = "";
+						if (dotIndex > -1) {
+							packagePath = className.substring(0, dotIndex + 1).replace(".", "/");
+						}
+						rtlPathName = packagePath + classInfo.getSourceName();
+					}
+					return findSourceFile(rtlPathName);
+				}
+			});
+			return result;
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+			return "None";
 		}
-		return findSourceFile(rtlPathName);
 	}
 	
 	public String findClassBinPath(String className) {
-		if (className == null) return "None";
-		String rtlPathName = className.replace(".", "/") + ".class";
-		
-		for (String path : fsClassPathUrls) {
-			if (path.endsWith(".jar")) {
-				if ( hasEntry(path, rtlPathName)) {
-					//extractContentToTemp(libSrcLoc,rtlPathName,tmpPath);
-					String tmpPath = "jar://" + path + "!" +rtlPathName;
-					return tmpPath;
-	            }
-			}
+		try {
+			String result = clsBinPathCache.get(className, new Callable<String>() {
+				@Override
+				public String call() {
+					if (className == null) return "None";
+					String rtlPathName = className.replace(".", "/") + ".class";
+					
+					for (String path : fsClassPathUrls) {
+						if (path.endsWith(".jar")) {
+							if ( hasEntry(path, rtlPathName)) {
+								//extractContentToTemp(libSrcLoc,rtlPathName,tmpPath);
+								String tmpPath = "jar://" + path + "!" +rtlPathName;
+								return tmpPath;
+							}
+						}
+					}
+					return "None";
+				}
+			});
+			return result;
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+			return "None";
 		}
-		
-		return "None";
 	}
 	
 	/**
