@@ -733,6 +733,30 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		}
 		return null;
 	}
+	
+	private boolean tryFindMemberInStaticImport(CompilationUnit compileUnit, MemberType memberType, String memberName,  List<String> typenameList, LocationInfo info) {
+		NodeList<ImportDeclaration> imports = compileUnit.getImports();
+		
+		for (ImportDeclaration importDec : imports) {
+			String importName = importDec.getNameAsString();
+			if (importDec.isStatic()) {
+
+				if (!importDec.isAsterisk()) {
+					String simpleName = importName.indexOf(".") > 0
+							? importName.substring(importName.lastIndexOf(".") + 1) : importName;
+					if (simpleName.equals(memberName)) {
+						String className =importName.substring(0, importName.lastIndexOf("."));
+						return searchMemberInClass(className, memberType, memberName, typenameList, info);
+					}
+				} else {
+					String classCanonicalName = importDec.getNameAsString();
+					boolean found = searchMemberInClass(classCanonicalName, memberType, memberName, typenameList, info);
+					if (found) return true;
+				}
+			}
+		}
+		return false;
+	}
 
 	public boolean searchMemberInClass(String className, MemberType memberType, String memberName,
 	        List<String> typenameList, LocationInfo info) {
@@ -780,7 +804,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				return true;
 			}
 		}
-		return false;
+		return tryFindMemberInStaticImport(searcher.compileUnit, memberType, memberName, typenameList, info);
 	}
 
 	public boolean searchMemberInHierachy(String className, MemberType memberType, String memberName,
