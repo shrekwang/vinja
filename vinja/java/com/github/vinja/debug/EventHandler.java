@@ -1,6 +1,7 @@
 package com.github.vinja.debug;
 
 import com.github.vinja.compiler.CompilerContext;
+import com.github.vinja.util.ClassNameUtil;
 import com.github.vinja.util.VjdeUtil;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
@@ -200,7 +201,7 @@ public class EventHandler extends Thread {
 		CompilerContext ctx = debugger.getCompilerContext();
 		String abPath = "None";
 		try {
-			String locClassName = loc.sourcePath().replace("/",".").replace(".java","");
+			String locClassName = ClassNameUtil.sourceToClassName(loc.sourcePath());
 			abPath = ctx.findSourceOrBinPath(locClassName);
 		} catch (Throwable e) {
 		}

@@ -29,6 +29,7 @@ import com.github.vinja.parser.IJavaSourceSearcher;
 import com.github.vinja.parser.JavaParser;
 import com.github.vinja.parser.ParseResult;
 import com.github.vinja.parser.VinjaJavaSourceSearcher;
+import com.github.vinja.util.ClassNameUtil;
 import com.github.vinja.util.IdGenerator;
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ArrayReference;
@@ -271,7 +272,7 @@ public class ExpEval {
 		try {
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			Location loc = stackFrame.location();
-			String locClassName = loc.sourcePath().replace("/",".").replace(".java","");
+			String locClassName = ClassNameUtil.sourceToClassName(loc.sourcePath());
 		    String abPath = ctx.findSourceOrBinPath(locClassName);
 		    IJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(abPath,ctx);
 			
@@ -1104,7 +1105,7 @@ public class ExpEval {
 		BufferedReader br = null;
 		try {
 			CompilerContext ctx = debugger.getCompilerContext();
-			String locClassName = javaSourcePath.replace("/",".").replace(".java","");
+			String locClassName = ClassNameUtil.sourceToClassName(javaSourcePath);
 			String abPath = ctx.findSourceOrBinPath(locClassName);
 			br = new BufferedReader(new FileReader(abPath));
 			Pattern pat = Pattern.compile("import\\s+static\\s+(.*)\\."+ memberName + "\\s*;\\s*$");
@@ -1359,7 +1360,7 @@ public class ExpEval {
 				return refTypes.get(0);
 			}
 			String locSourcePath = stackFrame.location().sourcePath();
-			String locClassName = locSourcePath.replace("/",".").replace(".java","");
+			String locClassName = ClassNameUtil.sourceToClassName(locSourcePath);
 			String abPath = ctx.findSourceOrBinPath(locClassName);
 			List<String> lines = getResourceLines(abPath);
 			Pattern pat = Pattern.compile("import\\s+(.*\\."+className+")\\s*;\\s*$");

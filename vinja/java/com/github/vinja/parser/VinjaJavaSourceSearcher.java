@@ -522,7 +522,19 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 
 		if (type instanceof ClassOrInterfaceType) {
 			ClassOrInterfaceType tmpType = (ClassOrInterfaceType) type;
-			return findReferencedClass(tmpType.getNameAsString());
+			StringBuilder sb = new StringBuilder();
+			if (tmpType.getScope().isPresent()) {
+				sb.append("."  + tmpType.getNameAsString());
+				while (tmpType.getScope().isPresent()) {
+					tmpType = tmpType.getScope().get();
+					sb.insert(0, "." + tmpType.getNameAsString());
+				}
+				sb.deleteCharAt(0);
+				System.out.print(tmpType.asString());
+			} else {
+				sb.append(tmpType.getNameAsString());
+			}
+			return findReferencedClass(sb.toString());
 		}
 
 		System.out.println("找不到type的信息" + type.asString());

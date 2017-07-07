@@ -20,6 +20,7 @@ import com.github.vinja.compiler.TomcatJvmoptConf;
 import com.github.vinja.debug.eval.ExpEval;
 import com.github.vinja.exception.NoConnectedVmException;
 import com.github.vinja.exception.NoSuspendThreadException;
+import com.github.vinja.util.ClassNameUtil;
 import com.github.vinja.util.Preference;
 import com.github.vinja.util.StreamGobbler;
 import com.github.vinja.util.VjdeUtil;
@@ -452,7 +453,7 @@ public class Debugger {
 		int lineNum = loc.lineNumber();
 		String abPath = "None";
 		try {
-			String locClassName = loc.sourcePath().replace("/",".").replace(".java","");
+			String locClassName = ClassNameUtil.sourceToClassName(loc.sourcePath());
 			abPath = compilerContext.findSourceOrBinPath(locClassName);
 		} catch (Throwable e) {
 		}

@@ -155,6 +155,14 @@ function RunSzPyfile(filename)
   exec "pyfile ".g:vinja_home."/python/".a:filename
 endfunction
 
+function OpenChannel()
+	let s:channel = ch_open('localhost:9527', {'callback': "MyHandler"})
+endfunction
+
+func MyHandler(channel, msg)
+  echo "from the handler: " . a:msg
+endfunc
+
 function! Shext()
   if bufnr("VinjaView_cmd_buffer") > -1 
     echo "Shext is already running."

@@ -6,6 +6,7 @@ import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.parser.IJavaSourceSearcher;
 import com.github.vinja.parser.JavaSourceSearcher;
 import com.github.vinja.parser.VinjaJavaSourceSearcher;
+import com.github.vinja.util.ClassNameUtil;
 import com.sun.jdi.Location;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
@@ -66,7 +67,7 @@ public class StepManager {
 			StackFrame stackFrame = threadRef.frame(threadStack.getCurFrame());
 			Location loc = stackFrame.location();
 			
-			String locClassName = loc.sourcePath().replace("/",".").replace(".java","");
+			String locClassName = ClassNameUtil.sourceToClassName(loc.sourcePath());
 		    String abPath = ctx.findSourceOrBinPath(locClassName);
 
 		    IJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(abPath,ctx);
