@@ -1,20 +1,26 @@
 package com.github.vinja.server;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.antlr.runtime.tree.CommonErrorNode;
-import org.antlr.runtime.tree.CommonTree;
-
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.NormalAnnotationExpr;
+import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.omni.ClassInfoUtil;
 import com.github.vinja.omni.PackageInfo;
-import com.github.vinja.parser.AstTreeFactory;
-import com.github.vinja.parser.JavaParser;
-import com.github.vinja.parser.ParseResult;
 
-public class SzjdeAutoImportCommand extends SzjdeCommand  {
+public class SzjdeAutoImportCommand extends SzjdeCommand {
 
 	@Override
 	@SuppressWarnings("rawtypes")
@@ -22,81 +28,110 @@ public class SzjdeAutoImportCommand extends SzjdeCommand  {
 		String classPathXml = params.get(SzjdeConstants.PARAM_CLASSPATHXML);
 		String currentPkg = params.get(SzjdeConstants.PARAM_PKG_NAME);
 		String tmpFilePath = params.get(SzjdeConstants.PARAM_TMP_FILE_PATH);
-		
+
 		String[] classNameList = params.get("classnames").split(",");
-	    String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
+		String sourceFile = params.get(SzjdeConstants.PARAM_SOURCEFILE);
 		Class aClass = ClassInfoUtil.getExistedClass(classPathXml, classNameList, sourceFile);
 
 		CompilerContext ctx = getCompilerContext(classPathXml);
-		PackageInfo packageInfo =ctx.getPackageInfo();
-		Set<String> varNames = new HashSet<String>();
-		
-		ParseResult result = AstTreeFactory.getJavaSourceAst(tmpFilePath);
-		searchImportedTokens(result.getTree(),varNames);
-		
+		PackageInfo packageInfo = ctx.getPackageInfo();
+
+		Set<String> varNames = searchImportedTokens(tmpFilePath);
+
 		Set<Class> declaredClass = ClassInfoUtil.getAllDeclaredClass(aClass);
-		
+
 		StringBuilder sb = new StringBuilder();
-		for (String varName : varNames ) {
+		for (String varName : varNames) {
 			varName = varName.trim();
-			
+
 			StringBuilder tmpSb = new StringBuilder();
-			
-			List<String> binClassNames=packageInfo.findPackage(varName);
-			if (binClassNames.size() == 0) continue;
+
+			List<String> binClassNames = packageInfo.findPackage(varName);
+			if (binClassNames.size() == 0)
+				continue;
 			boolean noNeedImport = false;
 			for (String binClassName : binClassNames) {
-				String pkgName = binClassName.substring(0,binClassName.lastIndexOf("."));
-				if ( pkgName.equals("java.lang")  || pkgName.equals(currentPkg)) {
-					noNeedImport =true;
+				String pkgName = binClassName.substring(0, binClassName.lastIndexOf("."));
+				if (pkgName.equals("java.lang") || pkgName.equals(currentPkg)) {
+					noNeedImport = true;
 					break;
 				}
 				tmpSb.append(binClassName).append(";");
 			}
-			
+
 			for (Class clazz : declaredClass) {
-				if (clazz.getCanonicalName().indexOf(varName) > -1) {
+				if (clazz.getCanonicalName().endsWith(varName)) {
 					noNeedImport = true;
 				}
 			}
-			
-			if (noNeedImport) continue;
+
+			if (noNeedImport)
+				continue;
 			sb.append(tmpSb.toString()).append("\n");
 		}
-		
+
 		return sb.toString();
 	}
-	
 
-	
-	public static void searchImportedTokens(CommonTree t, Set<String> names) {
-        if ( t != null ) {
-        	if (t instanceof CommonErrorNode) {
-        		CommonErrorNode tmp = (CommonErrorNode)t;
-	    		if ("ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(tmp.start.getText().charAt(0)) > -1 ) {
-		        	names.add(tmp.start.getText().trim());
-	    		}
-        	}
-	        if (t.getType() ==  JavaParser.QUALIFIED_TYPE_IDENT) {
-	        	names.add(t.getChild(0).getText().trim());
-	    	}
-	        if (t.getType() == JavaParser.AT) {
-	        	names.add(t.getChild(0).getText().trim());
-	        }
-	        if (t.getType() == JavaParser.THROWS_CLAUSE) {
-		        for ( int i = 0; i < t.getChildCount(); i++ ) {
-		        	names.add(t.getChild(i).getText().trim());
-		        }
-	        }
-	    	if (t.getType() == JavaParser.DOT) {
-	    		if ("ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(t.getChild(0).getText().charAt(0)) > -1 ) {
-		        	names.add(t.getChild(0).getText().trim());
-	    		}
-	    	}
-	        for ( int i = 0; i < t.getChildCount(); i++ ) {
-	            searchImportedTokens((CommonTree)t.getChild(i), names);
-	        }
-	    }
+	@SuppressWarnings("all")
+	public static Set<String> searchImportedTokens(String sourcePath) {
+		
+		final Set<String> names = new HashSet<String>();
+
+		try {
+			CompilationUnit compilationUnit = JavaParser.parse(new File(sourcePath));
+			VoidVisitorAdapter vistor = new VoidVisitorAdapter<Void>() {
+				@Override
+				public void visit(final ClassOrInterfaceType n, final Void arg) {
+					names.add(n.getNameAsString());
+					super.visit(n, arg);
+				}
+				@Override
+				public void visit(final SingleMemberAnnotationExpr n, final Void arg) {
+					names.add(n.getNameAsString());
+					super.visit(n, arg);
+				}
+				@Override
+				public void visit(final NormalAnnotationExpr n, final Void arg) {
+					names.add(n.getNameAsString());
+					super.visit(n, arg);	
+				}
+
+				@Override
+				public void visit(final MarkerAnnotationExpr n, final Void arg) {
+					names.add(n.getNameAsString());
+					super.visit(n, arg);	
+				}
+				
+				public void visit(final MethodCallExpr n, final Void arg) {
+					if (n.getScope().isPresent()) {
+						Expression exp = n.getScope().get();
+						if (exp instanceof NameExpr) {
+							String name = ((NameExpr)exp).getNameAsString();
+							if (Character.isUpperCase(name.charAt(0))) {
+								names.add(name);
+							}
+						}
+					}
+					super.visit(n, arg);
+				}
+				public void visit(final FieldAccessExpr n, final Void arg) {
+					Expression exp = n.getScope();
+					if (exp instanceof NameExpr) {
+						String name = ((NameExpr)exp).getNameAsString();
+						if (Character.isUpperCase(name.charAt(0))) {
+							names.add(name);
+						}
+					}
+					super.visit(n, arg);
+				}
+				
+			};
+			vistor.visit(compilationUnit, null);
+		} catch (Exception e) {
+
+		}
+		return names;
 	}
 
 }
