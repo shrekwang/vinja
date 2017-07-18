@@ -565,7 +565,11 @@ public class CompilerContext {
 						}
 						rtlPathName = packagePath + classInfo.getSourceName();
 					}
-					return findSourceFile(rtlPathName);
+					String result =  findSourceFile(rtlPathName);
+					if (result == null) {
+						System.out.println("imposiible");
+					}
+					return result;
 				}
 			});
 			return result;

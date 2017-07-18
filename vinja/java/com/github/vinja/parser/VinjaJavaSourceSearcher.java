@@ -29,6 +29,8 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.AnnotationDeclaration;
+import com.github.javaparser.ast.body.AnnotationMemberDeclaration;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
@@ -65,8 +67,8 @@ import com.github.javaparser.ast.expr.SuperExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.nodeTypes.NodeWithStatements;
 import com.github.javaparser.ast.nodeTypes.NodeWithType;
-import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForeachStmt;
@@ -229,6 +231,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 			}
 			readClassInfo(is);
 		} catch (Exception e) {
+			System.out.println("解析" + filename + "出错.");
 			e.printStackTrace();
 		} finally {
 			if (is != null) {
@@ -268,7 +271,34 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				}
 			}
 		}
-		
+		if (firstClass instanceof AnnotationDeclaration) {	
+			AnnotationDeclaration annoDeclare = (AnnotationDeclaration)firstClass;
+			NodeList<BodyDeclaration<?>> members = annoDeclare.getMembers();
+			for (BodyDeclaration member: members) {
+				if (member instanceof AnnotationMemberDeclaration) {
+					AnnotationMemberDeclaration annoMethod = (AnnotationMemberDeclaration) member;
+					int line =  annoMethod.getRange().get().begin.line;
+					MemberInfo info = new MemberInfo();
+
+					List<String> modifierList = new ArrayList<String>();
+					for (Iterator<Modifier> it = annoMethod.getModifiers().iterator(); it.hasNext();) {
+						modifierList.add(it.next().asString());
+					}
+					info.setModifierList(modifierList);
+
+					info.setName(annoMethod.getNameAsString());
+					ClassLocInfo classLocInfo = this.findTypeSourceLocInfo(annoMethod.getType());
+					info.setRtnType(classLocInfo.getClassName());
+					info.setLineNum(annoMethod.getName().getRange().get().begin.line);
+					info.setColumn(annoMethod.getName().getRange().get().begin.column);
+					info.setMemberType(MemberType.METHOD);
+					List<String[]> paramList = new ArrayList<String[]>();
+					info.setParamList(paramList);
+					memberInfos.add(info);
+				}
+			}
+		}
+
 		if (firstClass instanceof ClassOrInterfaceDeclaration) {
 			ClassOrInterfaceDeclaration classDeclare = (ClassOrInterfaceDeclaration)firstClass;
 
@@ -644,6 +674,17 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 			return locInfo;
 		}
 		
+		if (name.toUpperCase().substring(0,1).equals(name.substring(0,1))) {
+			 ClassLocInfo refClass = this.findReferencedClass(name);
+			 if (refClass.getClassName() != null && refClass.getSourcePath() != null) {
+					VinjaJavaSourceSearcher searcher = createSearcher(refClass.getSourcePath(), ctx);
+					locInfo.setFilePath(refClass.getSourcePath());
+					locInfo.setLine(searcher.classNameLine);
+					locInfo.setCol(searcher.classNameCol);
+					return locInfo;
+				}
+		}
+		
 		boolean found = this.searchMemberInHierachy(this.curFullClassName, MemberType.FIELD, name , null, locInfo);
 		if (found) {
 			return locInfo;
@@ -657,8 +698,8 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 
 		while (node.getParentNode().isPresent()) {
 			parentNode = node.getParentNode().get();
-			if (parentNode instanceof BlockStmt) {
-				BlockStmt blockStmt = (BlockStmt) parentNode;
+			if (parentNode instanceof NodeWithStatements) {
+				NodeWithStatements blockStmt = (NodeWithStatements) parentNode;
 				int position = -1;
 				for (int i = 0; i < blockStmt.getStatements().size(); i++) {
 					if (blockStmt.getStatements().get(i).equals(node)) {
@@ -669,7 +710,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 					throw new RuntimeException();
 				}
 				for (int i = position - 1; i >= 0; i--) {
-					Node stmtNode = blockStmt.getChildNodes().get(i);
+					Node stmtNode = blockStmt.getStatements().get(i);
 					if (stmtNode instanceof ExpressionStmt) {
 						Expression expression = ((ExpressionStmt) stmtNode).getExpression();
 						if (expression instanceof VariableDeclarationExpr) {
@@ -932,7 +973,8 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		List<MemberInfo> paramCountMatchedList = new ArrayList<MemberInfo>();
 
 		for (MemberInfo member : memberInfos) {
-			if (member.getMemberType() == MemberType.METHOD &&  member.getName().equals(methodName)) {
+			if ( (member.getMemberType() == MemberType.METHOD  || member.getMemberType() == MemberType.CONSTRUCTOR)
+					&&  member.getName().equals(methodName)) {
 
 				List<String[]> memberParamList = member.getParamList();
 				if ((argTypes == null || argTypes.size() == 0)
@@ -1092,6 +1134,24 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 			String nodeName = nameExpr.getNameAsString();
 			return this.findVarNameLocation(node, nameExpr.getNameAsString());
 		} else if (parentNode instanceof ClassOrInterfaceType) {
+			Node pparentNode = parentNode.getParentNode().get();
+			if (pparentNode instanceof ObjectCreationExpr) {
+				ObjectCreationExpr objectCreationExpr = (ObjectCreationExpr)pparentNode;
+				String constructorName = objectCreationExpr.getType().getNameAsString();
+				String className = this.findTypeSourceLocInfo(objectCreationExpr.getType()).getClassName();
+				
+				NodeList<Expression> arguments = objectCreationExpr.getArguments();
+				List<String> argumentTypes = new ArrayList<String>();
+				for (Expression argu : arguments) {
+					String javaType = this.getNodeJavaType(argu);
+					argumentTypes.add(javaType);
+				}
+				boolean suc = this.searchMemberInHierachy(className, MemberType.CONSTRUCTOR, constructorName, argumentTypes, info);
+				if (suc )  {
+					return info;
+				}
+			} 
+			//find location of class if can't find constructor  or it's just not a constructor call
 			ClassLocInfo refClass = findReferencedClass(((ClassOrInterfaceType)parentNode).getNameAsString());
 			if (refClass.getClassName() != null && refClass.getSourcePath() != null) {
 				VinjaJavaSourceSearcher searcher = createSearcher(refClass.getSourcePath(), ctx);
@@ -1100,6 +1160,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				info.setCol(searcher.classNameCol);
 				return info;
 			}
+
 		} else if (parentNode instanceof FieldAccessExpr) {
 			FieldAccessExpr fieldAccessExpr = (FieldAccessExpr) parentNode;
 			String scopeJavaClass = this.getNodeJavaType(fieldAccessExpr.getScope());
@@ -1139,25 +1200,6 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				        argumentTypes, info);
 				return info;
 			}
-		} else if (parentNode instanceof ClassOrInterfaceType) {
-			Node pparentNode = parentNode.getParentNode().get();
-			if (pparentNode instanceof ObjectCreationExpr) {
-
-				ObjectCreationExpr objectCreationExpr = (ObjectCreationExpr)pparentNode;
-				String constructorName = objectCreationExpr.getType().getNameAsString();
-				String className = this.findTypeSourceLocInfo(objectCreationExpr.getType()).getClassName();
-				
-				NodeList<Expression> arguments = objectCreationExpr.getArguments();
-				List<String> argumentTypes = new ArrayList<String>();
-				for (Expression argu : arguments) {
-					String javaType = this.getNodeJavaType(argu);
-					argumentTypes.add(javaType);
-				}
-				this.searchMemberInHierachy(className, MemberType.CONSTRUCTOR, constructorName, argumentTypes, info);
-				return info;
-
-			}
-
 		}
 		return null;
 	}
