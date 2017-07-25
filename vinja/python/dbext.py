@@ -110,9 +110,11 @@ class QueryUtil(object):
                         and a.table_schema+'.'+a.table_name = '%s' """ % (name,name)
 
         elif server_type == "mysql":
-            sql = """ select COLUMN_NAME, COLUMN_TYPE,   IS_NULLABLE , COLUMN_DEFAULT, COLUMN_KEY, COLUMN_COMMENT
-                          FROM INFORMATION_SCHEMA.COLUMNS
-                          WHERE table_name = '%s' and table_schema=database() """ % name
+            sql = " show create table %s " % name
+            columns,result = dbext.query(sql)
+            result = result[0][1]
+            output(result,outBuffer,False)
+            return
 
         append = False
         for index,item in enumerate(sql.split(";")):
@@ -214,8 +216,14 @@ class Dbext(object):
     def exportResultToSQL(self):
         sql = MiscUtil.getVisualBlock()
         outBuffer = Dbext.getOutputBuffer()
+        tablename = "xxxx"
+        reobj = re.compile(".*(?<=from) (\w+).*", re.IGNORECASE)
+        match = reobj.search(sql)
+        if match : 
+            tablename = match.group(1)
+
         columns,rows, colTypes = dbext.query(sql, returnColType=True)
-        result = dbext.exportToSqlInternal(columns,rows, colTypes)
+        result = dbext.exportToSqlInternal(tablename, columns,rows, colTypes)
         output(result,outBuffer)
 
     def queryVisualSQL(self):
@@ -470,14 +478,14 @@ class Dbext(object):
         r = ",\n".join([padStr + joinStr.join(values[i:i + chunkSize]) for i in range(0, len(values), chunkSize)])
         return r
 
-    def exportToSqlInternal(self,columns,rows, colTypes):
-        name = "xxx"
-        col_str =  self.chunkStr(columns, 4, ",", "    ")
+    def exportToSqlInternal(self,tablename,columns,rows, colTypes):
+        columns = map(lambda v:"`"+v+"`", columns)
+        col_str =  self.chunkStr(columns, 15, ",", "    ")
         sqls = []
         for row in rows :
             values = [self.convertForSQL(field, colTypes[index])  for index,field in enumerate(row)]
-            vals_str = self.chunkStr(values, 4, ",", "    ")  
-            insertSql = "insert into %s (\n%s) \n values (\n%s) \n" % (name, col_str , vals_str)
+            vals_str = self.chunkStr(values, 15, ",", "    ")  
+            insertSql = "insert into %s (\n%s) \n values (\n%s) \n" % (tablename, col_str , vals_str)
             sqls.append(insertSql)
         return sqls
 

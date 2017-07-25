@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -71,7 +72,9 @@ import com.github.javaparser.ast.nodeTypes.NodeWithStatements;
 import com.github.javaparser.ast.nodeTypes.NodeWithType;
 import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.ForeachStmt;
+import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.ast.type.ArrayType;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
@@ -151,7 +154,6 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	}
 	
 	public static Future<VinjaJavaSourceSearcher> loadJavaSourceSearcher(final String name, final CompilerContext ctx, final NameType nameType, boolean frontParse, VinjaSourceLoadPriority priority) {
-		System.out.println("start loading " + name);
 		String className = name;
 		CompilerContext tempCtx = findProperContext(name, ctx);
 
@@ -196,7 +198,6 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	}
 
 	public VinjaJavaSourceSearcher(String filename, CompilerContext ctx, boolean frontParse) {
-		System.out.println("start parsing " + filename);
 		this.ctx = findProperContext(filename, ctx);
 		this.currentFileName = filename;
 		this.curFullClassName = this.ctx.buildClassName(filename);
@@ -438,8 +439,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 
 	@Override
 	public int getClassScopeLine() {
-		// TODO Auto-generated method stub
-		return 0;
+		return this.classNameLine;
 	}
 	
 	
@@ -505,17 +505,73 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		return memberInfos;
 	}
 
-	@Override
 	public int searchLoopOutLine(int currentLine) {
-		System.out.println("searchLoopOutLine还未实现");
-		return 0;
+		Node node = searchNodeOnLine(this.compileUnit,currentLine);
+		Node parentNode = node;
+		while (parentNode.getParentNode().isPresent()) {
+			parentNode = parentNode.getParentNode().get();
+			if (parentNode instanceof ForeachStmt || parentNode instanceof WhileStmt || parentNode instanceof ForStmt) {
+				Node pparentNode = (Node)parentNode.getParentNode().orElse(null);
+				if (pparentNode == null) break;
+
+				int position = -1;
+				
+				List<Node> childNodes = pparentNode.getChildNodes();
+				for (int i = 0; i < childNodes.size(); i++) {
+					if (childNodes.get(i).equals(parentNode)) {
+						position = i;
+						break;
+					}
+				}
+				int line = -1;
+				//last position
+				if (position == childNodes.size() -1 ) {
+					line = pparentNode.getRange().get().end.line;
+				} else {
+					line = childNodes.get(position+1).getRange().get().begin.line;
+				}
+				return line;
+			}
+		}
+		return -1;
+	}
+
+	public Node searchNodeOnLine(Node node, int currentLine) {
+		if (node.getChildNodes() == null || node.getChildNodes().size() == 0) {
+			if (node.getRange().isPresent()) {
+				Range range = node.getRange().get();
+				if (range.begin.line == currentLine)
+					return node;
+			}
+		} else {
+			for (Node subNode : node.getChildNodes()) {
+				Node tmp = searchNodeOnLine(subNode, currentLine);
+				if (tmp != null)
+					return tmp;
+			}
+		}
+		return null;
 	}
 
 	@Override
 	public Set<String> searchNearByExps(int lineNum, boolean currentLine) {
-		// TODO Auto-generated method stub
-		return null;
+		Set<String> exps = new HashSet<String>();
+		searchNearByExps(exps, this.compileUnit, currentLine, lineNum);
+		return exps;
 	}
+	
+	private void searchNearByExps(Set<String> exps,Node node, boolean currentLine,int lineNum) {
+		if (node.getRange().isPresent() && node instanceof NameExpr) {
+			Range range = node.getRange().get();
+			if (range.begin.line == lineNum) {
+				exps.add(node.toString());
+			}
+		}
+		for (Node subNode : node.getChildNodes()) {
+			searchNearByExps(exps, subNode, currentLine, lineNum);
+		}
+	}
+		
 
 	@Override
 	public LocationInfo searchDefLocation(int line, int col, String sourceType) {
@@ -560,14 +616,12 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 					sb.insert(0, "." + tmpType.getNameAsString());
 				}
 				sb.deleteCharAt(0);
-				System.out.print(tmpType.asString());
 			} else {
 				sb.append(tmpType.getNameAsString());
 			}
 			return findReferencedClass(sb.toString());
 		}
 
-		System.out.println("找不到type的信息" + type.asString());
 		return new ClassLocInfo(type.asString(), null);
 	}
 
@@ -1121,7 +1175,6 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		
 		
 		if (!(node instanceof SimpleName)) {
-			System.out.println("not simplename");
 			return null;
 		}
 		Node parentNode = node.getParentNode().get();
