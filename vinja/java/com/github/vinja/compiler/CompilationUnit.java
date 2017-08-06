@@ -91,7 +91,7 @@ public class CompilationUnit implements ICompilationUnit {
 
 	@Override
 	public boolean ignoreOptionalProblems() {
-		return true;
+		return false;
 	}
 
 }
