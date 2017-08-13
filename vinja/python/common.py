@@ -935,6 +935,13 @@ class BasicTalker(object):
 class VimUtil(object):
 
     @staticmethod
+    def hasGuiRunning():
+        bufnr = vim.eval("has('gui_running')")    
+        if bufnr == "1" :
+            return True
+        return False
+
+    @staticmethod
     def getInput(prompt,default_text = ""):
         vim.command("redraw")
         vim.command("let b:vjde_user_input = input('%s','%s')" % (prompt,default_text))

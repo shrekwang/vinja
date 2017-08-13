@@ -5,6 +5,7 @@ import re
 import vim
 import subprocess
 import os.path
+from common import VimUtil
 
 if "EditUtil" not in globals() :
     from jde import EditUtil
@@ -83,8 +84,9 @@ class QuickLocater(object) :
         vim.command("set sidescroll=%s" % self.sidescroll)
         vim.command("set sidescrolloff=%s" % self.sidescrolloff) 
 
-        vim.command("set guicursor=%s" % self.guicursor)
-        vim.command("highlight Cursor guifg=black guibg=%s" % (self.cursor_bg))
+        if VimUtil.hasGuiRunning() :
+            vim.command("set guicursor=%s" % self.guicursor)
+            vim.command("highlight Cursor guifg=black guibg=%s" % (self.cursor_bg))
 
 
     def restore_winsize(self):
@@ -138,9 +140,10 @@ class QuickLocater(object) :
         vim.command("set sidescrolloff=0")
 
         vim.command("set guicursor+=a:blinkon0")
-        bg = vim.eval("""synIDattr(synIDtrans(hlID("Normal")), "bg")""")
-        if bg :
-            vim.command("highlight Cursor guifg=black guibg=%s" % (bg))
+        if VimUtil.hasGuiRunning() :
+            bg = vim.eval("""synIDattr(synIDtrans(hlID("Normal")), "bg")""")
+            if bg :
+                vim.command("highlight Cursor guifg=black guibg=%s" % (bg))
         
 
         printables = """/!"#$%&'()*+,-.0123456789:<=>?#@"ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{}~"""
@@ -165,16 +168,18 @@ class QuickLocater(object) :
         if isinstance(self.content_manager,FileContentManager):
             vim.command("syn match LocateName #^.* #")
             vim.command("hi def link LocateName Identifier")
-            fg = vim.eval("""synIDattr(synIDtrans(hlID("Identifier")), "fg")""")
-            vim.command("highlight Cursor guifg=%s guibg=%s" % (fg,bg))
+            if VimUtil.hasGuiRunning() :
+                fg = vim.eval("""synIDattr(synIDtrans(hlID("Identifier")), "fg")""")
+                vim.command("highlight Cursor guifg=%s guibg=%s" % (fg,bg))
         elif isinstance(self.content_manager,JavaMemberContentManager):
             vim.command("syn match MethodName #^.*\((\)\@=#")
             vim.command("hi def link MethodName Identifier")
         elif isinstance(self.content_manager,EditHistoryManager):
             vim.command("syn match LocateName #^.*\s#")
             vim.command("hi def link LocateName Identifier")
-            fg = vim.eval("""synIDattr(synIDtrans(hlID("Identifier")), "fg")""")
-            vim.command("highlight Cursor guifg=%s guibg=%s" % (fg,bg))
+            if VimUtil.hasGuiRunning() :
+                fg = vim.eval("""synIDattr(synIDtrans(hlID("Identifier")), "fg")""")
+                vim.command("highlight Cursor guifg=%s guibg=%s" % (fg,bg))
 
 
     def on_paste_content(self):
