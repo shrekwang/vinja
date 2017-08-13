@@ -1429,6 +1429,7 @@ class AutoImport(object):
     @staticmethod
     def addImportDef(line):
         if line.strip() == "" : return False
+        if line.startswith("java.lang") : return False
         vim_buffer_text ="\n".join(vim.current.buffer)
         tmpDefs = line[:-1].split(";")
         hadImported = False
@@ -1830,7 +1831,7 @@ class Parser(object):
     @staticmethod
     def getMainClass():
         pkgName = Parser.getPackage()
-        clsPat = re.compile(r"\s*public\s+(\w+\s+)?(class)|(interface)\s(?P<className>\w+)\b")
+        clsPat = re.compile(r"\s*public\s+(\w+\s+)?(class|interface)\s+(?P<className>\w+)\b")
         className = Parser.searchPattern(clsPat,"className")
 
         if className == None :

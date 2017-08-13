@@ -74,9 +74,9 @@ public class JDTCompiler  {
             settings.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_1_7);
         }
         
-        for (String option : CompilerOptions.warningOptionNames() ) {
-			settings.put(option, CompilerOptions.WARNING);
-        }
+        //for (String option : CompilerOptions.warningOptionNames() ) {
+		//	settings.put(option, CompilerOptions.WARNING);
+        //}
 
         final IProblemFactory problemFactory = 
             new DefaultProblemFactory(Locale.getDefault());

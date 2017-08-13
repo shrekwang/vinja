@@ -485,7 +485,7 @@ class Dbext(object):
         for row in rows :
             values = [self.convertForSQL(field, colTypes[index])  for index,field in enumerate(row)]
             vals_str = self.chunkStr(values, 15, ",", "    ")  
-            insertSql = "insert into %s (\n%s) \n values (\n%s) \n" % (tablename, col_str , vals_str)
+            insertSql = "insert into %s (\n%s) \n values (\n%s); \n" % (tablename, col_str , vals_str)
             sqls.append(insertSql)
         return sqls
 
