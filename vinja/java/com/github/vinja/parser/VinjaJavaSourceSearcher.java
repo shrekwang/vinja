@@ -250,28 +250,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		}
 
 	}
-
-	private void readClassInfo(InputStream is) {
-		this.compileUnit = JavaParser.parse(is);
-		TypeDeclaration<?> firstClass = compileUnit.getTypes().get(0);
-		
-		Range classNameRange = firstClass.getName().getRange().get();
-		classNameCol = classNameRange.begin.column;
-		classNameLine = classNameRange.begin.line;
-		
-		NodeList<ImportDeclaration> imports = this.compileUnit.getImports();
-		
-		//cache the parse Result
-		if (this.frontParse) {
-
-			for (ImportDeclaration importDec : imports) {
-				if (!importDec.isAsterisk()) {
-					String importName = importDec.getNameAsString();
-					boolean frontParse =false;
-					VinjaJavaSourceSearcher.loadJavaSourceSearcher(importName, this.ctx, NameType.CLASS, frontParse, VinjaSourceLoadPriority.LOW);
-				}
-			}
-		}
+	private void readClassOrItfDeclaration(TypeDeclaration<?> firstClass, List<MemberInfo> memberInfos ) {
 		if (firstClass instanceof AnnotationDeclaration) {	
 			AnnotationDeclaration annoDeclare = (AnnotationDeclaration)firstClass;
 			NodeList<BodyDeclaration<?>> members = annoDeclare.getMembers();
@@ -412,6 +391,45 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				memberInfos.add(info);
 			}
 		}
+		List<ClassOrInterfaceDeclaration> childNodes= firstClass.getChildNodesByType(ClassOrInterfaceDeclaration.class);
+		for (ClassOrInterfaceDeclaration subTypeDeclare: childNodes) {
+			MemberInfo info = new MemberInfo();
+			info.setMemberType(MemberType.SUBCLASS);
+			info.setName(subTypeDeclare.getNameAsString());
+			info.setLineNum(subTypeDeclare.getRange().get().begin.line);
+			info.setColumn(subTypeDeclare.getRange().get().begin.column);
+			info.setRtnType(this.curFullClassName + "." + subTypeDeclare.getNameAsString());
+			List<MemberInfo> subMemberInfos = new ArrayList<MemberInfo>();
+			readClassOrItfDeclaration(subTypeDeclare, subMemberInfos);
+			info.setSubMemberList(subMemberInfos);
+			memberInfos.add(info);
+		}
+	}
+
+	private void readClassInfo(InputStream is) {
+		this.compileUnit = JavaParser.parse(is);
+		TypeDeclaration<?> firstClass = compileUnit.getTypes().get(0);
+		
+		Range classNameRange = firstClass.getName().getRange().get();
+		classNameCol = classNameRange.begin.column;
+		classNameLine = classNameRange.begin.line;
+		
+		NodeList<ImportDeclaration> imports = this.compileUnit.getImports();
+		
+		//cache the parse Result
+		if (this.frontParse) {
+
+			for (ImportDeclaration importDec : imports) {
+				if (!importDec.isAsterisk()) {
+					String importName = importDec.getNameAsString();
+					boolean frontParse =false;
+					VinjaJavaSourceSearcher.loadJavaSourceSearcher(importName, this.ctx, NameType.CLASS, frontParse, VinjaSourceLoadPriority.LOW);
+				}
+			}
+		}
+		readClassOrItfDeclaration(firstClass, this.memberInfos);
+		
+		
 	}
 
 	public Node searchDefLocation(Node node, int line, int col) {
@@ -1015,7 +1033,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 
 	private MemberInfo findMatchedField(String fieldName, List<MemberInfo> memberInfos) {
 		for (MemberInfo member : memberInfos) {
-			if (MemberType.FIELD == member.getMemberType() && member.getName().equals(fieldName)) {
+			if (MemberType.METHOD != member.getMemberType() && member.getName().equals(fieldName)) {
 				return member;
 			}
 		}
