@@ -172,7 +172,7 @@ class NormalDirNode(TreeNode):
         super(NormalDirNode, self).__init__(dir_name,abpath, True)
 
     def _default_hidden(self,file_name):
-        if file_name.startswith(".") or file_name == "CVS" :
+        if self.projectTree.hide_dot_files and (file_name.startswith(".") or file_name == "CVS") :
             return True
         return False
 
@@ -719,6 +719,7 @@ class ProjectTree(object):
 
     def __init__(self, root_dir, treeType="currentDir"):
         self.remove_orignal = False 
+        self.hide_dot_files = True
         self.work_path_set = []
         self.edit_history = []
 
@@ -1357,6 +1358,13 @@ class ProjectTree(object):
         else :
             return path
 
+    def toggleHidden(self):
+        if self.hide_dot_files :
+            self.hide_dot_files = False
+        else :
+            self.hide_dot_files = True
+        self.refresh_selected_node()
+
     def _get_indent_level(self,line):
         matches = self.prefix_pat.search(line)
         if matches :
@@ -1721,6 +1729,7 @@ class ProjectTree(object):
             vim.command("exec 'wincmd w'")
             projectTree.restore_status(node_type="file")
             vim.command("exec 'wincmd w'")
+
 
     @staticmethod
     def toggleTreeType(treeType):

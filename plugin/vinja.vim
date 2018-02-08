@@ -427,6 +427,7 @@ function ProjectTree(...)
     map <silent><buffer> DD    :python projectTree.delete_node()<cr>
     map <silent><buffer> Dm    :python projectTree.delete_marked_node()<cr>
     map <silent><buffer> A     :python projectTree.add_node()<cr>
+    map <silent><buffer> I     :python projectTree.toggleHidden()<cr>
 
     map <silent><buffer> ya    :python projectTree.yank_node_path()<cr>
     map <silent><buffer> yr    :python projectTree.yank_node_rel_path()<cr>
