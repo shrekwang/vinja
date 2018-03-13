@@ -1012,7 +1012,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				return className;
 			}
 		} else if (node instanceof EnclosedExpr) {
-			return getNodeJavaType(((EnclosedExpr) node).getInner().get());
+			return getNodeJavaType(((EnclosedExpr) node).getInner());
 		} else if (node instanceof ClassExpr) {
 			return "java.lang.Class";
 		} else if (node instanceof ThisExpr) {
