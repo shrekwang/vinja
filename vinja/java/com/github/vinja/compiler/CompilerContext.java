@@ -1,5 +1,6 @@
 package com.github.vinja.compiler;
 
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class CompilerContext {
 	private String projectRoot;
 	private ReflectAbleClassLoader loader;
 	private List<String> srcLocations=new ArrayList<String>();
-	private List<String> libSrcLocations = new ArrayList<String>();
+	private List<String> libSrcLocations = new CopyOnWriteArrayList<String>();
 	
 	private List<String> extSrcLocations=new ArrayList<String>();
 	private List<String> extOutputDirs = new ArrayList<String>();
@@ -65,6 +66,8 @@ public class CompilerContext {
     private boolean mvnProject = false;
 	private boolean flatProject = false;
 	private boolean classInfoCached = false;
+
+    private DecompileHorse decompileHorse = DecompileHorse.getInstance();
 	
 	private enum ResourceType { Java, Other };
 	
@@ -266,7 +269,9 @@ public class CompilerContext {
 				addToClassPaths(libFile, -1);
 				if (entry.sourcepath !=null) {
 					libSrcLocations.add(entry.sourcepath);
-				}
+				} else {
+                    decompileHorse.decompileJar(entryAbsPath, this);
+                }
 			} else if (entry.kind.equals("src")) {
 				//if path startswith "/", it's another eclipse project 
 				if (entry.path.startsWith("/")) {
@@ -321,10 +326,16 @@ public class CompilerContext {
 				addToClassPaths(libFile, -1);
 				if (sourcePath !=null && !sourcePath.equals("")) {
 					libSrcLocations.add(sourcePath);
-				}
+				} else {
+                    decompileHorse.decompileJar(entryPath, this);
+                }
 			}
 		}
 	} 
+
+    public void appendLibSrcLocation(String sourcePath) {
+        libSrcLocations.add(sourcePath);
+    }
 	
 	private void parseDependProjectClassXml(String projectName) {
 		String extProjectPath = ProjectLocationConf.getProjectLocation(projectName);

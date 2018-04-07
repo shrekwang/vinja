@@ -629,6 +629,7 @@ class ProjectRootNode(NormalDirNode):
         self.projectTree = projectTree
         self.is_java_project = True
         self.var_dict = {}
+        self.decompiled_jar_dict = {}
         self.lib_srcs = []
         self._load_class_path()
         self._load_dir_content()
@@ -636,6 +637,7 @@ class ProjectRootNode(NormalDirNode):
         #self.isOpen = True
 
     def _load_class_path(self):
+
         varConfig = os.path.expanduser("~/.vinja/vars.txt")
         if not os.path.exists(varConfig) :
             varConfig = os.path.join(VinjaConf.getShareHome() , "conf/vars.txt")
@@ -645,6 +647,15 @@ class ProjectRootNode(NormalDirNode):
                     key,value = line.split("=")
                     key,value = key.strip() , value.strip()
                     self.var_dict[key] = value
+
+        decompiledJarConfigPath = os.path.expanduser("~/.vinja/decompile.cache")
+        if os.path.exists(decompiledJarConfigPath):
+            for line in open(decompiledJarConfigPath).readlines() :
+                if line.strip() != "" and not line.startswith("#") :
+                    key,value = line.split("=")
+                    key,value = key.strip() , value.strip()
+                    self.decompiled_jar_dict[key] = value
+
         classpathXml = os.path.join(self.root_dir, ".classpath")
         if not os.path.exists(classpathXml) :
             self.is_java_project = False
@@ -675,14 +686,22 @@ class ProjectRootNode(NormalDirNode):
                         logging.debug("var %s not exist in ~/.vinja/vars.txt" % var_key)
                     else :
                         abpath = path.replace(var_key, self.var_dict.get(var_key))
-                        self.lib_srcs.append(abpath)
+                        decompiled_jar_path = self.decompiled_jar_dict.get(abpath)
+                        if decompiled_jar_path :
+                            self.lib_srcs.append(decompiled_jar_path)
+                        else :
+                            self.lib_srcs.append(abpath)
             elif kind == "lib" :
                 if sourcepath :
                     abpath = os.path.normpath(os.path.join(self.root_dir,sourcepath))
                     self.lib_srcs.append(abpath)
                 else :
                     abpath = os.path.normpath(os.path.join(self.root_dir,path))
-                    self.lib_srcs.append(abpath)
+                    decompiled_jar_path = self.decompiled_jar_dict.get(abpath)
+                    if decompiled_jar_path :
+                        self.lib_srcs.append(decompiled_jar_path)
+                    else :
+                        self.lib_srcs.append(abpath)
 
     def _build_virtual_noes(self):
         if not self.is_java_project :
