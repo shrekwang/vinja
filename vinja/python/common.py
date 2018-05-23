@@ -193,6 +193,14 @@ class VinjaAgent(object):
         if platform.system() == "Darwin":
             cmdArray.append('-XstartOnFirstThread')
             cmdArray.append('-Dapple.awt.UIElement="true"')
+
+        data_home = VinjaConf.getDataHome()
+        hprof_filename = os.path.join(data_home, "vinja.hprof")
+
+        cmdArray.append('-Xms1024M')
+        cmdArray.append('-Xmx2048M') 
+        cmdArray.append('-XX:+HeapDumpOnOutOfMemoryError')
+        cmdArray.append('-XX:HeapDumpPath=%s' % hprof_filename ) 
         cmdArray.append('-Djava.library.path=%s' % libpath )
         cmdArray.append("-classpath")
         cmdArray.append(os.path.pathsep.join(cps))

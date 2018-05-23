@@ -6,6 +6,7 @@ O     :open select node recursively
 t     :open select node in new tab
 i     :open select node in split window
 go    :Open selected file, but leave cursor in the ProjectTree
+gc    :diff select node with current file
 r     :refresh select node
 x     :close parent node
 s     :prompt to filter display node

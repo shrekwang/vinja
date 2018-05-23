@@ -842,6 +842,13 @@ class ProjectTree(object):
         tab_id = self._get_tab_id()
         vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
 
+    def cmp_selected_node(self):
+        node = self.get_selected_node()
+        node_path = node.realpath
+        vim.command("exec 'wincmd w'")
+        vim.command("vertical diffsplit %s" % node_path)
+        
+
     def open_selected_node(self, edit_cmd = "edit"):
         node = self.get_selected_node()
         (row,col) = vim.current.window.cursor
