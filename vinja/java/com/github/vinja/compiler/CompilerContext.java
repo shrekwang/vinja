@@ -66,6 +66,8 @@ public class CompilerContext {
     private boolean mvnProject = false;
 	private boolean flatProject = false;
 	private boolean classInfoCached = false;
+	
+	private Map<String,String> reactorProjectMap = null;
 
     private DecompileHorse decompileHorse = DecompileHorse.getInstance();
 	
@@ -235,6 +237,8 @@ public class CompilerContext {
 		if (encoding != null && ! source.trim().equals("")) {
 			this.encoding = encoding;
 		}
+		String reactorRoot = prop.get("reactorRoot");
+		reactorProjectMap = ProjectLocationConf.loadProjectConfig(new File(reactorRoot));
 			
 	}
 	
@@ -338,7 +342,7 @@ public class CompilerContext {
     }
 	
 	private void parseDependProjectClassXml(String projectName) {
-		String extProjectPath = ProjectLocationConf.getProjectLocation(projectName);
+		String extProjectPath = reactorProjectMap.get(projectName);
 		if (extProjectPath == null ) {
 			log.warn("the file path configured for project " + projectName + " not exits!. please check project.cfg");
 			return;

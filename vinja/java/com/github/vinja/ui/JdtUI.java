@@ -1,5 +1,6 @@
 package com.github.vinja.ui;
 
+import com.github.vinja.nio.VinjaServer;
 import java.io.File;
 import java.io.InputStream;
 
@@ -87,6 +88,11 @@ public class JdtUI {
 			String port=pref.getValue(Preference.JDE_SERVER_PORT);
 			int portNum = Integer.parseInt(port);
 			new SzjdeServer(portNum).start();
+
+            //new server
+            VinjaServer server = new VinjaServer();
+            server.start();
+
 		} catch (Exception e) {
 			String errorMsg = VjdeUtil.getExceptionValue(e);
     		log.info(errorMsg);

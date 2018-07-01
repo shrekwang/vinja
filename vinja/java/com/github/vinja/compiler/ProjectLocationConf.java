@@ -15,11 +15,10 @@ public class ProjectLocationConf {
 	
 	private static Map<String,String> config  = null;
 
-	private static void loadVarsFromFile(File file) {
+	public static Map<String,String> loadProjectConfig(File file) {
 		config = new HashMap<String,String>();
 		
 		BufferedReader br = null;
-		
 		try {
 			br = new BufferedReader(new FileReader(file));
 			while (true) {
@@ -32,17 +31,19 @@ public class ProjectLocationConf {
 				String path = tmp.substring(splitIndex+1).trim();
 				config.put(name, path);
 			}
+			return config;
 		} catch (IOException e) {
 			
 		} finally {
 			if (br != null) try { br.close(); } catch (Exception e) {}
 		}
+		return null;
 			
 	}
 	
 	public static String getProjectLocation(String name) {
 		if (config == null) {
-			loadVarsFromFile(getConfigFile());
+			loadProjectConfig(getConfigFile());
 		}
 		String value= config.get(name);
 		return value ;

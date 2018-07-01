@@ -37,8 +37,8 @@ class ProjectManager(object):
                 break
             parent = tmpdir
             fullname = lambda name : os.path.join(parent,name)
-            prj_names =[fullname(name) for name in [".project",".classpath"]]
-            if os.path.exists(prj_names[0]) and os.path.exists(prj_names[1]):
+            prj_names =[fullname(name) for name in [".classpath"]]
+            if os.path.exists(prj_names[0]) :
                 projectRoot = parent
                 break
         if projectRoot != None :
