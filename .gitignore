@@ -13,3 +13,5 @@ doc/meta/*.pdf
 doc/tags*
 .pydevproject
 .idea*
+.DS_Store
+*.iml
