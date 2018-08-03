@@ -67,7 +67,7 @@ public class CompilerContext {
 	private boolean flatProject = false;
 	private boolean classInfoCached = false;
 	
-	private Map<String,String> reactorProjectMap = null;
+	private Map<String,String> reactorProjectMap = new HashMap<String,String>();
 
     private DecompileHorse decompileHorse = DecompileHorse.getInstance();
 	
@@ -238,7 +238,9 @@ public class CompilerContext {
 			this.encoding = encoding;
 		}
 		String reactorRoot = prop.get("reactorRoot");
-		reactorProjectMap = ProjectLocationConf.loadProjectConfig(new File(reactorRoot));
+		if (reactorRoot != null ) {
+			reactorProjectMap = ProjectLocationConf.loadProjectConfig(new File(reactorRoot, ".jde_module"));
+		}
 			
 	}
 	

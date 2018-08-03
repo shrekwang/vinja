@@ -297,8 +297,11 @@ class Dbext(object):
             strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ SID:'%s'"
             strValue = (db_profile["host"],db_profile["sid"])
         else :
-            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ Database:'%s'"
-            strValue = (db_profile["host"],self.dbname)
+            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ Database:'%s'\ Port:'%s'"
+            port="none"
+            if db_profile.get("port") != None:
+                port=db_profile["port"]
+            strValue = (db_profile["host"],self.dbname, port)
 
         vim.command(strTemplate % strValue )
         vim.command("redraw!")

@@ -7,16 +7,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.io.FilenameUtils;
-
-import com.github.vinja.util.VjdeUtil;
-
 public class ProjectLocationConf {
 	
-	private static Map<String,String> config  = null;
 
 	public static Map<String,String> loadProjectConfig(File file) {
-		config = new HashMap<String,String>();
+		Map<String,String> config = new HashMap<String,String>();
 		
 		BufferedReader br = null;
 		try {
@@ -39,21 +34,6 @@ public class ProjectLocationConf {
 		}
 		return null;
 			
-	}
-	
-	public static String getProjectLocation(String name) {
-		if (config == null) {
-			loadProjectConfig(getConfigFile());
-		}
-		String value= config.get(name);
-		return value ;
-	}
-
-	private static File getConfigFile() {
-		String userCfgPath = FilenameUtils.concat(VjdeUtil.getToolDataHome(), "project.cfg");
-		File tmpFile = new File(userCfgPath);
-		if (tmpFile.exists()) return tmpFile;
-		return null;
 	}
 
 }
