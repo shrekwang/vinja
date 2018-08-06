@@ -467,6 +467,8 @@ class Dbext(object):
         value = str(value).rstrip().replace("\n","\\n")
         value = value.replace("\r","\\r")
         value = value.replace("\t","\\t")
+        #null char
+        value = value.replace("\x00"," ")
         return value
 
     def convertForSQL(self, v, colType):
