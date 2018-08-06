@@ -79,6 +79,9 @@ public class CompilerContextManager {
 	}
 	
 	public void reloadCompilerContext(String classPathXml, boolean cacheClassInfo) {
+		CompilerContext cc = getCompilerContext(classPathXml);
+		cc.clean();
+
 		ctxCache.remove(classPathXml);
 		loadCompilerContext(classPathXml, cacheClassInfo);
 	}

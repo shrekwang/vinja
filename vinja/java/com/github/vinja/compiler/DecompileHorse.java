@@ -68,21 +68,23 @@ public class DecompileHorse {
 
     public void decompileJar(String targetJarPath, CompilerContext cc) {
         final ListenableFuture<String> decompileFuture = decompileCache.get(targetJarPath);
-        if (decompileFuture == null ) {
-
+        	
+        if (decompileFuture == null || targetJarPath.indexOf("SNAPSHOT") > -1 ) {
             Callable<String> callable = new Callable<String>() {
                 public String call() {
                 	System.out.println("start decompile:" + targetJarPath);
                     String path=  ConsoleDecompiler.decompileJar(targetJarPath, decompiledJarPath);
-					PrintWriter pw = null;
-                    try {
-						File decompileCacheFile = new File(vinjaDataHome, "decompile.cache");
-						pw = new PrintWriter(new FileWriter(decompileCacheFile, true));
-						pw.println(targetJarPath + "=" + path);
-                    } catch (Exception e) {
-                    	e.printStackTrace();
-                    } finally {
-                    	if (pw != null ) { pw.close(); }
+                    if (decompileFuture ==null ) {
+						PrintWriter pw = null;
+						try {
+							File decompileCacheFile = new File(vinjaDataHome, "decompile.cache");
+							pw = new PrintWriter(new FileWriter(decompileCacheFile, true));
+							pw.println(targetJarPath + "=" + path);
+						} catch (Exception e) {
+							e.printStackTrace();
+						} finally {
+							if (pw != null ) { pw.close(); }
+						}
                     }
                     return path;
                 }

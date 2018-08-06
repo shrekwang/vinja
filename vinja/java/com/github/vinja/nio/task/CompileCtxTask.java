@@ -3,6 +3,7 @@ package com.github.vinja.nio.task;
 import com.alibaba.fastjson.JSONObject;
 import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.compiler.CompilerContextManager;
+import com.github.vinja.parser.VinjaJavaSourceSearcher;
 import com.github.vinja.util.JdeLogger;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -26,6 +27,7 @@ public class CompileCtxTask implements Runnable {
 			ccm.reloadCompilerContext(classPathXml, false);
 			CompilerContext cc = ccm.getCompilerContext(classPathXml);
 			cc.cacheClassInfo();
+			VinjaJavaSourceSearcher.clean();
     	} catch (Exception e) {
 			JdeLogger.getLogger("VinjaMsgHandler").warn(e.getMessage());
     	}

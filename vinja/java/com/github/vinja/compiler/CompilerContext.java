@@ -55,7 +55,6 @@ public class CompilerContext {
 	
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	private List<String> fsClassPathUrls = new ArrayList<String>();
-	private List<URLConnection> cachedJarConns = new ArrayList<URLConnection>();
 	private Preference pref = Preference.getInstance();
 	private PackageInfo packageInfo = new PackageInfo();
 	private ClassMetaInfoManager classMetaInfoManager = null;
@@ -745,9 +744,14 @@ public class CompilerContext {
 			URL url = null;
 			if (libFile.getName().endsWith(".jar")) {
 				url = new URL("jar", "", -1, libFile.toURI().toString() + "!/");
-				URLConnection conn = url.openConnection();
-				conn.setUseCaches(true);
-                cachedJarConns.add(conn);
+				//jdk bug hacks, disable caching
+				URLConnection uConn = new URLConnection(url) {
+                    @Override
+                    public void connect() throws IOException {
+                        // NOOP
+                    }
+                };
+				uConn.setDefaultUseCaches(false);
 			} else {
 			    url = libFile.toURI().toURL();
 			}
@@ -765,14 +769,10 @@ public class CompilerContext {
 	
 	//close jar file opened by classloader etc.
 	public void clean() {
-		for (URLConnection c : this.cachedJarConns) {
-			try {
-				if (c instanceof JarURLConnection) {
-				    ((JarURLConnection) c).getJarFile().close();
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		try {
+			this.loader.close();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 	

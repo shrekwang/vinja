@@ -123,6 +123,11 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	private CompilationUnit compileUnit;
 	
 	public enum NameType {CLASS, FILE};
+	
+	public static void clean() {
+		cacheNew.invalidateAll();
+	}
+	
 
 	private static CompilerContext findProperContext(String fileName, CompilerContext ctx) {
 
