@@ -699,8 +699,8 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 
 		// try inner class
 		String classCanonicalName = this.curFullClassName;
-		/*while (true) {
-			aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[] { classCanonicalName }, null);
+		while (true) {
+			Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[] { classCanonicalName }, null);
 			classCanonicalName = classCanonicalName + "$" + className;
 			String path = this.getClassFilePath(classCanonicalName);
 			if (!path.equals("None")) {
@@ -712,7 +712,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 			if (aClass == null || aClass.equals("java.lang.Object"))
 				break;
 			classCanonicalName = aClass.getCanonicalName();
-		}*/
+		}
 
 		return new ClassLocInfo(className, null);
 	}
