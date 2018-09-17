@@ -1114,7 +1114,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	}
 
 	private boolean arguMatch(String defTypeName, String actTypeName) {
-		if (defTypeName == null || defTypeName.equals("java.lang.Object"))
+		if (defTypeName == null || actTypeName == null ||  defTypeName.equals("java.lang.Object"))
 			return true;
 		if (actTypeName.equals("String") && defTypeName.equals("java.lang.String"))
 			return true;
