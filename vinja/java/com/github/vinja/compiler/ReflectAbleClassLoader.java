@@ -33,6 +33,7 @@ public class ReflectAbleClassLoader extends URLClassLoader {
 	}
 
 	public InputStream getResourceAsStream(String name) {
+		System.out.println("getResourceAsStream: " + name);
 		return super.getResourceAsStream(name);
 	}
 	

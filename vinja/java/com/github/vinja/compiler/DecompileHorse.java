@@ -8,11 +8,13 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.io.IOUtils;
 
+import com.alibaba.fastjson.JSONObject;
 import com.github.vinja.util.ConsoleDecompiler;
 import com.github.vinja.util.Preference;
 import com.github.vinja.util.VjdeUtil;
@@ -29,8 +31,7 @@ public class DecompileHorse {
     private ListeningExecutorService listeningExecutorService 
         = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(10));
 
-    private ConcurrentHashMap<String, ListenableFuture<String>> decompileCache 
-        = new ConcurrentHashMap<String, ListenableFuture<String>>();
+    private ConcurrentHashMap<String, ListenableFuture<DecompileCacheInfo>> decompileCache = new ConcurrentHashMap<>();
 
     private static DecompileHorse instance = null;
 
@@ -54,12 +55,26 @@ public class DecompileHorse {
             try {
                 List<String> decompileList = IOUtils.readLines(new FileReader(decompileCacheFile));
                 for (String str  :  decompileList ) {
-                    if (str.indexOf("=") > 0) {
-                        String targetJarPath = str.substring(0, str.indexOf("="));
-                        String decompiledJarPath = str.substring(str.indexOf("=")+1);
-                        decompileCache.putIfAbsent(targetJarPath, Futures.immediateFuture(decompiledJarPath));
+                    if (str.indexOf("decompiledJarPath") > 0) {
+                    	DecompileCacheInfo cacheInfo = JSONObject.parseObject(str, DecompileCacheInfo.class);
+                        decompileCache.put(cacheInfo.getOriginalJarPath(), Futures.immediateFuture(cacheInfo));
                     }
                 }
+                
+                //clean duplicate cache info by rewrite the whole cache
+            	PrintWriter pw = null;
+				try {
+					pw = new PrintWriter(new FileWriter(decompileCacheFile));
+					for (ListenableFuture<DecompileCacheInfo> future : decompileCache.values()) {
+						DecompileCacheInfo cacheInfo = future.get();
+						pw.println(JSONObject.toJSONString(cacheInfo));
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				} finally {
+					if (pw != null ) { pw.close(); }
+				}
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -67,33 +82,53 @@ public class DecompileHorse {
     }
 
     public void decompileJar(String targetJarPath, CompilerContext cc) {
-        final ListenableFuture<String> decompileFuture = decompileCache.get(targetJarPath);
+        final ListenableFuture<DecompileCacheInfo> decompileFuture = decompileCache.get(targetJarPath);
+        
+        File targetJarFile = new File(targetJarPath);
+        if (!targetJarFile.exists()) return;
+        
+        final long gmtModified = targetJarFile.lastModified();
+        
+        boolean notModifiedJar = true;
+        try {
+        	DecompileCacheInfo cacheInfo = decompileFuture.get();
+        	notModifiedJar = cacheInfo.getOriginalJarGmtModified().longValue() == gmtModified;
+        } catch (Exception e) {
+        }
+        
         	
-        if (decompileFuture == null || targetJarPath.indexOf("SNAPSHOT") > -1 ) {
-            Callable<String> callable = new Callable<String>() {
-                public String call() {
+        if (decompileFuture == null || ! notModifiedJar ) {
+
+            Callable<DecompileCacheInfo> callable = new Callable<DecompileCacheInfo>() {
+                public DecompileCacheInfo call() {
                 	System.out.println("start decompile:" + targetJarPath);
                     String path=  ConsoleDecompiler.decompileJar(targetJarPath, decompiledJarPath);
-                    if (decompileFuture ==null ) {
-						PrintWriter pw = null;
-						try {
-							File decompileCacheFile = new File(vinjaDataHome, "decompile.cache");
-							pw = new PrintWriter(new FileWriter(decompileCacheFile, true));
-							pw.println(targetJarPath + "=" + path);
-						} catch (Exception e) {
-							e.printStackTrace();
-						} finally {
-							if (pw != null ) { pw.close(); }
-						}
-                    }
-                    return path;
+
+                    DecompileCacheInfo cacheInfo = new DecompileCacheInfo();
+                    cacheInfo.setDecompiledJarPath(path);
+                    cacheInfo.setOriginalJarGmtModified(gmtModified);
+                    cacheInfo.setOriginalJarPath(targetJarPath);
+
+					PrintWriter pw = null;
+					try {
+						File decompileCacheFile = new File(vinjaDataHome, "decompile.cache");
+						pw = new PrintWriter(new FileWriter(decompileCacheFile, true));
+						pw.println(JSONObject.toJSONString(cacheInfo));
+					} catch (Exception e) {
+						e.printStackTrace();
+					} finally {
+						if (pw != null ) { pw.close(); }
+					}
+
+                    return cacheInfo;
                 }
             };
-            final ListenableFuture<String> future = listeningExecutorService.submit(callable);
+            final ListenableFuture<DecompileCacheInfo> future = listeningExecutorService.submit(callable);
             future.addListener(new Runnable() {
                 public void run() {
                     try {
-                        cc.appendLibSrcLocation(future.get());
+                    	DecompileCacheInfo cacheInfo = future.get();
+                        cc.addDecompiledLibSrcLocation(targetJarPath, cacheInfo.getDecompiledJarPath());
                     } catch (Exception e) {
                     }
                 }
@@ -101,25 +136,34 @@ public class DecompileHorse {
 
             decompileCache.put(targetJarPath, future);
 
-        } else if (decompileFuture.isDone()) {
-            try {
-                String decompiledJarPath = decompileFuture.get();
-                cc.appendLibSrcLocation(decompiledJarPath);
-            } catch (Exception e) {
-            }
-        } else {
-            decompileFuture.addListener(new Runnable() {
-                public void run() {
-                    try {
-                        cc.appendLibSrcLocation(decompileFuture.get());
-                    } catch (Exception e) {
-                    }
-                }
-            }, listeningExecutorService);
         }
-    }
+	}
 
+}
 
+class DecompileCacheInfo {
 
+	private String decompiledJarPath ;
+	private Long originalJarGmtModified;
+	private String originalJarPath;
+
+	public String getOriginalJarPath() {
+		return originalJarPath;
+	}
+	public void setOriginalJarPath(String originalJarPath) {
+		this.originalJarPath = originalJarPath;
+	}
+	public String getDecompiledJarPath() {
+		return decompiledJarPath;
+	}
+	public void setDecompiledJarPath(String decompiledJarPath) {
+		this.decompiledJarPath = decompiledJarPath;
+	}
+	public Long getOriginalJarGmtModified() {
+		return originalJarGmtModified;
+	}
+	public void setOriginalJarGmtModified(Long originalJarGmtModified) {
+		this.originalJarGmtModified = originalJarGmtModified;
+	}
 
 }

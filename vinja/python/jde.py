@@ -1110,7 +1110,15 @@ class HighlightManager(object):
         if buf_hl_info.get(row) != None :
             fist_hl_info = buf_hl_info.get(row)[0]
             msg = fist_hl_info.msg
-            vim.command("call DisplayMsg('%s')" % msg)
+
+            try :
+                vim.command("call DisplayMsg('%s')" % msg)
+            except Exception , e:
+                fp = StringIO.StringIO()
+                traceback.print_exc(file=fp)
+                message = fp.getvalue()
+                logging.debug("displayMsg error")
+                logging.debug(message)
         else :
             vim.command("call DisplayMsg('%s')" % "")
 

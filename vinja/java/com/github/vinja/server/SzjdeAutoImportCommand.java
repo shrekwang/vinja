@@ -129,7 +129,7 @@ public class SzjdeAutoImportCommand extends SzjdeCommand {
 			};
 			vistor.visit(compilationUnit, null);
 		} catch (Exception e) {
-
+			e.printStackTrace();
 		}
 		return names;
 	}

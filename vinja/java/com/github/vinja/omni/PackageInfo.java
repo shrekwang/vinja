@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -27,9 +28,12 @@ public class PackageInfo {
 	/**
 	 * cache key is package name, the content is className list under that package 
 	 */
-	private Map<String,Set<String>> cache = new HashMap<String,Set<String>>();
+	private Map<String,Set<String>> cache = new ConcurrentHashMap<String,Set<String>>();
 	
-	private Map<String,String> pkgLocationCache = new HashMap<String,String>();
+	private Map<String,String> pkgLocationCache = new ConcurrentHashMap<String,String>();
+	
+	private static Pattern pattern = Pattern.compile("\\d+.class");
+	
 	
 	/**
 	 * cachekey is jar file path, value is "true" or "false". 
@@ -114,6 +118,10 @@ public class PackageInfo {
 			}
 		}
 		return result;
+	}
+	
+	public String findClassLocation(String className) {
+		return pkgLocationCache.get(className);
 	}
 	
 	public List<String> findClass(String nameStart,boolean ignoreCase,boolean withLoc, Set<String> fullClassNames) {
@@ -272,7 +280,11 @@ public class PackageInfo {
 	         while(entries.hasMoreElements()) {
 	             JarEntry entry = entries.nextElement();
 	             String entryName = entry.getName();
-	             if (entryName.indexOf("$") > -1) continue;
+	             if (entryName.indexOf("$") > -1) { 
+	            	 if (pattern.matcher(entryName.substring(entryName.indexOf("$")+1)).matches()) {
+						 continue;
+					 }
+	             }
 	             if (!entryName.endsWith(".class")) continue;
 	             String className = entryName.replace('/', '.').replace('\\', '.').replace(".class", "");
 	             addClassNameToCache(className,path);

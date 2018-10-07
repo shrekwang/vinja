@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,10 +26,8 @@ import com.github.javaparser.Range;
 import com.github.javaparser.ast.ArrayCreationLevel;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.body.AnnotationDeclaration;
 import com.github.javaparser.ast.body.AnnotationMemberDeclaration;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -79,7 +76,6 @@ import com.github.javaparser.ast.type.ArrayType;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.ast.type.VoidType;
 import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.compiler.CompilerContextManager;
@@ -90,6 +86,7 @@ import com.github.vinja.omni.ClassMetaInfoManager;
 import com.github.vinja.util.DecompileUtil;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableSet;
 
 @SuppressWarnings("all")
 public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
@@ -111,15 +108,8 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	private List<LocalVariableInfo> visibleVars = null;
 	private CompilerContext ctx = null;
 	private String currentFileName;
-	private String curFullClassName;
 	private boolean frontParse;
-	
-	private int classNameLine = 0;
-	private int classNameCol = 0;
 
-	private List<String> importedNames = new ArrayList<String>();
-	private List<MemberInfo> memberInfos = new ArrayList<MemberInfo>();
-	private List<String> staticImportedNames = new ArrayList<String>();
 	private CompilationUnit compileUnit;
 	
 	public enum NameType {CLASS, FILE};
@@ -128,6 +118,23 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		cacheNew.invalidateAll();
 	}
 	
+	private static Set<String> defaultNameSpaceList = ImmutableSet.of("Appendable","AutoCloseable","CharSequence","Cloneable",
+			"Comparable","Iterable","Readable","Runnable","Boolean","Byte","Character","Character.Subset","Character.UnicodeBlock",
+			"Class<T>","ClassLoader","ClassValue<T>","Compiler","Double","Float","InheritableThreadLocal<T>","Integer","Long",
+			"Math","Number","Object","Package","Process","ProcessBuilder","ProcessBuilder.Redirect","Runtime","RuntimePermission",
+			"SecurityManager","Short","StackTraceElement","StrictMath","String","StringBuffer","StringBuilder","System","Thread",
+			"ThreadGroup","ThreadLocal<T>","Throwable","Void","ArithmeticException","ArrayIndexOutOfBoundsException",
+			"ArrayStoreException","ClassCastException","ClassNotFoundException","CloneNotSupportedException","EnumConstantNotPresentException",
+			"Exception","IllegalAccessException","IllegalArgumentException","IllegalMonitorStateException","IllegalStateException",
+			"IllegalThreadStateException","IndexOutOfBoundsException","InstantiationException","InterruptedException",
+			"NegativeArraySizeException","NoSuchFieldException","NoSuchMethodException","NullPointerException","NumberFormatException",
+			"ReflectiveOperationException","RuntimeException","SecurityException","StringIndexOutOfBoundsException","TypeNotPresentException",
+			"UnsupportedOperationException","AbstractMethodError","AssertionError","BootstrapMethodError","ClassCircularityError",
+			"ClassFormatError","Error","ExceptionInInitializerError","IllegalAccessError","IncompatibleClassChangeError",
+			"InstantiationError","InternalError","LinkageError","NoClassDefFoundError","NoSuchFieldError","NoSuchMethodError","OutOfMemoryError",
+			"StackOverflowError","ThreadDeath","UnknownError","UnsatisfiedLinkError","UnsupportedClassVersionError","VerifyError",
+			"VirtualMachineError","Deprecated","Override","SafeVarargs","SuppressWarnings") ;
+	        	
 
 	private static CompilerContext findProperContext(String fileName, CompilerContext ctx) {
 
@@ -205,7 +212,6 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	public VinjaJavaSourceSearcher(String filename, CompilerContext ctx, boolean frontParse) {
 		this.ctx = findProperContext(filename, ctx);
 		this.currentFileName = filename;
-		this.curFullClassName = this.ctx.buildClassName(filename);
 		this.frontParse = frontParse;
 
 		// filename could be a jar entry path like below
@@ -255,170 +261,11 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		}
 
 	}
-	private void readClassOrItfDeclaration(TypeDeclaration<?> firstClass, List<MemberInfo> memberInfos ) {
-		if (firstClass instanceof AnnotationDeclaration) {	
-			AnnotationDeclaration annoDeclare = (AnnotationDeclaration)firstClass;
-			NodeList<BodyDeclaration<?>> members = annoDeclare.getMembers();
-			for (BodyDeclaration member: members) {
-				if (member instanceof AnnotationMemberDeclaration) {
-					AnnotationMemberDeclaration annoMethod = (AnnotationMemberDeclaration) member;
-					int line =  annoMethod.getRange().get().begin.line;
-					MemberInfo info = new MemberInfo();
-
-					List<String> modifierList = new ArrayList<String>();
-					for (Iterator<Modifier> it = annoMethod.getModifiers().iterator(); it.hasNext();) {
-						modifierList.add(it.next().asString());
-					}
-					info.setModifierList(modifierList);
-
-					info.setName(annoMethod.getNameAsString());
-					ClassLocInfo classLocInfo = this.findTypeSourceLocInfo(annoMethod.getType());
-					info.setRtnType(classLocInfo.getClassName());
-					info.setLineNum(annoMethod.getName().getRange().get().begin.line);
-					info.setColumn(annoMethod.getName().getRange().get().begin.column);
-					info.setMemberType(MemberType.METHOD);
-					List<String[]> paramList = new ArrayList<String[]>();
-					info.setParamList(paramList);
-					memberInfos.add(info);
-				}
-			}
-		}
-
-		if (firstClass instanceof ClassOrInterfaceDeclaration) {
-			ClassOrInterfaceDeclaration classDeclare = (ClassOrInterfaceDeclaration)firstClass;
-
-			NodeList<TypeParameter> typeParameters = ((ClassOrInterfaceDeclaration)firstClass).getTypeParameters();
-			for (TypeParameter pam : typeParameters ) {
-			}
-			
-			List<ConstructorDeclaration> constructers = ((ClassOrInterfaceDeclaration)firstClass).getConstructors();
-			for (ConstructorDeclaration consDeclare: constructers) {
-				int line =  consDeclare.getRange().get().begin.line;
-				MemberInfo info = new MemberInfo();
-
-				List<String> modifierList = new ArrayList<String>();
-				for (Iterator<Modifier> it = consDeclare.getModifiers().iterator(); it.hasNext();) {
-					modifierList.add(it.next().asString());
-				}
-				info.setModifierList(modifierList);
-
-				info.setName(consDeclare.getNameAsString());
-				info.setRtnType(this.curFullClassName);
-				info.setLineNum(consDeclare.getName().getRange().get().begin.line);
-				info.setColumn(consDeclare.getName().getRange().get().begin.column);
-				info.setMemberType(MemberType.CONSTRUCTOR);
-				NodeList<Parameter> parameters = consDeclare.getParameters();
-				List<String[]> paramList = new ArrayList<String[]>();
-				for (Parameter param : parameters) {
-					ClassLocInfo classInfo = this.findTypeSourceLocInfo(param.getType());
-					if (classInfo == null) {
-						System.out.println("parma type null" + param);
-					}
-					String paramJavaType = classInfo.getClassName();
-					String paramName = param.getNameAsString();
-					String[] methodParam = new String[] { paramJavaType, paramName };
-					paramList.add(methodParam);
-				}
-				info.setParamList(paramList);
-				memberInfos.add(info);
-				
-			}
-			
-		}
-		
-		
-		List<MethodDeclaration> methods = firstClass.getMethods();
-		for (MethodDeclaration methodDeclare : methods) {
-			int line = methodDeclare.getRange().get().begin.line;
-
-			MemberInfo info = new MemberInfo();
-
-			List<String> modifierList = new ArrayList<String>();
-			for (Iterator<Modifier> it = methodDeclare.getModifiers().iterator(); it.hasNext();) {
-				modifierList.add(it.next().asString());
-			}
-			info.setModifierList(modifierList);
-
-			info.setName(methodDeclare.getNameAsString());
-			ClassLocInfo classLocInfo = this.findTypeSourceLocInfo(methodDeclare.getType());
-			info.setRtnType(classLocInfo.getClassName());
-			info.setLineNum(methodDeclare.getName().getRange().get().begin.line);
-			info.setColumn(methodDeclare.getName().getRange().get().begin.column);
-			info.setMemberType(MemberType.METHOD);
-			NodeList<Parameter> parameters = methodDeclare.getParameters();
-			List<String[]> paramList = new ArrayList<String[]>();
-			for (Parameter param : parameters) {
-				ClassLocInfo classInfo = this.findTypeSourceLocInfo(param.getType());
-				if (classInfo == null) {
-					System.out.println("parma type null" + param);
-				}
-				String paramJavaType = classInfo.getClassName();
-				String paramName = param.getNameAsString();
-				String[] methodParam = new String[] { paramJavaType, paramName };
-				paramList.add(methodParam);
-			}
-			info.setParamList(paramList);
-			memberInfos.add(info);
-		}
-		List<FieldDeclaration> fields = firstClass.getFields();
-		for (FieldDeclaration field : fields) {
-			NodeList<VariableDeclarator> variables = field.getVariables();
-			for (VariableDeclarator var : variables) {
-				MemberInfo info = new MemberInfo();
-
-				List<String> modifierList = new ArrayList<String>();
-				for (Iterator<Modifier> it = field.getModifiers().iterator(); it.hasNext();) {
-					modifierList.add(it.next().asString());
-				}
-				info.setModifierList(modifierList);
-				
-				ClassLocInfo classLocInfo = this.findTypeSourceLocInfo(var.getType());
-				info.setRtnType(classLocInfo.getClassName());
-
-				info.setMemberType(MemberType.FIELD);
-				info.setName(var.getNameAsString());
-				info.setLineNum(var.getName().getRange().get().begin.line);
-				info.setColumn(var.getName().getRange().get().begin.column);
-				memberInfos.add(info);
-			}
-		}
-
-		if (firstClass instanceof EnumDeclaration) {
-			EnumDeclaration enumDec = (EnumDeclaration) firstClass;
-			NodeList<EnumConstantDeclaration> entries = enumDec.getEntries();
-			for (EnumConstantDeclaration entry : entries) {
-				MemberInfo info = new MemberInfo();
-				info.setMemberType(MemberType.FIELD);
-				info.setName(entry.getNameAsString());
-				info.setLineNum(entry.getName().getRange().get().begin.line);
-				info.setRtnType(this.curFullClassName);
-				info.setColumn(entry.getName().getRange().get().begin.column);
-				memberInfos.add(info);
-			}
-		}
-		List<ClassOrInterfaceDeclaration> childNodes= firstClass.getChildNodesByType(ClassOrInterfaceDeclaration.class);
-		for (ClassOrInterfaceDeclaration subTypeDeclare: childNodes) {
-			MemberInfo info = new MemberInfo();
-			info.setMemberType(MemberType.SUBCLASS);
-			info.setName(subTypeDeclare.getNameAsString());
-			info.setLineNum(subTypeDeclare.getRange().get().begin.line);
-			info.setColumn(subTypeDeclare.getRange().get().begin.column);
-			info.setRtnType(this.curFullClassName + "." + subTypeDeclare.getNameAsString());
-			List<MemberInfo> subMemberInfos = new ArrayList<MemberInfo>();
-			readClassOrItfDeclaration(subTypeDeclare, subMemberInfos);
-			info.setSubMemberList(subMemberInfos);
-			memberInfos.add(info);
-		}
-	}
+	
 
 	private void readClassInfo(InputStream is) {
 		this.compileUnit = JavaParser.parse(is);
 		TypeDeclaration<?> firstClass = compileUnit.getTypes().get(0);
-		
-		Range classNameRange = firstClass.getName().getRange().get();
-		classNameCol = classNameRange.begin.column;
-		classNameLine = classNameRange.begin.line;
-		
 		NodeList<ImportDeclaration> imports = this.compileUnit.getImports();
 		
 		//cache the parse Result
@@ -432,9 +279,6 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				}
 			}
 		}
-		readClassOrItfDeclaration(firstClass, this.memberInfos);
-		
-		
 	}
 
 	public Node searchDefLocation(Node node, int line, int col) {
@@ -454,17 +298,137 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		}
 		return null;
 	}
-
-	@Override
-	public List<MemberInfo> getMemberInfos() {
-		return this.memberInfos;
-	}
-
-	@Override
-	public int getClassScopeLine() {
-		return this.classNameLine;
+	
+	
+	
+	private TypeDeclaration findTypeBySimpleName(TypeDeclaration typeDec , String simpleTypeName) {
+		NodeList<BodyDeclaration<?>>  bodyDecs = typeDec.getMembers();
+		for (BodyDeclaration bodyDec : bodyDecs) {
+			if (bodyDec instanceof TypeDeclaration) {
+				if (((TypeDeclaration) bodyDec).getName().toString().equals(simpleTypeName)) {
+					return (TypeDeclaration) bodyDec;
+				} else {
+					TypeDeclaration result = findTypeBySimpleName((TypeDeclaration) bodyDec, simpleTypeName);
+					if (result != null) return result;
+				}
+			}
+		}
+		return null;
 	}
 	
+	private String getTypeCanonicalName(TypeDeclaration type) {
+		String typeName = type.getNameAsString();
+		while (type.getParentNode().isPresent()) {
+			Node node = type.getParentNode().get();
+			if (! (node instanceof TypeDeclaration)) break;
+			type = (TypeDeclaration)node;
+			typeName = type.getNameAsString() + "." + typeName;
+		}
+		if (this.compileUnit.getPackageDeclaration().isPresent()) {
+			String packageName = this.compileUnit.getPackageDeclaration().get().getNameAsString();
+			typeName = packageName + "." + typeName;
+		}
+		
+		return typeName;
+	}
+	
+	private String findScopeTypeCanonicalName(Node node) {
+		if (node instanceof TypeDeclaration) {
+			String canonicalName = getTypeCanonicalName((TypeDeclaration)node);
+			return canonicalName;
+		}
+
+		while (node.getParentNode().isPresent()) {
+			if (node instanceof TypeDeclaration) {
+				String canonicalName = getTypeCanonicalName((TypeDeclaration)node);
+				return canonicalName;
+			}
+			node = node.getParentNode().get();
+		}
+		return null;
+	}
+
+	
+	private TypeDeclaration findTypeByClassName(String typeName) {
+		String simpleName = typeName.indexOf(".") > 0 ? typeName.substring(typeName.lastIndexOf(".")+1) : typeName;
+		
+		NodeList<TypeDeclaration<?>>  types = this.compileUnit.getTypes();
+		TypeDeclaration foundType = null;
+		for (TypeDeclaration typeDec :types) {
+			if (typeDec.getName().toString().equals(simpleName)) {
+				foundType = typeDec;
+				break;
+			}
+		}
+		if (foundType == null)  {
+			for (TypeDeclaration typeDec :types) {
+				foundType = findTypeBySimpleName(typeDec, simpleName);
+				if (foundType != null) break;
+			}
+		}
+		return foundType;
+	}
+	
+	private ClassDeclareRange findTypeDeclareRange(String typeName) {
+		TypeDeclaration declare = this.findTypeByClassName(typeName);
+		if (declare == null) return null;
+
+		ClassDeclareRange range = new ClassDeclareRange();
+
+		Range tmp = declare.getName().getRange().get();
+		range.setClassNameCol(tmp.begin.column);
+		range.setClassNameLine(tmp.begin.line);
+		return range;
+	}
+
+
+	public List<MemberInfo> getMemberInfos(String typeName) {
+
+		TypeDeclaration foundType = this.findTypeByClassName(typeName);
+		if (foundType == null) return null;
+
+		List<MemberInfo> infos = new ArrayList<MemberInfo>();
+
+		NodeList<BodyDeclaration<?>>  bodyDecs = foundType.getMembers();
+		for (BodyDeclaration bodyDec : bodyDecs) {
+			if (bodyDec instanceof MethodDeclaration) {
+				MemberInfo info = MemberInfo.from(this, (MethodDeclaration)bodyDec);
+				infos.add(info);
+			} else if (bodyDec instanceof EnumConstantDeclaration) {
+				String eunumCanonialName = this.findScopeTypeCanonicalName(bodyDec);
+				MemberInfo info = MemberInfo.from(this, (EnumConstantDeclaration)bodyDec, eunumCanonialName);
+				infos.add(info);
+			} else if (bodyDec instanceof ConstructorDeclaration) {
+				String classCanonicalName = this.findScopeTypeCanonicalName(bodyDec);
+				MemberInfo info = MemberInfo.from(this, (ConstructorDeclaration)bodyDec, classCanonicalName);
+				infos.add(info);
+			} else if (bodyDec instanceof FieldDeclaration) {
+				List<MemberInfo> infoList = MemberInfo.from(this, (FieldDeclaration)bodyDec );
+				infos.addAll(infoList);
+			} else if (bodyDec instanceof AnnotationMemberDeclaration) {
+				MemberInfo info = MemberInfo.from(this, (AnnotationMemberDeclaration)bodyDec);
+				infos.add(info);
+			} else if (bodyDec instanceof ClassOrInterfaceDeclaration) {
+				String classCanonicalName = this.findScopeTypeCanonicalName(bodyDec);
+				MemberInfo info = MemberInfo.from(this, (ClassOrInterfaceDeclaration)bodyDec, classCanonicalName);
+				infos.add(info);
+			} else if (bodyDec instanceof EnumDeclaration) {
+				MemberInfo info = MemberInfo.from(this, (EnumDeclaration)bodyDec);
+				infos.add(info);
+			}
+		}
+		
+		if (foundType instanceof EnumDeclaration) {
+			NodeList<EnumConstantDeclaration> entries = ((EnumDeclaration)foundType).getEntries();
+			String eunumCanonialName = this.findScopeTypeCanonicalName(foundType);
+			for (EnumConstantDeclaration entry : entries) {
+				MemberInfo info = MemberInfo.from(this, entry, eunumCanonialName);
+				infos.add(info);
+			}
+		}
+		return infos;
+	}
+
 	
 	private static boolean isValidateModifier(boolean staticMember,boolean protectedMember,String mod) {
 		if (staticMember && ! (mod.indexOf("static") > -1) ) return false;
@@ -480,20 +444,11 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	public ArrayList<com.github.vinja.omni.MemberInfo> getMemberInfo(Class aClass, boolean staticMember,
 	        boolean protectedMember) {
 		
-		List<MemberInfo> tmpMemberInfo = this.memberInfos;
-		if (aClass.getName().indexOf("$")> -1 ) { //inner class
-			String innerClassName = aClass.getSimpleName();
-			for (MemberInfo info : this.memberInfos) {
-				if (innerClassName.equals(info.getName()) && info.getMemberType() == MemberType.SUBCLASS ) {
-					tmpMemberInfo = info.getSubMemberList();
-					break;
-				}
-			}
-		}
+		List<MemberInfo> tmpMemberInfos = this.getMemberInfos(aClass.getCanonicalName());
 
-		ArrayList<com.github.vinja.omni.MemberInfo> memberInfos = 
-				new ArrayList<com.github.vinja.omni.MemberInfo>();
-		for (MemberInfo info: tmpMemberInfo) {
+		ArrayList<com.github.vinja.omni.MemberInfo> memberInfos = new ArrayList<com.github.vinja.omni.MemberInfo>();
+
+		for (MemberInfo info: tmpMemberInfos) {
 			if (info.getMemberType() == MemberType.CONSTRUCTOR) continue;
 			if (aClass.isEnum() || aClass.isInterface() || aClass.isAnnotation() || 
 					isValidateModifier(staticMember, protectedMember, info.getModifierDesc())) {
@@ -511,9 +466,12 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	}
 
 	@Override
-	public ArrayList<com.github.vinja.omni.MemberInfo> getConstructorInfo() {
+	public ArrayList<com.github.vinja.omni.MemberInfo> getConstructorInfo(Class aClass) {
 		ArrayList<com.github.vinja.omni.MemberInfo> memberInfos=new ArrayList<com.github.vinja.omni.MemberInfo>();
-		for (MemberInfo info: this.memberInfos) {
+
+		List<MemberInfo> tmpMemberInfos = this.getMemberInfos(aClass.getCanonicalName());
+
+		for (MemberInfo info: tmpMemberInfos) {
 			if (!isValidateModifier(false, true, info.getModifierDesc())) continue;
 			if (! ( info.getMemberType() == MemberType.CONSTRUCTOR)) continue;
 			
@@ -649,45 +607,52 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	}
 
 	public ClassLocInfo findReferencedClass(String className) {
+		// default name space
+		if (className.indexOf(".") < 0 && defaultNameSpaceList.contains(className)) {
+			String classCanonicalName = "java.lang." + className;
+			String path = this.getClassFilePath(classCanonicalName);
+			if (!path.equals("None"))
+				return new ClassLocInfo(classCanonicalName, path);
+		}
+
+
 		NodeList<ImportDeclaration> imports = this.compileUnit.getImports();
+		
+		for (ImportDeclaration importDec : imports) {
+			String importName = importDec.getNameAsString();
+			String importedSimpleName = importName.indexOf(".") > 0
+					? importName.substring(importName.lastIndexOf(".") + 1) : importName;
+			if (importedSimpleName.equals(className)) {
+				return new ClassLocInfo(importName, this.getClassFilePath(importName));
+			}
+		}
 		
 		for (ImportDeclaration importDec : imports) {
 			String importName = importDec.getNameAsString();
 			if (importDec.isAsterisk()) {
 				String classCanonicalName = importDec.getNameAsString() + "." + className;
-				String path = this.getClassFilePath(classCanonicalName);
-				if (!path.equals("None"))
-					return new ClassLocInfo(classCanonicalName, path);
-			} else {
-				String importedSimpleName = importName.indexOf(".") > 0
-				        ? importName.substring(importName.lastIndexOf(".") + 1) : importName;
-				if (importedSimpleName.equals(className)) {
-					return new ClassLocInfo(importName, this.getClassFilePath(importName));
+				if (this.ctx.getPackageInfo().findClassLocation(classCanonicalName) != null) {
+					String path = this.getClassFilePath(classCanonicalName);
+					if (!path.equals("None"))
+						return new ClassLocInfo(classCanonicalName, path);
 				}
 			}
 		}
-
-		// same package class
-		if (className.indexOf(".") < 0 && curFullClassName != null) {
-			String classCanonicalName = className;
-			if (curFullClassName.indexOf(".") > 0) {
-				String packageName = curFullClassName.substring(0, curFullClassName.lastIndexOf("."));
-				classCanonicalName = packageName + "." + className;
-			}
-			String path = this.getClassFilePath(classCanonicalName);
-			if (!path.equals("None"))
-				return new ClassLocInfo(classCanonicalName, path);
-			
-		}
-
-		if (className.indexOf(".") < 0 ) {
-			String classCanonicalName = "java.lang." + className;
-			String path = this.getClassFilePath(classCanonicalName);
-			if (!path.equals("None"))
-				return new ClassLocInfo(classCanonicalName, path);
-			
-		}
 		
+		
+		// same package class
+		if (className.indexOf(".") < 0 ) {
+
+			String classCanonicalName = className;
+			String packageName = this.compileUnit.getPackageDeclaration().get().getNameAsString();
+			classCanonicalName = packageName + "." + className;
+
+			String path = this.getClassFilePath(classCanonicalName);
+			if (!path.equals("None"))
+				return new ClassLocInfo(classCanonicalName, path);
+			
+		}
+
 		
 		//try full qualified name
 		if (className.indexOf(".") > 0 ) {
@@ -696,9 +661,15 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				return new ClassLocInfo(className, this.getClassFilePath(className));
 			}
 		}
+		
+		TypeDeclaration foundType = this.findTypeByClassName(className);
+		if (foundType != null) {
+			return new ClassLocInfo(this.getTypeCanonicalName(foundType), this.currentFileName);
+		}
 
 		// try inner class
-		String classCanonicalName = this.curFullClassName;
+		TypeDeclaration<?> firstClass = compileUnit.getTypes().get(0);
+		String classCanonicalName = this.getTypeCanonicalName(firstClass);
 		while (true) {
 			Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[] { classCanonicalName }, null);
 			classCanonicalName = classCanonicalName + "$" + className;
@@ -724,7 +695,8 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		}
 		
 		LocationInfo locInfo = new LocationInfo();
-		boolean found = this.searchMemberInHierachy(this.curFullClassName, MemberType.FIELD, name , null, locInfo);
+		String scopeClass = this.findScopeTypeCanonicalName(node);
+		boolean found = this.searchMemberInHierachy(scopeClass, MemberType.FIELD, name , null, locInfo);
 		if (found) {
 			return locInfo.getMemberInfo().getRtnType();
 		}
@@ -737,6 +709,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		}
 		return null;
 	}
+	
 	
 	private LocationInfo findVarNameLocation(Node node, String name) {
 		NodeWithType<?,Type> foundLocalNode = this.findVarNameDeclareExp(node, name);
@@ -756,13 +729,17 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 			 if (refClass.getClassName() != null && refClass.getSourcePath() != null) {
 					VinjaJavaSourceSearcher searcher = createSearcher(refClass.getSourcePath(), ctx);
 					locInfo.setFilePath(refClass.getSourcePath());
-					locInfo.setLine(searcher.classNameLine);
-					locInfo.setCol(searcher.classNameCol);
+					ClassDeclareRange range = searcher.findTypeDeclareRange(refClass.getClassName());
+					if (range != null) {
+						locInfo.setLine(range.getClassNameLine());
+						locInfo.setCol(range.getClassNameCol());
+					}
 					return locInfo;
 				}
 		}
-		
-		boolean found = this.searchMemberInHierachy(this.curFullClassName, MemberType.FIELD, name , null, locInfo);
+
+		String scopeClass = this.findScopeTypeCanonicalName(node);
+		boolean found = this.searchMemberInHierachy(scopeClass, MemberType.FIELD, name , null, locInfo);
 		if (found) {
 			return locInfo;
 		}
@@ -892,7 +869,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 			throw new LocationNotFoundException();
 
 		VinjaJavaSourceSearcher searcher = createSearcher(classFilePath, ctx);
-		List<MemberInfo> leftClassMembers = searcher.getMemberInfos();
+		List<MemberInfo> leftClassMembers = searcher.getMemberInfos(className);
 
 		// if classname not equals to filename, find member in subclass or inner
 		// enum .
@@ -1021,10 +998,9 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		} else if (node instanceof ClassExpr) {
 			return "java.lang.Class";
 		} else if (node instanceof ThisExpr) {
-			return this.curFullClassName;
+			return this.findScopeTypeCanonicalName(node);
 		} else if (node instanceof SuperExpr) {
-			Class aClass = ClassInfoUtil.getExistedClass(this.ctx, new String[] { curFullClassName }, null);
-			return aClass.getSuperclass().getCanonicalName();
+			return this.findSuperTypeCanonialName(node);
 		} else if (node instanceof ArrayAccessExpr) {
 			ArrayAccessExpr arrayAccessExpr = (ArrayAccessExpr) node;
 			return getNodeJavaType(arrayAccessExpr.getName());
@@ -1034,6 +1010,19 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		}
 
 		return null;
+	}
+	
+	private String findSuperTypeCanonialName(Node node) {
+		while (node.getParentNode().isPresent()) {
+			if (node instanceof ClassOrInterfaceDeclaration) {
+				ClassOrInterfaceDeclaration tmpDec = (ClassOrInterfaceDeclaration)node;
+				ClassOrInterfaceType superType = tmpDec.getExtendedTypes().get(0);
+				ClassLocInfo clsInfo = findTypeSourceLocInfo(superType);
+				return clsInfo.getClassName();
+			}
+			node = node.getParentNode().get();
+		}
+		return "";
 	}
 
 	private MemberInfo findMatchedField(String fieldName, List<MemberInfo> memberInfos) {
@@ -1146,7 +1135,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		if (scope.isPresent()) {
 			className = this.getNodeJavaType(scope.get());
 		} else {
-			className = this.curFullClassName;
+			className = this.findScopeTypeCanonicalName(callExpr);
 		}
 		LocationInfo locInfo = new LocationInfo();
 		boolean found = this.searchMemberInHierachy(className, MemberType.METHOD, methodName, argumentTypes, locInfo);
@@ -1172,7 +1161,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		} 
 		String path = this.getClassFilePath(javaType);
 		VinjaJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(path, ctx);
-		tempMemberInfo = searcher.getMemberInfos();
+		tempMemberInfo = searcher.getMemberInfos(javaType);
 		
 		MemberInfo memberInfo = this.findMatchedField(fieldName, tempMemberInfo);
 		return memberInfo;
@@ -1190,8 +1179,11 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 			if (refClass.getClassName() != null && refClass.getSourcePath() != null) {
 				VinjaJavaSourceSearcher searcher = createSearcher(refClass.getSourcePath(), ctx);
 				info.setFilePath(refClass.getSourcePath());
-				info.setLine(searcher.classNameLine);
-				info.setCol(searcher.classNameCol);
+				ClassDeclareRange range = searcher.findTypeDeclareRange(refClass.getClassName());
+				if (range != null) {
+					info.setLine(range.getClassNameLine());
+					info.setCol(range.getClassNameCol());
+				}
 				return info;
 			}
 		}
@@ -1232,8 +1224,11 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 			if (refClass.getClassName() != null && refClass.getSourcePath() != null) {
 				VinjaJavaSourceSearcher searcher = createSearcher(refClass.getSourcePath(), ctx);
 				info.setFilePath(refClass.getSourcePath());
-				info.setLine(searcher.classNameLine);
-				info.setCol(searcher.classNameCol);
+				ClassDeclareRange range = searcher.findTypeDeclareRange(refClass.getClassName());
+				if (range != null) {
+					info.setLine(range.getClassNameLine());
+					info.setCol(range.getClassNameCol());
+				}
 				return info;
 			}
 
@@ -1254,7 +1249,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 				}
 
 				List<MemberInfo> tempMemberInfo = null;
-				String scopeJavaClass = this.curFullClassName;
+				String scopeJavaClass = null;
 				if (scope.isPresent()) {
 					scopeJavaClass = this.getNodeJavaType(scope.get());
 					String path = this.getClassFilePath(scopeJavaClass);
@@ -1270,6 +1265,8 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 							}
 						}
 					}
+				} else {
+					scopeJavaClass = this.findScopeTypeCanonicalName(parentNode);
 				}
 
 				this.searchMemberInHierachy(scopeJavaClass, MemberType.METHOD, callExpr.getNameAsString(),
@@ -1281,10 +1278,10 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	}
 
 	public static void main(String[] args) {
-		CompilerContext ctx = CompilerContext.load("/Users/wangsn/work/TuyaSmartServer/smart-service/.classpath");
-		String source = "/Users/wangsn/work/TuyaSmartServer/smart-service/src/main/java/com/tuya/smart/service/device/impl/GatewayService.java";
+		CompilerContext ctx = CompilerContext.load("/Users/wangsn/work/jupiter/jupiter-client/.classpath");
+		String source = "/Users/wangsn/work/jupiter/jupiter-client/src/main/java/com/tuya/jupiter/client/domain/linkage/constants/RuleType.java";
 		VinjaJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(source, ctx);
-		Object result = searcher.searchDefLocation(204, 44, "impl");
+		Object result = searcher.getMemberInfos("RuleType");
 		System.out.println(result);
 	}
 
@@ -1315,5 +1312,24 @@ class ClassLocInfo {
 		this.className = className;
 		this.sourcePath = sourcePath;
 	}
+
+}
+
+class ClassDeclareRange {
+
+	public int getClassNameLine() {
+		return classNameLine;
+	}
+	public void setClassNameLine(int classNameLine) {
+		this.classNameLine = classNameLine;
+	}
+	public int getClassNameCol() {
+		return classNameCol;
+	}
+	public void setClassNameCol(int classNameCol) {
+		this.classNameCol = classNameCol;
+	}
+	private int classNameLine = 0;
+	private int classNameCol = 0;
 
 }

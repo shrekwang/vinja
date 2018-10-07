@@ -49,7 +49,7 @@ public class MemberInfoResolver {
 		String sourcePath = resolveInSource(ctx, cls);
 		if (sourcePath != null) {
 			IJavaSourceSearcher searcher = VinjaJavaSourceSearcher.createSearcher(sourcePath, ctx);
-			memberInfos = searcher.getConstructorInfo();
+			memberInfos = searcher.getConstructorInfo(cls);
 		} else {
 			memberInfos = ClassInfoUtil.getConstructorInfo(cls);
 		}
@@ -78,7 +78,7 @@ public class MemberInfoResolver {
 		} else if (completionType.equals(CPT_TYPE_CLASSMEMBER)){
 			tmpInfoList=searcher.getMemberInfo(cls,true,false);
 		} else if (completionType.equals(CPT_TYPE_CONSTRUCTOR)){
-			tmpInfoList=searcher.getConstructorInfo();
+			tmpInfoList=searcher.getConstructorInfo(cls);
 		} else if (completionType.equals(CPT_TYPE_INHERITMEMBER)){
 			tmpInfoList=searcher.getMemberInfo(cls,false,true);
 		}

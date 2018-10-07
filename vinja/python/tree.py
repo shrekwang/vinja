@@ -5,6 +5,7 @@ import logging
 import traceback
 import chardet
 import fnmatch
+import json
 from common import ZipUtil,FileUtil,VimUtil,PathUtil
 from xml.etree.ElementTree import *
 from jde import ProjectManager,EditUtil
@@ -652,9 +653,10 @@ class ProjectRootNode(NormalDirNode):
         if os.path.exists(decompiledJarConfigPath):
             for line in open(decompiledJarConfigPath).readlines() :
                 if line.strip() != "" and not line.startswith("#") :
-                    key,value = line.split("=")
-                    key,value = key.strip() , value.strip()
-                    self.decompiled_jar_dict[key] = value
+                    cache_info = json.loads(line)
+                    ori_jar_path = cache_info["originalJarPath"]
+                    decompiled_jar_path = cache_info["decompiledJarPath"]
+                    self.decompiled_jar_dict[ori_jar_path] = decompiled_jar_path
 
         classpathXml = os.path.join(self.root_dir, ".classpath")
         if not os.path.exists(classpathXml) :

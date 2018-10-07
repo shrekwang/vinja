@@ -1,9 +1,22 @@
 package com.github.vinja.parser;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.AnnotationMemberDeclaration;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.ConstructorDeclaration;
+import com.github.javaparser.ast.body.EnumConstantDeclaration;
+import com.github.javaparser.ast.body.EnumDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.body.VariableDeclarator;
 
 public class MemberInfo {
 
@@ -159,4 +172,139 @@ public class MemberInfo {
         String resultString = regexMatcher.replaceAll("$3");
 		return resultString;
 	}
+
+    public static MemberInfo from(VinjaJavaSourceSearcher searcher, AnnotationMemberDeclaration annoMethod) {
+        MemberInfo info = new MemberInfo();
+
+        List<String> modifierList = new ArrayList<String>();
+        for (Iterator<Modifier> it = annoMethod.getModifiers().iterator(); it.hasNext();) {
+            modifierList.add(it.next().asString());
+        }
+        info.setModifierList(modifierList);
+
+        info.setName(annoMethod.getNameAsString());
+        ClassLocInfo classLocInfo = searcher.findTypeSourceLocInfo(annoMethod.getType());
+        info.setRtnType(classLocInfo.getClassName());
+        info.setLineNum(annoMethod.getName().getRange().get().begin.line);
+        info.setColumn(annoMethod.getName().getRange().get().begin.column);
+        info.setMemberType(MemberType.METHOD);
+        List<String[]> paramList = new ArrayList<String[]>();
+        info.setParamList(paramList);
+        return info;
+    }
+    
+    public static MemberInfo from(VinjaJavaSourceSearcher searcher, ConstructorDeclaration consDeclare, String typeName) {
+		MemberInfo info = new MemberInfo();
+
+		List<String> modifierList = new ArrayList<String>();
+		for (Iterator<Modifier> it = consDeclare.getModifiers().iterator(); it.hasNext();) {
+			modifierList.add(it.next().asString());
+		}
+		info.setModifierList(modifierList);
+
+		info.setName(consDeclare.getNameAsString());
+		info.setRtnType(typeName);
+		info.setLineNum(consDeclare.getName().getRange().get().begin.line);
+		info.setColumn(consDeclare.getName().getRange().get().begin.column);
+		info.setMemberType(MemberType.CONSTRUCTOR);
+		NodeList<Parameter> parameters = consDeclare.getParameters();
+		List<String[]> paramList = new ArrayList<String[]>();
+		for (Parameter param : parameters) {
+			ClassLocInfo classInfo = searcher.findTypeSourceLocInfo(param.getType());
+			if (classInfo == null) {
+				System.out.println("parma type null" + param);
+			}
+			String paramJavaType = classInfo.getClassName();
+			String paramName = param.getNameAsString();
+			String[] methodParam = new String[] { paramJavaType, paramName };
+			paramList.add(methodParam);
+		}
+		info.setParamList(paramList);
+		return info;
+    }
+    
+    public static MemberInfo from(VinjaJavaSourceSearcher searcher, MethodDeclaration methodDeclare) {
+
+		MemberInfo info = new MemberInfo();
+		List<String> modifierList = new ArrayList<String>();
+		for (Iterator<Modifier> it = methodDeclare.getModifiers().iterator(); it.hasNext();) {
+			modifierList.add(it.next().asString());
+		}
+		info.setModifierList(modifierList);
+
+		info.setName(methodDeclare.getNameAsString());
+		ClassLocInfo classLocInfo = searcher.findTypeSourceLocInfo(methodDeclare.getType());
+		info.setRtnType(classLocInfo.getClassName());
+		info.setLineNum(methodDeclare.getName().getRange().get().begin.line);
+		info.setColumn(methodDeclare.getName().getRange().get().begin.column);
+		info.setMemberType(MemberType.METHOD);
+		NodeList<Parameter> parameters = methodDeclare.getParameters();
+		List<String[]> paramList = new ArrayList<String[]>();
+		for (Parameter param : parameters) {
+			ClassLocInfo classInfo = searcher.findTypeSourceLocInfo(param.getType());
+			if (classInfo == null) {
+				System.out.println("parma type null" + param);
+			}
+			String paramJavaType = classInfo.getClassName();
+			String paramName = param.getNameAsString();
+			String[] methodParam = new String[] { paramJavaType, paramName };
+			paramList.add(methodParam);
+		}
+		info.setParamList(paramList);
+		return info;
+    }
+    
+    public static List<MemberInfo> from(VinjaJavaSourceSearcher searcher, FieldDeclaration field) {
+
+    	List<MemberInfo> infos = new ArrayList<>();
+    	NodeList<VariableDeclarator> variables = field.getVariables();
+		for (VariableDeclarator var : variables) {
+			MemberInfo info = new MemberInfo();
+
+			List<String> modifierList = new ArrayList<String>();
+			for (Iterator<Modifier> it = field.getModifiers().iterator(); it.hasNext();) {
+				modifierList.add(it.next().asString());
+			}
+			info.setModifierList(modifierList);
+			
+			ClassLocInfo classLocInfo = searcher.findTypeSourceLocInfo(var.getType());
+			info.setRtnType(classLocInfo.getClassName());
+
+			info.setMemberType(MemberType.FIELD);
+			info.setName(var.getNameAsString());
+			info.setLineNum(var.getName().getRange().get().begin.line);
+			info.setColumn(var.getName().getRange().get().begin.column);
+			infos.add(info);
+		}
+		return infos;
+    }
+    
+    public static MemberInfo from(VinjaJavaSourceSearcher searcher, EnumConstantDeclaration enumDeclaration, String typeName) {
+    	MemberInfo info = new MemberInfo();
+		info.setMemberType(MemberType.FIELD);
+		info.setName(enumDeclaration.getNameAsString());
+		info.setLineNum(enumDeclaration.getName().getRange().get().begin.line);
+		info.setRtnType(typeName);
+		info.setColumn(enumDeclaration.getName().getRange().get().begin.column);
+		return info;
+    }
+    
+    public static MemberInfo from(VinjaJavaSourceSearcher searcher, ClassOrInterfaceDeclaration subTypeDeclare, String typeName) {
+    	MemberInfo info = new MemberInfo();
+		info.setMemberType(MemberType.SUBCLASS);
+		info.setName(subTypeDeclare.getNameAsString());
+		info.setLineNum(subTypeDeclare.getRange().get().begin.line);
+		info.setColumn(subTypeDeclare.getRange().get().begin.column);
+		info.setRtnType(typeName);
+		return info;
+    }
+    
+    public static MemberInfo from(VinjaJavaSourceSearcher searcher, EnumDeclaration enumDec) {
+		MemberInfo info = new MemberInfo();
+		info.setMemberType(MemberType.SUBCLASS);
+		info.setName(enumDec.getNameAsString());
+		info.setLineNum(enumDec.getRange().get().begin.line);
+		info.setColumn(enumDec.getRange().get().begin.column);
+		return info;
+    }
 }

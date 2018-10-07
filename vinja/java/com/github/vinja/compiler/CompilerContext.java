@@ -1,11 +1,9 @@
 package com.github.vinja.compiler;
 
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -13,7 +11,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -38,6 +42,7 @@ import com.github.vinja.util.UserLibConfig;
 import com.github.vinja.util.VjdeUtil;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class CompilerContext {
 	private static JdeLogger log = JdeLogger.getLogger("CompilerContext");
@@ -52,6 +57,8 @@ public class CompilerContext {
 	
 	private List<String> extSrcLocations=new ArrayList<String>();
 	private List<String> extOutputDirs = new ArrayList<String>();
+
+	private List<ClassPathEntry> classPathEntries = null ;
 	
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	private List<String> fsClassPathUrls = new ArrayList<String>();
@@ -76,6 +83,12 @@ public class CompilerContext {
 	Cache<String, String> clsBinPathCache =    CacheBuilder.newBuilder().maximumSize(5000).build(); 
 	
 	private Map<String,String> testSrcLocationMap = new HashMap<String,String>();
+	private Map<String,String> dstToSrcMap = new HashMap<String,String>();
+	
+	private static ExecutorService backJobs =  new ThreadPoolExecutor(8, 16,
+                      10, TimeUnit.SECONDS,
+                      new LinkedBlockingQueue<Runnable>(),
+                      new ThreadFactoryBuilder().setNameFormat("compileCtx-thread-%d").build());
 	
 	public static CompilerContext load(String classPathXml) {
 		return new CompilerContext(classPathXml);
@@ -257,7 +270,7 @@ public class CompilerContext {
 	}
 	
 	private void initClassPath(String classPathXml) {
-		List<ClassPathEntry> classPathEntries=parseClassPathXmlFile(classPathXml);
+		classPathEntries=parseClassPathXmlFile(classPathXml);
 		
 		 String jdkSrc = FilenameUtils.concat(System.getenv("JAVA_HOME") , "src.zip");
 		 if (jdkSrc != null ) {
@@ -328,6 +341,7 @@ public class CompilerContext {
 					log.info(entryPath + " in classpath not exists.");
 					continue;
 				}
+				dstToSrcMap.put(entryPath, sourcePath);
 				addToClassPaths(libFile, -1);
 				if (sourcePath !=null && !sourcePath.equals("")) {
 					libSrcLocations.add(sourcePath);
@@ -336,9 +350,11 @@ public class CompilerContext {
                 }
 			}
 		}
+		
 	} 
 
-    public void appendLibSrcLocation(String sourcePath) {
+    public void addDecompiledLibSrcLocation(String jarPath, String sourcePath) {
+    	dstToSrcMap.put(jarPath, sourcePath);
         libSrcLocations.add(sourcePath);
     }
 	
@@ -379,24 +395,35 @@ public class CompilerContext {
 	}
 	
 	private void cachePackageInfo() {
-		packageInfo.cacheSystemRtJar();
+
+		List<Future> futures = new ArrayList<Future>();
+		futures.add( backJobs.submit(() -> packageInfo.cacheSystemRtJar()));
+
 		for (String path : fsClassPathUrls) {
 			if (path.endsWith(".jar")) {
-				packageInfo.cacheClassNameInJar(path);
+				futures.add( backJobs.submit(() -> packageInfo.cacheClassNameInJar(path)));
 			}
 		}
 		
-		packageInfo.cacheClassNameInDist(outputDir,true);
-		classMetaInfoManager.cacheAllInfo(outputDir);
-		
+		futures.add( backJobs.submit(() -> packageInfo.cacheClassNameInDist(outputDir,true)));
+		futures.add( backJobs.submit(() -> classMetaInfoManager.cacheAllInfo(outputDir)));
+
+
 		for (String testOutDir :testSrcLocationMap.values()) {
-			packageInfo.cacheClassNameInDist(testOutDir,true);
-			classMetaInfoManager.cacheAllInfo(testOutDir);
+			futures.add( backJobs.submit(() -> packageInfo.cacheClassNameInDist(testOutDir,true)));
+			futures.add( backJobs.submit(() -> classMetaInfoManager.cacheAllInfo(testOutDir)));
 		}
 		
 		for (String dirPath : extOutputDirs) {
-			packageInfo.cacheClassNameInDist(dirPath,true);
-			classMetaInfoManager.cacheAllInfo(dirPath);
+			futures.add( backJobs.submit(() -> packageInfo.cacheClassNameInDist(dirPath,true)));
+			futures.add( backJobs.submit(() -> classMetaInfoManager.cacheAllInfo(dirPath)));
+		}
+		
+		try {
+			for(Future f: futures) { 
+				f.get(); 
+			}
+		} catch (Exception e) {
 		}
 	}
 	
@@ -534,7 +561,7 @@ public class CompilerContext {
 	
 	class ClassPathEntry {
 		
-		public String 	kind;
+		public String  kind;
 		public String  path;
 		public String  sourcepath;
 		public String output;
@@ -572,6 +599,7 @@ public class CompilerContext {
 					if (className == null)
 						return "None";
 					ClassInfo classInfo = classMetaInfoManager.getMetaInfo(className);
+					
 					String rtlPathName = className.replace(".", "/") + ".java";
 					if (classInfo != null && classInfo.getSourceName() != null) {
 						int dotIndex = className.lastIndexOf(".");
@@ -581,10 +609,22 @@ public class CompilerContext {
 						}
 						rtlPathName = packagePath + classInfo.getSourceName();
 					}
-					String result =  findSourceFile(rtlPathName);
-					if (result == null) {
-						System.out.println("imposiible");
+					String classFileLocation = packageInfo.findClassLocation(className);
+					if (classFileLocation != null) {
+						System.out.println("shit, it works.");
+						String srcLocation = dstToSrcMap.get(classFileLocation);
+						if (srcLocation != null && ! srcLocation.trim().equals(""))  {
+							String tmpPath = "jar://" + srcLocation + "!" +rtlPathName;
+							return tmpPath;
+						}
 					}
+
+					String result =  findSourceFile(rtlPathName);
+					//TODO 这里需要考虑inner class
+					//if (result.equals("None") && className.indexOf(".")> 0 ) {
+					//	rtlPathName = className.substring(0, className.lastIndexOf(".")).replace(".", "/") + ".java";
+					//	result =  findSourceFile(rtlPathName);
+					//}
 					return result;
 				}
 			});
@@ -602,6 +642,14 @@ public class CompilerContext {
 				public String call() {
 					if (className == null) return "None";
 					String rtlPathName = className.replace(".", "/") + ".class";
+					
+					String classDstPath = packageInfo.findClassLocation(className);
+					if (classDstPath != null) {
+						if (classDstPath.endsWith("jar")) {
+							classDstPath = "jar://" + classDstPath + "!" +rtlPathName;
+						}
+						return classDstPath;
+					}
 					
 					for (String path : fsClassPathUrls) {
 						if (path.endsWith(".jar")) {
@@ -691,6 +739,7 @@ public class CompilerContext {
 	
 	
 	public static boolean hasEntry(String zipFileName, String rtlPath) {
+		System.out.println("hasEntry: " + zipFileName + " "+ rtlPath);
 		try {
 			ZipFile zipFile = null;
 			zipFile = new ZipFile(zipFileName);

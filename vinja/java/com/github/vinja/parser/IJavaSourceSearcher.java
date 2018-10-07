@@ -4,18 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.antlr.runtime.tree.CommonTree;
-
 public interface IJavaSourceSearcher {
 
-	List<MemberInfo> getMemberInfos();
-
-	int getClassScopeLine();
+	List<MemberInfo> getMemberInfos(String typeCanonicalName);
 
 	@SuppressWarnings("rawtypes")
 	ArrayList<com.github.vinja.omni.MemberInfo> getMemberInfo(Class aClass, boolean staticMember, boolean protectedMember);
 
-	ArrayList<com.github.vinja.omni.MemberInfo> getConstructorInfo();
+	@SuppressWarnings("rawtypes")
+	ArrayList<com.github.vinja.omni.MemberInfo> getConstructorInfo(Class aClass);
 
 	int searchLoopOutLine(int currentLine);
 

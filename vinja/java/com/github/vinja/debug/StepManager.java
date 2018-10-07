@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.parser.IJavaSourceSearcher;
-import com.github.vinja.parser.JavaSourceSearcher;
 import com.github.vinja.parser.VinjaJavaSourceSearcher;
 import com.github.vinja.util.ClassNameUtil;
 import com.sun.jdi.Location;
