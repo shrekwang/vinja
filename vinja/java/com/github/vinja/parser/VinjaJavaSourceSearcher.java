@@ -619,6 +619,7 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 		NodeList<ImportDeclaration> imports = this.compileUnit.getImports();
 		
 		for (ImportDeclaration importDec : imports) {
+			if (importDec.isStatic()) continue;
 			String importName = importDec.getNameAsString();
 			String importedSimpleName = importName.indexOf(".") > 0
 					? importName.substring(importName.lastIndexOf(".") + 1) : importName;

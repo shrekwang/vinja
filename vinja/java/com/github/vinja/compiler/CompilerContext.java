@@ -739,7 +739,7 @@ public class CompilerContext {
 	
 	
 	public static boolean hasEntry(String zipFileName, String rtlPath) {
-		System.out.println("hasEntry: " + zipFileName + " "+ rtlPath);
+		//System.out.println("hasEntry: " + zipFileName + " "+ rtlPath);
 		try {
 			ZipFile zipFile = null;
 			zipFile = new ZipFile(zipFileName);
