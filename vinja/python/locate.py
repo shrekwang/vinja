@@ -501,4 +501,54 @@ class EditHistoryManager(object):
             del work_buffer[row-1]
             vim.command("resize %d" % len(work_buffer))
 
+class ProjectLocationManager(object):
+    def __init__(self):
+        project_cfg_path = os.path.join(VinjaConf.getDataHome(), "project2.cfg")
+        if not os.path.exists(project_cfg_path):
+            return
+        lines = open(project_cfg_path,"r").readlines()
+        self.prj_dict = {}
+        self.options = []
+        self.show_on_open = True
+        for line in lines:
+            if not line.strip() : continue
+            if line[0] == "#" : continue
+            split_index= line.find ("=")
+            if split_index < 0 : continue 
+            name = line[0:split_index].strip()
+            path = line[split_index+1:].strip()
+            self.prj_dict[name] = path
+            self.options.append(name)
+
+    def get_init_prompt(self):
+        return ""
+
+    def search_content(self,search_pat):
+        result = []
+        if not search_pat :
+            search_pat = "*"
+        pat = re.compile("^%s.*" % search_pat.replace("*",".*") , re.IGNORECASE)
+        for project_name in self.options :
+            if pat.match(project_name) :
+                result.append(project_name)
+        return result
+
+    def open_content(self,line,mode="local"):
+        projectName = line
+        vim.command("silent lcd %s" % self.prj_dict[projectName].replace(" ",r"\ "))
+        vim.command("silent call Shext()")
+        vim.command("silent tabnew")
+        vim.command("silent call Jdext()")
+        vim.command("silent call ProjectTree()")
+        vim.command("let g:vinja_title = \"%s\"" % projectName)
+        vim.command("let &titlestring = MyTitleString()")
+
+    def cursor_current_buf(self):
+        if self.cur_buf == None :
+            return 
+        cur_name = self.cur_buf.replace("\\","/")
+        if cur_name in self.matched_item :
+            vim.current.window.cursor = ( self.matched_item.index(cur_name)+1, 0)
+
+
 

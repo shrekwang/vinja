@@ -1,7 +1,6 @@
-java.*
-javax.*
 sun.*
 com.sun.*
 com.opensymphony.*
 net.sf.*
 org.hibernate.*
+org.springframework.*

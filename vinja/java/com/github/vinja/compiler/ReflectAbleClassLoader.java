@@ -8,6 +8,10 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLStreamHandlerFactory;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import com.github.vinja.util.LRUCache;
 
@@ -15,6 +19,7 @@ public class ReflectAbleClassLoader extends URLClassLoader {
 
 	private static LRUCache<String, byte[]> jarByteCache = new LRUCache<String, byte[]>(1000);
 	private static LRUCache<String, byte[]> classByteCache = new LRUCache<String, byte[]>(1000);
+	
 
 	public ReflectAbleClassLoader(URL[] urls, ClassLoader parent, URLStreamHandlerFactory factory) {
 		super(urls, parent, factory);
@@ -31,9 +36,74 @@ public class ReflectAbleClassLoader extends URLClassLoader {
 	public Package[] getPackageInfo() {
 		return this.getPackages();
 	}
+	
+	@Override
+	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+		// has the class loaded already?
+		Class<?> loadedClass = findLoadedClass(name);
+		if (loadedClass == null) {
+			try {
+				if (loadedClass == null) {
+					loadedClass = findClass(name);
+				}
+			} catch (ClassNotFoundException e) {
+				loadedClass = super.loadClass(name, resolve);
+			}
+		}
+		if (resolve) { // marked to resolve
+			resolveClass(loadedClass);
+		}
+		return loadedClass;
+	}
+
+	@Override
+	public Enumeration<URL> getResources(String name) throws IOException {
+		List<URL> allRes = new LinkedList<>();
+
+		// load resource from this classloader
+		Enumeration<URL> thisRes = findResources(name);
+		if (thisRes != null) {
+			while (thisRes.hasMoreElements()) {
+				allRes.add(thisRes.nextElement());
+			}
+		}
+
+		// then try finding resources from parent classloaders
+		Enumeration<URL> parentRes = super.findResources(name);
+		if (parentRes != null) {
+			while (parentRes.hasMoreElements()) {
+				allRes.add(parentRes.nextElement());
+			}
+		}
+
+		return new Enumeration<URL>() {
+			Iterator<URL> it = allRes.iterator();
+
+			@Override
+			public boolean hasMoreElements() {
+				return it.hasNext();
+			}
+
+			@Override
+			public URL nextElement() {
+				return it.next();
+			}
+		};
+	}
+	
+	@Override
+	public URL getResource(String name) {
+		URL res = null;
+		if (res == null) {
+			res = findResource(name);
+		}
+		if (res == null) {
+			res = super.getResource(name);
+		}
+		return res;
+	}
 
 	public InputStream getResourceAsStream(String name) {
-		System.out.println("getResourceAsStream: " + name);
 		return super.getResourceAsStream(name);
 	}
 	

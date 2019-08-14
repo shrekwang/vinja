@@ -1601,7 +1601,7 @@ class ProjectTree(object):
         for path in  opened_dir_nodes :
             tree_state_file.write(path)
             tree_state_file.write("\n")
-        rev_history = self.edit_history[0:18]
+        rev_history = self.edit_history[0:10]
         for path in  rev_history :
             tree_state_file.write(path)
             tree_state_file.write("\n")

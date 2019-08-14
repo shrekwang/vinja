@@ -74,6 +74,8 @@ class ZipUtil(object):
             finally:
                 zipFile.close()
             
+            logging.debug("all_the_text is %s . " % (all_the_text))
+
             file_encoding = chardet.detect(all_the_text).get("encoding")
             if file_encoding != None :
                 all_the_text = all_the_text.decode(file_encoding, "ignore")
@@ -573,7 +575,9 @@ class MiscUtil(object):
     @staticmethod
     def copy_buffer_path():
         buffer_name=vim.current.buffer.name
-        vim.command("let @\" = '%s' " % buffer_name)
+        (row,col)=vim.current.window.cursor
+        vim.command("let @\" = '%s %s' " % (buffer_name, str(row)))
+        vim.command("let @* = '%s %s' " % (buffer_name, str(row)))
 
     @staticmethod
     def initHightLightScheme():

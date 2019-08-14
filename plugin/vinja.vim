@@ -483,6 +483,12 @@ function LocateHistory()
   python QuickLocater.runApp(hismgr)
 endfunction
 
+function LocateProject()
+  call RunSzPyfile("locate.py")
+  python projmgr = ProjectLocationManager()
+  python QuickLocater.runApp(projmgr)
+endfunction
+
 function LocateMember()
   call RunSzPyfile("locate.py")
   python membermgr = JavaMemberContentManager()
@@ -749,6 +755,7 @@ nmap <silent><leader>zl  :call TagList()<cr>
 nmap <silent><leader>lc  :call LocateFile("currentDir")<cr>
 nmap <silent><leader>lw  :call LocateFile("all")<cr>
 nmap <silent><leader>la  :call LocateHistory()<cr>
+nmap <silent><leader>lr  :call LocateProject()<cr>
 
 function SetProjectTreeFileEditFlag(filename,flag)
   python ProjectTree.set_file_edit(vim.eval("a:filename"),vim.eval("a:flag"))

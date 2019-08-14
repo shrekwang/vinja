@@ -1839,8 +1839,13 @@ class Parser(object):
     @staticmethod
     def getMainClass():
         pkgName = Parser.getPackage()
-        clsPat = re.compile(r"\s*public\s+(\w+\s+)?(class|interface)\s+(?P<className>\w+)\b")
+
+        clsPat = re.compile(r"\n\s*public\s+(\w+\s+)?(class|interface)\s+(?P<className>\w+)\b")
         className = Parser.searchPattern(clsPat,"className")
+
+        if className == None :
+            clsPat = re.compile(r"\s*public\s+(\w+\s+)?(class|interface)\s+(?P<className>\w+)\b")
+            className = Parser.searchPattern(clsPat,"className")
 
         if className == None :
             clsPat = re.compile(r"\s*(\w+\s+)?\bclass\b\s+(?P<className>\w+)\b")
@@ -2856,6 +2861,7 @@ class Jdb(object):
                     java_options = ""
                     methodName = ""
                     if self.env_map.get("JAVA_OPTS") != None :
+                        self.env_map = dict(MiscUtil.loadMapFromFile(os.path.join(VinjaConf.getDataHome(), "env.cfg")))
                         java_options = self.env_map.get("JAVA_OPTS")
                     if cmdLine.find("#") > 0 :
                         methodName = cmdLine[cmdLine.find("#"):]

@@ -611,7 +611,6 @@ public class CompilerContext {
 					}
 					String classFileLocation = packageInfo.findClassLocation(className);
 					if (classFileLocation != null) {
-						System.out.println("shit, it works.");
 						String srcLocation = dstToSrcMap.get(classFileLocation);
 						if (srcLocation != null && ! srcLocation.trim().equals(""))  {
 							String tmpPath = "jar://" + srcLocation + "!" +rtlPathName;
