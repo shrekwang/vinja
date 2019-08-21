@@ -4,6 +4,7 @@ import re
 import sys
 import logging
 import difflib
+import json
 from string import maketrans
 
 conn_pool = {}
@@ -238,6 +239,16 @@ class Dbext(object):
                 if index!=0 :
                     append = True
                 output(result,outBuffer,append)
+
+    def queryVisualSQLToJson(self):
+        sql = MiscUtil.getVisualBlock()
+        outBuffer = Dbext.getOutputBuffer()
+        append = False
+        for index,item in enumerate(sql.split(";")):
+            if item.strip() != "" :
+                columns,result = dbext.query(item)
+                r = [dict((columns[i], value) for i, value in enumerate(row)) for row in result]
+                output(json.dumps(r,indent=4, sort_keys=True,ensure_ascii=False), outBuffer, False)
 
     def loadConf(self,path):
         confs = []

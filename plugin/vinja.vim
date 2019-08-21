@@ -219,6 +219,7 @@ function! Dbext()
   python Dbext.runApp()
 
   vmap <buffer><silent>,,  :python dbext.queryVisualSQL()<cr>
+  vmap <buffer><silent>,j  :python dbext.queryVisualSQLToJson()<cr>
   imap <buffer><silent>,,  <C-o>:python dbext.executeOneStatement("line")<cr>
   nmap <buffer><silent>,,  :python dbext.executeOneStatement("line")<cr>
 
