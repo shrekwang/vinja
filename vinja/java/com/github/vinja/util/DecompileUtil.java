@@ -1,7 +1,5 @@
 package com.github.vinja.util;
 
-import jd.commonide.IdeDecompiler;
-import jd.commonide.preferences.IdePreferences;
 
 public class DecompileUtil {
 
@@ -14,13 +12,9 @@ public class DecompileUtil {
 		boolean showLineNumbers = false;
 		boolean showMetadata = false;
 
-		// Create preferences
-		IdePreferences preferences = new IdePreferences(showDefaultConstructor, realignmentLineNumber, showPrefixThis,
-				mergeEmptyLines, unicodeEscape, showLineNumbers, showMetadata);
-
 		// Decompile
-		String classContent = IdeDecompiler.decompile(preferences, jarPath, innerPath);
-		return classContent;
+		//String classContent = IdeDecompiler.decompile(preferences, jarPath, innerPath);
+		return "";
 	}
 	
 	public static void main(String[] args) {

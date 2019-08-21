@@ -89,7 +89,7 @@ public class JdtUI {
 			int portNum = Integer.parseInt(port);
 			new SzjdeServer(portNum).start();
 
-            //new server
+          
             VinjaServer server = new VinjaServer();
             server.start();
 

@@ -1,5 +1,10 @@
 package com.github.vinja.locate;
 
+import io.methvin.watcher.DirectoryChangeEvent;
+import java.io.IOException;
+import io.methvin.watcher.DirectoryChangeListener;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -11,8 +16,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import net.contentobjects.jnotify.JNotify;
-import net.contentobjects.jnotify.JNotifyListener;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -20,14 +23,19 @@ import com.github.vinja.util.JdeLogger;
 import com.github.vinja.util.Preference;
 import com.github.vinja.util.VjdeUtil;
 
+import io.methvin.watcher.DirectoryWatcher;
 
-public class FileSystemDb  implements JNotifyListener {
+
+public class FileSystemDb  implements DirectoryChangeListener {
+
 	private static JdeLogger log = JdeLogger.getLogger("FileSystemDb");
 	private SqliteManager sqliteManager ;
 	private Map<String,WatchedDirInfo> watchedDir= new HashMap<String,WatchedDirInfo>();
 	private static final FileSystemDb instance = new FileSystemDb();
   	private Preference pref =  Preference.getInstance();
   	private RecordBatchUpdater batchUpdater = null;
+
+    private DirectoryWatcher directoryWatcher = null;
 	
   	private void initTable() {
          String sql1 = "create table fsdb_dirs ( alias varchar(60), start_dir varchar(160) , excludes varchar(500) , "
@@ -67,42 +75,47 @@ public class FileSystemDb  implements JNotifyListener {
 	public static FileSystemDb getInstance() {
 		return instance;
 	}
+
+    public void onEvent(DirectoryChangeEvent event) throws IOException {
+        String absPath = event.path().toAbsolutePath().normalize().toString();
+        
+        if (event.eventType() == DirectoryChangeEvent.EventType.CREATE) {
+            this.fileCreated(absPath);
+        }
+        if (event.eventType() == DirectoryChangeEvent.EventType.DELETE) {
+            this.fileDeleted(absPath);
+        }
+    }
+
 	
 	public void initWatchOnIndexedDir() {
-		List<WatchedDirInfo> dirs =getIndexedDirs();
-		for (WatchedDirInfo dirInfo : dirs) {
-			addWatch(dirInfo);
-		}
-	}
-		
-	public void removeWatch(String path) {
-		WatchedDirInfo dirInfo = watchedDir.get(path);
-		if (dirInfo == null) return ;
-		try {
-			JNotify.removeWatch(dirInfo.getWatchId());
-		} catch (Exception e) {
-			String errorMsg = VjdeUtil.getExceptionValue(e);
-    		log.info(errorMsg);
-		}
-		watchedDir.remove(path);
-	}
-	public void addWatch(WatchedDirInfo dirInfo) {
-		
-		String startDir = dirInfo.getStartDir();
-		if (watchedDir.get(startDir)!=null ) return;
-		
-		int mask = JNotify.FILE_CREATED | JNotify.FILE_DELETED | JNotify.FILE_RENAMED;
-		boolean watchSubtree = true;
-		try {
-			int watchId = JNotify.addWatch(startDir, mask, watchSubtree, this);
-			dirInfo.setWatchId(watchId);
-			watchedDir.put(startDir, dirInfo);
-		} catch (Exception e) {
-			String errorMsg = VjdeUtil.getExceptionValue(e);
-    		log.info(errorMsg);
-		}
-	}
 
+        List<WatchedDirInfo> dirs =getIndexedDirs();
+        List<Path> paths = new ArrayList<>();
+		for (WatchedDirInfo dirInfo : dirs) {
+            paths.add(Paths.get(dirInfo.getStartDir()));
+            watchedDir.put(dirInfo.getStartDir(), dirInfo);
+		}
+
+        try {
+            if (directoryWatcher != null) {
+                directoryWatcher.close();
+            }
+            directoryWatcher = null;
+        } catch (Exception e) {
+        }
+ 
+        try {
+            directoryWatcher = DirectoryWatcher.builder()
+                .paths(paths) 
+                .listener(this)
+                .fileHashing(false)
+                .build();
+            directoryWatcher.watchAsync();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 	
 	public List<WatchedDirInfo> getIndexedDirs() {
@@ -131,7 +144,7 @@ public class FileSystemDb  implements JNotifyListener {
     	String startDir = valueArray[0];
     	String excludes = valueArray[1];
     	String depth = valueArray[2];
-    	removeIndexedDir(alias,out);
+    	removeIndexedDir(alias,out, false);
     	addIndexedDir(alias, startDir, excludes, Integer.parseInt(depth),out);
     }
     
@@ -157,8 +170,12 @@ public class FileSystemDb  implements JNotifyListener {
     	if (!countStr.equals("0")) return true;
     	return false;
     }
-    
+
     public void removeIndexedDir(String alias,PrintWriter out) {
+        this.removeIndexedDir(alias, out, true);
+    }
+    
+    public void removeIndexedDir(String alias,PrintWriter out, boolean initWatch) {
     	String sql = " select start_dir from fsdb_dirs where alias='"+alias+"'";
     	List<String[]> values = sqliteManager.query(sql);
     	if (values.size()==0) return;
@@ -175,8 +192,11 @@ public class FileSystemDb  implements JNotifyListener {
     	sqliteManager.batchUpdate(sql, params);
     	
     	out.println("rm the index of " + alias );
-    	
-    	removeWatch(path);
+
+    	watchedDir.remove(path);
+        if (initWatch) {
+            this.initWatchOnIndexedDir();
+        }
     }
     
    
@@ -215,19 +235,19 @@ public class FileSystemDb  implements JNotifyListener {
     	info.setStartDir(dir);
     	info.setExcludes(excludes);
     	info.setDepth(depth);
-    	addWatch(info);
     	
+    	watchedDir.put(dir, info);
+        this.initWatchOnIndexedDir();
     }
 	
-    public void fileCreated(int wd, String rootPath, String name) {
-    	String absPath = FilenameUtils.concat(rootPath, name);
+    public void fileCreated(String absPath) {
     	File file = new File(absPath);
     	if (file.isDirectory()) return ;
     	String[] indexedData = getIndexedData(absPath);
     	if  (indexedData == null ) return ;
     	String startDir = indexedData[0];
     	String rtlPath = indexedData[1];
-    	name = FilenameUtils.getName(name);
+    	String name = FilenameUtils.getName(absPath);
     	WatchedDirInfo watchedDirInfo=watchedDir.get(startDir);
     	
     	if (! PatternUtil.isExclude(watchedDirInfo.getExcludes(), new File(absPath))) {
@@ -237,22 +257,14 @@ public class FileSystemDb  implements JNotifyListener {
     	
     }
     
-    public void fileDeleted(int wd, String rootPath, String name) {
-    	String absPath = FilenameUtils.concat(rootPath, name);
+    public void fileDeleted(String absPath) {
     	String[] indexedData = getIndexedData(absPath);
     	if  (indexedData == null ) return ;
+    	String name = FilenameUtils.getName(absPath);
 		Record record = new Record(name,indexedData[0], indexedData[1]);
     	batchUpdater.addDeletedRecord(record);
     	
     }
-    
-    public void fileRenamed(int wd, String rootPath, String oldName, String newName) {
-    	fileDeleted(wd, rootPath, oldName);
-    	fileCreated(wd, rootPath, newName);
-    }
-    
-	public void fileModified(int wd, String rootPath, String name) { 
-	}
 	
     private String[] getIndexedData(String absPath) {
     	Set<String> dirs = watchedDir.keySet();
