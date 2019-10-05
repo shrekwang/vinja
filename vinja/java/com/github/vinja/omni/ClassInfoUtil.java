@@ -307,8 +307,18 @@ public class ClassInfoUtil {
 					aClass = classLoader.loadClass("java.lang."+className);
 				} catch (ClassNotFoundException e2) {
 					try {
-						String mainClass = ctx.buildClassName(sourceFile);
-						aClass = classLoader.loadClass(mainClass+"$"+className);
+						if (sourceFile != null) {
+							String mainClass = ctx.buildClassName(sourceFile);
+							aClass = classLoader.loadClass(mainClass+"$"+className);
+						} else {
+							int lastIdx = className.lastIndexOf(".");
+							if (lastIdx > 0) {
+								String mainClass = className.substring(0,lastIdx);
+								className = className.substring(lastIdx+1);
+								aClass = classLoader.loadClass(mainClass+"$"+className);
+							}
+							
+						}
 					} catch (ClassNotFoundException e3) { }
 				}
 			}

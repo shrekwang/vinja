@@ -620,10 +620,10 @@ public class CompilerContext {
 
 					String result =  findSourceFile(rtlPathName);
 					//TODO 这里需要考虑inner class
-					//if (result.equals("None") && className.indexOf(".")> 0 ) {
-					//	rtlPathName = className.substring(0, className.lastIndexOf(".")).replace(".", "/") + ".java";
-					//	result =  findSourceFile(rtlPathName);
-					//}
+					if (result.equals("None") && className.indexOf(".")> 0 ) {
+						rtlPathName = className.substring(0, className.lastIndexOf(".")).replace(".", "/") + ".java";
+						result =  findSourceFile(rtlPathName);
+					}
 					return result;
 				}
 			});

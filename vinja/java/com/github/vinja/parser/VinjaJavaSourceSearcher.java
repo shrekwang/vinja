@@ -265,7 +265,6 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 
 	private void readClassInfo(InputStream is) {
 		this.compileUnit = JavaParser.parse(is);
-		TypeDeclaration<?> firstClass = compileUnit.getTypes().get(0);
 		NodeList<ImportDeclaration> imports = this.compileUnit.getImports();
 		
 		//cache the parse Result
