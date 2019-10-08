@@ -1,5 +1,6 @@
 package com.github.vinja.compiler;
 
+import com.github.vinja.omni.ReactorProjectManager;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -63,20 +64,20 @@ public class CompilerContext {
 	private List<URL> classPathUrls = new ArrayList<URL>();
 	private List<String> fsClassPathUrls = new ArrayList<String>();
 	private Preference pref = Preference.getInstance();
+
 	private PackageInfo packageInfo = new PackageInfo();
 	private ClassMetaInfoManager classMetaInfoManager = null;
 	
 	private String lastSearchedRtlName = "";
 	private String lastSearchResult = "";
 	
-    private boolean mvnProject = false;
 	private boolean flatProject = false;
 	private boolean classInfoCached = false;
 	
+
+	private String reactorRoot = null;
 	private Map<String,String> reactorProjectMap = new HashMap<String,String>();
 
-    private DecompileHorse decompileHorse = DecompileHorse.getInstance();
-	
 	private enum ResourceType { Java, Other };
 	
 	Cache<String, String> clsSourcePathCache = CacheBuilder.newBuilder().maximumSize(3000).build(); 
@@ -128,7 +129,11 @@ public class CompilerContext {
 				 }
 			}
 		}
-		this.classMetaInfoManager = new ClassMetaInfoManager(this);
+        if (this.reactorRoot != null) {
+            this.classMetaInfoManager = ReactorProjectManager.initClassMetaInfoManager(this.reactorRoot, this);
+        } else {
+            this.classMetaInfoManager = new ClassMetaInfoManager(this);
+        }
 		
 		URL urlsA[] = new URL[classPathUrls.size()];
 		classPathUrls.toArray(urlsA);
@@ -218,7 +223,7 @@ public class CompilerContext {
 
 				String classAsPath = className.replace('.', '/') + ".class";
 				InputStream stream = this.getClassLoader().getResourceAsStream(classAsPath);
-				classMetaInfoManager.loadSingleMetaInfo(stream);
+				classMetaInfoManager.loadSingleMetaInfo(stream, this);
 				bpmgr.verifyBreakpoint(className);
 			}
 		}
@@ -249,7 +254,7 @@ public class CompilerContext {
 		if (encoding != null && ! source.trim().equals("")) {
 			this.encoding = encoding;
 		}
-		String reactorRoot = prop.get("reactorRoot");
+		reactorRoot = prop.get("reactorRoot");
 		if (reactorRoot != null ) {
 			reactorProjectMap = ProjectLocationConf.loadProjectConfig(new File(reactorRoot, ".jde_module"));
 		}
@@ -287,8 +292,6 @@ public class CompilerContext {
 				addToClassPaths(libFile, -1);
 				if (entry.sourcepath !=null) {
 					libSrcLocations.add(entry.sourcepath);
-				} else {
-                    decompileHorse.decompileJar(entryAbsPath, this);
                 }
 			} else if (entry.kind.equals("src")) {
 				//if path startswith "/", it's another eclipse project 
@@ -345,8 +348,6 @@ public class CompilerContext {
 				addToClassPaths(libFile, -1);
 				if (sourcePath !=null && !sourcePath.equals("")) {
 					libSrcLocations.add(sourcePath);
-				} else {
-                    decompileHorse.decompileJar(entryPath, this);
                 }
 			}
 		}
@@ -406,17 +407,17 @@ public class CompilerContext {
 		}
 		
 		futures.add( backJobs.submit(() -> packageInfo.cacheClassNameInDist(outputDir,true)));
-		futures.add( backJobs.submit(() -> classMetaInfoManager.cacheAllInfo(outputDir)));
+		futures.add( backJobs.submit(() -> classMetaInfoManager.cacheAllInfo(outputDir, this)));
 
 
 		for (String testOutDir :testSrcLocationMap.values()) {
 			futures.add( backJobs.submit(() -> packageInfo.cacheClassNameInDist(testOutDir,true)));
-			futures.add( backJobs.submit(() -> classMetaInfoManager.cacheAllInfo(testOutDir)));
+			futures.add( backJobs.submit(() -> classMetaInfoManager.cacheAllInfo(testOutDir, this)));
 		}
 		
 		for (String dirPath : extOutputDirs) {
 			futures.add( backJobs.submit(() -> packageInfo.cacheClassNameInDist(dirPath,true)));
-			futures.add( backJobs.submit(() -> classMetaInfoManager.cacheAllInfo(dirPath)));
+			futures.add( backJobs.submit(() -> classMetaInfoManager.cacheAllInfo(dirPath, this)));
 		}
 		
 		try {
@@ -586,9 +587,20 @@ public class CompilerContext {
 	}
 	
 	public String findSourceOrBinPath(String className) {
-		String path = findSourceClass(className);
-		if ("None".equals(path)) path = findClassBinPath(className);
-		return path;
+		if (this.reactorRoot == null) {
+			String path = findSourceClass(className);
+			if ("None".equals(path)) path = findClassBinPath(className);
+			return path;
+		} else {
+			for (String projectRoot: reactorProjectMap.values()) {
+				String classPathXml = FilenameUtils.concat(projectRoot, ".classpath");
+				CompilerContext ctx = CompilerContextManager.getInstnace().getCompilerContext(classPathXml);
+				String path = ctx.findSourceClass(className);
+				if (! "None".equals(path)) return path;
+			}
+			String path = findClassBinPath(className);
+			return path;
+		}
 	}
 
 	public String findSourceClass(final String className) {
@@ -674,7 +686,7 @@ public class CompilerContext {
 	 * @param rtlPathName
 	 * @return
 	 */
-	public String findSourceFile(String rtlPathName) {
+	private String findSourceFile(String rtlPathName) {
 		
 		rtlPathName = rtlPathName.replace("\\", "/");
 		if (lastSearchedRtlName.equals(rtlPathName)) {

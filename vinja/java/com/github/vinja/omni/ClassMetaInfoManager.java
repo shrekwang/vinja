@@ -21,32 +21,47 @@ import com.github.vinja.compiler.CompilerContext;
 public class ClassMetaInfoManager  {
 	
 	private Map<String,ClassInfo> metaInfos = new ConcurrentHashMap<String,ClassInfo>();
+
+    private Set<String> loadedPaths = new HashSet<>();
 	
-	private CompilerContext ctx;
+	private Map<String,CompilerContext> ctxMap = new ConcurrentHashMap<String,CompilerContext>();
 	
 	
 	public ClassMetaInfoManager(CompilerContext ctx) {
-		this.ctx = ctx;
+		this.ctxMap.put(ctx.getProjectRoot(), ctx);
 	}
 	
-	public void cacheAllInfo(String dir) {
-		loadAllMetaInfo(dir);
+	public void addCompilerContext(CompilerContext ctx) {
+		this.ctxMap.put(ctx.getProjectRoot(), ctx);
+	}
+
+	
+	public void cacheAllInfo(String dir, CompilerContext ctx) {
+		loadAllMetaInfo(dir,ctx);
 		constructAllSubNames();
 	}
 	
-	public void loadAllMetaInfo(String dir) {
+	public void loadAllMetaInfo(String dir, CompilerContext ctx) {
+        if (loadedPaths.contains(dir)) {
+            return;
+        }
+
 		File file = new File(dir);
 		File[] classes = file.listFiles(); 
 		for (File classFile : classes ) {
 			if (classFile.isDirectory()) {
-				loadAllMetaInfo(classFile.getAbsolutePath());
+				loadAllMetaInfo(classFile.getAbsolutePath(),ctx);
 			} else {
-				loadSingleMetaInfo(classFile);
+				loadSingleMetaInfo(classFile, ctx);
 			}
 		}
 	}
 	
-	public void loadMetaInfoInJar(String jarPath) {
+	public void loadMetaInfoInJar(String jarPath, CompilerContext ctx) {
+        if (loadedPaths.contains(jarPath)) {
+            return;
+        }
+
 		File file = new File(jarPath);
 		if (! file.exists()) return;
 		 JarFile jarFile = null;
@@ -57,7 +72,7 @@ public class ClassMetaInfoManager  {
 	             JarEntry entry = entries.nextElement();
 	             if (!entry.getName().endsWith(".class")) continue;
 	             InputStream is = jarFile.getInputStream(entry);
-	             loadSingleMetaInfo(is);
+	             loadSingleMetaInfo(is, ctx);
 	         }
 		} catch (IOException e ) {
 		} finally {
@@ -66,10 +81,10 @@ public class ClassMetaInfoManager  {
 		return ;
 	}
 	
-	public void loadSingleMetaInfo(InputStream stream) {
+	public void loadSingleMetaInfo(InputStream stream, CompilerContext ctx) {
 		try {
 			ClassReader cr = new ClassReader(stream);
-			loadSingleMetaInfo(cr);
+			loadSingleMetaInfo(cr, ctx);
 		} catch (Throwable e) {
 			e.printStackTrace();
 		} finally {
@@ -77,13 +92,13 @@ public class ClassMetaInfoManager  {
 		}
 	}
 	
-	public void loadSingleMetaInfo(File classFile) {
+	public void loadSingleMetaInfo(File classFile, CompilerContext ctx) {
 		if  (classFile.getName().endsWith(".class") ) {
 			FileInputStream fs =null;
 			try {
 				fs = new FileInputStream(classFile);
 				ClassReader cr = new ClassReader(fs);
-				loadSingleMetaInfo(cr);
+				loadSingleMetaInfo(cr,ctx);
 			} catch (IOException e) {
 			} finally {
 				if (fs!=null) { 
@@ -94,19 +109,21 @@ public class ClassMetaInfoManager  {
 	}
 	
 	public void loadSingleMetaInfo(String className) {
-		try {
-			String classAsPath = className.replace('.', '/') + ".class";
-			InputStream stream = ctx.getClassLoader().getResourceAsStream(classAsPath);
-			if (stream == null) return;
-			ClassReader cr = new ClassReader(stream);
-			stream.close();
-			loadSingleMetaInfo(cr);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+        for (CompilerContext ctx : ctxMap.values()) {
+            try {
+                String classAsPath = className.replace('.', '/') + ".class";
+                InputStream stream = ctx.getClassLoader().getResourceAsStream(classAsPath);
+                if (stream == null) continue;
+                ClassReader cr = new ClassReader(stream);
+                stream.close();
+                loadSingleMetaInfo(cr,ctx);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 	}
 	
-	private void loadSingleMetaInfo(ClassReader cr) {
+	private void loadSingleMetaInfo(ClassReader cr, CompilerContext ctx) {
 		ClassInfo classInfo = new ClassInfo();
 		VinjaClassVisitor classInfoReader = new VinjaClassVisitor(classInfo, ctx);
 		cr.accept(classInfoReader, 0);

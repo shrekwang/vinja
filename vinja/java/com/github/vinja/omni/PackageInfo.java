@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -25,20 +24,18 @@ import com.github.vinja.compiler.CompilerContext;
 
 public class PackageInfo {
 	
+
 	/**
 	 * cache key is package name, the content is className list under that package 
 	 */
 	private Map<String,Set<String>> cache = new ConcurrentHashMap<String,Set<String>>();
 	
 	private Map<String,String> pkgLocationCache = new ConcurrentHashMap<String,String>();
+
+
+    private Set<String> loadedPaths = new HashSet<>();
 	
 	private static Pattern pattern = Pattern.compile("\\d+.class");
-	
-	
-	/**
-	 * cachekey is jar file path, value is "true" or "false". 
-	 */
-	private Map<String, String> cachedPath = new HashMap<String,String>();
 	
 	private Set<String> dstClassNames = new HashSet<String>();
 	
@@ -258,6 +255,7 @@ public class PackageInfo {
 		if (!dir.isDirectory()) {
 			return;
 		}
+
 		Iterator it=FileUtils.iterateFiles(dir, new String[] {"class"}	,recursive);
 		while (it.hasNext()) {
 			File file = (File)it.next();
@@ -271,9 +269,10 @@ public class PackageInfo {
 	public void cacheClassNameInJar(String path) {
 		File file = new File(path);
 		if (! file.exists()) return;
-		String hadCached=cachedPath.get(path);
-		if (hadCached !=null && hadCached.equals("true")) return;
-		 JarFile jarFile = null;
+        if (loadedPaths.contains(path)) {
+            return;
+        }
+        JarFile jarFile = null;
 		try {
 			 jarFile = new JarFile(path);         
 	         Enumeration<JarEntry> entries = jarFile.entries();
@@ -294,7 +293,6 @@ public class PackageInfo {
 		} finally {
 			if (jarFile !=null ) try {jarFile.close();} catch (Exception e) {};
 		}
-		cachedPath.put(path, "true");
 		return ;
 	}
 	

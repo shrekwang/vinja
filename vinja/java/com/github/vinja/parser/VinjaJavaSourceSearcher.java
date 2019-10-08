@@ -384,7 +384,9 @@ public class VinjaJavaSourceSearcher implements IJavaSourceSearcher {
 	public List<MemberInfo> getMemberInfos(String typeName) {
 
 		TypeDeclaration foundType = this.findTypeByClassName(typeName);
-		if (foundType == null) return null;
+		if (foundType == null) {
+			return null;
+		}
 
 		List<MemberInfo> infos = new ArrayList<MemberInfo>();
 

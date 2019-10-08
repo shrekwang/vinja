@@ -45,13 +45,14 @@ public class SzjdeSearchReferenceCommand extends SzjdeCommand {
 	}
 	
 	public String getSourcePath(CompilerContext ctx ,String className,String sourceName) {
-		String rtlPathName = sourceName;
-		if (className.indexOf("/") > 0 ) {
-			rtlPathName = className.substring(0,className.lastIndexOf("/")+1) + sourceName;
-		}
-		
-		String sourcePath = ctx.findSourceFile(rtlPathName);
-		return sourcePath;
+//		String rtlPathName = sourceName;
+//		if (className.indexOf("/") > 0 ) {
+//			rtlPathName = className.substring(0,className.lastIndexOf("/")+1) + sourceName;
+//		}
+//		
+//		String sourcePath = ctx.findSourceFile(rtlPathName);
+//		return sourcePath;
+		return "";
 	}
 	
 	public String getSourceLine(CompilerContext ctx, String className, String sourceName, int line) {

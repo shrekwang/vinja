@@ -18,7 +18,7 @@ public class SzjdeLoadJarMetaInfoCommand extends SzjdeShextCommand {
 				
 				for (String path : urls) {
 					if (path.endsWith(".jar")) {
-						cmm.loadMetaInfoInJar(path);
+						cmm.loadMetaInfoInJar(path, ctx);
 						out.println("loadding " +path + " ...");
 					}
 				}

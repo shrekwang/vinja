@@ -5,3 +5,4 @@ com.opensymphony.*
 net.sf.*
 org.hibernate.*
 org.springframework.*
+com.alibaba.dubbo.common.bytecode.*
