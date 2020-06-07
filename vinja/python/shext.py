@@ -423,6 +423,8 @@ class LocateCmd(object):
             selectSql += " and b.alias = ? "
             params.append(alias.decode(codepage))
 
+        selectSql += " limit 50 "
+
         cur.execute(selectSql,tuple(params))
         if startWithAlias :
             rows = [(os.path.join(alias,path),alias,start_dir) for (start_dir,name,path,alias) in cur.fetchall()]
