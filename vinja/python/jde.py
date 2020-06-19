@@ -2554,7 +2554,7 @@ class Jdb(object):
     def resumeSuspend(self):
         if self.suspendRow == -1 :
             return 
-        pat = re.compile(r".*=(?P<line>\d+)\s+id=(?P<id>\d+)\s.*=(?P<name>.+)\b\s*$")
+        pat = re.compile(r".*=(?P<line>\d+)\s+id=(?P<id>\d+)\s.*name=(?P<name>\w+)\s*.*$")
         vim.command("redir => g:current_signplace")
         vim.command("silent sign place buffer=%s" % self.suspendBufnr )
         vim.command("redir END")
