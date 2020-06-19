@@ -280,7 +280,7 @@ class MiscUtil(object):
         vim_mode = vim.eval("mode()")
         #logging.debug("startCol is %s , endCol is %s " % (str(startCol), str(endCol)))
         #logging.debug("current mode is %s " % vim_mode)
-        operateCode = VimUtil.getInput("choose an operation(sum,join,avg,inc,sqlin):")
+        operateCode = VimUtil.getInput("choose an operation(sum,join,avg,inc,sqlin,cljin):")
         result_list = []
         inbuf=vim.current.buffer
         for row_num in range(startLine, endLine+1, 1) :
@@ -305,6 +305,9 @@ class MiscUtil(object):
         elif operateCode == "sqlin" : 
             join_text = ",".join(["'" + item +"'" for item in result_list])
             vim.command('call append(%s," (%s) ")' %(str(endLine),join_text))
+        elif operateCode == "cljin" : 
+            join_text = " ".join(["\\\"" + item +"\\\"" for item in result_list])
+            vim.command('call append(%s," [%s] ")' %(str(endLine),join_text))
         elif operateCode == "inc":
             start_num = int(result_list[0]) 
             for row_num in range(startLine, endLine+1, 1) :
