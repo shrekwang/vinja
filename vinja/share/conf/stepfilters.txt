@@ -4,4 +4,7 @@ com.sun.*
 com.opensymphony.*
 net.sf.*
 org.hibernate.*
+org.springframework.aop.*
+org.apache.commons.logging.*
 org.springframework.*
+org.aspectj.*
