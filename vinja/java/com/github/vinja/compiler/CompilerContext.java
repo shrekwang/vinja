@@ -132,7 +132,7 @@ public class CompilerContext {
 		
 		URL urlsA[] = new URL[classPathUrls.size()];
 		classPathUrls.toArray(urlsA);
-		loader = new ReflectAbleClassLoader(urlsA, this.getClass().getClassLoader());
+		loader = new ReflectAbleClassLoader(this.projectRoot,urlsA, this.getClass().getClassLoader());
 		
 		if (cacheClassInfo) {
 			cacheClassInfo();
@@ -201,7 +201,7 @@ public class CompilerContext {
 		
 		if (loader == null) return;
 		URL[] urls = loader.getURLs();
-		loader = new ReflectAbleClassLoader(urls, this.getClass().getClassLoader());
+		loader = new ReflectAbleClassLoader(this.projectRoot,urls, this.getClass().getClassLoader());
 		for (Debugger debugger : Debugger.getInstances()) {
 			BreakpointManager bpmgr = debugger.getBreakpointManager();
 			for (String className : classNames ) {
@@ -211,7 +211,7 @@ public class CompilerContext {
 				//File outFile = new File(classPath);
 				
 				String resourceName = className.replace('.', '/') + ".class";
-				this.getClassLoader().clearResourceByteCache(resourceName);
+				this.getClassLoader().clearResourceByteCache(this.projectRoot,resourceName);
 				
 				this.clsBinPathCache.invalidate(className);
 				this.clsSourcePathCache.invalidate(className);
@@ -288,7 +288,7 @@ public class CompilerContext {
 				if (entry.sourcepath !=null) {
 					libSrcLocations.add(entry.sourcepath);
 				} else {
-                    decompileHorse.decompileJar(entryAbsPath, this);
+                    //decompileHorse.decompileJar(entryAbsPath, this);
                 }
 			} else if (entry.kind.equals("src")) {
 				//if path startswith "/", it's another eclipse project 
@@ -346,7 +346,7 @@ public class CompilerContext {
 				if (sourcePath !=null && !sourcePath.equals("")) {
 					libSrcLocations.add(sourcePath);
 				} else {
-                    decompileHorse.decompileJar(entryPath, this);
+                    //decompileHorse.decompileJar(entryPath, this);
                 }
 			}
 		}
@@ -793,13 +793,13 @@ public class CompilerContext {
 			if (libFile.getName().endsWith(".jar")) {
 				url = new URL("jar", "", -1, libFile.toURI().toString() + "!/");
 				//jdk bug hacks, disable caching
-				URLConnection uConn = new URLConnection(url) {
-                    @Override
-                    public void connect() throws IOException {
-                        // NOOP
-                    }
-                };
-				uConn.setDefaultUseCaches(false);
+				//URLConnection uConn = new URLConnection(url) {
+                //   @Override
+                //   public void connect() throws IOException {
+                         // NOOP
+                //  }
+                //};
+				//uConn.setDefaultUseCaches(false);
 			} else {
 			    url = libFile.toURI().toURL();
 			}

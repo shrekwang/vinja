@@ -1,6 +1,7 @@
 
 package com.github.vinja.compiler;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -55,20 +56,17 @@ public class NameEnvironment implements INameEnvironment {
 		}
 
 		String resourceName = className.replace('.', '/') + ".class";
+		char[] fileName = className.toCharArray();
+		byte[] classBytes = ctx.getClassLoader().getResourceByte(ctx.getProjectRoot(),resourceName);
+		if (classBytes == null) return  null;
 
 		try {
-			ReflectAbleClassLoader classLoader = ctx.getClassLoader();
-			byte[] classBytes = classLoader.getResourceBytes(resourceName);
-			if (classBytes != null) {
-				char[] fileName = className.toCharArray();
-				ClassFileReader classFileReader = new ClassFileReader(classBytes, fileName, true);
-				return new NameEnvironmentAnswer(classFileReader, null);
-			}
+			ClassFileReader classFileReader = new ClassFileReader(classBytes, fileName, true);
+			return new NameEnvironmentAnswer(classFileReader, null);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
-
 	}
 
 	private boolean isPackage(String result) {
@@ -78,8 +76,8 @@ public class NameEnvironment implements INameEnvironment {
 
 		ReflectAbleClassLoader classLoader = ctx.getClassLoader();
 		String resourceName = result.replace('.', '/') + ".class";
-		return 	classLoader.getResourceBytes(resourceName) == null;
-		
+		return classLoader.getResourceByte(ctx.getProjectRoot(),resourceName) == null;
+
 	}
 
 	public boolean isPackage(char[][] parentPackageName, char[] packageName) {

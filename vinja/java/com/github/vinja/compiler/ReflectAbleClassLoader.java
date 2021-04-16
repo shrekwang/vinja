@@ -1,164 +1,92 @@
 package com.github.vinja.compiler;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import org.eclipse.jdt.internal.compiler.classfmt.ClassFileReader;
+import org.eclipse.jdt.internal.compiler.env.NameEnvironmentAnswer;
+
+import javax.swing.text.html.Option;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLConnection;
 import java.net.URLStreamHandlerFactory;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
-import com.github.vinja.util.LRUCache;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class ReflectAbleClassLoader extends URLClassLoader {
 
-	private static LRUCache<String, byte[]> jarByteCache = new LRUCache<String, byte[]>(1000);
-	private static LRUCache<String, byte[]> classByteCache = new LRUCache<String, byte[]>(1000);
-	
+    private static Map<String,LoadingCache<String, Optional<Object>>> allCache = new HashMap<>();
 
-	public ReflectAbleClassLoader(URL[] urls, ClassLoader parent, URLStreamHandlerFactory factory) {
-		super(urls, parent, factory);
-	}
+    private void initCache(String projectRoot) {
+        LoadingCache<String, Optional<Object>> cache = allCache.get(projectRoot);
 
-	public ReflectAbleClassLoader(URL[] urls, ClassLoader parent) {
-		super(urls, parent);
-	}
+        if (cache == null) {
+            cache = CacheBuilder.newBuilder()
+                    .initialCapacity(5000)
+                    .maximumSize(20000)
+                    .softValues()
+                    .build(new CacheLoader<String, Optional<Object>>() {
+                        @Override
+                        public Optional<Object> load(String resourceName) throws Exception {
+                            try (InputStream is = getResourceAsStream(resourceName)) {
+                                if (is != null) {
+                                    byte[] classBytes;
+                                    byte[] buf = new byte[8192];
+                                    ByteArrayOutputStream baos = new ByteArrayOutputStream(buf.length);
+                                    int count;
+                                    while ((count = is.read(buf, 0, buf.length)) > 0) {
+                                        baos.write(buf, 0, count);
+                                    }
+                                    baos.flush();
+                                    classBytes = baos.toByteArray();
+                                    return Optional.of(classBytes);
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            return Optional.empty();
+                        }
+                    });
+            allCache.put(projectRoot, cache);
+        }
+    }
 
-	public ReflectAbleClassLoader(URL[] urls) {
-		super(urls);
-	}
 
-	public Package[] getPackageInfo() {
-		return this.getPackages();
-	}
-	
-	@Override
-	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-		// has the class loaded already?
-		Class<?> loadedClass = findLoadedClass(name);
-		if (loadedClass == null) {
-			try {
-				if (loadedClass == null) {
-					loadedClass = findClass(name);
-				}
-			} catch (ClassNotFoundException e) {
-				loadedClass = super.loadClass(name, resolve);
-			}
-		}
-		if (resolve) { // marked to resolve
-			resolveClass(loadedClass);
-		}
-		return loadedClass;
-	}
+    public ReflectAbleClassLoader(String projectRoot, URL[] urls, ClassLoader parent) {
+        super(urls, parent);
+        initCache(projectRoot);
+    }
 
-	@Override
-	public Enumeration<URL> getResources(String name) throws IOException {
-		List<URL> allRes = new LinkedList<>();
 
-		// load resource from this classloader
-		Enumeration<URL> thisRes = findResources(name);
-		if (thisRes != null) {
-			while (thisRes.hasMoreElements()) {
-				allRes.add(thisRes.nextElement());
-			}
-		}
+    public Package[] getPackageInfo() {
+        return this.getPackages();
+    }
 
-		// then try finding resources from parent classloaders
-		Enumeration<URL> parentRes = super.findResources(name);
-		if (parentRes != null) {
-			while (parentRes.hasMoreElements()) {
-				allRes.add(parentRes.nextElement());
-			}
-		}
+    public void clearResourceByteCache(String projectRoot, String resourceName) {
+        LoadingCache<String, Optional<Object>> cache = allCache.get(projectRoot);
+        if (cache != null) {
+            cache.invalidate(resourceName);
+        }
+    }
 
-		return new Enumeration<URL>() {
-			Iterator<URL> it = allRes.iterator();
+    public byte[] getResourceByte(String projectRoot,String resourceName){
+        try {
+            LoadingCache<String, Optional<Object>> cache = allCache.get(projectRoot);
+            Optional<Object> obj = cache.get(resourceName);
+            if (obj.isPresent()) {
+                return (byte[])obj.get();
+            }
+            return null;
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-			@Override
-			public boolean hasMoreElements() {
-				return it.hasNext();
-			}
-
-			@Override
-			public URL nextElement() {
-				return it.next();
-			}
-		};
-	}
-	
-	@Override
-	public URL getResource(String name) {
-		URL res = null;
-		if (res == null) {
-			res = findResource(name);
-		}
-		if (res == null) {
-			res = super.getResource(name);
-		}
-		return res;
-	}
-
-	public InputStream getResourceAsStream(String name) {
-		return super.getResourceAsStream(name);
-	}
-	
-	public void clearResourceByteCache(String name) {
-		classByteCache.remove(name);
-	}
-
-	public byte[] getResourceBytes(String name) {
-		if (jarByteCache.containsKey(name)) {
-			return jarByteCache.get(name);
-		}
-		if (classByteCache.containsKey(name)) {
-			return classByteCache.get(name);
-		}
-
-		URL url = getResource(name);
-		if (url == null) {
-			classByteCache.put(name, null);
-			return null;
-		}
-
-		InputStream is = null;
-		try {
-			URLConnection urlc = url.openConnection();
-			is = urlc.getInputStream();
-			boolean isJarFile = false;
-			if (urlc instanceof JarURLConnection) {
-				isJarFile = true;
-			}
-
-			byte[] classBytes;
-			byte[] buf = new byte[8192];
-			ByteArrayOutputStream baos = new ByteArrayOutputStream(buf.length);
-			int count;
-			while ((count = is.read(buf, 0, buf.length)) > 0) {
-				baos.write(buf, 0, count);
-			}
-			baos.flush();
-			classBytes = baos.toByteArray();
-
-			if (isJarFile) {
-				jarByteCache.put(name, classBytes);
-			} else {
-				classByteCache.put(name, classBytes);
-
-			}
-			return classBytes;
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (is != null) {
-				try { is.close(); } catch (Exception e) {}
-			}
-		}
-		return null;
-	}
 
 }
