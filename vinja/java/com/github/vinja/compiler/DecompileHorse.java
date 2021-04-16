@@ -15,8 +15,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.io.IOUtils;
 
 import com.alibaba.fastjson.JSONObject;
-import com.github.vinja.util.ConsoleDecompiler;
-import com.github.vinja.util.Preference;
 import com.github.vinja.util.VjdeUtil;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -101,26 +99,7 @@ public class DecompileHorse {
 
             Callable<DecompileCacheInfo> callable = new Callable<DecompileCacheInfo>() {
                 public DecompileCacheInfo call() {
-                	System.out.println("start decompile:" + targetJarPath);
-                    String path=  ConsoleDecompiler.decompileJar(targetJarPath, decompiledJarPath);
-
-                    DecompileCacheInfo cacheInfo = new DecompileCacheInfo();
-                    cacheInfo.setDecompiledJarPath(path);
-                    cacheInfo.setOriginalJarGmtModified(gmtModified);
-                    cacheInfo.setOriginalJarPath(targetJarPath);
-
-					PrintWriter pw = null;
-					try {
-						File decompileCacheFile = new File(vinjaDataHome, "decompile.cache");
-						pw = new PrintWriter(new FileWriter(decompileCacheFile, true));
-						pw.println(JSONObject.toJSONString(cacheInfo));
-					} catch (Exception e) {
-						e.printStackTrace();
-					} finally {
-						if (pw != null ) { pw.close(); }
-					}
-
-                    return cacheInfo;
+                    return null;
                 }
             };
             final ListenableFuture<DecompileCacheInfo> future = listeningExecutorService.submit(callable);
