@@ -1,10 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import vim,os,re,sys,random
 from subprocess import Popen, PIPE
 import subprocess
 import logging
 import shutil
 import socket
-import uuid
+#import uuid
+import random
+import string
 import chardet
 from StringIO import StringIO
 from distutils import dir_util
@@ -15,6 +19,11 @@ import platform
 HOST = 'localhost'
 PORT = 9527
 END_TOKEN = "==end=="
+
+def get_random_string(length):
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
 
 class PathUtil(object):
     @staticmethod
@@ -199,6 +208,7 @@ class VinjaAgent(object):
         data_home = VinjaConf.getDataHome()
         hprof_filename = os.path.join(data_home, "vinja.hprof")
 
+        cmdArray.append('-javaagent:' + os.path.join(libpath, "lombok.jar") +'=ECJ') 
         cmdArray.append('-Xms1024M')
         cmdArray.append('-Xmx2048M') 
         cmdArray.append('-XX:+HeapDumpOnOutOfMemoryError')
@@ -210,7 +220,7 @@ class VinjaAgent(object):
         cmdArray.append("--vinja-home")
         cmdArray.append(vinja_home)
 
-
+        logging.debug("cmdArray is %s . " % " ".join(cmdArray))
         if os.name == "posix" :
             Popen(" ".join(cmdArray),shell = True)
         else :
@@ -257,7 +267,11 @@ class MiscUtil(object):
         vim.command("call SwitchToVinjaView('redir-out','belowright','%s')" % height)
 
         buf_lines = vim.eval("g:redir_output").split("\n")
-        buf_lines = [item for item in buf_lines if item.strip() !=  "No matching autocommands"]
+        reobj = re.compile(r"^\s*没有匹配的自动命令")
+        buf_lines = [reobj.sub("",item) for item in buf_lines if item.strip() !=  "没有匹配的自动命令"]
+        #remove ending nil 
+        if buf_lines[-1].endswith("nil") and  buf_lines[-1].strip() != "nil":
+            buf_lines[-1] =  buf_lines[-1][0:-3]
         output(buf_lines)
         lastwin = str(vim.eval("winnr('#')"))
         vim.command("exec '"+lastwin+" wincmd w'")
@@ -1192,7 +1206,7 @@ class EditHistory(object):
 
     def create_win_id(self):
         if self._get_win_id() == None :
-            vim.command('let t:id="%s"' % uuid.uuid4())
+            vim.command('let t:id="%s"' % get_random_string(8))
 
     def record_current_buf(self):
         if vim.eval("&buftype") != "" :
