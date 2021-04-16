@@ -1833,6 +1833,7 @@ class Parser(object):
     def copyMainClassToRegister():
         className = Parser.getMainClass()
         vim.command("let @\"='%s'" % className)
+        vim.command("let @* = '%s' " % className)
         vim.command("echo 'class named copied to vim register.....'")
         return None
 
@@ -2207,11 +2208,14 @@ class SzJdeCompletion(object):
             params =(current_file_name,classNameList,classPathXml,completionType,expTokens)
             memberInfos = []
             memberInfoLines = Talker.getMemberList(params).split("\n")
-            
+
             for line in memberInfoLines :
                 if line == "" : continue
-                mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
-                memberInfos.append( (mtype,mname,mparams,mreturntype) )
+                try:
+                    mtype,mname,mparams,mreturntype,mexceptions = line.split(":")
+                    memberInfos.append( (mtype,mname,mparams,mreturntype) )
+                except Exception as e :
+                    logging.debug("error in getCompleteResult , line is:%s, error is %s" % (line, e))
             inheritMembers = SzJdeCompletion.buildCptDictArrary(memberInfos, pat,base)
             for item in inheritMembers :
                 result.append(item)
