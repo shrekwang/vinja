@@ -1,17 +1,26 @@
 package com.github.vinja.debug;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.github.vinja.util.DecompileUtil;
+import com.github.vinja.util.Pair;
 import org.apache.commons.io.FilenameUtils;
 
 import com.github.vinja.compiler.CompilerContext;
@@ -457,6 +466,15 @@ public class Debugger {
 			abPath = compilerContext.findSourceOrBinPath(locClassName);
 		} catch (Throwable e) {
 		}
+
+
+		//still can't find source, try decompile
+		if (abPath.equals("None") || abPath.endsWith(".class")) {
+			Pair<String, Integer> pair = MappingDecompilerUtil.decompileWithMappedLine(loc, lineNum, abPath);
+			abPath = pair.getFirst();
+			lineNum = pair.getSecond();
+		}
+
 		String funcName = "HandleJdiEvent";
 		String[] args = {"suspend", abPath, String.valueOf(lineNum), className,"null"};
 		VjdeUtil.callVimFunc(getVimServerName(), funcName, args);

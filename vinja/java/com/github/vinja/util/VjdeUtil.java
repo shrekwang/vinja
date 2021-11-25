@@ -97,11 +97,4 @@ public class VjdeUtil {
 		}
 	}
 	
-	public static void main(String[] args) throws Exception {
-		System.out.println("sdfk");
-		String[] vimRemoteCmdArray = new String[] {"mvim","--servername","VIM"};
-		Runtime.getRuntime().exec(vimRemoteCmdArray);
-	}
-	
-
 }

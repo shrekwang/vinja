@@ -2509,6 +2509,7 @@ class Jdb(object):
         if os.path.exists(absPath) or absPath.startswith("jar:") :
             if not PathUtil.same_path(absPath, vim.current.buffer.name):
                 #if absPath != vim.current.buffer.name :
+                absPath = absPath.replace("$","\$")
                 vim.command("edit %s" % absPath)
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)

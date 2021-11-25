@@ -350,6 +350,13 @@ public class CompilerContext {
                 }
 			}
 		}
+		String extraSrcLocs =Preference.getInstance().getValue(Preference.EXTRA_SRC_LOCS);
+		if (extraSrcLocs !=null && extraSrcLocs.length() > 0) {
+			String [] paths = extraSrcLocs.split(",");
+			for (String path : paths) {
+				extSrcLocations.add(path);
+			}
+		}
 		
 	} 
 
@@ -613,8 +620,10 @@ public class CompilerContext {
 					if (classFileLocation != null) {
 						String srcLocation = dstToSrcMap.get(classFileLocation);
 						if (srcLocation != null && ! srcLocation.trim().equals(""))  {
-							String tmpPath = "jar://" + srcLocation + "!" +rtlPathName;
-							return tmpPath;
+							if (!specialPackageCase(srcLocation,rtlPathName)) {
+								String tmpPath = "jar://" + srcLocation + "!" + rtlPathName;
+								return tmpPath;
+							}
 						}
 					}
 
@@ -632,6 +641,15 @@ public class CompilerContext {
 			e.printStackTrace();
 			return "None";
 		}
+	}
+
+	public boolean specialPackageCase(String srcLocation, String rtlPathName) {
+		//spring packaged cglib in binary jar , but not in source jar
+		if (srcLocation.indexOf("spring-core") > -1
+				&& rtlPathName.startsWith("org/springframework/cglib")) {
+			return true;
+		}
+		return false;
 	}
 	
 	public String findClassBinPath(String className) {

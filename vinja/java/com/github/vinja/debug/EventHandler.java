@@ -2,6 +2,8 @@ package com.github.vinja.debug;
 
 import com.github.vinja.compiler.CompilerContext;
 import com.github.vinja.util.ClassNameUtil;
+import com.github.vinja.util.DecompileUtil;
+import com.github.vinja.util.Pair;
 import com.github.vinja.util.VjdeUtil;
 import com.sun.jdi.Location;
 import com.sun.jdi.ReferenceType;
@@ -21,6 +23,17 @@ import com.sun.jdi.event.VMDisconnectEvent;
 import com.sun.jdi.event.VMStartEvent;
 import com.sun.jdi.event.WatchpointEvent;
 import com.sun.jdi.request.BreakpointRequest;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Map;
+import java.util.NavigableMap;
 
 public class EventHandler extends Thread {
 
@@ -204,6 +217,13 @@ public class EventHandler extends Thread {
 			String locClassName = ClassNameUtil.sourceToClassName(loc.sourcePath());
 			abPath = ctx.findSourceOrBinPath(locClassName);
 		} catch (Throwable e) {
+		}
+
+		//still can't find source, try decompile
+		if (abPath.equals("None") || abPath.endsWith(".class")) {
+			Pair<String, Integer> pair = MappingDecompilerUtil.decompileWithMappedLine(loc, lineNum, abPath);
+			abPath = pair.getFirst();
+			lineNum = pair.getSecond();
 		}
 		
 		String appendOperate  = "null";
