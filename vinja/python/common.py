@@ -197,8 +197,8 @@ class VinjaAgent(object):
             else :
                 swtLibPath = os.path.join(libpath,"swt-linux/swt.jar")
         cps.append(swtLibPath)
-        toolsJarPath = os.path.join(os.getenv("JAVA_HOME"),"lib/tools.jar")
-        cps.append(toolsJarPath)
+        #toolsJarPath = os.path.join(os.getenv("JAVA_HOME"),"lib/tools.jar")
+        #cps.append(toolsJarPath)
         cps.insert(0, os.path.join(libpath,"vinja.jar"))
         #cps.insert(0, "/Users/wangsn/github/vinja/vinja/classes")
         if platform.system() == "Darwin":

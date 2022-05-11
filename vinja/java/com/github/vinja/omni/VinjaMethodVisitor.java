@@ -79,12 +79,12 @@ public class VinjaMethodVisitor extends MethodVisitor {
 	@Override
 	public AnnotationVisitor visitAnnotation(final String desc, final boolean visible) {
 		this.vinjaClassVisitor.addDesc(desc);
-		return new VinjaAnnotationVisitor(Opcodes.ASM5, super.visitAnnotation(desc, visible), this.vinjaClassVisitor);
+		return new VinjaAnnotationVisitor(Opcodes.ASM9, super.visitAnnotation(desc, visible), this.vinjaClassVisitor);
 	}
 
 	@Override
 	public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-		return new VinjaAnnotationVisitor(Opcodes.ASM5, super.visitTypeAnnotation(typeRef, typePath, desc, visible),this.vinjaClassVisitor);
+		return new VinjaAnnotationVisitor(Opcodes.ASM9, super.visitTypeAnnotation(typeRef, typePath, desc, visible),this.vinjaClassVisitor);
 	}
 
 	@Override
@@ -95,14 +95,14 @@ public class VinjaMethodVisitor extends MethodVisitor {
 	@Override
 	public AnnotationVisitor visitInsnAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
 		this.vinjaClassVisitor.addDesc(desc);
-		return new VinjaAnnotationVisitor(Opcodes.ASM5, super.visitAnnotation(desc, visible), this.vinjaClassVisitor);
+		return new VinjaAnnotationVisitor(Opcodes.ASM9, super.visitAnnotation(desc, visible), this.vinjaClassVisitor);
 	}
 
 	@Override
 	public AnnotationVisitor visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end,
 			int[] index, String desc, boolean visible) {
 		this.vinjaClassVisitor.addDesc(desc);
-		return new VinjaAnnotationVisitor(Opcodes.ASM5, super.visitAnnotation(desc, visible), this.vinjaClassVisitor);
+		return new VinjaAnnotationVisitor(Opcodes.ASM9, super.visitAnnotation(desc, visible), this.vinjaClassVisitor);
 	}
 	
 	

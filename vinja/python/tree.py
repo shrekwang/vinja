@@ -723,7 +723,7 @@ class ProjectRootNode(NormalDirNode):
             except Exception , e:
                 logging.debug(basename+" not exists or is corrupted")
 
-        jdk_lib_src = os.path.join(os.getenv("JAVA_HOME"),"src.zip")
+        jdk_lib_src = os.path.join(os.getenv("JAVA_HOME"),"lib/src.zip")
         if os.path.exists(jdk_lib_src) :
             try : 
                 node = ZipRootNode("src.zip",jdk_lib_src, False,False)

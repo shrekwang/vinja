@@ -24,12 +24,12 @@ public class VinjaFieldVisitor extends FieldVisitor {
 	@Override
 	public AnnotationVisitor visitAnnotation(final String desc, final boolean visible) {
 		this.vinjaClassVisitor.addDesc(desc);
-		return new VinjaAnnotationVisitor(Opcodes.ASM5, super.visitAnnotation(desc, visible), this.vinjaClassVisitor);
+		return new VinjaAnnotationVisitor(Opcodes.ASM9, super.visitAnnotation(desc, visible), this.vinjaClassVisitor);
 	}
 
 	@Override
 	public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-		return new VinjaAnnotationVisitor(Opcodes.ASM5, super.visitTypeAnnotation(typeRef, typePath, desc, visible),this.vinjaClassVisitor);
+		return new VinjaAnnotationVisitor(Opcodes.ASM9, super.visitTypeAnnotation(typeRef, typePath, desc, visible),this.vinjaClassVisitor);
 	}
 
 	@Override

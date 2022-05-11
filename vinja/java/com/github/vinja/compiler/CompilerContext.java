@@ -54,7 +54,8 @@ public class CompilerContext {
 	private ReflectAbleClassLoader loader;
 	private List<String> srcLocations=new ArrayList<String>();
 	private List<String> libSrcLocations = new CopyOnWriteArrayList<String>();
-	
+	private String jdkSrcLocation = null;
+
 	private List<String> extSrcLocations=new ArrayList<String>();
 	private List<String> extOutputDirs = new ArrayList<String>();
 
@@ -120,11 +121,11 @@ public class CompilerContext {
 			this.outputDir = abpath;
 			this.srcLocations.add(abpath);
 			addToClassPaths(file, -1);
-			String jdkSrc = FilenameUtils.concat(System.getenv("JAVA_HOME") , "src.zip");
-			if (jdkSrc != null ) {
-				 File jdkSrcFile = new File(jdkSrc);
+			String tmpJdkSrc = FilenameUtils.concat(System.getenv("JAVA_HOME") , "lib/src.zip");
+			if (tmpJdkSrc != null ) {
+				 File jdkSrcFile = new File(tmpJdkSrc);
 				 if (jdkSrcFile.exists()) {
-					 libSrcLocations.add(jdkSrc);
+					 jdkSrcLocation = tmpJdkSrc;
 				 }
 			}
 		}
@@ -271,12 +272,13 @@ public class CompilerContext {
 	
 	private void initClassPath(String classPathXml) {
 		classPathEntries=parseClassPathXmlFile(classPathXml);
-		
-		 String jdkSrc = FilenameUtils.concat(System.getenv("JAVA_HOME") , "src.zip");
-		 if (jdkSrc != null ) {
-			 File jdkSrcFile = new File(jdkSrc);
+
+
+		 String tempJdkLoc = FilenameUtils.concat(System.getenv("JAVA_HOME") , "lib/src.zip");
+		 if (tempJdkLoc != null ) {
+			 File jdkSrcFile = new File(tempJdkLoc);
 			 if (jdkSrcFile.exists()) {
-				 libSrcLocations.add(jdkSrc);
+				 jdkSrcLocation = tempJdkLoc;
 			 }
 		 }
 
@@ -405,6 +407,7 @@ public class CompilerContext {
 
 		List<Future> futures = new ArrayList<Future>();
 		futures.add( backJobs.submit(() -> packageInfo.cacheSystemRtJar()));
+		futures.add( backJobs.submit(() -> packageInfo.cacheSystemJmodJar()));
 
 		for (String path : fsClassPathUrls) {
 			if (path.endsWith(".jar")) {
@@ -606,8 +609,15 @@ public class CompilerContext {
 					if (className == null)
 						return "None";
 					ClassInfo classInfo = classMetaInfoManager.getMetaInfo(className);
-					
 					String rtlPathName = className.replace(".", "/") + ".java";
+
+					if ( packageInfo.getModName(className) != null) {
+						String mod = packageInfo.getModName(className);
+						String tmpPath = "jar://" + jdkSrcLocation + "!" +mod +"/" +rtlPathName ;
+						lastSearchResult = tmpPath;
+						return tmpPath;
+					}
+
 					if (classInfo != null && classInfo.getSourceName() != null) {
 						int dotIndex = className.lastIndexOf(".");
 						String packagePath = "";
@@ -708,7 +718,11 @@ public class CompilerContext {
 			boolean suc = tmpDirFile.mkdirs();
 			if (!suc) return "None";
 		}
-		
+
+		if (rtlPathName.indexOf("/") < 0) {
+			rtlPathName = "java/lang/"+rtlPathName;
+		}
+
 		String tmpPath =FilenameUtils.concat(tmpDirPath,className+".class");
 		
 		for (String srcLoc : srcLocations) {
@@ -729,9 +743,7 @@ public class CompilerContext {
 				return absPath;
 			}
 		}
-		if (rtlPathName.indexOf("/") < 0) {
-			rtlPathName = "java/lang/"+rtlPathName;
-		}
+
 		for (String libSrcLoc : libSrcLocations) {
 			if (libSrcLoc.endsWith(".jar") || libSrcLoc.endsWith(".zip")) {
 				if ( hasEntry(libSrcLoc, rtlPathName)) {

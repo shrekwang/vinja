@@ -33,6 +33,9 @@ public class PackageInfo {
 	private Map<String,String> pkgLocationCache = new ConcurrentHashMap<String,String>();
 	
 	private static Pattern pattern = Pattern.compile("\\d+.class");
+
+	//className --> ModName cache
+	private static Map<String, String> classModCache = new ConcurrentHashMap<>();
 	
 	
 	/**
@@ -267,7 +270,50 @@ public class PackageInfo {
 		    addClasstoDstClass(className);
 		}
 	}
-	
+
+	public String getModName(String className) {
+		return classModCache.get(className);
+	}
+
+	public void cacheClassNameInJmod (String path) {
+		File file = new File(path);
+		if (! file.exists()) return;
+		String hadCached=cachedPath.get(path);
+		if (hadCached !=null && hadCached.equals("true")) return;
+		JarFile jarFile = null;
+
+		String modNFileName = file.getName();
+		String modName = modNFileName.substring(0, modNFileName.indexOf(".jmod"));
+		try {
+			jarFile = new JarFile(path);
+			Enumeration<JarEntry> entries = jarFile.entries();
+			while(entries.hasMoreElements()) {
+				JarEntry entry = entries.nextElement();
+				String entryName = entry.getName();
+				if (entryName.indexOf("$") > -1) {
+					if (pattern.matcher(entryName.substring(entryName.indexOf("$")+1)).matches()) {
+						continue;
+					}
+				}
+				if (!entryName.endsWith(".class")) continue;
+				//classes/sun/net/SocksProxy.class
+				String className = entryName.replaceAll("^classes/","")
+						.replace('/', '.')
+						.replace('\\', '.')
+						.replace(".class", "");
+				addClassNameToCache(className,path);
+				classModCache.put(className,modName);
+			}
+			jarFile.close();
+		} catch (IOException e ) {
+		} finally {
+			if (jarFile !=null ) try {jarFile.close();} catch (Exception e) {};
+		}
+		cachedPath.put(path, "true");
+		return ;
+
+	}
+
 	public void cacheClassNameInJar(String path) {
 		File file = new File(path);
 		if (! file.exists()) return;
@@ -305,6 +351,16 @@ public class PackageInfo {
 			rtjarFile=new File(FilenameUtils.concat(javaHome, "lib/rt.jar"));
 		if (! rtjarFile.exists()) return ;
 		cacheClassNameInJar(rtjarFile.getPath());
+	}
+
+	public void  cacheSystemJmodJar() {
+		String javaHome="/Users/wangsn/.sdkman/candidates/java/11.0.2-open/";
+		File jmodsDir=new File(FilenameUtils.concat(javaHome, "jmods"));
+		for (File file: jmodsDir.listFiles()) {
+			if (file.getName().endsWith("jmod")) {
+				cacheClassNameInJmod(file.getPath());
+			}
+		}
 	}
 	 
 

@@ -20,7 +20,7 @@ public class VinjaClassVisitor extends ClassVisitor {
 
 
 	public VinjaClassVisitor(ClassInfo classInfo,CompilerContext ctx) {
-		super(Opcodes.ASM5);
+		super(Opcodes.ASM9);
 		this.classInfo = classInfo;
 		this.packageInfo = ctx.getPackageInfo();
 	}
@@ -57,7 +57,7 @@ public class VinjaClassVisitor extends ClassVisitor {
 	@Override
 	public AnnotationVisitor visitAnnotation(final String desc, final boolean visible) {
 		addDesc(desc);
-		return new VinjaAnnotationVisitor(Opcodes.ASM5, super.visitAnnotation(desc, visible), this);
+		return new VinjaAnnotationVisitor(Opcodes.ASM9, super.visitAnnotation(desc, visible), this);
 	}
 
 
@@ -72,7 +72,7 @@ public class VinjaClassVisitor extends ClassVisitor {
 		if (value instanceof Type) {
 			addType((Type) value);
 		}
-		return new VinjaFieldVisitor(Opcodes.ASM5, super.visitField(access, name, desc, signature, value), this);
+		return new VinjaFieldVisitor(Opcodes.ASM9, super.visitField(access, name, desc, signature, value), this);
 	}
 
 	@Override
@@ -84,7 +84,7 @@ public class VinjaClassVisitor extends ClassVisitor {
 			addSignature(signature);
 		}
 		addInternalNames(exceptions);
-		return new VinjaMethodVisitor(Opcodes.ASM5, super.visitMethod(access, name, desc, signature, exceptions), this);
+		return new VinjaMethodVisitor(Opcodes.ASM9, super.visitMethod(access, name, desc, signature, exceptions), this);
 	}
 
 	@Override
@@ -147,7 +147,7 @@ public class VinjaClassVisitor extends ClassVisitor {
 	
 	public void addSignature(final String signature) {
 		if (signature != null) {
-			new SignatureReader(signature).accept(new VinjaSignatureVisitor(Opcodes.ASM5, this));
+			new SignatureReader(signature).accept(new VinjaSignatureVisitor(Opcodes.ASM9, this));
 		}
 	}
 	
@@ -158,13 +158,13 @@ public class VinjaClassVisitor extends ClassVisitor {
 
 	public void addTypeSignature(final String signature) {
 		if (signature != null) {
-			new SignatureReader(signature).accept(new VinjaSignatureVisitor(Opcodes.ASM5, this));
+			new SignatureReader(signature).accept(new VinjaSignatureVisitor(Opcodes.ASM9, this));
 		}
 	}
 
 	@Override
 	public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-		return new VinjaAnnotationVisitor(Opcodes.ASM5, super.visitTypeAnnotation(typeRef, typePath, desc, visible),this);
+		return new VinjaAnnotationVisitor(Opcodes.ASM9, super.visitTypeAnnotation(typeRef, typePath, desc, visible),this);
 	}
 
 	@Override

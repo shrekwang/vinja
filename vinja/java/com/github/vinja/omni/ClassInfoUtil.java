@@ -1,10 +1,6 @@
 package com.github.vinja.omni;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -191,6 +187,9 @@ public class ClassInfoUtil {
 			Method m = (Method) member;
 			parameters = m.getParameterTypes();
 			paramnames = namer.lookupParameterNames(m, false);
+			for (Parameter p : m.getParameters()) {
+				System.err.println("  " + p.getName());
+			}
 		} else {
 			Constructor c = (Constructor) member;
 			parameters = c.getParameterTypes();

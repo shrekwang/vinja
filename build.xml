@@ -12,9 +12,9 @@
             <include name="**/*.jar" />
         </fileset>
         <pathelement location="${dist}" />
-        <fileset dir="${env.JAVA_HOME}/lib">
-            <include name="tools.jar" />
-        </fileset>
+        <!-- <fileset dir="${env.JAVA_HOME}/lib"> -->
+        <!--     <include name="tools.jar" /> -->
+        <!-- </fileset> -->
     </path>
 
     <target name="build">
