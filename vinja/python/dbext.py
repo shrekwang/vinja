@@ -9,7 +9,7 @@ from string import maketrans
 
 conn_pool = {}
 
-MAX_ROW_COUNT = 2000
+MAX_ROW_COUNT = 5000
 
 class QueryUtil(object):
 
@@ -55,6 +55,12 @@ class QueryUtil(object):
         tableList = []
         for dataRow in result :
             tableList.append(dataRow[0].lower())
+
+        sql = " show databases "
+        columns,result = dbext.query(sql)
+        for dataRow in result :
+            tableList.append(dataRow[0].lower())
+
         return tableList
 
     @staticmethod
@@ -74,7 +80,7 @@ class QueryUtil(object):
             sql = sql % name
         elif server_type == "mysql":
             sql = """ SELECT table_name FROM INFORMATION_SCHEMA.TABLES
-            where table_name like '%%%s%%' and table_schema=database() """ % name
+            where table_name like '%%%s%%' and table_schema='%s' """ % (name, dbext.dbname)
 
         columns,result = dbext.query(sql)
         return columns, result
@@ -642,7 +648,7 @@ class SzDbCompletion(object):
         if exp.find("*") > -1 :
             pat = re.compile("^%s$" % exp.upper().replace("*",".*"))
         else:
-            pat = re.compile(".*%s.*" % exp.upper() )
+            pat = re.compile("^%s.*" % exp.upper() )
 
         result = [str(item) for item in srcList if pat.match(item.upper())]
         if result == [] :
@@ -673,7 +679,15 @@ class SzDbCompletion(object):
         elif server_type == "mysql":
             tableCon = "','".join(tableList)
             tableCon = "'%s'" % tableCon
-            sql = " SELECT lower(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name in (%s) " % tableCon
+            conditions = []
+            for tableName in tableList :
+                if tableName.find(".") > -1: 
+                    schema, tableName = tableName.split(".")
+                    conditions.append("( table_name = '%s' and table_schema = '%s' )" % ( tableName.upper(),schema.upper()) )
+                else :
+                    conditions.append("( table_name = '%s' )" %  tableName.upper())
+            conditionStr = " or ".join(conditions)
+            sql = " SELECT lower(COLUMN_NAME) FROM information_schema.columns WHERE %s " % conditionStr
 
         tmpcolumns,result = dbext.query(sql)
         columns = []
@@ -691,7 +705,7 @@ class SzDbCompletion(object):
         elif server_type == "mssql":
             sql = "SELECT lower(name) FROM sysobjects where type = 'U' "
         elif server_type == "mysql":
-            sql = "select lower(table_name) from information_schema.tables"
+            sql = "select lower(table_name) from information_schema.tables where table_schema ='%s'" % schema
 
         tmpcolumns,result = dbext.query(sql)
         tables = []
