@@ -1227,8 +1227,8 @@ class EditHistory(object):
     def get_history(self):
         uuid_str = self._get_win_id()
         records = self.history.get(uuid_str)
-        records[:] = [item for item in records if os.path.exists(item) \
-                or ( len(item)> 4 and item[0:4] in ["jar:", "zip:", "war:"] )]
+        normal_buffers = [buffer.name for buffer in vim.buffers if buffer.options["buftype"] == ""]
+        records[:] = [item for item in records if item in normal_buffers]
         return records
 
     def remove_from_history(self,filename):
