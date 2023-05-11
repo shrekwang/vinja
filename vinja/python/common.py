@@ -1171,6 +1171,7 @@ class VimUtil(object):
         for line in vim.current.buffer :
             if len(line) > maxlen :
                 maxlen = len(line)
+        maxlen = maxlen + 3
         vim.command("vertical resize %d" % maxlen)
         
     @staticmethod
