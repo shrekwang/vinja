@@ -133,7 +133,7 @@ public class CompilerContext {
 		
 		URL urlsA[] = new URL[classPathUrls.size()];
 		classPathUrls.toArray(urlsA);
-		loader = new ReflectAbleClassLoader(this.projectRoot,urlsA, this.getClass().getClassLoader());
+		loader = new ReflectAbleClassLoader(this.projectRoot,urlsA, Object.class.getClassLoader());
 		
 		if (cacheClassInfo) {
 			cacheClassInfo();
@@ -202,7 +202,7 @@ public class CompilerContext {
 		
 		if (loader == null) return;
 		URL[] urls = loader.getURLs();
-		loader = new ReflectAbleClassLoader(this.projectRoot,urls, this.getClass().getClassLoader());
+		loader = new ReflectAbleClassLoader(this.projectRoot,urls, Object.class.getClassLoader());
 		for (Debugger debugger : Debugger.getInstances()) {
 			BreakpointManager bpmgr = debugger.getBreakpointManager();
 			for (String className : classNames ) {
