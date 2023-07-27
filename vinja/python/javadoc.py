@@ -1,5 +1,5 @@
 from BeautifulSoup import *
-import re,os, os.path, urllib2 
+import re,os, os.path, urllib.request, urllib.error, urllib.parse 
 
 class SqliteDbManager(object):
 
@@ -17,9 +17,9 @@ class SqliteDbManager(object):
         if isinstance(sql,list) :
             for item in sql :
                 cur.execute(item)
-        elif isinstance(sql, basestring):
+        elif isinstance(sql, str):
             if params :
-                if isinstance(params, basestring):
+                if isinstance(params, str):
                     cur.execute(sql,(params,))
                 elif isinstance(params[0], list) or isinstance(params[0],tuple):
                     for param in params :
@@ -36,7 +36,7 @@ class SqliteDbManager(object):
         conn=self.get_conn()
         cur=conn.cursor()
         if parameters :
-            if isinstance(parameters , basestring):
+            if isinstance(parameters , str):
                 cur.execute(selectSql,(parameters,))
             else :
                 cur.execute(selectSql,parameters)
@@ -98,7 +98,7 @@ class Javadoc(object):
 
     def __init__(self) :
         self.cache = PageCache()
-        print "cacheing class list"
+        print("cacheing class list")
         self.cacheClassList()
         self.updateIndexView()
 
@@ -135,7 +135,7 @@ class Javadoc(object):
         return value
 
     def extractText(self, texts,tag):
-        if  isinstance(tag, unicode) :
+        if  isinstance(tag, str) :
             if tag.strip() != "" :
                 texts.append(self.replaceEntity(tag))
 
@@ -145,7 +145,7 @@ class Javadoc(object):
         elif hasattr(node,"name") and node.name=="hr" : 
             texts.append("-"*80 +"<br>")
         for item in node.contents:
-            if isinstance(item, unicode) :
+            if isinstance(item, str) :
                 if item.strip() != "" :
                     texts.append(self.replaceEntity(item))
             else :
@@ -193,7 +193,7 @@ class Javadoc(object):
         if not urls : 
             output("not result")
             return 
-        page = urllib2.urlopen(urls[0])
+        page = urllib.request.urlopen(urls[0])
         soup = ICantBelieveItsBeautifulSoup(page)
         node = soup.find("html")
         classdata=[]
@@ -207,7 +207,7 @@ class Javadoc(object):
                     start_class_data = True
                 elif node.find("END OF CLASS DATA") > -1 :
                     start_class_data = False
-                node = node.next
+                node = node.__next__
 
             if  start_class_data :
                 tagname=getattr(node,"name","")
@@ -217,21 +217,21 @@ class Javadoc(object):
                     if node.nextSibling :
                         node = node.nextSibling
                     else :
-                        node = node.next
+                        node = node.__next__
                 elif tagname == "tr" :
                     classdata.append(self.extractTR(node))
                     node = node.nextSibling
                 elif tagname in ("p","dt") :
                     classdata.append("\n")
-                    node = node.next
+                    node = node.__next__
                 elif tagname == "hr" :
                     classdata.append("\n"+"-"*80 +"\n")
-                    node = node.next
+                    node = node.__next__
                 else :
                     self.extractText(classdata, node)
-                    node = node.next
+                    node = node.__next__
             else :
-                node = node.next
+                node = node.__next__
         result = " ".join([item.replace("&nbsp;"," ") for item in classdata])
         result = self.squeeze(result)
         output(result)
@@ -266,7 +266,7 @@ class Javadoc(object):
                 continue
             homeid = self.cache.saveHomeLink(url)
             url = "%s%s" % ( url.replace("\n",""), "allclasses-frame.html")
-            page = urllib2.urlopen(url)
+            page = urllib.request.urlopen(url)
             soup = BeautifulSoup(page)
             for link in soup('a') :
                 packagename=link.get("href").replace(".html","").replace("/",".")

@@ -5,7 +5,6 @@ import sys
 import logging
 import difflib
 import json
-from string import maketrans
 
 conn_pool = {}
 
@@ -259,7 +258,7 @@ class Dbext(object):
     def loadConf(self,path):
         confs = []
         if not os.path.exists(path):
-            print "db conf file not existed."
+            print("db conf file not existed.")
             return None
         file = open(path,"r")
         try :
@@ -272,7 +271,7 @@ class Dbext(object):
                     pass
             return confs
         except :
-            print "db conf file content is not valid."
+            print("db conf file content is not valid.")
             return None
 
     def existsConnParameter(self):
@@ -282,13 +281,13 @@ class Dbext(object):
         return False
 
     def promptTempOption(self):
-        print "please input parameter as follows: dbtype,host,user,password,database"
+        print("please input parameter as follows: dbtype,host,user,password,database")
         vim.command("let b:connection_parameter = input('')")
         if self.existsConnParameter():
             params = vim.eval("b:connection_parameter").split(",")
             if len(params) < 5 :
                 vim.command("unlet b:connection_parameter")
-                print "the parameter your enterd is not correct."
+                print("the parameter your enterd is not correct.")
 
     def getTempProfile(self):
         db_profile = {}
@@ -301,7 +300,7 @@ class Dbext(object):
                 db_profile["password"] = params[3]
                 db_profile["database"] = params[4]
             except :
-                print "get db temp connection parameter error"
+                print("get db temp connection parameter error")
                 return {}
         return db_profile
 
@@ -331,11 +330,11 @@ class Dbext(object):
             return
         for index,item in enumerate(dbconfs):
             if item["servertype"] == "sqlite" :
-                print " %s : %s "  % ( str(index) , item["file"] )
+                print(" %s : %s "  % ( str(index) , item["file"] ))
             elif item["servertype"] == "oracle" :
-                print " %s : %s %s %s " % (str(index), item["host"].ljust(16),item["sid"].ljust(12),item["user"])
+                print(" %s : %s %s %s " % (str(index), item["host"].ljust(16),item["sid"].ljust(12),item["user"]))
             else :
-                print " %s : %s %s " % (str(index), item["host"].ljust(16),item["con_name"])
+                print(" %s : %s %s " % (str(index), item["host"].ljust(16),item["con_name"]))
 
         vim.command("let b:profile_index = input('please enter a selection')")
         #clear temp connection parameter
@@ -372,7 +371,7 @@ class Dbext(object):
             return db_profile
 
         for index,item in enumerate(dbconfs):
-            print str(index) + ": " + item["host"] + ":  " + item["database"]
+            print(str(index) + ": " + item["host"] + ":  " + item["database"])
         vim.command("let b:profile_index = input('please enter a selection')")
         selection = vim.eval("b:profile_index")
         db_profile = dbconfs[int(selection)]
@@ -384,8 +383,6 @@ class Dbext(object):
         server_type = profile["servertype"]
         if server_type == "oracle":
             import cx_Oracle
-            codepage = sys.getdefaultencoding()
-            if codepage  ==  "gbk" : os.environ['NLS_LANG']="SIMPLIFIED CHINESE_CHINA.ZHS16GBK"
             dns_tns = cx_Oracle.makedsn(profile["host"],1521,profile["sid"])
             conn = cx_Oracle.connect(profile["user"], profile["password"], dns_tns)
         elif server_type == "mssql":
@@ -438,11 +435,6 @@ class Dbext(object):
             self.dbname = sql[4:].strip().replace(";","")
             self.renderStatusLine(db_profile)
 
-        import MySQLdb
-        if server_type == "mysql" :
-            codepage = sys.getdefaultencoding()
-            sql = sql.decode(codepage, 'ignore')
-
         cur = None
         try :
             cur = conn.cursor()
@@ -451,7 +443,7 @@ class Dbext(object):
             conn = self.createConn(db_profile)
             cur = conn.cursor()
             cur.execute(sql)
-        except Exception, reason:
+        except Exception as reason:
             if cur : 
                 cur.close()
             server_type = db_profile["servertype"]
@@ -478,9 +470,6 @@ class Dbext(object):
             return columns,result
 
     def convertForDis(self, value):
-        codepage = sys.getdefaultencoding()
-        if isinstance(value,unicode) :
-            value = value.encode(codepage, 'replace')
         value = str(value).rstrip().replace("\n","\\n")
         value = value.replace("\r","\\r")
         value = value.replace("\t","\\t")
@@ -501,7 +490,7 @@ class Dbext(object):
         return r
 
     def exportToSqlInternal(self,tablename,columns,rows, colTypes):
-        columns = map(lambda v:"`"+v+"`", columns)
+        columns = ["`"+v+"`" for v in columns]
         col_str =  self.chunkStr(columns, 15, ",", "    ")
         sqls = []
         for row in rows :
@@ -628,10 +617,10 @@ class SzDbCompletion(object):
             else :
                 completeList = QueryUtil.getAllTables()
         else  :
-            filebufferText = "\n".join([unicode(line) for line in vim.current.buffer])
-            outBufferText = "\n".join([unicode(line) for line in Dbext.getOutputBuffer()])
+            filebufferText = "\n".join([str(line) for line in vim.current.buffer])
+            outBufferText = "\n".join([str(line) for line in Dbext.getOutputBuffer()])
             bufferText = "%s\n%s" %(filebufferText, outBufferText) 
-            pattern = unicode(r"""%s[^\s'"]*""" % base.replace("*","\S+") )
+            pattern = str(r"""%s[^\s'"]*""" % base.replace("*","\S+") )
             matches = re.findall(pattern,bufferText)
             completeList = []
             if matches :
@@ -739,7 +728,7 @@ class SzDbCompletion(object):
 
         currentCurPos = 0
         for i in range(startRow, row-1):
-            print currentCurPos , len(buffer[i]), i
+            print(currentCurPos , len(buffer[i]), i)
             currentCurPos = currentCurPos + len(buffer[i])
         currentCurPos = col + currentCurPos
 

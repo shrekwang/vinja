@@ -9,8 +9,7 @@ import socket
 #import uuid
 import random
 import string
-import chardet
-from StringIO import StringIO
+from io import StringIO
 from distutils import dir_util
 from distutils import file_util
 import zipfile
@@ -79,20 +78,13 @@ class ZipUtil(object):
             if entry_size > 1024 * 1024 * 2:
                 return ["too large zip entry size"]
             try:
-                all_the_text = zipFile.open(inner_path).read()
+                all_the_text = zipFile.open(inner_path).read().decode()
             finally:
                 zipFile.close()
             
             logging.debug("all_the_text is %s . " % (all_the_text))
-
-            file_encoding = chardet.detect(all_the_text).get("encoding")
-            if file_encoding != None :
-                all_the_text = all_the_text.decode(file_encoding, "ignore")
-
-            if file_encoding != sys.getdefaultencoding() :
-                all_the_text = all_the_text.encode(sys.getdefaultencoding(), "replace")
-
             content = [line.rstrip() for line in all_the_text.split("\n")]
+
         return content
 
     @staticmethod
@@ -152,12 +144,12 @@ class FuzzyCompletion(object):
     def getCompletionList(base):
         bufferTexts=[]
         for buffer in vim.buffers :
-            bufferTexts.append("\n".join([unicode(line) for line in buffer]))
+            bufferTexts.append("\n".join([str(line) for line in buffer]))
         allText="\n".join(bufferTexts)
         if base.find("*") > -1 :
-            pattern = unicode(r"\b%s\b" % base.replace("*","[a-zA-Z0-9-_]*") )
+            pattern = str(r"\b%s\b" % base.replace("*","[a-zA-Z0-9-_]*") )
         else :
-            pattern = unicode(r"\b%s[a-zA-Z0-9-_]*\b" % base)
+            pattern = str(r"\b%s[a-zA-Z0-9-_]*\b" % base)
         matches=re.findall(pattern,allText)
         completeList = []
         if matches :
@@ -175,7 +167,7 @@ class VinjaAgent(object):
         try :
             s.connect((HOST, PORT))
             s.close()
-        except Exception , e :
+        except Exception as e :
             agentStarted = False
         return agentStarted
 
@@ -329,13 +321,6 @@ class MiscUtil(object):
                 start_num = start_num + 1
 
     @staticmethod
-    def startfile():
-        """ invoke os.startfile to open the file under the cursor"""
-        (row, col) = vim.current.window.cursor  
-        line = vim.current.buffer[row-1]  
-        os.startfile(line)
-
-    @staticmethod
     def selectColumn():
         (row, col) = vim.current.window.cursor  
         lineCount = len(vim.current.buffer)
@@ -361,7 +346,7 @@ class MiscUtil(object):
         """ open current editing file in firefox browser """
         import subprocess
         cmd='firefox "%s"' %(vim.current.buffer.name)
-        print cmd
+        print(cmd)
         p=subprocess.Popen(cmd,shell=False)
 
     @staticmethod
@@ -613,19 +598,6 @@ class MiscUtil(object):
             vim.command(vimCmd)
 
     @staticmethod
-    def startMailAgent():
-
-        vinja_home = vim.eval("g:vinja_home")
-        mail_app_path = os.path.join(vinja_home,"python/mailext.py")
-        print mail_app_path
-        print vinja_home
-        try :
-            os.spawnlp(os.P_NOWAIT,"python","python", mail_app_path, "-p", vinja_home)
-        except Exception as e :
-            logging.debug(e)
-            logging.debug("start ageng error")
-
-    @staticmethod
     def remove_comment():
         def replacer(match):
             s = match.group(0)
@@ -677,10 +649,10 @@ class ScratchUtil(object):
     def startScriptEdit():
 
         vim.command("call SwitchToVinjaView('script')")    
-        vim.command("map <buffer><silent>,, :python ScratchUtil.runScript()<cr>")
+        vim.command("map <buffer><silent>,, :py3 ScratchUtil.runScript()<cr>")
         vim.command("set filetype=python")
         vim.command("set bufhidden=delete")
-        vim.command("autocmd BufLeave <buffer>  python ScratchUtil.saveScratchText()")
+        vim.command("autocmd BufLeave <buffer>  py3 ScratchUtil.saveScratchText()")
 
         buffer_name=vim.current.buffer.name
         if not scratch_buf :
@@ -710,7 +682,7 @@ class ScratchUtil(object):
     @staticmethod
     def runScript():
         script="\n".join([line for line in vim.current.buffer])
-        exec script
+        exec(script)
 
 class DictUtil(object):
     @staticmethod
@@ -749,33 +721,6 @@ class DictUtil(object):
                 defs.append(section)
             if len(defs) > 0 : result="\n".join(defs)
         return result
-
-    @staticmethod
-    def searchDict(word):
-        global stardict
-        VimUtil.createOutputBuffer("dict")
-        outbuffer=getOutputBuffer("dict")
-        dict_path = os.path.join(VinjaConf.getDataHome(), "dict")
-        if not stardict :
-            stardict = Dictionary(os.path.join(dict_path, 'stardict-dreye', 'DrEye4in1'))
-        result=DictUtil.getWordDef(stardict, word)
-        if not result :
-            if word.endswith("ed") :
-                word=word[0:-2]
-            elif word.endswith("s") :
-                word=word[0:-1]
-            result = DictUtil.getWordDef(stardict,word)
-            if not result :
-                result = "can't find the word definition"
-        else :
-            dict_search_log_path = os.path.join(VinjaConf.getDataHome(), "dict/log.txt")
-            log_file=open(dict_search_log_path,"aw")
-            log_file.write(word+"\n")
-            log_file.close()
-        result=unicode(result,"utf-8")
-        codepage=sys.getdefaultencoding()
-        result=result.encode(codepage,"replace")
-        output(result,outbuffer)
 
 class VinjaConf(object):
 
@@ -862,14 +807,14 @@ class BasicTalker(object):
         for item in params :
             sb.append("%s=%s\n" %(item,params[item]))
         sb.append('%s\n' % END_TOKEN)
-        s.send("".join(sb))
+        s.send("".join(sb).encode())
         if params.get("cmd") == "quit" :
             return 
         total_data=[]
         while True:
             data = s.recv(8192)
             if not data: break
-            total_data.append(data)
+            total_data.append(data.decode())
         s.close()
         return ''.join(total_data)
 

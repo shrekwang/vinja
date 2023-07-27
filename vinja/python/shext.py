@@ -3,7 +3,6 @@ import glob,time,vim,re, sys, logging
 from subprocess import Popen, PIPE
 from optparse import OptionParser 
 import sqlite3 as sqlite
-import chardet
 from datetime import timedelta, datetime ,date
 
 
@@ -58,6 +57,7 @@ class LsCmd(object):
             rows = len(sorted_list) / cols
         else :
             rows = len(sorted_list) / cols + 1
+        rows = int(rows)
         for i in range(rows):
             rowValue = []
             for j in range(cols):
@@ -139,7 +139,7 @@ class LsCmd(object):
 
     def lsd(self):
 
-        file_list= filter(lambda item: os.path.isdir(item), os.listdir(os.getcwd()))
+        file_list= [item for item in os.listdir(os.getcwd()) if os.path.isdir(item)]
         nlist = self.getmatrix(file_list)
         self.colorOutput()
         Shext.stdout(nlist)
@@ -267,15 +267,7 @@ class FindCmd(object):
                     all_the_text = file_object.read()
                 finally:
                     file_object.close()
-
-                # only do decode when there's a encoding param 
-                if self.encoding_param :
-                    if self.encoding_param == "auto" :
-                        file_encoding = chardet.detect(all_the_text).get("encoding")
-                    else :
-                        file_encoding = self.encoding_param
-                    if file_encoding != None :
-                        all_the_text = all_the_text.decode(file_encoding, "ignore")
+                
                 if all_the_text.find(self.content) > -1 :
                     return True
                 return False
@@ -408,8 +400,7 @@ class LocateCmd(object):
             fname = fname.replace("*","%")
             fname = fname.replace("?","_")
         selectSql += " and a.name like ?  " 
-        codepage = sys.getdefaultencoding()
-        params = [ fname.decode(codepage) ]
+        params = [ fname ]
 
         if searchPath :
             if searchPath.find("*") > -1 or searchPath.find("?") > -1 :
@@ -417,11 +408,11 @@ class LocateCmd(object):
                 searchPath = searchPath.replace("?","_")
             selectSql += " and a.start_dir||a.rtl_path like ?  " 
             searchPath = "%%%s%%" % searchPath.strip()
-            params.append( searchPath.decode(codepage))
+            params.append( searchPath)
 
         if alias :
             selectSql += " and b.alias = ? "
-            params.append(alias.decode(codepage))
+            params.append(alias)
 
         selectSql += " limit 50 "
 
@@ -681,7 +672,7 @@ class ShUtil(object):
         result = self.locatecmd.locateFile(fname)
         if result == None or len(result) == 0 :
             if nocmdBuffer :
-                print "can't locate the file"
+                print("can't locate the file")
             else :
                 Shext.stdout("can't locate the file.")
             return
@@ -693,7 +684,7 @@ class ShUtil(object):
                 self.edit(result)
         else :
             for index,item in enumerate(result):
-                print str(index) + ": " + item
+                print(str(index) + ": " + item)
             vim.command("let b:result_number = input('please enter a selection')")
             exists = vim.eval("exists('b:result_number')")
             if exists == "1" :
@@ -1084,7 +1075,7 @@ class Shext(object):
             serverName = vim.eval("v:servername")
             inputString = cmdLine
             BasicTalker.feedInput(serverName,inputString)
-        except (OSError,ValueError) , msg:
+        except (OSError,ValueError) as msg:
             Shext.stdout(msg)
 
     def runSysCmd(self,cmdArray,cmdLine):
@@ -1107,7 +1098,7 @@ class Shext(object):
                 runInShell = "false"
             Shext.stdout("")
             BasicTalker.runSys(serverName,"::".join(path_resolved_cmdarray),runInShell,"shext",workDir,cmdLine)
-        except (OSError,ValueError) , msg:
+        except (OSError,ValueError) as msg:
             Shext.stdout(msg)
 
     def resolveExtraPythonCmd(self, cmdArray):
@@ -1115,7 +1106,7 @@ class Shext(object):
             return cmdArray
         ab_path = os.path.join(self.extra_cmd_home, cmdArray[0]+".py")
         if os.path.exists(ab_path):
-            cmdArray.insert(0, "python")
+            cmdArray.insert(0, "python3")
             cmdArray[1] = ab_path
         return cmdArray
 
@@ -1127,7 +1118,7 @@ class Shext(object):
         for name in os.listdir(self.extra_cmd_home):
             if name.endswith(".py"):
                 ab_path = os.path.join(self.extra_cmd_home, name)
-                output = Popen(["python", ab_path, "--desc"], stdout=PIPE, shell = True).communicate()[0]
+                output = Popen(["python3", ab_path, "--desc"], stdout=PIPE, shell = True).communicate()[0]
                 result.append(name[0:name.rfind(".")] +" : " )
                 result.append(output.replace("\r",""))
 
@@ -1136,7 +1127,7 @@ class Shext(object):
     def runInBackground(self,cmdline):
         try :
             pid = Popen([cmdline],shell = True).pid
-        except (OSError,ValueError) , msg:
+        except (OSError,ValueError) as msg:
             Shext.stdout(msg)
 
     def help(self):
@@ -1200,11 +1191,11 @@ class Shext(object):
 
         try :
             cmd = self.parseCmd(cmdLine)
-        except ShextArgumentError , e :
+        except ShextArgumentError as e :
             Shext.clearColorSyntax()
             Shext.stdout(e.msg)
             return
-        except Exception , e :
+        except Exception as e :
             Shext.clearColorSyntax()
             Shext.stdout(str(e))
             return

@@ -150,20 +150,20 @@ class QuickLocater(object) :
         mapcmd = "noremap <silent> <buffer>"
 
         for byte in printables :
-            vim.command("%s %s :python quickLocater.on_key_pressed('%s')<CR>" % (mapcmd, byte , byte))
+            vim.command("%s %s :py3 quickLocater.on_key_pressed('%s')<CR>" % (mapcmd, byte , byte))
 
-        vim.command("%s  <Tab>    :python quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "Tab"))
-        vim.command("%s  <BS>     :python quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "BS"))
-        vim.command("%s  <Del>    :python quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "Del"))
-        vim.command("%s  <CR>     :python quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "CR"))
-        vim.command("%s  <Esc>    :python quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "ESC"))
-        vim.command("%s  <C-j>    :python quickLocater.on_cursor_move('down')<cr>" %(mapcmd ))
-        vim.command("%s  <C-k>    :python quickLocater.on_cursor_move('up')<cr>" %(mapcmd ))
-        vim.command("%s  <C-d>    :python quickLocater.on_remove_content()<cr>" %(mapcmd ))
-        vim.command("%s  <C-B>    :python quickLocater.open_content('buffer')<cr>" %(mapcmd ))
-        vim.command("%s  <C-T>    :python quickLocater.open_content('tab')<cr>" %(mapcmd ))
-        vim.command("%s  <C-Y>    :python quickLocater.yank_content()<cr>" %(mapcmd ))
-        vim.command("%s  <C-v>    :python quickLocater.on_paste_content()<cr>" %(mapcmd ))
+        vim.command("%s  <Tab>    :py3 quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "Tab"))
+        vim.command("%s  <BS>     :py3 quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "BS"))
+        vim.command("%s  <Del>    :py3 quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "Del"))
+        vim.command("%s  <CR>     :py3 quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "CR"))
+        vim.command("%s  <Esc>    :py3 quickLocater.on_key_pressed('%s')<cr>" %(mapcmd, "ESC"))
+        vim.command("%s  <C-j>    :py3 quickLocater.on_cursor_move('down')<cr>" %(mapcmd ))
+        vim.command("%s  <C-k>    :py3 quickLocater.on_cursor_move('up')<cr>" %(mapcmd ))
+        vim.command("%s  <C-d>    :py3 quickLocater.on_remove_content()<cr>" %(mapcmd ))
+        vim.command("%s  <C-B>    :py3 quickLocater.open_content('buffer')<cr>" %(mapcmd ))
+        vim.command("%s  <C-T>    :py3 quickLocater.open_content('tab')<cr>" %(mapcmd ))
+        vim.command("%s  <C-Y>    :py3 quickLocater.yank_content()<cr>" %(mapcmd ))
+        vim.command("%s  <C-v>    :py3 quickLocater.on_paste_content()<cr>" %(mapcmd ))
 
         if isinstance(self.content_manager,FileContentManager):
             vim.command("syn match LocateName #^.* #")
@@ -207,7 +207,7 @@ class QuickLocater(object) :
         row,col = vim.current.window.cursor
         content = re.escape( work_buffer[row-1])
         vim.command('let @@="%s"' % content )
-        print "line has been yanked."
+        print("line has been yanked.")
 
 
     def open_content(self,mode="local"):

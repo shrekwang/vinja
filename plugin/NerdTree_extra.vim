@@ -48,7 +48,7 @@ function! NERDTreeRmNode()
     let curNode = g:NERDTreeFileNode.GetSelected()
     let parent = curNode.parent
     let curPath = curNode.path.str()
-    python FileUtil.fileOrDirRm(vim.eval("curPath"))
+    py3 FileUtil.fileOrDirRm(vim.eval("curPath"))
     call parent.refresh()
     call NERDTreeRender()
 endfunction
@@ -61,9 +61,9 @@ function! NERDTreePasteToNode()
     let curPath = curNode.path.str()
     if g:VinjaNodeBuf != ""
       if g:VinjaOpType == "yank" 
-        python FileUtil.fileOrDirCp(vim.eval("g:VinjaNodeBuf"),vim.eval("curPath"))
+        py3 FileUtil.fileOrDirCp(vim.eval("g:VinjaNodeBuf"),vim.eval("curPath"))
       else
-        python FileUtil.fileOrDirMv(vim.eval("g:VinjaNodeBuf"),vim.eval("curPath"))
+        py3 FileUtil.fileOrDirMv(vim.eval("g:VinjaNodeBuf"),vim.eval("curPath"))
       endif
       echomsg 'node: ' . curNode.path.str() . " pasted. "
       let g:VinjaNodeBuf = ""

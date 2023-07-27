@@ -4,7 +4,7 @@ import os.path
 import time
 import re
 import traceback
-import StringIO
+import io
 import shutil
 from subprocess import Popen
 from string import Template
@@ -102,7 +102,7 @@ class ProjectManager(object):
         f.close()
         shutil.copy2(classpathInitXml, "./.classpath")
         shutil.copy2(jdeInitXml, "./.jde")
-        print "project initialized in current dir succeed."
+        print("project initialized in current dir succeed.")
 
     @staticmethod
     def projectClean():
@@ -504,17 +504,17 @@ class EditUtil(object):
         #col = col + 1
         vim_buffer = vim.current.buffer
         line = vim_buffer[row-1]
-        col = len(unicode(line[0:col])) + 1
+        col = len(str(line[0:col])) + 1
         current_file_name = vim_buffer.name
         classPathXml = ProjectManager.getClassPathXml(current_file_name)
 
         source_info = Talker.locateDefinition(current_file_name, classPathXml,row,col,sourceType)
         if source_info.strip() == "" :
-            print "can't find definition location"
+            print("can't find definition location")
             return 
 
         if not ";" in source_info :
-            print source_info
+            print(source_info)
             return 
 
         abs_path, row,col = source_info.split(";")
@@ -648,13 +648,13 @@ class EditUtil(object):
             vim.command("let @/='\<%s\>'" % memberName)
             vim.command("edit +%s %s" % (matchedLine, sourcePath ))
         else :
-            print "cant' locate the source code"
+            print("cant' locate the source code")
         return
 
     @staticmethod
     def reprDictInDoubleQuote(dic):
         pairs = []
-        for item in dic.keys() :
+        for item in list(dic.keys()) :
             value = re.escape(dic[item])
             pair = '"'+str(item)+'"'+":"+'"'+value+'"'
             pairs.append(pair)
@@ -670,7 +670,7 @@ class EditUtil(object):
 
         result = Parser.parseCurrentMethod()
         if result == None :
-            print "current line not contains a method declaration."
+            print("current line not contains a method declaration.")
             return 
         rtntype,name,param = result
         memberDesc = rtntype + " " + name + "(" + param +")"
@@ -694,8 +694,8 @@ class EditUtil(object):
                 lend = lstart + len(name) + 2 
                 HighlightManager.addHighlightInfo(absname,lnum,hltype,text,lstart, lend)
                 qflist.append(qfitem)
-            except Exception , e:
-                fp = StringIO.StringIO()
+            except Exception as e:
+                fp = io.StringIO()
                 traceback.print_exc(file=fp)
                 message = fp.getvalue()
                 logging.debug(message)
@@ -708,7 +708,7 @@ class EditUtil(object):
             vim.command("call setqflist(%s)" % qflist_str)
             vim.command("cwindow")
         else :
-            print "can't find any reference location."
+            print("can't find any reference location.")
 
     @staticmethod
     def searchMemeberLineNum(memberName,sourcePath,paramCount = -1):
@@ -885,7 +885,7 @@ class EditUtil(object):
                 bp_set.remove(row)
                 HighlightManager.removeSign(file_name,row,"B")
             else :
-                print "remove breakpoint error : msgs "+data
+                print("remove breakpoint error : msgs "+data)
         else :
             cmdLine = "breakpoint_add %s %s" % (row,mainClassName)
             data = JdbTalker.submit(cmdLine,class_path_xml,serverName)
@@ -894,7 +894,7 @@ class EditUtil(object):
                 bp_set.add(row)
                 bp_data[file_name] = bp_set
             else :
-                print "can't create breakpoint here"
+                print("can't create breakpoint here")
 
     @staticmethod
     def addConditionalBreakpoint(lineNum):
@@ -1113,8 +1113,8 @@ class HighlightManager(object):
 
             try :
                 vim.command("call DisplayMsg('%s')" % msg)
-            except Exception , e:
-                fp = StringIO.StringIO()
+            except Exception as e:
+                fp = io.StringIO()
                 traceback.print_exc(file=fp)
                 message = fp.getvalue()
                 logging.debug("displayMsg error")
@@ -1175,12 +1175,12 @@ class HighlightManager(object):
 
         if group=="SzjdeError" or group == "SzjdeWarning" :
             for row in vim_buffer[0:errorRow-1] :
-                charCount += len(unicode(row)) +  newLineCount
+                charCount += len(str(row)) +  newLineCount
             rowStart = 0 if start - charCount < 0 else start - charCount
             #TODO : shit! where does that magic number come from ? don't fucing rember.
             rowEnd = end - charCount + 3
             if rowEnd < 0 :
-                rowEnd = rowStart + len(unicode(vim_buffer[errorRow]))  
+                rowEnd = rowStart + len(str(vim_buffer[errorRow]))  
         else :
             rowStart = start
             rowEnd = end
@@ -1290,8 +1290,8 @@ class Compiler(object):
                 qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
                 HighlightManager.addHighlightInfo(absname,lnum,errorType,text,lstart,lend)
                 QuickFixListManager.addQuickFix(qfitem)
-            except Exception , e:
-                fp = StringIO.StringIO()
+            except Exception as e:
+                fp = io.StringIO()
                 traceback.print_exc(file=fp)
                 message = fp.getvalue()
                 logging.debug(message)
@@ -1333,8 +1333,8 @@ class Compiler(object):
                 qfitem = dict(filename=filename,lnum=lnum,text=text,type=errorType)
                 QuickFixListManager.addQuickFix(qfitem)
                 HighlightManager.addHighlightInfo(absname,lnum,errorType,text,lstart,lend)
-            except Exception , e:
-                fp = StringIO.StringIO()
+            except Exception as e:
+                fp = io.StringIO()
                 traceback.print_exc(file=fp)
                 message = fp.getvalue()
                 logging.debug(message)
@@ -1400,7 +1400,7 @@ class Runner(object):
                 runInShell = "true"
             resultText = Talker.runAntBuild(serverName,cmdName,runInShell)
         else :
-            print "can't find the build.xml."
+            print("can't find the build.xml.")
 
 class AutoImport(object):
 
@@ -1595,15 +1595,13 @@ class Parser(object):
     def parseAllMemberInfo(lines):
         memberInfo = []
         scopeCount = 0
-        methodPat = re.compile(ur"(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)",re.UNICODE)
+        methodPat = re.compile(r"(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)",re.UNICODE)
         assignPat = re.compile("(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*=")
         defPat = re.compile("(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*;")
         commentLine = False
-        fileencoding = vim.eval("&fileencoding")
-        if fileencoding == "":
-            fileencoding = "utf-8"
+        
         for lineNum,line in enumerate(lines) :
-            line = line.strip().decode(fileencoding)
+            line = line.strip()
             if (line.startswith("/*") and not line.endswith("*/") ) :
                 commentLine = True
                 continue
@@ -1897,8 +1895,8 @@ class SzJdeCompletion(object):
         else:
             try :
                 result = SzJdeCompletion.getCompleteResult(base)
-            except Exception , e :
-                fp = StringIO.StringIO()
+            except Exception as e :
+                fp = io.StringIO()
                 traceback.print_exc(file=fp)
                 message = fp.getvalue()
                 logging.debug(message)
@@ -2108,10 +2106,6 @@ class SzJdeCompletion(object):
     @staticmethod
     def buildCptMenu(mtype,mname,mparams,mreturntype,needParenthesis):
         menu = dict()
-
-        mname = mname.encode("utf-8","replace")
-        mreturntype = mreturntype.encode("utf-8","replace")
-        mparams = mparams.encode("utf-8","replace")
         padStr = ""
         if needParenthesis :
             padStr = "("
@@ -2237,12 +2231,12 @@ class JdbTalker(object):
         for item in params :
             sb.append("%s=%s\n" %(item,params[item]))
         sb.append('%s\n' % END_TOKEN)
-        s.send("".join(sb))
+        s.send("".join(sb).encode())
         total_data=[]
         while True:
             data = s.recv(8192)
             if not data: break
-            total_data.append(data)
+            total_data.append(data.decode())
         s.close()
         return ''.join(total_data)
 
@@ -2298,7 +2292,8 @@ class Jdb(object):
         self.out_buf_list = []
         self.ivp = InspectorVarParser()
         self.quick_step = False
-        alias_text = file(os.path.join(VinjaConf.getShareHome(),"conf/jdb_alias.cfg")).read()
+        with open(os.path.join(VinjaConf.getShareHome(), "conf/jdb_alias.cfg"), 'r') as f:
+            alias_text = f.read()
         self.alias_table = [item.split() for item in alias_text.split("\n") if item.strip() != "" ]
 
         env_cfg_path = os.path.join(VinjaConf.getDataHome(), "env.cfg")
@@ -2338,7 +2333,7 @@ class Jdb(object):
         #vim.command("call SwitchToVinjaView('Jdb','aboveleft','7')")
         vim.command("call SwitchToVinjaView('Jdb','belowright','%s')" % height)
         vim.command("call SwitchToVinjaViewVertical('JdbStdOut')")
-        vim.command("nnoremap <buffer><silent>o      :python VarTree.open_selected_node()<cr>")
+        vim.command("nnoremap <buffer><silent>o      :py3 VarTree.open_selected_node()<cr>")
         vim.command("setlocal cursorline")
         vim.command("call SetTabPageName('Jdb')")
         vim.command("set filetype=jdb")
@@ -2361,9 +2356,9 @@ class Jdb(object):
         
         vim.current.window.cursor = (cur_row,cur_col)
         #vim.command("startinsert")
-        vim.command("inoremap <buffer><silent><cr>  <Esc>:python jdb.executeCmd()<cr>")
-        vim.command("nnoremap <buffer><silent><cr>   :python jdb.executeCmd(insertMode=False)<cr>")
-        vim.command("nnoremap <buffer><silent>o      :python jdb.appendPrompt()<cr>")
+        vim.command("inoremap <buffer><silent><cr>  <Esc>:py3 jdb.executeCmd()<cr>")
+        vim.command("nnoremap <buffer><silent><cr>   :py3 jdb.executeCmd(insertMode=False)<cr>")
+        vim.command("nnoremap <buffer><silent>o      :py3 jdb.appendPrompt()<cr>")
         vim.command("set omnifunc=SzJdbCompletion")
 
     def __str__(self):
@@ -2391,7 +2386,7 @@ class Jdb(object):
         elif args[0] == "msg" :
             buffer = VimUtil.getVinjaBuffer("JdbStdOut", createNew = False )
             if (buffer == None ) :
-                print args[1]
+                print(args[1])
                 return
             vim.command("call SwitchToVinjaView('JdbStdOut')")
             self.stdout(args[1])
@@ -2449,31 +2444,31 @@ class Jdb(object):
             printables = """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz?"""
             mapcmd = "nnoremap <silent><buffer>"
             for byte in printables :
-                vim.command("%s %s :python jdb.emptyFunc()<CR>" % (mapcmd, byte))
+                vim.command("%s %s :py3 jdb.emptyFunc()<CR>" % (mapcmd, byte))
 
             vim.command("inoremap <buffer><silent><ESC> <ESC>^ld$a <ESC>")
-            vim.command("nnoremap <buffer><silent>a   dd:python jdb.appendPrompt()<cr>")
-            vim.command("nnoremap <buffer><silent>b   :python jdb.toggleBpAtSuspendLine()<cr>")
-            vim.command("nnoremap <buffer><silent>i   dd:python jdb.appendPrompt()<cr>")
-            vim.command("nnoremap <buffer><silent>l   :python jdb.stepCmd('step_into')<cr>")
-            vim.command("nnoremap <buffer><silent>j   :<C-U>python jdb.stepCmd('step_over')<cr>")
-            vim.command("nnoremap <buffer><silent>h   :<C-U>python jdb.stepCmd('step_return')<cr>")
-            vim.command("nnoremap <buffer><silent>u   :<C-U>python jdb.stepCmd('step_out')<cr>")
-            vim.command("nnoremap <buffer><silent>C   :python jdb.stepCmd('resume')<cr>")
-            vim.command("nnoremap <buffer><silent>v   :python jdb.executeCmd(insertMode=False,cmdLine='>locals')<cr>")
-            vim.command("nnoremap <buffer><silent>f   :python jdb.executeCmd(insertMode=False,cmdLine='>fields')<cr>")
-            vim.command("nnoremap <buffer><silent>w   :python jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
-            vim.command("nnoremap <buffer><silent>W   :python jdb.executeCmd(insertMode=False,cmdLine='>threads')<cr>")
-            vim.command("nnoremap <buffer><silent>r   :python jdb.executeCmd(insertMode=False,cmdLine='>run')<cr>")
-            vim.command("nnoremap <buffer><silent>d   :python jdb.executeCmd(insertMode=False,cmdLine='>disconnect')<cr>")
-            vim.command("nnoremap <buffer><silent>t   :python jdb.executeCmd(insertMode=False,cmdLine='>runtest')<cr>")
-            vim.command("nnoremap <buffer><silent>R   :python jdb.executeCmd(insertMode=False,cmdLine='>runlast')<cr>")
-            vim.command("nnoremap <buffer><silent>s   :python jdb.executeCmd(insertMode=False,cmdLine='>shutdown')<cr>")
-            vim.command("nnoremap <buffer><silent>?   :python jdb.executeCmd(insertMode=False,cmdLine='>help')<cr>")
-            vim.command("nnoremap <buffer><silent>K   :python jdb.executeCmd(insertMode=False,cmdLine='>up')<cr>")
-            vim.command("nnoremap <buffer><silent>J   :python jdb.executeCmd(insertMode=False,cmdLine='>down')<cr>")
-            vim.command("nnoremap <buffer><silent>G   :<C-U>python jdb.untilCmd()<cr>")
-            vim.command("nnoremap <buffer><silent>e   :python jdb.qevalCmd()<cr>")
+            vim.command("nnoremap <buffer><silent>a   dd:py3 jdb.appendPrompt()<cr>")
+            vim.command("nnoremap <buffer><silent>b   :py3 jdb.toggleBpAtSuspendLine()<cr>")
+            vim.command("nnoremap <buffer><silent>i   dd:py3 jdb.appendPrompt()<cr>")
+            vim.command("nnoremap <buffer><silent>l   :py3 jdb.stepCmd('step_into')<cr>")
+            vim.command("nnoremap <buffer><silent>j   :<C-U>py3 jdb.stepCmd('step_over')<cr>")
+            vim.command("nnoremap <buffer><silent>h   :<C-U>py3 jdb.stepCmd('step_return')<cr>")
+            vim.command("nnoremap <buffer><silent>u   :<C-U>py3 jdb.stepCmd('step_out')<cr>")
+            vim.command("nnoremap <buffer><silent>C   :py3 jdb.stepCmd('resume')<cr>")
+            vim.command("nnoremap <buffer><silent>v   :py3 jdb.executeCmd(insertMode=False,cmdLine='>locals')<cr>")
+            vim.command("nnoremap <buffer><silent>f   :py3 jdb.executeCmd(insertMode=False,cmdLine='>fields')<cr>")
+            vim.command("nnoremap <buffer><silent>w   :py3 jdb.executeCmd(insertMode=False,cmdLine='>frames')<cr>")
+            vim.command("nnoremap <buffer><silent>W   :py3 jdb.executeCmd(insertMode=False,cmdLine='>threads')<cr>")
+            vim.command("nnoremap <buffer><silent>r   :py3 jdb.executeCmd(insertMode=False,cmdLine='>run')<cr>")
+            vim.command("nnoremap <buffer><silent>d   :py3 jdb.executeCmd(insertMode=False,cmdLine='>disconnect')<cr>")
+            vim.command("nnoremap <buffer><silent>t   :py3 jdb.executeCmd(insertMode=False,cmdLine='>runtest')<cr>")
+            vim.command("nnoremap <buffer><silent>R   :py3 jdb.executeCmd(insertMode=False,cmdLine='>runlast')<cr>")
+            vim.command("nnoremap <buffer><silent>s   :py3 jdb.executeCmd(insertMode=False,cmdLine='>shutdown')<cr>")
+            vim.command("nnoremap <buffer><silent>?   :py3 jdb.executeCmd(insertMode=False,cmdLine='>help')<cr>")
+            vim.command("nnoremap <buffer><silent>K   :py3 jdb.executeCmd(insertMode=False,cmdLine='>up')<cr>")
+            vim.command("nnoremap <buffer><silent>J   :py3 jdb.executeCmd(insertMode=False,cmdLine='>down')<cr>")
+            vim.command("nnoremap <buffer><silent>G   :<C-U>py3 jdb.untilCmd()<cr>")
+            vim.command("nnoremap <buffer><silent>e   :py3 jdb.qevalCmd()<cr>")
             vim.command("setlocal statusline=\ Jdb\ %2*QuickStep%*")
 
             cur_buffer =vim.current.buffer
@@ -2500,7 +2495,7 @@ class Jdb(object):
                 vim.command("%s %s" % (mapcmd, byte))
 
             vim.command("iunmap <buffer><silent><ESC>")
-            vim.command("nnoremap <buffer><silent>o      :python jdb.appendPrompt()<cr>")
+            vim.command("nnoremap <buffer><silent>o      :py3 jdb.appendPrompt()<cr>")
             vim.command("setlocal statusline=\ Jdb")
 
     def handleSuspend(self,absPath,lineNum,className,appendOperate):
@@ -3021,7 +3016,7 @@ class InspectorVarParser():
         n = toks[0]
         try:
             return int(n)
-        except ValueError, ve:
+        except ValueError as ve:
             return float(n)
 
     def getParser(self):
@@ -3068,7 +3063,7 @@ class InspectorVarParser():
     def buildAstTree(self, exp,parentEle, ori_exp_str = None):
         expType = "expression"
         
-        if isinstance(exp,basestring) :
+        if isinstance(exp,str) :
             expType = "string"
         elif exp == None :
             expType = "null"
@@ -3107,7 +3102,7 @@ class InspectorVarParser():
             ele.append(paramsEle)
 
         if exp[0].arrayidx !=None :
-            if not isinstance(exp[0].arrayidx,basestring) or exp[0].arrayidx !="" :
+            if not isinstance(exp[0].arrayidx,str) or exp[0].arrayidx !="" :
                 arrayidxEle = Element("arrayidx")
                 self.buildAstTree(exp[0].arrayidx, arrayidxEle)
                 ele.append(arrayidxEle)
@@ -3131,7 +3126,7 @@ class InspectorVarParser():
 
     def generate(self, exp):
         self.locs = []
-        stringIO = StringIO.StringIO()
+        stringIO = io.StringIO()
         root = Element('root')
         eleTree = ElementTree(root)
         parseResult = self.parser.parseString(exp)
@@ -3293,10 +3288,6 @@ class VarTree(object):
     def parse_tree_nodes(xml_str):
         var_nodes = []
         try :
-            xml_encoding = sys.getdefaultencoding()
-            if xml_encoding != "utf-8" :
-                xml_str = xml_str.decode(xml_encoding,"ignore")
-                xml_str = xml_str.encode("utf-8","replace")
             #some nasty char entity like &#0; will cause xml parse error,so just replace it;
             xml_str=VarTree.unknow_char_pat.sub("?", xml_str)
             tree = fromstring(xml_str)

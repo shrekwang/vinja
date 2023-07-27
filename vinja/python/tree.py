@@ -3,7 +3,6 @@ import shutil
 import sys
 import logging
 import traceback
-import chardet
 import fnmatch
 import json
 from common import ZipUtil,FileUtil,VimUtil,PathUtil
@@ -119,11 +118,11 @@ class TreeNode(object):
         return treeParts
 
     def add_sub_node(self, name):
-        print "unsupported operation."
+        print("unsupported operation.")
         return False
 
     def dispose(self):
-        print "unsupported operation."
+        print("unsupported operation.")
         return False
 
     def refresh(self):
@@ -131,7 +130,7 @@ class TreeNode(object):
         return
 
     def paste(self, file_names):
-        print "unsupported operation."
+        print("unsupported operation.")
         return False
 
     def toggle_mark(self):
@@ -355,13 +354,6 @@ class NormalFileNode(TreeNode):
             all_the_text = file_object.read()
         finally:
             file_object.close()
-        if file_encoding == None :
-            file_encoding = chardet.detect(all_the_text).get("encoding")
-        if file_encoding != None :
-            try :
-                all_the_text = all_the_text.decode(file_encoding)
-            except Exception as e :
-                all_the_text = ""
 
         filecontent = all_the_text.split("\n")
         return filecontent
@@ -389,7 +381,7 @@ class NormalFileNode(TreeNode):
         return True
 
     def add_sub_node(self, name):
-        print "selected item is not a dir, can't add node"
+        print("selected item is not a dir, can't add node")
         return False
 
 class ZipFileItemNode(TreeNode):
@@ -415,7 +407,8 @@ class ZipFileItemNode(TreeNode):
     def open_node(self, edit_cmd):
         vim.command("exec 'wincmd w'")
         scheme_path = "jar://"+self.zip_file_path+"!"+ self.realpath
-        vim.command("%s %s" %(edit_cmd, scheme_path))
+        final_cmd = "%s %s" %(edit_cmd, scheme_path)
+        vim.command(final_cmd)
         ProjectTree.set_file_edit(scheme_path,"true");
 
 class ZipRootNode(TreeNode):
@@ -576,7 +569,7 @@ class WorkSetRootNode(NormalDirNode):
         if len(currentSet) > 0  :
             self.workset_all[currentSetName] = currentSet
 
-        for workset_name  in self.workset_all.keys() :
+        for workset_name  in list(self.workset_all.keys()) :
             node = WorkSetNode(workset_name, self.workset_all[workset_name], self.projectTree)
             self.add_child(node)
 
@@ -720,7 +713,7 @@ class ProjectRootNode(NormalDirNode):
             try :
                 node = ZipRootNode(basename,lib_src, False,False)
                 lib_src_node.add_child(node)
-            except Exception , e:
+            except Exception as e:
                 logging.debug(basename+" not exists or is corrupted")
 
         jdk_lib_src = os.path.join(os.getenv("JAVA_HOME"),"lib/src.zip")
@@ -728,7 +721,7 @@ class ProjectRootNode(NormalDirNode):
             try : 
                 node = ZipRootNode("src.zip",jdk_lib_src, False,False)
                 lib_src_node.add_child(node)
-            except Exception , e:
+            except Exception as e:
                 logging.debug(basename+" not exists or is corrupted")
 
     def refresh(self):
@@ -894,7 +887,7 @@ class ProjectTree(object):
         global yank_buffer 
         yank_buffer = nodes
         self.remove_orignal = remove_orignal
-        print "visual selected node has been yanked"
+        print("visual selected node has been yanked")
 
     def delete_visual_node(self):
         (row,col) = vim.current.window.cursor
@@ -907,7 +900,7 @@ class ProjectTree(object):
         prompt = "Are you sure you with to delete \n" + node_names +" (yN):"
         answer = VimUtil.getInput(prompt)
         if not answer or answer != "y" :
-            print "delete node abort."
+            print("delete node abort.")
             return
         parent = nodes[0].parent
         for node in nodes :
@@ -954,14 +947,12 @@ class ProjectTree(object):
         result = []
 
         re_type = type(re.compile(""))
-        sysencoding = sys.getdefaultencoding()
         def _search_node(node,text) :
             if not node.isDirectory and node.plainText() :
                 # logging.debug("search content of %s " % node.realpath)
                 try :
                     content = node.get_content(self.project_encoding)
                     file_path = node.get_uri_path()
-                    file_path = file_path.decode(sysencoding)
                     for index,line in enumerate(content) :
                         if (isinstance(text,str) and line.find(text) > -1 ) \
                                 or (isinstance(text,re_type) and text.search(line)) :
@@ -974,7 +965,7 @@ class ProjectTree(object):
         _search_node(node,text)
         qflist = []
         for filename,lineNum,lineText in result :
-            qfitem = dict(filename=self.relpath(filename).decode(sysencoding),lnum=lineNum,text=lineText.strip())
+            qfitem = dict(filename=self.relpath(filename),lnum=lineNum,text=lineText.strip())
             qflist.append(qfitem)
 
         if len(qflist) > 0 :
@@ -982,29 +973,19 @@ class ProjectTree(object):
             #been handled, so repr the dict in a double quoted string
             qflist_str = "[" + ",".join([EditUtil.reprDictInDoubleQuote(item) for item in qflist])+"]" 
 
-            vim_encoding= vim.eval("&encoding")
-            if vim_encoding :
-                try :
-                    vim.command("call setqflist(%s)" % qflist_str.encode(vim_encoding))
-                except Exception as e:
-                    try :
-                        vim.command("call setqflist(%s)" % qflist_str)
-                    except Exception as e:
-                        logging.debug("set qflist_str error: %s " %  qflist_str)
-            else :
-                vim.command("call setqflist(%s)" % qflist_str)
-
+            vim.command("call setqflist(%s)" % qflist_str)
             vim.command("exec 'wincmd w'")
             vim.command("cwindow")
         else :
-            print "can't find any reference location."
+            print("can't find any reference location.")
 
     def filter_display_node(self):
         node = self.get_selected_node()
         relpath = node.get_rel_path()
         curdir_workset = []
         if os.path.exists(self.workset_config_path):
-            lines = [line.strip() for line in file(self.workset_config_path) ]
+            with open(self.workset_config_path) as f:
+                lines = [line.strip() for line in f]
             curdir_workset =[os.path.basename(line) for line in lines if os.path.dirname(line) == relpath ]
 
         if not node.isDirectory :
@@ -1104,7 +1085,8 @@ class ProjectTree(object):
         workset = []
         node_relpath = parent_node.get_rel_path()
         if os.path.exists(self.workset_config_path):
-            lines = [line.strip() for line in file(self.workset_config_path) ]
+            with open(self.workset_config_path) as f:
+                lines = [line.strip() for line in f]
             workset =[line for line in lines if os.path.dirname(line) != node_relpath ]
 
         for file_name in file_names :
@@ -1131,17 +1113,17 @@ class ProjectTree(object):
     def yank_node_path(self):
         node = self.get_selected_node()
         vim.command("let @\" = '%s' " % node.realpath)
-        print "node path yanked"
+        print("node path yanked")
 
     def yank_node_rel_path(self):
         node = self.get_selected_node()
         vim.command("let @\" = '%s' " % node.get_rel_path())
-        print "node relative path yanked"
+        print("node relative path yanked")
 
     def yank_node_name(self):
         node = self.get_selected_node()
         vim.command("let @\" = '%s' " % node.name)
-        print "node name yanked"
+        print("node name yanked")
 
     def get_selected_node(self, row = None ):
         if row == None :
@@ -1181,7 +1163,7 @@ class ProjectTree(object):
         prompt = "enter file name to be created, dirs endswith / \n" + node.realpath +"/"
         added_file = VimUtil.getInput(prompt)
         if not added_file :
-            print "add node aborted."
+            print("add node aborted.")
             return
         suc = node.add_sub_node(added_file)
         node_name = added_file
@@ -1197,7 +1179,7 @@ class ProjectTree(object):
         prompt = "enter new file name .\n" + os.path.dirname(node.realpath) +"/"
         new_file_name = VimUtil.getInput(prompt,node.name)
         if not new_file_name :
-            print "rename node aborted."
+            print("rename node aborted.")
             return
         try :
             new_file_path = os.path.join(os.path.dirname(node.realpath),new_file_name)
@@ -1208,9 +1190,9 @@ class ProjectTree(object):
                 node.force_reload()
             self.render_tree()
             self.select_node(node)
-        except Exception , e:
-            print e
-            print "rename operation failed"
+        except Exception as e:
+            print(e)
+            print("rename operation failed")
 
     def delete_node(self):
         (row,col) = vim.current.window.cursor
@@ -1218,7 +1200,7 @@ class ProjectTree(object):
         prompt = "Are you sure you with to delete the node \n" + node.realpath +" (yN):"
         answer = VimUtil.getInput(prompt)
         if not answer or answer != "y" :
-            print "delete node abort."
+            print("delete node abort.")
             return
         parent = node.parent
         suc = node.dispose()
@@ -1232,21 +1214,21 @@ class ProjectTree(object):
         global yank_buffer 
         yank_buffer = [node]
         self.remove_orignal = remove_orignal
-        print "selected node has been yanked"
+        print("selected node has been yanked")
 
     def yank_marked_node(self, remove_orignal = False):
         nodes = self.get_marked_nodes()
         global yank_buffer 
         yank_buffer = nodes
         self.remove_orignal = remove_orignal
-        print "visible marked node has been yanked"
+        print("visible marked node has been yanked")
 
     def delete_marked_node(self) :
         nodes = self.get_marked_nodes()
         prompt = "Are you sure you with to delete marked node (yN):"
         answer = VimUtil.getInput(prompt)
         if not answer or answer != "y" :
-            print "delete node abort."
+            print("delete node abort.")
             return
         for node in nodes :
             parent = node.parent
@@ -1289,7 +1271,7 @@ class ProjectTree(object):
     def copy_to_clipBoard(self):
         file_path = self.get_selected_node().realpath
         files = BasicTalker.setClipbordContent(file_path)
-        print "files had been copied to system clipboard. "
+        print("files had been copied to system clipboard. ")
 
     def open_with_default(self):
         file_path = self.get_selected_node().realpath
@@ -1607,7 +1589,7 @@ class ProjectTree(object):
             tree_state_file.write("\n")
         tree_state_file.close()
         if not closeFile :
-            print "ProjectTree status has been saved."
+            print("ProjectTree status has been saved.")
 
     def restore_status(self, node_type = "dir"):
         if not os.path.exists(self.tree_state_path):
@@ -1643,7 +1625,7 @@ class ProjectTree(object):
         vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
         tree_path = projectTree.open_path(current_file_name)
         if tree_path == None :
-            print "can't find node %s in ProjectTree" % current_file_name
+            print("can't find node %s in ProjectTree" % current_file_name)
             return
         projectTree.render_tree()
         (row,col) = projectTree.get_path_cursor(tree_path)

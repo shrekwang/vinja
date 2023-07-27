@@ -152,7 +152,7 @@ endfunction
 let g:vinja_home = fnamemodify(expand("<sfile>"), ':p:h:h') . '/vinja'
 
 function RunSzPyfile(filename)
-  exec "pyfile ".g:vinja_home."/python/".a:filename
+  exec "py3file ".g:vinja_home."/python/".a:filename
 endfunction
 
 function OpenChannel()
@@ -173,18 +173,18 @@ function! Shext()
   exec 'setlocal statusline=\ shext_cmd_buffer\ [%r%{getcwd()}%h]'
   call SetTabPageName("Shext")
   call SetVinjaBuf()
-  nnoremap <buffer><silent><cr>   :python shext.executeCmd(insertMode=False)<cr>
-  imap <buffer><silent><cr>  <Esc>:python shext.executeCmd()<cr>
-  ino <buffer><silent>/      <Esc>:python shext.tipDirName()<cr>a/
-  inoremap <buffer><silent>;;  <Esc>:python OutputNavigator.startNavigate()<cr>
-  nnoremap <buffer><silent><c-n>    :python OutputNavigator.next()<cr>
-  nnoremap <buffer><silent><c-p>    :python OutputNavigator.prev()<cr>
+  nnoremap <buffer><silent><cr>   :py3 shext.executeCmd(insertMode=False)<cr>
+  imap <buffer><silent><cr>  <Esc>:py3 shext.executeCmd()<cr>
+  ino <buffer><silent>/      <Esc>:py3 shext.tipDirName()<cr>a/
+  inoremap <buffer><silent>;;  <Esc>:py3 OutputNavigator.startNavigate()<cr>
+  nnoremap <buffer><silent><c-n>    :py3 OutputNavigator.next()<cr>
+  nnoremap <buffer><silent><c-p>    :py3 OutputNavigator.prev()<cr>
   setlocal iskeyword+=.
-  python Shext.runApp()
+  py3 Shext.runApp()
 endfunction
 
 function! SzDbextCompletion(findstart, base)
-  python SzDbCompletion.completion(vim.eval("a:findstart"),vim.eval("a:base"))
+  py3 SzDbCompletion.completion(vim.eval("a:findstart"),vim.eval("a:base"))
   if a:findstart
     return g:SzCompletionIndex
   endif
@@ -192,7 +192,7 @@ function! SzDbextCompletion(findstart, base)
 endfunction
 
 function! FuzzyCompletion(findstart, base)
-  python FuzzyCompletion.completion(vim.eval("a:findstart"),vim.eval("a:base"))
+  py3 FuzzyCompletion.completion(vim.eval("a:findstart"),vim.eval("a:base"))
   if a:findstart
     return g:FuzzyCompletionIndex
   endif
@@ -216,39 +216,39 @@ function! Dbext()
   setlocal nobuflisted
   "setlocal ignorecase
   call SetTabPageName("Dbext")
-  python Dbext.runApp()
+  py3 Dbext.runApp()
 
-  vmap <buffer><silent>,,  :python dbext.queryVisualSQL()<cr>
-  vmap <buffer><silent>,j  :python dbext.queryVisualSQLToJson()<cr>
-  imap <buffer><silent>,,  <C-o>:python dbext.executeOneStatement("line")<cr>
-  nmap <buffer><silent>,,  :python dbext.executeOneStatement("line")<cr>
+  vmap <buffer><silent>,,  :py3 dbext.queryVisualSQL()<cr>
+  vmap <buffer><silent>,j  :py3 dbext.queryVisualSQLToJson()<cr>
+  imap <buffer><silent>,,  <C-o>:py3 dbext.executeOneStatement("line")<cr>
+  nmap <buffer><silent>,,  :py3 dbext.executeOneStatement("line")<cr>
 
-  map <buffer><silent>,gs :python dbext.executeOneStatement("visual")<cr>
-  map <buffer><silent>,go :python dbext.promptDbOption()<cr>
-  map <buffer><silent>,gc :python dbext.promptTempOption()<cr>
-  map <buffer><silent>,lt :python QueryUtil.queryTables(True)<cr>
-  map <buffer><silent>,la :python QueryUtil.queryTables(False)<cr>
-  map <buffer><silent>,ld :python QueryUtil.queryDataBases()<cr>
-  map <buffer><silent>,dt :python QueryUtil.descTable()<cr>
-  map <buffer><silent>,gg :python dbext.exportResultToSQL()<cr>
+  map <buffer><silent>,gs :py3 dbext.executeOneStatement("visual")<cr>
+  map <buffer><silent>,go :py3 dbext.promptDbOption()<cr>
+  map <buffer><silent>,gc :py3 dbext.promptTempOption()<cr>
+  map <buffer><silent>,lt :py3 QueryUtil.queryTables(True)<cr>
+  map <buffer><silent>,la :py3 QueryUtil.queryTables(False)<cr>
+  map <buffer><silent>,ld :py3 QueryUtil.queryDataBases()<cr>
+  map <buffer><silent>,dt :py3 QueryUtil.descTable()<cr>
+  map <buffer><silent>,gg :py3 dbext.exportResultToSQL()<cr>
 endfunction
 
 
 
 function CustomSub(exp,method)
-  python MiscUtil.transform(vim.eval("a:exp"), vim.eval("a:method"))
+  py3 MiscUtil.transform(vim.eval("a:exp"), vim.eval("a:method"))
 	return g:sztransform_result
 endfunction
 
 function Transform(method) range
   let g:sztransform_result=0
-  python MiscUtil.initIncValue()
+  py3 MiscUtil.initIncValue()
   execute a:firstline.",".a:lastline.'s//\=CustomSub(submatch(0),a:method)/gc'
 endfunction
 
 
 function Pydoc(word)
-  python pydoc(vim.eval("a:word"))
+  py3 pydoc(vim.eval("a:word"))
 endfunction
 
 function Javadoc()
@@ -257,74 +257,74 @@ function Javadoc()
   call SetTabPageName("Javadoc")
   call SetVinjaBuf()
   call SplitLeftPanel(40, 'VinjaView_jdoc_index') 
-  map <silent><buffer> <cr>  :python jdocviewer.showJavaDoc()<cr>
-  map <silent><buffer> o     :python jdocviewer.showJavaDoc()<cr>
-  python Javadoc.runApp()
+  map <silent><buffer> <cr>  :py3 jdocviewer.showJavaDoc()<cr>
+  map <silent><buffer> o     :py3 jdocviewer.showJavaDoc()<cr>
+  py3 Javadoc.runApp()
 endfunction
 
 function ProjectTree(...) 
-  python ProjectTree.runApp()
+  py3 ProjectTree.runApp()
   if bufname('%') =~ 'Vinja.*ProjectTree.*$'
 		"call SetTabPageName("ProjectExplorer")
-    nnoremap <silent><buffer> <2-leftmouse> :python projectTree.open_selected_node()<cr>
-    map <silent><buffer> <cr>  :python projectTree.open_selected_node()<cr>
-    map <silent><buffer> o     :python projectTree.open_selected_node()<cr>
-    map <silent><buffer> O     :python projectTree.recursive_open_node()<cr>
-    map <silent><buffer> t     :python projectTree.open_selected_node("tabnew")<cr>
-    map <silent><buffer> i     :python projectTree.open_selected_node("leftabove split")<cr>
-    map <silent><buffer> gc    :python projectTree.cmp_selected_node()<cr>
-    map <silent><buffer> go    :python projectTree.preview_selected_node()<cr>
-    map <silent><buffer> r     :python projectTree.refresh_selected_node()<cr>
-    map <silent><buffer> x     :python projectTree.close_parent_node()<cr>
-    map <silent><buffer> s     :python projectTree.filter_display_node()<cr>
-    map <silent><buffer> z     :python projectTree.close_opened_file(False)<cr>
-    map <silent><buffer> Z     :python projectTree.close_opened_file(True)<cr>
-    map <silent><buffer> u     :python projectTree.up_one_level()<cr>
-    map <silent><buffer> m     :python projectTree.mark_selected_node()<cr>
-    map <silent><buffer> f     :python projectTree.recursive_search()<cr>
-    map <silent><buffer> F     :python projectTree.recursive_search2()<cr>
-    map <silent><buffer> <     :python projectTree.get_prev_open_node()<cr>
-    map <silent><buffer> >     :python projectTree.get_next_open_node()<cr>
-    map <silent><buffer> g<    :python projectTree.get_prev_marked_node()<cr>
-    map <silent><buffer> g>    :python projectTree.get_next_marked_node()<cr>
-    map <silent><buffer> e     :python projectTree.open_with_default()<cr>
-    map <silent><buffer> E     :python projectTree.open_in_terminal()<cr>
-    map <silent><buffer> <C-j> :python projectTree.goto_next_sibling()<cr>
-    map <silent><buffer> <C-k> :python projectTree.goto_prev_sibling()<cr>
+    nnoremap <silent><buffer> <2-leftmouse> :py3 projectTree.open_selected_node()<cr>
+    map <silent><buffer> <cr>  :py3 projectTree.open_selected_node()<cr>
+    map <silent><buffer> o     :py3 projectTree.open_selected_node()<cr>
+    map <silent><buffer> O     :py3 projectTree.recursive_open_node()<cr>
+    map <silent><buffer> t     :py3 projectTree.open_selected_node("tabnew")<cr>
+    map <silent><buffer> i     :py3 projectTree.open_selected_node("leftabove split")<cr>
+    map <silent><buffer> gc    :py3 projectTree.cmp_selected_node()<cr>
+    map <silent><buffer> go    :py3 projectTree.preview_selected_node()<cr>
+    map <silent><buffer> r     :py3 projectTree.refresh_selected_node()<cr>
+    map <silent><buffer> x     :py3 projectTree.close_parent_node()<cr>
+    map <silent><buffer> s     :py3 projectTree.filter_display_node()<cr>
+    map <silent><buffer> z     :py3 projectTree.close_opened_file(False)<cr>
+    map <silent><buffer> Z     :py3 projectTree.close_opened_file(True)<cr>
+    map <silent><buffer> u     :py3 projectTree.up_one_level()<cr>
+    map <silent><buffer> m     :py3 projectTree.mark_selected_node()<cr>
+    map <silent><buffer> f     :py3 projectTree.recursive_search()<cr>
+    map <silent><buffer> F     :py3 projectTree.recursive_search2()<cr>
+    map <silent><buffer> <     :py3 projectTree.get_prev_open_node()<cr>
+    map <silent><buffer> >     :py3 projectTree.get_next_open_node()<cr>
+    map <silent><buffer> g<    :py3 projectTree.get_prev_marked_node()<cr>
+    map <silent><buffer> g>    :py3 projectTree.get_next_marked_node()<cr>
+    map <silent><buffer> e     :py3 projectTree.open_with_default()<cr>
+    map <silent><buffer> E     :py3 projectTree.open_in_terminal()<cr>
+    map <silent><buffer> <C-j> :py3 projectTree.goto_next_sibling()<cr>
+    map <silent><buffer> <C-k> :py3 projectTree.goto_prev_sibling()<cr>
 
-    map <silent><buffer> !     :python projectTree.load_java_classpath()<cr>
-    map <silent><buffer> #     :python projectTree.toggleTreeType("workSpaceTree")<cr>
-    map <silent><buffer> @     :python projectTree.toggleTreeType("workSetTree")<cr>
-    map <silent><buffer> %     :python projectTree.toggleTreeType("projectTree")<cr>
-    map <silent><buffer> DD    :python projectTree.delete_node()<cr>
-    map <silent><buffer> Dm    :python projectTree.delete_marked_node()<cr>
-    map <silent><buffer> A     :python projectTree.add_node()<cr>
-    map <silent><buffer> I     :python projectTree.toggleHidden()<cr>
+    map <silent><buffer> !     :py3 projectTree.load_java_classpath()<cr>
+    map <silent><buffer> #     :py3 projectTree.toggleTreeType("workSpaceTree")<cr>
+    map <silent><buffer> @     :py3 projectTree.toggleTreeType("workSetTree")<cr>
+    map <silent><buffer> %     :py3 projectTree.toggleTreeType("projectTree")<cr>
+    map <silent><buffer> DD    :py3 projectTree.delete_node()<cr>
+    map <silent><buffer> Dm    :py3 projectTree.delete_marked_node()<cr>
+    map <silent><buffer> A     :py3 projectTree.add_node()<cr>
+    map <silent><buffer> I     :py3 projectTree.toggleHidden()<cr>
 
-    map <silent><buffer> ya    :python projectTree.yank_node_path()<cr>
-    map <silent><buffer> yr    :python projectTree.yank_node_rel_path()<cr>
-    map <silent><buffer> yn    :python projectTree.yank_node_name()<cr>
-    map <silent><buffer> cc    :python projectTree.rename_node()<cr>
-    map <silent><buffer> yy    :python projectTree.yank_selected_node(False)<cr>
-    map <silent><buffer> dd    :python projectTree.yank_selected_node(True)<cr>
-    map <silent><buffer> ym    :python projectTree.yank_marked_node(False)<cr>
-    map <silent><buffer> dm    :python projectTree.yank_marked_node(True)<cr>
-    map <silent><buffer> p     :python projectTree.paste()<cr>
-    map <silent><buffer> P     :python projectTree.paste_from_clipBoard()<cr>
-    map <silent><buffer> YY    :python projectTree.copy_to_clipBoard()<cr>
+    map <silent><buffer> ya    :py3 projectTree.yank_node_path()<cr>
+    map <silent><buffer> yr    :py3 projectTree.yank_node_rel_path()<cr>
+    map <silent><buffer> yn    :py3 projectTree.yank_node_name()<cr>
+    map <silent><buffer> cc    :py3 projectTree.rename_node()<cr>
+    map <silent><buffer> yy    :py3 projectTree.yank_selected_node(False)<cr>
+    map <silent><buffer> dd    :py3 projectTree.yank_selected_node(True)<cr>
+    map <silent><buffer> ym    :py3 projectTree.yank_marked_node(False)<cr>
+    map <silent><buffer> dm    :py3 projectTree.yank_marked_node(True)<cr>
+    map <silent><buffer> p     :py3 projectTree.paste()<cr>
+    map <silent><buffer> P     :py3 projectTree.paste_from_clipBoard()<cr>
+    map <silent><buffer> YY    :py3 projectTree.copy_to_clipBoard()<cr>
 
-    map <silent><buffer> ?     :python projectTree.print_help()<cr>
-    map <silent><buffer> C     :python projectTree.change_root()<cr>
-    map <silent><buffer> B     :python projectTree.change_back()<cr>
-    map <silent><buffer> U     :python projectTree.change_root_upper()<cr>
-    map <silent><buffer> QQ    :python projectTree.dispose_tree()<cr>
-    "map <silent><buffer> S     :python projectTree.save_status(False)<cr>
-    autocmd BufUnload <buffer>  python projectTree.save_status(False)
+    map <silent><buffer> ?     :py3 projectTree.print_help()<cr>
+    map <silent><buffer> C     :py3 projectTree.change_root()<cr>
+    map <silent><buffer> B     :py3 projectTree.change_back()<cr>
+    map <silent><buffer> U     :py3 projectTree.change_root_upper()<cr>
+    map <silent><buffer> QQ    :py3 projectTree.dispose_tree()<cr>
+    "map <silent><buffer> S     :py3 projectTree.save_status(False)<cr>
+    autocmd BufUnload <buffer>  py3 projectTree.save_status(False)
 
-    vmap <silent><buffer> DD   :python projectTree.delete_visual_node()<cr>
-    vmap <silent><buffer> m    :python projectTree.mark_visual_node()<cr>
-    vmap <silent><buffer> yy   :python projectTree.yank_visual_node(False)<cr>
-    vmap <silent><buffer> dd   :python projectTree.yank_visual_node(True)<cr>
+    vmap <silent><buffer> DD   :py3 projectTree.delete_visual_node()<cr>
+    vmap <silent><buffer> m    :py3 projectTree.mark_visual_node()<cr>
+    vmap <silent><buffer> yy   :py3 projectTree.yank_visual_node(False)<cr>
+    vmap <silent><buffer> dd   :py3 projectTree.yank_visual_node(True)<cr>
 	endif
   exec 'wincmd w'
 endfunction
@@ -333,39 +333,39 @@ endfunction
 
 function LocateFile(locateType)
   call RunSzPyfile("locate.py")
-  python fcmgr = FileContentManager(vim.eval("a:locateType"))
-  python QuickLocater.runApp(fcmgr)
+  py3 fcmgr = FileContentManager(vim.eval("a:locateType"))
+  py3 QuickLocater.runApp(fcmgr)
 endfunction
 
 function LocateHistory()
   call RunSzPyfile("locate.py")
-  python hismgr = EditHistoryManager()
-  python QuickLocater.runApp(hismgr)
+  py3 hismgr = EditHistoryManager()
+  py3 QuickLocater.runApp(hismgr)
 endfunction
 
 function LocateProject()
   call RunSzPyfile("locate.py")
-  python projmgr = ProjectLocationManager()
-  python QuickLocater.runApp(projmgr)
+  py3 projmgr = ProjectLocationManager()
+  py3 QuickLocater.runApp(projmgr)
 endfunction
 
 function LocateMember()
   call RunSzPyfile("locate.py")
-  python membermgr = JavaMemberContentManager()
-  python QuickLocater.runApp(membermgr)
+  py3 membermgr = JavaMemberContentManager()
+  py3 QuickLocater.runApp(membermgr)
 endfunction
 
 function LocateClass()
   call RunSzPyfile("locate.py")
-  python classnamemgr = JavaClassNameContentManager()
-  python QuickLocater.runApp(classnamemgr)
+  py3 classnamemgr = JavaClassNameContentManager()
+  py3 QuickLocater.runApp(classnamemgr)
 endfunction
 
 function LocateHierarchy()
   call RunSzPyfile("locate.py")
-  python method,param = Parser.parseCurrentMethodName()
-  python thmgr = TypeHierarchyContentManager(vim.current.buffer.name,method,param)
-  python QuickLocater.runApp(thmgr)
+  py3 method,param = Parser.parseCurrentMethodName()
+  py3 thmgr = TypeHierarchyContentManager(vim.current.buffer.name,method,param)
+  py3 QuickLocater.runApp(thmgr)
 endfunction
 
 
@@ -377,7 +377,7 @@ set tabline=%!MyTabLine()
 autocmd BufEnter * let &titlestring = MyTitleString()
 
 function! SzJdbCompletion(findstart, base)
-  python Jdb.completion(vim.eval("a:findstart"),vim.eval("a:base"))
+  py3 Jdb.completion(vim.eval("a:findstart"),vim.eval("a:base"))
   if a:findstart
     return g:SzJdbCompletionIndex
   endif
@@ -386,7 +386,7 @@ endfunction
 
 
 function! SzJdeCompletion(findstart, base)
-  python SzJdeCompletion.completion(vim.eval("a:findstart"),vim.eval("a:base"))
+  py3 SzJdeCompletion.completion(vim.eval("a:findstart"),vim.eval("a:base"))
   if a:findstart
     return g:SzJdeCompletionIndex
   endif
@@ -394,33 +394,33 @@ function! SzJdeCompletion(findstart, base)
 endfunction
 
 function FetchResult(...)
-  python fetchCallBack(vim.eval("a:000"))
+  py3 fetchCallBack(vim.eval("a:000"))
   redraw
 endfunction
 
 function FetchJdbResult()
-  python jdb.fetchJdbResult()
+  py3 jdb.fetchJdbResult()
   redraw
 endfunction
 
 
 function FetchAutocmdResult()
-  python jdb.fetchAutocmdResult()
+  py3 jdb.fetchAutocmdResult()
   redraw
 endfunction
 
 function HandleJdiEvent(...)
-  python jdb.handleJdiEvent(vim.eval("a:000"))
+  py3 jdb.handleJdiEvent(vim.eval("a:000"))
   "redraw
 endfunction
 
 function HandleBuildResult(...)
-  python Compiler.setQfList(vim.eval("a:000"))
+  py3 Compiler.setQfList(vim.eval("a:000"))
 endfunction
 
 
 function! Jdb()
-  python Jdb.runApp()
+  py3 Jdb.runApp()
 endfunction
 
 
@@ -441,9 +441,9 @@ function InitJavaSetting()
   map <C-p> :cp<cr>
   setlocal omnifunc=SzJdeCompletion
   "set cmdheight=2
-  "au CursorHold <buffer> :python HighlightManager.displayMsg()
-  "au CursorMoved <buffer> :python HighlightManager.displayMsg()
-  python EditUtil.createSkeleton()
+  "au CursorHold <buffer> :py3 HighlightManager.displayMsg()
+  "au CursorMoved <buffer> :py3 HighlightManager.displayMsg()
+  py3 EditUtil.createSkeleton()
   if exists("*SuperTabSetDefaultCompletionType")
     call SuperTabSetDefaultCompletionType("<c-x><c-o>")
   endif
@@ -453,101 +453,101 @@ function! JdeInit()
   call RunSzPyfile("jde.py")
   set completeopt=menuone
   autocmd BufEnter     *.java     call InitJavaSetting()
-  autocmd BufWinEnter   *.java    python HighlightManager.highlightCurrentBuf()
-  "autocmd BufReadPost   *.java    python HighlightManager.highlightCurrentBuf()
-  autocmd BufWritePost  *.java    python Compiler.compileCurrentFile()
-  autocmd BufWritePost  *         python Compiler.copyResource()
+  autocmd BufWinEnter   *.java    py3 HighlightManager.highlightCurrentBuf()
+  "autocmd BufReadPost   *.java    py3 HighlightManager.highlightCurrentBuf()
+  autocmd BufWritePost  *.java    py3 Compiler.compileCurrentFile()
+  autocmd BufWritePost  *         py3 Compiler.copyResource()
 
-  autocmd BufRead     *.java     python Compiler.preloadAstInfo()
+  autocmd BufRead     *.java     py3 Compiler.preloadAstInfo()
 
-  autocmd CursorHold *.java  :python HighlightManager.displayMsg()
-  autocmd CursorMoved *.java :python HighlightManager.displayMsg()
+  autocmd CursorHold *.java  :py3 HighlightManager.displayMsg()
+  autocmd CursorMoved *.java :py3 HighlightManager.displayMsg()
 
-  command! -nargs=0   DumpClass        :python EditUtil.dumpClassInfo()
-  command! -nargs=0   AutoImport       :python AutoImport.autoImportVar()
-  command! -nargs=0   Run              :python Runner.runCurrentFile()
-  command! -nargs=0   RunTest          :python Runner.runCurrentFile("runTest")
-  command! -nargs=0   Overide          :python EditUtil.overideMethod()
+  command! -nargs=0   DumpClass        :py3 EditUtil.dumpClassInfo()
+  command! -nargs=0   AutoImport       :py3 AutoImport.autoImportVar()
+  command! -nargs=0   Run              :py3 Runner.runCurrentFile()
+  command! -nargs=0   RunTest          :py3 Runner.runCurrentFile("runTest")
+  command! -nargs=0   Overide          :py3 EditUtil.overideMethod()
 
   command! -nargs=0   Jdb              :call Jdb()
-  command! -nargs=0   ToggleBreakPoint :python EditUtil.toggleBreakpoint()
+  command! -nargs=0   ToggleBreakPoint :py3 EditUtil.toggleBreakpoint()
   command! -nargs=1   FetchDebugOutput :call FetchDebugOutput('<args>')
   command! -nargs=*   HandleJdiEvent    :call HandleJdiEvent(<f-args>)
 
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>,   :python Runner.runCurrentFile()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
-  autocmd BufEnter  *.java    vmap <buffer><silent><leader>gs  :python EditUtil.generateGseter()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>dc  :python EditUtil.dumpClassInfo()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>,   :py3 Runner.runCurrentFile()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :py3 VimUtil.closeVinjaBuffer("JdeConsole")<cr>
+  autocmd BufEnter  *.java    vmap <buffer><silent><leader>gs  :py3 EditUtil.generateGseter()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>dc  :py3 EditUtil.dumpClassInfo()<cr>
 
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
-  autocmd BufEnter  *.class   nmap <buffer><silent><leader>gd  :python EditUtil.locateDefinition("declare")<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gd  :py3 EditUtil.locateDefinition("declare")<cr>
+  autocmd BufEnter  *.class   nmap <buffer><silent><leader>gd  :py3 EditUtil.locateDefinition("declare")<cr>
 
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gi  :python EditUtil.locateDefinition("impl")<cr>
-  autocmd BufEnter  *.class   nmap <buffer><silent><leader>gi  :python EditUtil.locateDefinition("impl")<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gi  :py3 EditUtil.locateDefinition("impl")<cr>
+  autocmd BufEnter  *.class   nmap <buffer><silent><leader>gi  :py3 EditUtil.locateDefinition("impl")<cr>
 
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gh  :python EditUtil.searchRef()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>ai  :python AutoImport.autoImportVar()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>pt  :python ProjectManager.projectTree()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>gh  :py3 EditUtil.searchRef()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>ai  :py3 AutoImport.autoImportVar()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>pt  :py3 ProjectManager.projectTree()<cr>
 
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>go  :call LocateMember()<cr>
   autocmd BufEnter  *.class   nmap <buffer><silent><leader>go  :call LocateMember()<cr>
 
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>cq  :python Parser.copyMainClassToRegister()<cr>
-  autocmd BufEnter  *.class   nmap <buffer><silent><leader>cq  :python Parser.copyMainClassToRegister()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>cq  :py3 Parser.copyMainClassToRegister()<cr>
+  autocmd BufEnter  *.class   nmap <buffer><silent><leader>cq  :py3 Parser.copyMainClassToRegister()<cr>
 
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gt  :call LocateHierarchy()<cr>
   autocmd BufEnter  *         nmap <buffer><silent><leader>gc  :call LocateClass()<cr>
 
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
-  autocmd BufEnter  *.class   nmap <buffer><silent><leader>tb  :python EditUtil.toggleBreakpoint()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>tb  :py3 EditUtil.toggleBreakpoint()<cr>
+  autocmd BufEnter  *.class   nmap <buffer><silent><leader>tb  :py3 EditUtil.toggleBreakpoint()<cr>
 
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>td  :python Jdb.runApp()<cr>
-  autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:python EditUtil.tipMethodDefinition()<cr>
-  autocmd BufEnter  *.java    imap <buffer><silent><M-8>       <c-o>:python EditUtil.tipMethodDefinition(True)<cr>
-  autocmd BufEnter  *.java    imap <buffer><silent><M-7>       <c-o>:python AutoImport.autoImportVar()<cr>
-  autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><M-9>       :python EditUtil.tipMethodDefinition()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><M-8>       :python EditUtil.tipMethodDefinition(True)<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :python VimUtil.closeVinjaBuffer("JdeConsole")<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>de  :python Jdb.toggleDebug()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>sc  :python EditUtil.showJdeConsoleOut()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>td  :py3 Jdb.runApp()<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-9>       <c-o>:py3 EditUtil.tipMethodDefinition()<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-8>       <c-o>:py3 EditUtil.tipMethodDefinition(True)<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-7>       <c-o>:py3 AutoImport.autoImportVar()<cr>
+  autocmd BufEnter  *.java    imap <buffer><silent><M-0>       <c-o>:py3 VimUtil.closeVinjaBuffer("JdeConsole")<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-9>       :py3 EditUtil.tipMethodDefinition()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-8>       :py3 EditUtil.tipMethodDefinition(True)<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><M-0>       :py3 VimUtil.closeVinjaBuffer("JdeConsole")<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>de  :py3 Jdb.toggleDebug()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>sc  :py3 EditUtil.showJdeConsoleOut()<cr>
   
 
-  autocmd CompleteDone *.java  :python AutoImport.importAfterCompletion()
+  autocmd CompleteDone *.java  :py3 AutoImport.importAfterCompletion()
   
-  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><leader>de    :python Jdb.toggleDebug()<cr>
-  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><leader>k     :python jdb.qevalCmd()<cr>
-  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F5>     :python jdb.stepCmd('step_into')<cr>
-  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F6>     :python jdb.stepCmd('step_over')<cr>
-  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F7>     :python jdb.stepCmd('step_return')<cr>
-  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F8>     :python jdb.stepCmd('resume')<cr>
-  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><c-i>    :python jdb.toggleQuickStep()<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><leader>de    :py3 Jdb.toggleDebug()<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><leader>k     :py3 jdb.qevalCmd()<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F5>     :py3 jdb.stepCmd('step_into')<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F6>     :py3 jdb.stepCmd('step_over')<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F7>     :py3 jdb.stepCmd('step_return')<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><F8>     :py3 jdb.stepCmd('resume')<cr>
+  autocmd BufEnter  VinjaView_Jdb  nmap <buffer><silent><c-i>    :py3 jdb.toggleQuickStep()<cr>
 
-  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F5>     <c-o>:python jdb.stepCmd('step_into')<cr>
-  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F6>     <c-o>:python jdb.stepCmd('step_over')<cr>
-  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F7>     <c-o>:python jdb.stepCmd('step_return')<cr>
-  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F8>     <c-o>:python jdb.stepCmd('resume')<cr>
-  "autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><c-i>    <c-o>:python jdb.toggleQuickStep()<cr>
+  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F5>     <c-o>:py3 jdb.stepCmd('step_into')<cr>
+  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F6>     <c-o>:py3 jdb.stepCmd('step_over')<cr>
+  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F7>     <c-o>:py3 jdb.stepCmd('step_return')<cr>
+  autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><F8>     <c-o>:py3 jdb.stepCmd('resume')<cr>
+  "autocmd BufEnter  VinjaView_Jdb  imap <buffer><silent><c-i>    <c-o>:py3 jdb.toggleQuickStep()<cr>
 
-  autocmd BufLeave  VinjaView_JdeConsole  python EditUtil.saveJdeConsoleOut()
-  autocmd BufEnter  VinjaView_JdeConsole  nmap <buffer><silent><leader>de  :python Jdb.toggleDebug()<cr>
+  autocmd BufLeave  VinjaView_JdeConsole  py3 EditUtil.saveJdeConsoleOut()
+  autocmd BufEnter  VinjaView_JdeConsole  nmap <buffer><silent><leader>de  :py3 Jdb.toggleDebug()<cr>
 
 endfunction
 
 function! Jdext()
   call JdeInit()
-  python ProjectManager.projectOpen()
+  py3 ProjectManager.projectOpen()
 endfunction
 
 function! Jdesp()
-  python MiscUtil.select_project_open()
+  py3 MiscUtil.select_project_open()
 endfunction
 
 
 command! -nargs=1 -range=% Transform :<line1>,<line2>call Transform('<args>')
 
-command! -nargs=0 StartAgent  :python VinjaAgent.startAgent()
-command! -nargs=0 StopAgent   :python VinjaAgent.stopAgent()
+command! -nargs=0 StartAgent  :py3 VinjaAgent.startAgent()
+command! -nargs=0 StopAgent   :py3 VinjaAgent.stopAgent()
 command! -nargs=0 Shext       :call Shext()
 command! -nargs=0 Jdext       :call Jdext()
 "select project to open in jde.
@@ -556,25 +556,25 @@ command! -nargs=0 Dbext       :call Dbext()
 
 
 command! -nargs=0 ProjectTree          :call ProjectTree()
-command! -nargs=0 ProjectTreeFind      :python ProjectTree.locate_buf_in_tree()
-command! -nargs=0 ProjectTreeDispose   :python ProjectTree.dispose_tree()
+command! -nargs=0 ProjectTreeFind      :py3 ProjectTree.locate_buf_in_tree()
+command! -nargs=0 ProjectTreeDispose   :py3 ProjectTree.dispose_tree()
 
 nmap <silent><leader>pt  :call ProjectTree()<cr>
-nmap <silent><leader>pf  :python ProjectTree.locate_buf_in_tree()<cr>
+nmap <silent><leader>pf  :py3 ProjectTree.locate_buf_in_tree()<cr>
 
 "vinja mapping
-nmap <silent><leader>zc  :python ScratchUtil.startScriptEdit()<cr>
-vmap <silent><leader>zf  :python MiscUtil.simpleFormatSQL()<cr>
-vmap <silent><leader>te  :python MiscUtil.tabulate()<cr>
-vmap <silent><leader>tr  :python MiscUtil.arrange()<cr>
-vmap <silent><leader>zg  :python MiscUtil.operateVisualContext()<cr>
-nmap <silent><leader>rc  :python MiscUtil.remove_comment()<cr>
-nmap <silent><leader>ya  :python MiscUtil.copy_buffer_path()<cr>
-nmap <silent><leader>mm  :python VimUtil.toggleMaxWin()<cr>
-nmap <silent><leader>mw  :python VimUtil.zoomWinWidth()<cr>
-nmap <silent><leader>bc  :python MiscUtil.selectColumn()<cr>
+nmap <silent><leader>zc  :py3 ScratchUtil.startScriptEdit()<cr>
+vmap <silent><leader>zf  :py3 MiscUtil.simpleFormatSQL()<cr>
+vmap <silent><leader>te  :py3 MiscUtil.tabulate()<cr>
+vmap <silent><leader>tr  :py3 MiscUtil.arrange()<cr>
+vmap <silent><leader>zg  :py3 MiscUtil.operateVisualContext()<cr>
+nmap <silent><leader>rc  :py3 MiscUtil.remove_comment()<cr>
+nmap <silent><leader>ya  :py3 MiscUtil.copy_buffer_path()<cr>
+nmap <silent><leader>mm  :py3 VimUtil.toggleMaxWin()<cr>
+nmap <silent><leader>mw  :py3 VimUtil.zoomWinWidth()<cr>
+nmap <silent><leader>bc  :py3 MiscUtil.selectColumn()<cr>
 
-nmap <silent><leader>zs  :python MiscUtil.startfile()<cr>
+nmap <silent><leader>zs  :py3 MiscUtil.startfile()<cr>
 nmap <silent><leader>zv  <C-Q>
 
 nmap <silent><leader>lc  :call LocateFile("currentDir")<cr>
@@ -583,23 +583,23 @@ nmap <silent><leader>la  :call LocateHistory()<cr>
 nmap <silent><leader>lr  :call LocateProject()<cr>
 
 function SetProjectTreeFileEditFlag(filename,flag)
-  python ProjectTree.set_file_edit(vim.eval("a:filename"),vim.eval("a:flag"))
+  py3 ProjectTree.set_file_edit(vim.eval("a:filename"),vim.eval("a:flag"))
 endfunction
 
-autocmd BufReadCmd  jar://*	python ZipUtil.read_zip_cmd()
+autocmd BufReadCmd  jar://*	py3 ZipUtil.read_zip_cmd()
 autocmd BufReadPost *  call SetProjectTreeFileEditFlag(expand("<amatch>"),"true")
 autocmd BufUnload   *  call SetProjectTreeFileEditFlag(expand("<amatch>"),"false")
 
 function RemoveFromHistory(filename)
-  python edit_history.remove_from_history(vim.eval("a:filename"))
+  py3 edit_history.remove_from_history(vim.eval("a:filename"))
 endfunction
 
-autocmd BufEnter           *  python edit_history.record_current_buf()
-autocmd VimEnter,WinEnter  *  python edit_history.create_win_id()
+autocmd BufEnter           *  py3 edit_history.record_current_buf()
+autocmd VimEnter,WinEnter  *  py3 edit_history.create_win_id()
 autocmd BufUnload          *  call RemoveFromHistory(expand("<amatch>"))
 
 command! -nargs=1 Silent
 \ | execute ':silent !'.<q-args>
 \ | execute ':redraw!'
 
-python VinjaAgent.startAgent()
+py3 VinjaAgent.startAgent()
