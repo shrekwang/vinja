@@ -233,130 +233,7 @@ function! Dbext()
   map <buffer><silent>,gg :python dbext.exportResultToSQL()<cr>
 endfunction
 
-function! SzDtdCompletion(findstart,base)
-  python SzDtdCompletion(vim.eval("a:findstart"),vim.eval("a:base"))
-  if a:findstart
-    return g:SzCompletionIndex
-  endif
-    return g:SzCompletionResult
-endfunction
 
-function! LoadDtd()
-  call RunSzPyfile("dtd.py")
-  set omnifunc=SzDtdCompletion
-  python parseDtdDecl()
-endfunction
-
-function! CodeGen()
-  call RunSzPyfile("dbext.py")
-  call RunSzPyfile("codegen.py")
-  map <buffer><silent>,, :python generateCode()<cr>
-endfunction
-
-function! Recite()
-  if bufnr("VinjaView_recite") > -1 
-    echo "Recite is already running."
-    return
-  endif
-  file VinjaView_recite
-  call SetVinjaBuf()
-  call RunSzPyfile("engext.py")
-  map <silent><buffer> o  :python recite.wordDetail()<cr>
-  map <silent><buffer> n  :python recite.listWords(20)<cr>
-  map <silent><buffer> t  :python recite.trainning()<cr>
-  python Recite.runApp()
-endfunction
-
-function! ClassicReader()
-  if bufnr("VinjaView_book_content") > -1 
-    echo "ClassicReader is already running."
-    return
-  endif
-  file VinjaView_book_content
-  call SetTabPageName("ClassicReader")
-  call SetVinjaBuf()
-  call SplitLeftPanel(43, 'VinjaView_book_index') 
-  call RunSzPyfile("engext.py")
-  python ClassicReader.runApp()
-  map <silent><buffer> <cr>  :python classicReader.updateContentView()<cr>
-  map <silent><buffer> o     :python classicReader.updateContentView()<cr>
-endfunction
-
-function! Notext()
-  if bufnr("VinjaView_note_list") > -1 
-    echo "Notext is already running."
-    return
-  endif
-  file VinjaView_note_list
-  call SetTabPageName("Notext")
-  call SetVinjaBuf()
-  call SplitLeftPanel(20, 'VinjaView_tag_list') 
-  map <silent><buffer> <cr>  :python notext.listCurrentTagItems()<cr>
-  map <silent><buffer> o     :python notext.listCurrentTagItems()<cr>
-  command! -nargs=0 ExitNote   :python notext.exit()
-  python Notext.runApp()
-endfunction
-
-function! Tagext()
-  call RunSzPyfile("tagext.py")
-  python TagExt.runApp()
-  python tagext.edit_tag()
-endfunction
-
-function! TagList()
-  call RunSzPyfile("tagext.py")
-  python TagExt.runApp()
-  python tagext.list_buf()
-endfunction
-
-
-function! NoteBufferSetting()  
-  map <silent><buffer> o  :python notext.queryDetail()<cr>
-  map <silent><buffer> i  :python notext.makeTemplate()<cr>
-  command! -nargs=0 RemoveItem   :python notext.removeNoteItem()
-  command! -nargs=0 ExitNote   :python notext.exit()
-endfunction  
-
-
-function! NoteItemSyntax()  
-  
-  syn keyword sztodoKeyword tag title id status create_date   
-  syn keyword sztodoStatus unstarted done doing postpone  
-  
-  syn match tags "^tags:.*"   
-  syn match title "^title:.*"  
-  syn match id  "^id:.*"  
-  syn match status  "^status:.*"  
-  
-  hi def link sztodoKeyword Keyword  
-  hi def link sztodoStatus Identifier  
-  hi def link tags String  
-  hi def link id String  
-  hi def link title String  
-  hi def link status String  
-  
-endfunction  
-
-
-function! SzSudoku()  
-
-  call RunSzPyfile("gamext.py")
-  call SetVinjaBuf()
-  call SetTabPageName("Sudoku")
-  python Sudoku.runApp()
-  command! -nargs=0 CheckSudoku  :python sudoku.checkBufferMap()
-  command! -nargs=0 Hint         :python sudoku.hint()
-endfunction
-
-function! SzMineSweeper()  
-  call RunSzPyfile("gamext.py")
-  call SetTabPageName("MineSweeper")
-  python mf=MineField()
-  python content=mf.getFormatedMap()
-  python output(content)
-  map <buffer><silent>d    :python mf.digField()<cr>
-  map <buffer><silent>m    :python mf.markField()<cr>
-endfunction
 
 function CustomSub(exp,method)
   python MiscUtil.transform(vim.eval("a:exp"), vim.eval("a:method"))
@@ -367,12 +244,6 @@ function Transform(method) range
   let g:sztransform_result=0
   python MiscUtil.initIncValue()
   execute a:firstline.",".a:lastline.'s//\=CustomSub(submatch(0),a:method)/gc'
-endfunction
-
-function SearchDict(word)
-  call RunSzPyfile("pystardict.py")
-  python DictUtil.searchDict(vim.eval("a:word"))
-  python DictUtil.playWordSound(vim.eval("a:word"))
 endfunction
 
 
@@ -388,7 +259,6 @@ function Javadoc()
   call SplitLeftPanel(40, 'VinjaView_jdoc_index') 
   map <silent><buffer> <cr>  :python jdocviewer.showJavaDoc()<cr>
   map <silent><buffer> o     :python jdocviewer.showJavaDoc()<cr>
-  command! -nargs=0 ExitNote   :python notext.exit()
   python Javadoc.runApp()
 endfunction
 
@@ -459,18 +329,7 @@ function ProjectTree(...)
   exec 'wincmd w'
 endfunction
 
-function PlayDict(word)
-  python playWordSound(vim.eval("a:word"))
-endfunction
 
-function Ledit(name)
-  call RunSzPyfile("shext.py")
-  python Shext.ledit(vim.eval("a:name"))
-endfunction
-
-function WatchExample(name)
-  python MiscUtil.watchExample(vim.eval("a:name"))
-endfunction
 
 function LocateFile(locateType)
   call RunSzPyfile("locate.py")
@@ -509,13 +368,8 @@ function LocateHierarchy()
   python QuickLocater.runApp(thmgr)
 endfunction
 
-function StartMailAgent()
-  python startMailAgent()
-endfunction
-
 
 call RunSzPyfile("common.py")
-call RunSzPyfile("notext.py")
 call RunSzPyfile("tree.py")
 
 set completefunc=FuzzyCompletion
@@ -564,14 +418,6 @@ function HandleBuildResult(...)
   python Compiler.setQfList(vim.eval("a:000"))
 endfunction
 
-
-function RunAntBuild(...)
-  if a:0 > 0
-    python Runner.runAntBuild(vim.eval("a:1"))
-  else
-    python Runner.runAntBuild()
-  endif
-endfunction 
 
 function! Jdb()
   python Jdb.runApp()
@@ -622,7 +468,6 @@ function! JdeInit()
   command! -nargs=0   Run              :python Runner.runCurrentFile()
   command! -nargs=0   RunTest          :python Runner.runCurrentFile("runTest")
   command! -nargs=0   Overide          :python EditUtil.overideMethod()
-  command! -nargs=?   Ant              :call RunAntBuild('<args>')
 
   command! -nargs=0   Jdb              :call Jdb()
   command! -nargs=0   ToggleBreakPoint :python EditUtil.toggleBreakpoint()
@@ -699,18 +544,6 @@ function! Jdesp()
 endfunction
 
 
-command! -nargs=1 Example       :call WatchExample('<args>')
-command! -nargs=1 Dict          :call SearchDict('<args>')
-command! -nargs=0 Recite        :call Recite()
-command! -nargs=0 ClassicReader :call ClassicReader()
-"command! -nargs=0 StartMailAgent :call StartMailAgent()
-
-command! -nargs=0 CodeGen      :call CodeGen()
-command! -nargs=0 LoadDtd      :call LoadDtd()
-
-command! -nargs=0 SzSudoku    :call SzSudoku()
-command! -nargs=0 SzMineSweeper  :call SzMineSweeper()
-
 command! -nargs=1 -range=% Transform :<line1>,<line2>call Transform('<args>')
 
 command! -nargs=0 StartAgent  :python VinjaAgent.startAgent()
@@ -720,12 +553,6 @@ command! -nargs=0 Jdext       :call Jdext()
 "select project to open in jde.
 command! -nargs=0 Jdesp       :call Jdesp()
 command! -nargs=0 Dbext       :call Dbext()
-command! -nargs=0 Notext      :call Notext()
-command! -nargs=0 Tagext      :call Tagext()
-command! -nargs=0 TagList      :call TagList()
-command! -nargs=0 SaveNote            :python Notext.saveBufContent()
-command! -nargs=0 MakeNoteTemplate    :python Notext.makeTemplate()
-"command! -nargs=+ FetchResult      :call FetchResult(<f-args>)
 
 
 command! -nargs=0 ProjectTree          :call ProjectTree()
@@ -737,7 +564,6 @@ nmap <silent><leader>pf  :python ProjectTree.locate_buf_in_tree()<cr>
 
 "vinja mapping
 nmap <silent><leader>zc  :python ScratchUtil.startScriptEdit()<cr>
-nmap <silent><leader>zd  :call SearchDict('<C-R><C-W>')<CR>
 vmap <silent><leader>zf  :python MiscUtil.simpleFormatSQL()<cr>
 vmap <silent><leader>te  :python MiscUtil.tabulate()<cr>
 vmap <silent><leader>tr  :python MiscUtil.arrange()<cr>
@@ -751,8 +577,6 @@ nmap <silent><leader>bc  :python MiscUtil.selectColumn()<cr>
 nmap <silent><leader>zs  :python MiscUtil.startfile()<cr>
 nmap <silent><leader>zv  <C-Q>
 
-nmap <silent><leader>zt  :call Tagext()<cr>
-nmap <silent><leader>zl  :call TagList()<cr>
 nmap <silent><leader>lc  :call LocateFile("currentDir")<cr>
 nmap <silent><leader>lw  :call LocateFile("all")<cr>
 nmap <silent><leader>la  :call LocateHistory()<cr>
