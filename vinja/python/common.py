@@ -677,12 +677,21 @@ class ScratchUtil(object):
     def printScriptResult(result):
         """ output to result to a temp vim buffer named "scriptResult" """
         vim.command("call SwitchToVinjaView('scriptResult')")    
-        output(result)
+        output(result,append=True)
 
     @staticmethod
     def runScript():
         script="\n".join([line for line in vim.current.buffer])
-        exec(script)
+        import io
+        from contextlib import redirect_stdout
+        with io.StringIO() as buf, redirect_stdout(buf):
+            exec(script)
+            output = buf.getvalue()
+
+        ScratchUtil.printScriptResult(output)
+        listwinnr=str(vim.eval("winnr('#')"))
+        vim.command("exec '%s wincmd w'" % listwinnr)
+
 
 class DictUtil(object):
     @staticmethod
@@ -1173,7 +1182,7 @@ class EditHistory(object):
     def get_history(self):
         uuid_str = self._get_win_id()
         records = self.history.get(uuid_str)
-        normal_buffers = [buffer.name for buffer in vim.buffers if buffer.options["buftype"] == ""]
+        normal_buffers = [buffer.name for buffer in vim.buffers if buffer.options["buftype"] == b'']
         records[:] = [item for item in records if item in normal_buffers]
         return records
 
