@@ -651,14 +651,6 @@ class EditUtil(object):
             print("cant' locate the source code")
         return
 
-    @staticmethod
-    def reprDictInDoubleQuote(dic):
-        pairs = []
-        for item in list(dic.keys()) :
-            value = re.escape(dic[item])
-            pair = '"'+str(item)+'"'+":"+'"'+value+'"'
-            pairs.append(pair)
-        return "{"+",".join(pairs)+"}"
 
     @staticmethod
     def searchRef():
@@ -702,10 +694,14 @@ class EditUtil(object):
 
         HighlightManager.highlightCurrentBuf()
         if len(qflist) > 0 :
-            #since vim use single quote string as literal string, the escape char will not
-            #been handled, so repr the dict in a double quoted string
-            qflist_str = "[" + ",".join([EditUtil.reprDictInDoubleQuote(item) for item in qflist])+"]" 
-            vim.command("call setqflist(%s)" % qflist_str)
+            vim_qflist = vim.eval('[]')
+            for d in qflist:
+                vim_dict = vim.Dictionary()
+                for key, value in d.items():
+                    vim_dict[key] = value
+                vim_qflist.append(vim_dict)
+            vim.vars['tmp_qflist'] = vim_qflist
+            vim.command("call setqflist(tmp_qflist)" )
             vim.command("cwindow")
         else :
             print("can't find any reference location.")

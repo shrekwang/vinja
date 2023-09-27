@@ -969,11 +969,14 @@ class ProjectTree(object):
             qflist.append(qfitem)
 
         if len(qflist) > 0 :
-            #since vim use single quote string as literal string, the escape char will not
-            #been handled, so repr the dict in a double quoted string
-            qflist_str = "[" + ",".join([EditUtil.reprDictInDoubleQuote(item) for item in qflist])+"]" 
-
-            vim.command("call setqflist(%s)" % qflist_str)
+            vim_qflist = vim.eval('[]')
+            for d in qflist:
+                vim_dict = vim.Dictionary()
+                for key, value in d.items():
+                    vim_dict[key] = value
+                vim_qflist.append(vim_dict)
+            vim.vars['tmp_qflist'] = vim_qflist
+            vim.command("call setqflist(tmp_qflist)" )
             vim.command("exec 'wincmd w'")
             vim.command("cwindow")
         else :
