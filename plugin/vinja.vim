@@ -486,7 +486,7 @@ function! JdeInit()
   autocmd BufEnter  *.class   nmap <buffer><silent><leader>gi  :py3 EditUtil.locateDefinition("impl")<cr>
 
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>gh  :py3 EditUtil.searchRef()<cr>
-  autocmd BufEnter  *.java    nmap <buffer><silent><leader>ai  :py3 AutoImport.autoImportVar()<cr>
+  autocmd BufEnter  *.java    nmap <buffer><silent><leader>ci  :py3 AutoImport.autoImportVar()<cr>
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>pt  :py3 ProjectManager.projectTree()<cr>
 
   autocmd BufEnter  *.java    nmap <buffer><silent><leader>go  :call LocateMember()<cr>
