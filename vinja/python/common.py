@@ -649,9 +649,9 @@ class ScratchUtil(object):
     def startScriptEdit():
 
         vim.command("call SwitchToVinjaView('script')")    
-        vim.command("map <buffer><silent>,, :py3 ScratchUtil.runScript()<cr>")
         vim.command("set filetype=python")
         vim.command("set bufhidden=delete")
+        vim.command("nnoremap <buffer><silent>,, :py3 ScratchUtil.runScript()<cr>")
         vim.command("autocmd BufLeave <buffer>  py3 ScratchUtil.saveScratchText()")
 
         buffer_name=vim.current.buffer.name
