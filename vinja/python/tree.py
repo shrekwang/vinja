@@ -1650,7 +1650,11 @@ class ProjectTree(object):
             projectRoot = ProjectManager.getProjectRoot(current_file_name,False)
 
         if projectRoot == None :
-            projectRoot = os.path.abspath(os.getcwd())
+            parentDir = os.path.dirname(current_file_name)
+            if os.path.exists(parentDir):
+                projectRoot = parentDir
+            else :
+                projectRoot = os.path.abspath(os.getcwd())
         tree = ProjectTree(projectRoot)
         return tree
 
