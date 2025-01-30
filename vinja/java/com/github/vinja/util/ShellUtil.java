@@ -3,7 +3,6 @@ package com.github.vinja.util;
 import java.io.File;
 
 import org.apache.commons.io.FilenameUtils;
-import org.eclipse.swt.program.Program;
 
 public class ShellUtil {
 	
@@ -27,19 +26,6 @@ public class ShellUtil {
 	}
 
 	public static void openFileWithDefaultApp(String path) {
-		if (path == null)
-			return;
-		String ext = FilenameUtils.getExtension(path);
-		File file = new File(path);
-		if (ext.equals("bat") || ext.equals("sh")) {
-			try {
-				Runtime.getRuntime().exec(new String[] { path }, null, file.getParentFile());
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} else {
-			Program.launch(path);
-		}
 
 	}
 

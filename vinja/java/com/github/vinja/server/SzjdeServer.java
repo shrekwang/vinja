@@ -12,8 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.swt.widgets.Display;
-
 import com.github.vinja.debug.DebugCommand;
 import com.github.vinja.ui.JdtUI;
 import com.github.vinja.util.JdeLogger;
@@ -140,11 +138,7 @@ public class SzjdeServer extends Thread {
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_DECOMPILE)) {
 		   szjdeCommand = new SzjdeDecompileCommannd();
 	   } else if (cmdStr.equals(SzjdeConstants.CMD_QUIT)) {
-		   Display.getDefault().syncExec(new Runnable() {
-				public void run() {
-				   JdtUI.instance.exit();
-				}
-			});
+		   System.exit(0);
 	   }
 	   if (szjdeCommand == null) {
 		   return ("can't find the command '"+cmdStr+"' definition.");

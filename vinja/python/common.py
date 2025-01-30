@@ -181,14 +181,8 @@ class VinjaAgent(object):
         cps=[os.path.join(libpath,item) for item in os.listdir(libpath) if ( item.endswith(".jar")  and item != "vinja.jar" ) ]
         if os.name == "nt" :
             cmdArray=[os.path.join(os.getenv("JAVA_HOME"),"bin/javaw.exe")]
-            swtLibPath = os.path.join(libpath,"swt-win\\swt.jar")
         else :
             cmdArray=[os.path.join(os.getenv("JAVA_HOME"),"bin/java")]
-            if platform.system() == "Darwin":
-                swtLibPath = os.path.join(libpath,"swt-osx/swt.jar")
-            else :
-                swtLibPath = os.path.join(libpath,"swt-linux/swt.jar")
-        cps.append(swtLibPath)
         #toolsJarPath = os.path.join(os.getenv("JAVA_HOME"),"lib/tools.jar")
         #cps.append(toolsJarPath)
         cps.insert(0, os.path.join(libpath,"vinja.jar"))
@@ -264,6 +258,8 @@ class MiscUtil(object):
         #remove ending nil 
         if buf_lines[-1].endswith("nil") and  buf_lines[-1].strip() != "nil":
             buf_lines[-1] =  buf_lines[-1][0:-3]
+        if len(buf_lines) > 1 and buf_lines[-1] == 'nil':
+            buf_lines.pop()
         output(buf_lines)
         lastwin = str(vim.eval("winnr('#')"))
         vim.command("exec '"+lastwin+" wincmd w'")
@@ -658,9 +654,11 @@ class ScratchUtil(object):
         if not scratch_buf :
             template=[]
             template.append("import vim")
-            template.append("inbuf = VimUtil.getLastBuffer()")
-            template.append('#outbuf = VimUtil.createOutputBuffer("result",True)')
-            template.append('#VimUtil.setLine(["aa","bb"])')
+            template.append("from sympy import *")
+            template.append("from sympy.abc import *")
+            template.append("from sympy.core import S")
+            template.append("from sympy.plotting import plot")
+            template.append("init_printing()")
             output(template)
         else :
             output(scratch_buf)

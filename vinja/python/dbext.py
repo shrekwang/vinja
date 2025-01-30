@@ -439,10 +439,6 @@ class Dbext(object):
         try :
             cur = conn.cursor()
             cur.execute(sql)
-        except (AttributeError, MySQLdb.OperationalError):
-            conn = self.createConn(db_profile)
-            cur = conn.cursor()
-            cur.execute(sql)
         except Exception as reason:
             if cur : 
                 cur.close()

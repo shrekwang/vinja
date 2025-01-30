@@ -4,6 +4,8 @@ import sys
 import logging
 import traceback
 import fnmatch
+import subprocess
+import subprocess
 import json
 from common import ZipUtil,FileUtil,VimUtil,PathUtil
 from xml.etree.ElementTree import *
@@ -1278,7 +1280,13 @@ class ProjectTree(object):
 
     def open_with_default(self):
         file_path = self.get_selected_node().realpath
-        BasicTalker.doTreeCmd(file_path,"openWithDefault")
+        if platform.system() == 'Darwin':  # macOS
+            subprocess.call(('open', file_path))
+        elif platform.system() == 'Windows':  # Windows
+            os.startfile(file_path)
+        else:  
+            subprocess.call(('xdg-open', file_path))
+
 
     def open_in_terminal(self):
         file_path = self.get_selected_node().realpath

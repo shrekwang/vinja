@@ -269,9 +269,10 @@ function ProjectTree(...)
     nnoremap <silent><buffer> <2-leftmouse> :py3 projectTree.open_selected_node()<cr>
     map <silent><buffer> <cr>  :py3 projectTree.open_selected_node()<cr>
     map <silent><buffer> o     :py3 projectTree.open_selected_node()<cr>
-    map <silent><buffer> O     :py3 projectTree.recursive_open_node()<cr>
+    "map <silent><buffer> O     :py3 projectTree.recursive_open_node()<cr>
     map <silent><buffer> t     :py3 projectTree.open_selected_node("tabnew")<cr>
     map <silent><buffer> i     :py3 projectTree.open_selected_node("leftabove split")<cr>
+    map <silent><buffer> O     :py3 projectTree.open_selected_node("vertical leftabove split")<cr>
     map <silent><buffer> gc    :py3 projectTree.cmp_selected_node()<cr>
     map <silent><buffer> go    :py3 projectTree.preview_selected_node()<cr>
     map <silent><buffer> r     :py3 projectTree.refresh_selected_node()<cr>
