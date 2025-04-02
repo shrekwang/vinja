@@ -795,6 +795,8 @@ class ProjectTree(object):
     def _set_render_root(self, node):
         tab_id = self._get_tab_id()
         self.root_map[tab_id] = node
+        cur_tab = vim.eval("tabpagenr()")
+        vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab,node.realpath))
 
     def _get_render_root(self):
         tab_id = self._get_tab_id()
@@ -1738,6 +1740,9 @@ class ProjectTree(object):
 
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
+
+        cur_tab = vim.eval("tabpagenr()")
+        vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab,projectTree.root_dir))
         
         tab_id = projectTree._get_tab_id()
         if VimUtil.isVinjaBufferVisible("ProjectTree_%s" % tab_id):
