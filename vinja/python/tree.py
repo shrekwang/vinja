@@ -1756,9 +1756,9 @@ class ProjectTree(object):
             projectTree.render_tree()
             if current_file_name != None :
                 ProjectTree.locate_buf_in_tree(current_file_name)
-            vim.command("exec 'wincmd w'")
+            vim.command("exec 'wincmd l'")
             projectTree.restore_status(node_type="file")
-            vim.command("exec 'wincmd w'")
+            vim.command("exec 'wincmd h'")
 
 
     @staticmethod
