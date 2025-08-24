@@ -394,17 +394,19 @@ class Dbext(object):
                 conn = pyodbc.connect(driver = '{SQL Server}',server=profile["host"],\
                         uid=profile["user"],  pwd = profile["password"] )
         elif server_type == "mysql":
-            import MySQLdb
-            port = "3306"
-            if profile.get("port") != None:
-                port = profile.get("port")
+            import mysql.connector
 
-            if profile.get("database") != None:
-                conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
-                    port=int(port),db=profile["database"], passwd = profile["password"], charset = "utf8", use_unicode = True )
-            else :
-                conn = MySQLdb.connect (host = profile["host"] , user = profile["user"],\
-                    port=int(port), passwd = profile["password"], charset = "utf8", use_unicode = True )
+            config = {
+                'host': profile["host"],
+                'user': profile["user"],
+                'password': profile["password"],
+                'port': int(profile.get("port", "3306")),  # Default to 3306 if not provided
+                'charset': 'utf8mb4',  # mysql.connector handles unicode well with utf8
+            }
+            db_name = profile.get("database")
+            if db_name is not None:
+                config['database'] = db_name
+            conn = mysql.connector.connect(**config)
         elif server_type == "sqlite":
             import sqlite3 as sqlite
             conn = sqlite.connect(profile["file"])
@@ -422,12 +424,6 @@ class Dbext(object):
 
         conn = conn_pool.get(bufnum)
         if conn == None :
-            conn = self.createConn(db_profile)
-            conn_pool[bufnum] = conn
-
-        server_type = db_profile["servertype"]
-        if server_type == "mysql" and conn.open == 0:
-            logging.debug("auto reconnected")
             conn = self.createConn(db_profile)
             conn_pool[bufnum] = conn
 

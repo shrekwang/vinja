@@ -570,7 +570,7 @@ vmap <silent><leader>te  :py3 MiscUtil.tabulate()<cr>
 vmap <silent><leader>tr  :py3 MiscUtil.arrange()<cr>
 vmap <silent><leader>zg  :py3 MiscUtil.operateVisualContext()<cr>
 nmap <silent><leader>rc  :py3 MiscUtil.remove_comment()<cr>
-nmap <silent><leader>ya  :py3 MiscUtil.copy_buffer_path()<cr>
+"nmap <silent><leader>ya  :py3 MiscUtil.copy_buffer_path()<cr>
 nmap <silent><leader>mm  :py3 VimUtil.toggleMaxWin()<cr>
 nmap <silent><leader>mw  :py3 VimUtil.zoomWinWidth()<cr>
 nmap <silent><leader>bc  :py3 MiscUtil.selectColumn()<cr>
