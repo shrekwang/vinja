@@ -89,36 +89,59 @@ function! GetBufList()
 endfunction
 
 function SetVinjaBuf()
-    exec "setlocal nowrap"    
-    exec "setlocal buftype=nofile" 
-    exec "setlocal noswapfile"
-    exec "setlocal bufhidden=wipe"
-    exec "setlocal nobuflisted"
-    exec "setlocal nolist"
+    setlocal nowrap
+    setlocal buftype=nofile
+    setlocal noswapfile
+    setlocal bufhidden=wipe
+    setlocal nobuflisted
+    setlocal nolist
+    setlocal viminfo=
 endfunction
 
-function! SwitchToVinjaView(...)    
+let s:views = {}  " viewname -> bufnr
+    
+function! SwitchToVinjaView(...) abort
   let viewname = a:1
-  let direct = "belowright"
-  let height = winheight(0) / 2
-  if len(a:000) > 1 
-    let direct = a:2
+  let direct   = (len(a:000) > 1) ? a:2 : 'belowright'
+  let height   = (len(a:000) > 2) ? a:3 : max([1, winheight(0)/2])
+  let target   = 'VinjaView_' . viewname
+
+  " Resolve buffer number: prefer cached, else find by tail name
+  let bufn = get(s:views, viewname, -1)
+  if bufn == -1 || !bufexists(bufn)
+    let bufn = -1
+    for b in getbufinfo({'bufloaded': 1})
+      if fnamemodify(b.name, ':t') ==# target
+        let bufn = b.bufnr
+        break
+      endif
+    endfor
+    if bufn > 0
+      let s:views[viewname] = bufn
+    endif
   endif
-  if len(a:000) > 2
-    let height = a:3
+
+  " Jump to existing window if any (in current tab)
+  if bufn > 0
+    let winid = bufwinid(bufn)
+    if winid > 0
+      call win_gotoid(winid)
+      return
+    endif
   endif
-  let s:cur_buf = bufnr("%")    
-  let s:szdb_result_buf=bufnr("VinjaView_" . viewname)    
-  if bufwinnr(s:szdb_result_buf) > 0    
-    exec bufwinnr(s:szdb_result_buf) . "wincmd w"    
-    "%d    
-  else    
-    exec 'silent! '.direct.' '.height.'split VinjaView_' . viewname    
-    exec "e VinjaView_" . viewname    
-    exec 'setlocal statusline=\ '.viewname
-    call SetVinjaBuf()
-  endif    
-endfunction    
+
+  execute 'silent! ' . direct . ' ' . height . 'new'
+  if bufn > 0
+    execute 'buffer' bufn
+  else
+    execute 'file ' . target
+    setlocal buftype=nofile bufhidden=hide noswapfile
+    let s:views[viewname] = bufnr('%')
+  endif
+
+  let &l:statusline = viewname
+  call SetVinjaBuf()
+endfunction
 
 function! SwitchToVinjaViewVertical(viewname)    
   let s:cur_buf = bufnr("%")    
@@ -146,6 +169,7 @@ function! SplitLeftPanel(splitSize,name)
     setlocal nospell
     setlocal cursorline
     setlocal nonumber
+    
     call SetVinjaBuf()
 endfunction
 
