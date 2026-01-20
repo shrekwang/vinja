@@ -5,7 +5,6 @@ import logging
 import traceback
 import fnmatch
 import subprocess
-import subprocess
 import json
 from common import ZipUtil,FileUtil,VimUtil,PathUtil
 from xml.etree.ElementTree import *
@@ -982,7 +981,7 @@ class ProjectTree(object):
             vim.vars['tmp_qflist'] = vim_qflist
             vim.command("call setqflist(tmp_qflist)" )
             vim.command("exec 'wincmd w'")
-            vim.command("cwindow")
+            vim.command("belowright cwindow")
         else :
             print("can't find any reference location.")
 
@@ -1272,12 +1271,37 @@ class ProjectTree(object):
         self._do_paste(yank_buffer,self.remove_orignal)
 
     def paste_from_clipBoard(self):
-        files = BasicTalker.getClipbordContent().split(";")
-        self._do_paste(files,False)
+        """
+        Paste files from the system clipboard into the selected node in the tree.
+        This function is similar to copy_to_clipBoard, but performs a paste operation.
+        """
+        # On macOS, get clipboard content using pbpaste
+        try:
+            process = subprocess.Popen(['pbpaste'], stdout=subprocess.PIPE)
+            clipboard_content, _ = process.communicate()
+            clipboard_content = clipboard_content.decode('utf-8').strip()
+        except Exception as e:
+            print("Failed to get clipboard content: %s" % str(e))
+            return
+        if not clipboard_content:
+            print("Clipboard is empty or does not contain file paths.")
+            return
+        # Support multiple files separated by ';' or newlines
+        if ';' in clipboard_content:
+            files = clipboard_content.split(';')
+        else:
+            files = clipboard_content.splitlines()
+        files = [f.strip() for f in files if f.strip()]
+        if not files:
+            print("No valid file paths found in clipboard.")
+            return
+        self._do_paste(files, False)
 
     def copy_to_clipBoard(self):
         file_path = self.get_selected_node().realpath
-        files = BasicTalker.setClipbordContent(file_path)
+        #files = BasicTalker.setClipbordContent(file_path)
+        process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
+        process.communicate(input=file_path.encode('utf-8'))
         print("files had been copied to system clipboard. ")
 
     def open_with_default(self):
@@ -1635,7 +1659,8 @@ class ProjectTree(object):
             return 
 
         tab_id = projectTree._get_tab_id()
-        vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
+        if vim.current.buffer.name.find("ProjectTree_%s" % tab_id) == -1:
+            vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
         tree_path = projectTree.open_path(current_file_name)
         if tree_path == None :
             print("can't find node %s in ProjectTree" % current_file_name)
@@ -1732,10 +1757,14 @@ class ProjectTree(object):
 
     @staticmethod
     def runApp():
-        if "projectTree" not in globals() :
-            global projectTree
+
+        global projectTree
+        try:
+            projectTree
+        except NameError:
             projectTree = None
-        if projectTree == None :
+
+        if projectTree is None:
             projectTree = ProjectTree.create_project_tree()
 
         vim_buffer = vim.current.buffer

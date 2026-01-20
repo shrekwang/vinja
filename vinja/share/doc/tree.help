@@ -2,7 +2,7 @@
 
 <cr>  :open select node
 o     :open select node
-O     :open select node recursively
+O     :open select node in vertical split window
 t     :open select node in new tab
 i     :open select node in split window
 go    :Open selected file, but leave cursor in the ProjectTree
