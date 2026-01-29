@@ -31,13 +31,17 @@ class ProjectManager(object):
         parent = filePath
         if not filePath :
             return None
+        markers = [
+            ".classpath", "go.mod", "Cargo.toml", "package.json", 
+            "CMakeLists.txt", "Makefile", ".git", "compile_commands.json"
+        ]
         while True :
             tmpdir = os.path.dirname(parent)
             if tmpdir == "" or tmpdir == "/" or tmpdir == parent :
                 break
             parent = tmpdir
             fullname = lambda name : os.path.join(parent,name)
-            prj_names =[fullname(name) for name in [".classpath", "go.mod", "Cargo.toml", "package.json"]]
+            prj_names =[fullname(name) for name in markers]
             if any(os.path.exists(prj_name) for prj_name in prj_names):
                 projectRoot = parent
                 break
