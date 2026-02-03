@@ -700,6 +700,23 @@ class ProjectRootNode(NormalDirNode):
                         self.lib_srcs.append(abpath)
 
     def _build_virtual_noes(self):
+        vnode_path = os.path.join(self.root_dir, ".vnode")
+        if os.path.exists(vnode_path):
+            lines = open(vnode_path).readlines()
+            for line in lines :
+                if line.strip().startswith("#") or line.find("=") == -1 :
+                    continue
+                name, path = line.split("=")
+                name = name.strip()
+                path = path.strip()
+                if not os.path.exists(path):
+                    continue
+                if os.path.isdir(path):
+                    node = NormalDirNode(name, path, self.projectTree)
+                else :
+                    node = NormalFileNode(name, path, isDirectory=False)
+                self.add_child(node)
+
         if not self.is_java_project :
             return 
 
@@ -1474,6 +1491,11 @@ class ProjectTree(object):
                         if PathUtil.in_directory(path,childs_child.realpath): 
                             node = childs_child
                             break
+            if isinstance(node, ProjectRootNode) and not PathUtil.in_directory(path, node.realpath):
+                for child in node.get_children():
+                    if PathUtil.in_directory(path, child.realpath):
+                        node = child
+                        break
 
         if path.startswith("jar:") :
             zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
