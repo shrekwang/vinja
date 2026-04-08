@@ -14,6 +14,12 @@ class TreeNode(object):
     mark_postfix = " [mark]"
     edit_postfix = " [edit]"
     error_postfix = " [error]"
+    meta_status_postfixes = {
+        "running": " [running]",
+        "completed": " [completed]",
+        "failed": " [failed]",
+    }
+    META_FILE_NAME = ".jde_node_meta.json"
 
     def __init__(self, name, realpath, isDirectory, isOpen = False, isLoaded = False):
         self.name=name
@@ -26,6 +32,12 @@ class TreeNode(object):
         self.isMarked = False
         self.isEdited = False
         self.isError = False
+        self.meta_status = None
+
+    def get_meta_status_postfix(self):
+        if self.meta_status and self.meta_status in TreeNode.meta_status_postfixes:
+            return TreeNode.meta_status_postfixes[self.meta_status]
+        return ""
 
     def get_display_str(self):
         dis_str = self.name
@@ -94,13 +106,13 @@ class TreeNode(object):
             treeParts = treeParts + "-"
 
         if depth == 0 :
-            treeParts = self.name + "/" + "\n"
+            treeParts = self.name + "/" + self.get_meta_status_postfix() + "\n"
         else :
             if self.isDirectory :
                 mark = ""
                 if self.isMarked :
                     mark = TreeNode.mark_postfix
-                treeParts = treeParts + self.name + "/" + mark + "\n"
+                treeParts = treeParts + self.name + "/" + mark + self.get_meta_status_postfix() + "\n"
             else :
                 treeParts = treeParts + self.get_display_str() + "\n"
 
@@ -177,11 +189,26 @@ class NormalDirNode(TreeNode):
             return True
         return False
 
+    def _load_meta_status(self):
+        meta_path = os.path.join(self.realpath, TreeNode.META_FILE_NAME)
+        self.meta_status = None
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, "r") as f:
+                    meta = json.load(f)
+                status = meta.get("status")
+                if status in TreeNode.meta_status_postfixes:
+                    self.meta_status = status
+            except Exception:
+                pass
+
     def _load_dir_content(self):
 
         if not os.path.exists(self.realpath):
             self.isLoaded = True
             return
+
+        self._load_meta_status()
 
         old_children = self._children
         self._children = []
@@ -216,6 +243,8 @@ class NormalDirNode(TreeNode):
                     node = ProjectRootNode(abpath,self.projectTree)
                 else :
                     node = NormalDirNode(dir_name, abpath, self.projectTree)
+            elif isinstance(node, NormalDirNode):
+                node._load_meta_status()
             self.add_child(node)
         for file_name, abpath in files :
             node = None
@@ -864,7 +893,7 @@ class ProjectTree(object):
         vim.command("vertical diffsplit %s" % node_path)
         
 
-    def open_selected_node(self, edit_cmd = "edit"):
+    def open_selected_node(self, edit_cmd = "silent edit"):
         node = self.get_selected_node()
         (row,col) = vim.current.window.cursor
         if node.isDirectory :
@@ -1163,6 +1192,9 @@ class ProjectTree(object):
             path = path[0: len(TreeNode.edit_postfix)]
         if path.endswith(TreeNode.error_postfix) :
             path = path[0: len(TreeNode.error_postfix)]
+        for postfix in TreeNode.meta_status_postfixes.values():
+            if path.endswith(postfix):
+                path = path[:-len(postfix)]
         node = self._get_node_from_path(path)
         return node
 
@@ -1445,6 +1477,8 @@ class ProjectTree(object):
         line = line.replace(TreeNode.mark_postfix, "")
         line = line.replace(TreeNode.edit_postfix, "")
         line = line.replace(TreeNode.error_postfix, "")
+        for postfix in TreeNode.meta_status_postfixes.values():
+            line = line.replace(postfix, "")
 
         #strip off any bookmark flags
         line = re.sub( ' {[^}]*}', "", line)
@@ -1667,7 +1701,7 @@ class ProjectTree(object):
             elif node_type !="dir" and os.path.isfile(path):
                 edit_count = edit_count + 1
                 if edit_count < 18 :
-                    edit_cmd = "edit"
+                    edit_cmd = "silent edit"
                     vim.command("%s %s" %(edit_cmd, path))
 
     @staticmethod

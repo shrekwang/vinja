@@ -3,6 +3,7 @@ package com.github.vinja.locate;
 import io.methvin.watcher.DirectoryChangeEvent;
 import java.io.IOException;
 import io.methvin.watcher.DirectoryChangeListener;
+import java.nio.file.FileSystems;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.io.File;
@@ -110,6 +111,7 @@ public class FileSystemDb  implements DirectoryChangeListener {
                 .paths(paths) 
                 .listener(this)
                 .fileHashing(false)
+                .watchService(FileSystems.getDefault().newWatchService())
                 .build();
             directoryWatcher.watchAsync();
         } catch (Exception e) {

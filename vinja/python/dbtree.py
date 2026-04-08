@@ -431,6 +431,9 @@ class DatabaseTree(object):
             path = path[0: len(TreeNode.edit_postfix)]
         if path.endswith(TreeNode.error_postfix) :
             path = path[0: len(TreeNode.error_postfix)]
+        for postfix in TreeNode.meta_status_postfixes.values():
+            if path.endswith(postfix):
+                path = path[:-len(postfix)]
         node = self._get_node_from_path(path)
         return node
 
@@ -634,6 +637,8 @@ class DatabaseTree(object):
         line = line.replace(TreeNode.mark_postfix, "")
         line = line.replace(TreeNode.edit_postfix, "")
         line = line.replace(TreeNode.error_postfix, "")
+        for postfix in TreeNode.meta_status_postfixes.values():
+            line = line.replace(postfix, "")
 
         #strip off any bookmark flags
         line = re.sub( ' {[^}]*}', "", line)
