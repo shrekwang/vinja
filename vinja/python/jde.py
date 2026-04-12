@@ -1346,21 +1346,24 @@ class Compiler(object):
 
     @staticmethod
     def set_error_flags(pathflags):
-        if "projectTree" not in globals() :
+        from tree import get_all_trees
+        all_trees = get_all_trees()
+        if len(all_trees) == 0:
             return 
         
-        for path,flag in pathflags :
-            node = projectTree.find_node(path)
-            if node != None :
-                node.set_error_flag(flag)
+        for tab_id, tree in all_trees.items():
+            for path,flag in pathflags :
+                node = tree.find_node(path)
+                if node != None :
+                    node.set_error_flag(flag)
 
-        if not VimUtil.isVinjaBufferVisible('ProjectTree'):
-            return 
-        vim.command("call SwitchToVinjaView('ProjectTree')" )
-        (row,col) = vim.current.window.cursor
-        projectTree.render_tree()
-        vim.current.window.cursor = (row,col)
-        vim.command("exec 'wincmd w'")
+            if not VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
+                continue
+            vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id)
+            (row,col) = vim.current.window.cursor
+            tree.render_tree()
+            vim.current.window.cursor = (row,col)
+            vim.command("exec 'wincmd w'")
 
     @staticmethod
     def copyResource():

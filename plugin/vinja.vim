@@ -287,7 +287,11 @@ function Javadoc()
 endfunction
 
 function ProjectTree(...) 
-  py3 ProjectTree.runApp()
+  if a:0 > 0
+    py3 ProjectTree.runApp(vim.eval("a:1"))
+  else
+    py3 ProjectTree.runApp()
+  endif
   if bufname('%') =~ 'Vinja.*ProjectTree.*$'
 		"call SetTabPageName("ProjectExplorer")
     nnoremap <silent><buffer> <2-leftmouse> :py3 projectTree.open_selected_node()<cr>
@@ -580,7 +584,7 @@ command! -nargs=0 Jdesp       :call Jdesp()
 command! -nargs=0 Dbext       :call Dbext()
 
 
-command! -nargs=0 ProjectTree          :call ProjectTree()
+command! -nargs=? -complete=dir ProjectTree  :call ProjectTree(<f-args>)
 command! -nargs=0 ProjectTreeFind      :py3 ProjectTree.locate_buf_in_tree()
 command! -nargs=0 ProjectTreeDispose   :py3 ProjectTree.dispose_tree()
 

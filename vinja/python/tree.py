@@ -6,9 +6,44 @@ import traceback
 import fnmatch
 import subprocess
 import json
+import uuid
 from common import ZipUtil,FileUtil,VimUtil,PathUtil
 from xml.etree.ElementTree import *
 from jde import ProjectManager,EditUtil
+
+_tree_registry = {}
+
+def _get_tab_id_global():
+    cur_tab = vim.eval("tabpagenr()")
+    tab_id = vim.eval('gettabvar("%s","tab_id")' % cur_tab)
+    if tab_id == None or tab_id == "":
+        tab_id = str(uuid.uuid4())
+        vim.command('call settabvar("%s","tab_id","%s")' %(cur_tab,tab_id))
+    return tab_id
+
+def get_current_tree():
+    tab_id = _get_tab_id_global()
+    return _tree_registry.get(tab_id)
+
+def set_current_tree(tree):
+    tab_id = _get_tab_id_global()
+    _tree_registry[tab_id] = tree
+
+def remove_current_tree():
+    tab_id = _get_tab_id_global()
+    _tree_registry.pop(tab_id, None)
+
+def get_all_trees():
+    return _tree_registry
+
+class _TreeProxy(object):
+    def __getattr__(self, name):
+        tree = get_current_tree()
+        if tree is None:
+            raise RuntimeError("No ProjectTree for current tab")
+        return getattr(tree, name)
+
+projectTree = _TreeProxy()
 
 class TreeNode(object):
     mark_postfix = " [mark]"
@@ -1210,7 +1245,7 @@ class ProjectTree(object):
             if node == self._get_render_root() :
                 break
         tree_path = "/".join(node_list[1:])
-        (row,col) = projectTree.get_path_cursor(tree_path)
+        (row,col) = self.get_path_cursor(tree_path)
         vim.current.window.cursor = (row,col)
 
     def add_node(self):
@@ -1714,15 +1749,19 @@ class ProjectTree(object):
         if current_file_name == None or current_file_name =="" or "ProjectTree" in current_file_name:
             return 
 
-        tab_id = projectTree._get_tab_id()
+        tree = get_current_tree()
+        if tree is None:
+            return
+
+        tab_id = _get_tab_id_global()
         if vim.current.buffer.name.find("ProjectTree_%s" % tab_id) == -1:
             vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
-        tree_path = projectTree.open_path(current_file_name)
+        tree_path = tree.open_path(current_file_name)
         if tree_path == None :
             print("can't find node %s in ProjectTree" % current_file_name)
             return
-        projectTree.render_tree()
-        (row,col) = projectTree.get_path_cursor(tree_path)
+        tree.render_tree()
+        (row,col) = tree.get_path_cursor(tree_path)
         vim.current.window.cursor = (row,col)
 
     @staticmethod
@@ -1761,75 +1800,64 @@ class ProjectTree(object):
 
     @staticmethod
     def set_file_edit(path, flag):
-        if "projectTree" not in globals() :
+        if len(_tree_registry) == 0:
             return 
 
         if flag == "true" :
             flag = True
         else :
             flag = False
-        node = projectTree.find_node(path)
-        if node != None :
-            node.set_edit_flag(flag)
-            normed_path = os.path.normpath(path)
-            if path in projectTree.edit_history :
-                projectTree.edit_history.remove(normed_path)
-            if flag :
-                projectTree.edit_history.insert(0,normed_path)
-        else : 
-            return
 
-        render_root = projectTree._get_render_root()
-        tmp_node = node.parent
-        under_render_root = False
-        while True :
-            if tmp_node == render_root :
-                under_render_root = True
-                break
-            tmp_node = tmp_node.parent
-            if tmp_node == None :
-                break
-        if not under_render_root :
-            return 
+        for tab_id, tree in _tree_registry.items():
+            node = tree.find_node(path)
+            if node != None :
+                node.set_edit_flag(flag)
+                normed_path = os.path.normpath(path)
+                if normed_path in tree.edit_history :
+                    tree.edit_history.remove(normed_path)
+                if flag :
+                    tree.edit_history.insert(0,normed_path)
 
-        tab_id = projectTree._get_tab_id()
-        if not VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
-            return 
-        vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
-        (row,col) = vim.current.window.cursor
-        projectTree.render_tree()
-        vim.current.window.cursor = (row,col)
-        vim.command("exec 'wincmd w'")
+                if not VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
+                    continue
+                vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
+                (row,col) = vim.current.window.cursor
+                tree.render_tree()
+                vim.current.window.cursor = (row,col)
+                vim.command("exec 'wincmd w'")
 
     @staticmethod
     def dispose_tree():
-        global projectTree
-        tab_id = projectTree._get_tab_id()
+        tree = get_current_tree()
+        if tree is None:
+            return
+        tab_id = _get_tab_id_global()
         if VimUtil.isVinjaBufferVisible("ProjectTree_%s" % tab_id):
-            projectTree.save_status()
+            tree.save_status()
             VimUtil.closeVinjaBuffer("ProjectTree_%s" % tab_id)
-        projectTree = None
-        del globals()["projectTree"]
+        remove_current_tree()
 
     @staticmethod
-    def runApp():
+    def runApp(root_dir=None):
 
-        global projectTree
-        try:
-            projectTree
-        except NameError:
-            projectTree = None
-
-        if projectTree is None:
-            projectTree = ProjectTree.create_project_tree()
+        tree = get_current_tree()
+        if root_dir:
+            root_dir = os.path.expanduser(root_dir)
+            root_dir = os.path.abspath(root_dir)
+            if tree is not None and os.path.normpath(tree.root_dir) != os.path.normpath(root_dir):
+                ProjectTree.dispose_tree()
+                tree = None
+        if tree is None:
+            tree = ProjectTree.create_project_tree(root_dir)
+            set_current_tree(tree)
 
         vim_buffer = vim.current.buffer
         current_file_name = vim_buffer.name
 
         cur_tab = vim.eval("tabpagenr()")
-        vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab,projectTree.root_dir))
+        vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab,tree.root_dir))
         
-        tab_id = projectTree._get_tab_id()
+        tab_id = _get_tab_id_global()
         if VimUtil.isVinjaBufferVisible("ProjectTree_%s" % tab_id):
             VimUtil.closeVinjaBuffer("ProjectTree_%s" % tab_id)
         else :
@@ -1837,39 +1865,39 @@ class ProjectTree(object):
             vim.command("set filetype=ztree")
             vim.command("setlocal statusline=\ ProjectTree")
             vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
-            projectTree.restore_status()
-            projectTree.render_tree()
+            tree.restore_status()
+            tree.render_tree()
             if current_file_name != None :
                 ProjectTree.locate_buf_in_tree(current_file_name)
             vim.command("exec 'wincmd l'")
-            projectTree.restore_status(node_type="file")
+            tree.restore_status(node_type="file")
             vim.command("exec 'wincmd h'")
 
 
     @staticmethod
     def toggleTreeType(treeType):
-        global projectTree
-        if projectTree == None :
+        tree = get_current_tree()
+        if tree is None:
             return 
 
-        projectTree.save_status()
-        projectTree = None
-        del globals()["projectTree"]
+        tree.save_status()
+        remove_current_tree()
         vim.command("setlocal modifiable")
         vim_buffer = vim.current.buffer
         vim_buffer[:] = None
         vim.command("setlocal nomodifiable")
 
         if treeType == "workSpaceTree"  :
-            projectTree = ProjectTree.create_workspace_tree()
+            tree = ProjectTree.create_workspace_tree()
         elif treeType == "workSetTree" :
-            projectTree = ProjectTree.create_workset_tree()
+            tree = ProjectTree.create_workset_tree()
         else:
-            projectTree = ProjectTree.create_project_tree()
-        projectTree.restore_status()
-        projectTree.render_tree()
+            tree = ProjectTree.create_project_tree()
+        set_current_tree(tree)
+        tree.restore_status()
+        tree.render_tree()
 
         vim.command("exec 'wincmd w'")
-        projectTree.restore_status(node_type="file")
+        tree.restore_status(node_type="file")
         vim.command("exec 'wincmd w'")
 
