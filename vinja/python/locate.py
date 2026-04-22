@@ -5,7 +5,7 @@ import re
 import vim
 import subprocess
 import os.path
-from common import VimUtil
+from common import VimUtil, output
 
 if "EditUtil" not in globals() :
     from jde import EditUtil
@@ -107,13 +107,15 @@ class QuickLocater(object) :
 
     def get_buffer_name(self):
         if isinstance(self.content_manager,FileContentManager):
-            return "File\ Locate"
+            return r"File\ Locate"
         elif isinstance(self.content_manager,EditHistoryManager):
-            return "Edit\ History\ Locate"
+            return r"Edit\ History\ Locate"
         elif isinstance(self.content_manager,JavaMemberContentManager):
-            return "Class\ Member\ Locate"
+            return r"Class\ Member\ Locate"
+        elif isinstance(self.content_manager,ProjectTreeRootContentManager):
+            return r"ProjectTree\ Root\ Select"
         else :
-            return "Explorer\ Buffer"
+            return r"Explorer\ Buffer"
 
     def create_explorer_buffer(self) :
         self.save_env()
@@ -172,10 +174,10 @@ class QuickLocater(object) :
                 fg = vim.eval("""synIDattr(synIDtrans(hlID("Identifier")), "fg")""")
                 vim.command("highlight Cursor guifg=%s guibg=%s" % (fg,bg))
         elif isinstance(self.content_manager,JavaMemberContentManager):
-            vim.command("syn match MethodName #^.*\((\)\@=#")
+            vim.command(r"syn match MethodName #^.*\((\)\@=#")
             vim.command("hi def link MethodName Identifier")
         elif isinstance(self.content_manager,EditHistoryManager):
-            vim.command("syn match LocateName #^.*\s#")
+            vim.command(r"syn match LocateName #^.*\s#")
             vim.command("hi def link LocateName Identifier")
             if VimUtil.hasGuiRunning() :
                 fg = vim.eval("""synIDattr(synIDtrans(hlID("Identifier")), "fg")""")
@@ -247,7 +249,7 @@ class QuickLocater(object) :
 class FileContentManager(object):
 
     def __init__(self, locateType):
-        self.bound_chars = """/\?%*:|"<>(), \t\n.;@"""
+        self.bound_chars = """/\\?%*:|"<>(), \t\n.;@"""
         shext_locatedb_path = os.path.join(VinjaConf.getDataHome(), "locate.db")
         self.locatecmd = LocateCmd(shext_locatedb_path)
         self.locateType = locateType
@@ -413,7 +415,7 @@ class JavaClassNameContentManager(object):
 
     def get_init_prompt(self):
         buffer = vim.current.buffer
-        pat = re.compile("[\w\.]")
+        pat = re.compile(r"[\w\.]")
         row, col = vim.current.window.cursor
         row_len = len(buffer[row-1])
         start_index = 0 
@@ -494,12 +496,46 @@ class EditHistoryManager(object):
         work_buffer=vim.current.buffer
         row,col = vim.current.window.cursor
         line = work_buffer[row-1].strip()
-        basename,path = re.split("\s+",line)
+        basename,path = re.split(r"\s+",line)
         bufnr = vim.eval("bufnr('%s')" % path)    
         if bufnr != "-1" :
             vim.command('Bclose %s' % bufnr)
             del work_buffer[row-1]
             vim.command("resize %d" % len(work_buffer))
+
+class ProjectTreeRootContentManager(object):
+    def __init__(self):
+        from common import MiscUtil, VinjaConf
+        cfg_path = os.path.join(VinjaConf.getDataHome(), "ptree_roots.cfg")
+        self.entries = []
+        self.path_dict = {}
+        self.show_on_open = True
+        root_dict = MiscUtil.loadMapFromFile(cfg_path)
+        for name, path in root_dict.items():
+            path = os.path.expanduser(path)
+            self.entries.append(name)
+            self.path_dict[name] = path
+
+    def get_init_prompt(self):
+        return ""
+
+    def search_content(self, search_pat):
+        result = []
+        if not search_pat:
+            search_pat = "*"
+        pat = re.compile("^%s.*" % search_pat.replace("*", ".*"), re.IGNORECASE)
+        max_name_len = max(len(n) for n in self.entries) if self.entries else 0
+        for name in self.entries:
+            if pat.match(name):
+                result.append("%s  %s" % (name.ljust(max_name_len), self.path_dict[name]))
+        return result
+
+    def open_content(self, line, mode="local"):
+        name = line.split()[0].strip()
+        path = self.path_dict.get(name)
+        if not path:
+            return
+        vim.command("call ProjectTree('%s')" % path.replace("'", "''"))
 
 class ProjectLocationManager(object):
     def __init__(self):

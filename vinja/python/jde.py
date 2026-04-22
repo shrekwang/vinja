@@ -421,7 +421,7 @@ class EditUtil(object):
         if len(vim_buffer) > 10 :
             return 
         buf_content = "\n".join(vim_buffer)
-        if not re.match("^\s*$",buf_content) :
+        if not re.match(r"^\s*$",buf_content) :
             return 
 
         cur_file = vim_buffer.name
@@ -429,7 +429,7 @@ class EditUtil(object):
             return
         if os.path.exists(cur_file) :
             file_content ="\n".join(open(cur_file,"r").readlines())
-            if not re.match("^\s*$",file_content) :
+            if not re.match(r"^\s*$",file_content) :
                 return
 
         cur_path = os.path.dirname(cur_file)
@@ -542,7 +542,7 @@ class EditUtil(object):
         tokenEndCol = col
         
         for char in line[col:] :
-            if not re.match("\w",char) :
+            if not re.match(r"\w",char) :
                 break
             tokenEndCol += 1
 
@@ -589,7 +589,7 @@ class EditUtil(object):
             #search in visible scope(only upward)
             var_type, var_type_row = Parser.getVarTypeInfo(memberName,row-1)
             if var_type != None :
-                vim.command("let @/='\<%s\>'" % memberName)
+                vim.command(r"let @/='\<%s\>'" % memberName)
                 vim.command("normal %sG" % str(var_type_row + 1))
                 return
 
@@ -598,7 +598,7 @@ class EditUtil(object):
             for name,mtype,rtntype,param,lineNum in members :
                 if name == memberName :
                     matched_row = lineNum
-                    vim.command("let @/='\<%s\>'" % memberName)
+                    vim.command(r"let @/='\<%s\>'" % memberName)
                     vim.command("normal %sG" % str(matched_row))
                     return
         else :
@@ -649,7 +649,7 @@ class EditUtil(object):
         sourcePath = Talker.getMethodDefClass(params)
         if sourcePath != "None" :
             matchedLine = EditUtil.searchMemeberLineNum(memberName, sourcePath,param_count)
-            vim.command("let @/='\<%s\>'" % memberName)
+            vim.command(r"let @/='\<%s\>'" % memberName)
             vim.command("edit +%s %s" % (matchedLine, sourcePath ))
         else :
             print("cant' locate the source code")
@@ -743,8 +743,8 @@ class EditUtil(object):
         matched_row = 1
 
         clsPat = re.compile(r"\s*((public|private|protected)\s+)?"
-                "((abstract|static|final|strictfp)\s+)?"
-                "(class|interface)\s"+className+r"\b")
+                r"((abstract|static|final|strictfp)\s+)?"
+                r"(class|interface)\s"+className+r"\b")
         for index,line in enumerate(lines):
             if clsPat.match(line):
                 matched_row = index + 1
@@ -844,7 +844,7 @@ class EditUtil(object):
             line = vim_buffer[row-1]
             rtntype = methodDefs.split(" ")[0]
             varname = rtntype[0].lower() + rtntype[1:]
-            tmp = re.sub('(?P<white>\s*)(?P<text>.+)', lambda m: m.group("white") + rtntype +" " + varname + " = " + m.group('text'), line) 
+            tmp = re.sub(r'(?P<white>\s*)(?P<text>.+)', lambda m: m.group("white") + rtntype +" " + varname + " = " + m.group('text'), line) 
             idx = tmp.find(" = ")
             vim_buffer[row-1] = tmp
             vim.current.window.cursor = (row,idx)
@@ -1185,7 +1185,7 @@ class HighlightManager(object):
             rowStart = start
             rowEnd = end
 
-        syncmd = """syn match %s "\%%%sl\%%>%sc.\%%<%sc" """ %(group, errorRow, rowStart, rowEnd)
+        syncmd = r"""syn match %s "\%%%sl\%%>%sc.\%%<%sc" """ %(group, errorRow, rowStart, rowEnd)
         vim.command(syncmd)
 
     @staticmethod
@@ -1432,7 +1432,7 @@ class AutoImport(object):
         vim_buffer_text ="\n".join(vim.current.buffer)
         hadImported = False
 
-        pat = r"import\s+%s\b|import\s+%s" % (className, className[0:className.rfind(".")]+"\.\*")
+        pat = r"import\s+%s\b|import\s+%s" % (className, className[0:className.rfind(".")]+r"\.\*")
         if re.search(pat,vim_buffer_text) :
             hadImported = True
         return hadImported
@@ -1446,7 +1446,7 @@ class AutoImport(object):
         hadImported = False
 
         for tmpDef in tmpDefs :
-            pat = r"import\s+%s\b|import\s+%s" % (tmpDef, tmpDef[0:tmpDef.rfind(".")]+"\.\*")
+            pat = r"import\s+%s\b|import\s+%s" % (tmpDef, tmpDef[0:tmpDef.rfind(".")]+r"\.\*")
             if re.search(pat,vim_buffer_text) :
                 hadImported = True
                 break
@@ -1599,8 +1599,8 @@ class Parser(object):
         memberInfo = []
         scopeCount = 0
         methodPat = re.compile(r"(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*\((?P<param>.*)\)",re.UNICODE)
-        assignPat = re.compile("(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*=")
-        defPat = re.compile("(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*;")
+        assignPat = re.compile(r"(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*=")
+        defPat = re.compile(r"(?P<rtntype>[\w<>\[\],]+)\s+(?P<name>\w+)\s*;")
         commentLine = False
         
         for lineNum,line in enumerate(lines) :
@@ -1813,12 +1813,12 @@ class Parser(object):
 
     @staticmethod
     def getSuperClass():
-        extPat = re.compile("\s+extends\s+(?P<superclass>\w+)")
+        extPat = re.compile(r"\s+extends\s+(?P<superclass>\w+)")
         return  Parser.searchPattern(extPat,"superclass")
 
     @staticmethod
     def getAllNewedClasses():
-        pat = re.compile("\W+new\s+(?P<newclass>\w+)")
+        pat = re.compile(r"\W+new\s+(?P<newclass>\w+)")
         vim_buffer = vim.current.buffer
         search_text = "\n".join(vim_buffer)
         result  = pat.findall(search_text)
@@ -1826,7 +1826,7 @@ class Parser(object):
 
     @staticmethod
     def getPackage():
-        pkgPat = re.compile("\s*package\s+(?P<package>[\w.]+)\s*;")
+        pkgPat = re.compile(r"\s*package\s+(?P<package>[\w.]+)\s*;")
         return  Parser.searchPattern(pkgPat,"package")
 
 
@@ -1859,7 +1859,7 @@ class Parser(object):
 
     @staticmethod
     def getInterfaces():
-        impPat = re.compile("\s+implements\s+(?P<interface>[\w, ]+)")
+        impPat = re.compile(r"\s+implements\s+(?P<interface>[\w, ]+)")
         result = Parser.searchPattern(impPat , "interface")
         if result :
              return [item.strip() for item in result.split(",")]
@@ -1952,7 +1952,7 @@ class SzJdeCompletion(object):
         bufferText = "\n".join([vim_buffer[row] for row in visibleRowNum])
         #bufferText = "\n".join([line for line in vim.current.buffer])
 
-        pattern = r"\b%s\w*\b" % base.replace("*","\w*")
+        pattern = r"\b%s\w*\b" % base.replace("*",r"\w*")
         matches = re.findall(pattern,bufferText)
         completeList = []
         if matches :
@@ -2472,7 +2472,7 @@ class Jdb(object):
             vim.command("nnoremap <buffer><silent>J   :py3 jdb.executeCmd(insertMode=False,cmdLine='>down')<cr>")
             vim.command("nnoremap <buffer><silent>G   :<C-U>py3 jdb.untilCmd()<cr>")
             vim.command("nnoremap <buffer><silent>e   :py3 jdb.qevalCmd()<cr>")
-            vim.command("setlocal statusline=\ Jdb\ %2*QuickStep%*")
+            vim.command(r"setlocal statusline=\ Jdb\ %2*QuickStep%*")
 
             cur_buffer =vim.current.buffer
             self.old_lines = [line for line in cur_buffer]
@@ -2499,7 +2499,7 @@ class Jdb(object):
 
             vim.command("iunmap <buffer><silent><ESC>")
             vim.command("nnoremap <buffer><silent>o      :py3 jdb.appendPrompt()<cr>")
-            vim.command("setlocal statusline=\ Jdb")
+            vim.command(r"setlocal statusline=\ Jdb")
 
     def handleSuspend(self,absPath,lineNum,className,appendOperate):
         self.switchSourceBuffer()
@@ -2507,7 +2507,7 @@ class Jdb(object):
         if os.path.exists(absPath) or absPath.startswith("jar:") :
             if not PathUtil.same_path(absPath, vim.current.buffer.name):
                 #if absPath != vim.current.buffer.name :
-                absPath = absPath.replace("$","\$")
+                absPath = absPath.replace("$",r"\$")
                 vim.command("edit %s" % absPath)
                 bufnr=str(vim.eval("bufnr('%')"))
                 signcmd="sign place 1 line=1 name=SzjdeFR buffer=%s" % str(bufnr)
@@ -2797,7 +2797,7 @@ class Jdb(object):
         if cmdLine.strip() == "" :
             return
 
-        cmdLine = cmdLine.replace("\ ","$$").strip()[1:]
+        cmdLine = cmdLine.replace(r"\ ","$$").strip()[1:]
         #remove duplicate line 
         #self.removeDuplicate()
         if insertMode :
@@ -3370,7 +3370,7 @@ class VarTree(object):
         line = VarTree.tree_markup_pat.sub("",line)
 
         #strip off any read only flag
-        line = re.sub(' \[RO\]', "", line)
+        line = re.sub(r' \[RO\]', "", line)
 
         #strip off any bookmark flags
         line = re.sub( ' {[^}]*}', "", line)

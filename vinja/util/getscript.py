@@ -1,5 +1,5 @@
-import urllib2
-from BeautifulSoup import BeautifulSoup
+import urllib.request
+from bs4 import BeautifulSoup
 import os
 import tarfile
 import zipfile
@@ -27,15 +27,15 @@ scripts = {
 
 def download_script(script_id,save_to):
     vimhome="http://www.vim.org/scripts/"
-    data=urllib2.urlopen(vimhome+"/script.php?script_id="+script_id)
-    soup = BeautifulSoup(data)
+    data=urllib.request.urlopen(vimhome+"/script.php?script_id="+script_id)
+    soup = BeautifulSoup(data, 'html.parser')
     #the first row of download link table
-    a_tag=soup.first('td', {'class' : 'rowodd'}).find('a')
+    a_tag=soup.find('td', {'class' : 'rowodd'}).find('a')
 
     download_link=a_tag["href"]
     download_filename=a_tag.text
 
-    src_data=urllib2.urlopen(vimhome+download_link).read()
+    src_data=urllib.request.urlopen(vimhome+download_link).read()
     dst_path=os.path.join(save_to, download_filename)
     dst_fileobj=open(dst_path, "wb")
     dst_fileobj.write(src_data)
@@ -43,7 +43,7 @@ def download_script(script_id,save_to):
 
 def download_all(save_to):
     for script_name in scripts :
-        print "downlading %s " % script_name
+        print("downloading %s " % script_name)
         download_script( scripts[script_name], save_to)
 
 def ungzip(path):

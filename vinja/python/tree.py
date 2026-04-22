@@ -7,7 +7,9 @@ import fnmatch
 import subprocess
 import json
 import uuid
-from common import ZipUtil,FileUtil,VimUtil,PathUtil
+import vim
+import re
+from common import ZipUtil,FileUtil,VimUtil,PathUtil,MiscUtil,VinjaConf
 from xml.etree.ElementTree import *
 from jde import ProjectManager,EditUtil
 
@@ -1011,8 +1013,8 @@ class ProjectTree(object):
 
     def recursive_search2(self):
         search_str = vim.eval("@/")
-        search_str = search_str.replace("\<", r"\b")
-        search_str = search_str.replace("\>", r"\b")
+        search_str = search_str.replace(r"\<", r"\b")
+        search_str = search_str.replace(r"\>", r"\b")
         search_str = "/" + search_str + "/"
         self.recursive_search(search_str)
 
@@ -1508,7 +1510,7 @@ class ProjectTree(object):
         line = self.tree_markup_pat.sub("",line)
 
         #strip off any read only flag
-        line = re.sub(' \[RO\]', "", line)
+        line = re.sub(r' \[RO\]', "", line)
         line = line.replace(TreeNode.mark_postfix, "")
         line = line.replace(TreeNode.edit_postfix, "")
         line = line.replace(TreeNode.error_postfix, "")
@@ -1863,7 +1865,7 @@ class ProjectTree(object):
         else :
             vim.command("call SplitLeftPanel(30, 'VinjaView_ProjectTree_%s')" % tab_id )
             vim.command("set filetype=ztree")
-            vim.command("setlocal statusline=\ ProjectTree")
+            vim.command(r"setlocal statusline=\ ProjectTree")
             vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
             tree.restore_status()
             tree.render_tree()

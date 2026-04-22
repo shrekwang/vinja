@@ -1,4 +1,4 @@
-from BeautifulSoup import *
+from bs4 import BeautifulSoup, Comment
 import re,os, os.path, urllib.request, urllib.error, urllib.parse 
 
 class SqliteDbManager(object):
@@ -194,7 +194,7 @@ class Javadoc(object):
             output("not result")
             return 
         page = urllib.request.urlopen(urls[0])
-        soup = ICantBelieveItsBeautifulSoup(page)
+        soup = BeautifulSoup(page, 'html.parser')
         node = soup.find("html")
         classdata=[]
         start_class_data = False
@@ -207,31 +207,31 @@ class Javadoc(object):
                     start_class_data = True
                 elif node.find("END OF CLASS DATA") > -1 :
                     start_class_data = False
-                node = node.__next__
+                node = node.next_element
 
             if  start_class_data :
                 tagname=getattr(node,"name","")
                 if tagname == "dd" :
                     classdata.append("\n    ")
                     classdata.append(self.extractDD(node))
-                    if node.nextSibling :
-                        node = node.nextSibling
+                    if node.next_sibling :
+                        node = node.next_sibling
                     else :
-                        node = node.__next__
+                        node = node.next_element
                 elif tagname == "tr" :
                     classdata.append(self.extractTR(node))
-                    node = node.nextSibling
+                    node = node.next_sibling
                 elif tagname in ("p","dt") :
                     classdata.append("\n")
-                    node = node.__next__
+                    node = node.next_element
                 elif tagname == "hr" :
                     classdata.append("\n"+"-"*80 +"\n")
-                    node = node.__next__
+                    node = node.next_element
                 else :
                     self.extractText(classdata, node)
-                    node = node.__next__
+                    node = node.next_element
             else :
-                node = node.__next__
+                node = node.next_element
         result = " ".join([item.replace("&nbsp;"," ") for item in classdata])
         result = self.squeeze(result)
         output(result)
@@ -267,7 +267,7 @@ class Javadoc(object):
             homeid = self.cache.saveHomeLink(url)
             url = "%s%s" % ( url.replace("\n",""), "allclasses-frame.html")
             page = urllib.request.urlopen(url)
-            soup = BeautifulSoup(page)
+            soup = BeautifulSoup(page, 'html.parser')
             for link in soup('a') :
                 packagename=link.get("href").replace(".html","").replace("/",".")
                 #the last part of href is classname, get rid of it.

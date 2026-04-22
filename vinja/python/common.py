@@ -10,8 +10,6 @@ import socket
 import random
 import string
 from io import StringIO
-from distutils import dir_util
-from distutils import file_util
 import zipfile
 import platform
 
@@ -99,9 +97,9 @@ class FileUtil(object):
     def fileOrDirCp(src,dst):
         if os.path.isdir(src):
             dst = os.path.join(dst,os.path.basename(src)) if os.path.exists(dst) else dst
-            dir_util.copy_tree(src , dst)
+            shutil.copytree(src, dst, dirs_exist_ok=True)
         else:
-            file_util.copy_file(src, dst)
+            shutil.copy2(src, dst)
 
     @staticmethod
     def fileOrDirMv(src,dst):
@@ -424,7 +422,7 @@ class MiscUtil(object):
                 example_file = os.path.join(examples_dir , file_name)
                 break
         if example_file :
-            example_file.replace(" ","\ ")
+            example_file.replace(" ",r"\ ")
             vim.command("exec 'silent! belowright split %s '" % example_file)
 
 
@@ -472,17 +470,17 @@ class MiscUtil(object):
             randValue=random.randint(1,6)
             for i in range(1,(endLine- startLine)):
                 valueTuple=(randValue, str(startLine+i), 0, 200)
-                colorInfo="""syn match MarkWord%s "\%%%sl\%%>%sc.\%%<%sc" """ % valueTuple
+                colorInfo=r"""syn match MarkWord%s "\%%%sl\%%>%sc.\%%<%sc" """ % valueTuple
                 cmds.append(colorInfo)
             valueTuple=(randValue, startLine,startCol,200)
-            colorInfo="""syn match MarkWord%s "\%%%sl\%%>%sc.\%%<%sc" """  % valueTuple
+            colorInfo=r"""syn match MarkWord%s "\%%%sl\%%>%sc.\%%<%sc" """  % valueTuple
             cmds.append(colorInfo)
             valueTuple=(randValue, endLine,0,endCol)
-            colorInfo="""syn match MarkWord%s "\%%%sl\%%>%sc.\%%<%sc" """ % valueTuple
+            colorInfo=r"""syn match MarkWord%s "\%%%sl\%%>%sc.\%%<%sc" """ % valueTuple
             cmds.append(colorInfo)
         else :
             valueTuple=(random.randint(1,6), startLine,startCol,endCol)
-            colorInfo="""syn match MarkWord%s "\%%%sl\%%>%sc.\%%<%sc" """ % valueTuple
+            colorInfo=r"""syn match MarkWord%s "\%%%sl\%%>%sc.\%%<%sc" """ % valueTuple
             cmds.append(colorInfo)
         return cmds
 
@@ -492,7 +490,7 @@ class MiscUtil(object):
         buffer=vim.current.buffer
         split_char = VimUtil.getInput("please input the split char:")
         if not split_char :
-            pat = re.compile("\s+")
+            pat = re.compile(r"\s+")
         elif split_char[0] == "\\":
             pat = re.compile(split_char)
         else :
@@ -530,7 +528,7 @@ class MiscUtil(object):
         (curRow,curCol)=vim.current.window.cursor
         startCol,endCol,startLine,endLine=MiscUtil.getVisualArea()
         buffer=vim.current.buffer
-        pat = re.compile("\s+")
+        pat = re.compile(r"\s+")
 
         firstRow = buffer[startLine-1]
         count = 0
@@ -784,7 +782,7 @@ def initVinja():
     gscope=globals()
     gscope["incValue"] = 0
     gscope["endsWithNewLine"] = True
-    gscope["digit_pat"] = re.compile("\d+")
+    gscope["digit_pat"] = re.compile(r"\d+")
     gscope["search_pat"] = None
     gscope["stardict"] = None
     gscope["scratch_buf"] = []

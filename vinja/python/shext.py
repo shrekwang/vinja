@@ -129,7 +129,7 @@ class LsCmd(object):
                 filetype = self.file_types.get(colValue)
                 if filetype :
                     start,end = col_bounds[colIndex]
-                    colorInfo = """syn match shext%s "\%%%sl\%%>%sv.\%%<%sv" """ %(filetype,rowIndex+1,start,end)
+                    colorInfo = r"""syn match shext%s "\%%%sl\%%>%sv.\%%<%sv" """ %(filetype,rowIndex+1,start,end)
                     self.colorInfos.append(colorInfo)
 
         nnlist = []
@@ -207,7 +207,7 @@ class LsCmd(object):
             filetype = self.file_types.get(item)
             if filetype :
                 start,end = (0, max)
-                colorInfo = """syn match shext%s "\%%%sl\%%>%sc.\%%<%sc" """ %(filetype, rowIndex+1, start, end)
+                colorInfo = r"""syn match shext%s "\%%%sl\%%>%sc.\%%<%sc" """ %(filetype, rowIndex+1, start, end)
                 self.colorInfos.append(colorInfo)
 
         return infos
@@ -992,7 +992,7 @@ class Shext(object):
         return True
 
     def parseCmd(self,cmdLine):
-        cmdLine = cmdLine.replace("\ ","$$").strip()
+        cmdLine = cmdLine.replace(r"\ ","$$").strip()
         #cmdArray = [ item.replace("$$"," ") for item in re.split(r"\s+",cmdLine)]
         cmdLine = cmdLine.replace("\\","/").strip()
 
@@ -1363,7 +1363,7 @@ class OutputNavigator(object):
         work_buffer = vim.current.buffer
         row,col = vim.current.window.cursor
         line = work_buffer[row-1]
-        pat=re.compile(".*\s+(?P<var>\$(?P<row>\d+))$")
+        pat=re.compile(r".*\s+(?P<var>\$(?P<row>\d+))$")
         match =pat.match(line)
         if match :
             shext_ngt_index = int(match.group("row")) -1
@@ -1397,7 +1397,7 @@ class OutputNavigator(object):
         vim.command("syntax clear")
         vim.command("highlight def MarkCurrentLine  ctermbg=Cyan     ctermfg=Black  guibg=#8CCBEA    guifg=Black")
         valueTuple=(ngt_index,0,length)
-        colorInfo="""syn match MarkCurrentLine "\%%%sl\%%>%sc.\%%<%sc" """ % valueTuple
+        colorInfo=r"""syn match MarkCurrentLine "\%%%sl\%%>%sc.\%%<%sc" """ % valueTuple
         vim.command(colorInfo)
         
         listwinnr = str(vim.eval("winnr('#')"))

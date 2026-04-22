@@ -134,8 +134,8 @@ function! SwitchToVinjaView(...) abort
   if bufn > 0
     execute 'buffer' bufn
   else
-    execute 'file ' . target
     setlocal buftype=nofile bufhidden=hide noswapfile
+    execute 'file ' . target
     let s:views[viewname] = bufnr('%')
   endif
 
@@ -378,6 +378,12 @@ function LocateProject()
   py3 QuickLocater.runApp(projmgr)
 endfunction
 
+function ProjectTreeSelect()
+  call RunSzPyfile("locate.py")
+  py3 ptmgr = ProjectTreeRootContentManager()
+  py3 QuickLocater.runApp(ptmgr)
+endfunction
+
 function LocateMember()
   call RunSzPyfile("locate.py")
   py3 membermgr = JavaMemberContentManager()
@@ -587,9 +593,11 @@ command! -nargs=0 Dbext       :call Dbext()
 command! -nargs=? -complete=dir ProjectTree  :call ProjectTree(<f-args>)
 command! -nargs=0 ProjectTreeFind      :py3 ProjectTree.locate_buf_in_tree()
 command! -nargs=0 ProjectTreeDispose   :py3 ProjectTree.dispose_tree()
+command! -nargs=0 ProjectTreeSelect    :call ProjectTreeSelect()
 
 nmap <silent><leader>pt  :call ProjectTree()<cr>
 nmap <silent><leader>pf  :py3 ProjectTree.locate_buf_in_tree()<cr>
+nmap <silent><leader>ps  :call ProjectTreeSelect()<cr>
 
 "vinja mapping
 nmap <silent><leader>zc  :py3 ScratchUtil.startScriptEdit()<cr>

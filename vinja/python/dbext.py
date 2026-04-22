@@ -223,7 +223,7 @@ class Dbext(object):
         sql = MiscUtil.getVisualBlock()
         outBuffer = Dbext.getOutputBuffer()
         tablename = "xxxx"
-        reobj = re.compile(".*(?<=from) (\w+).*", re.IGNORECASE)
+        reobj = re.compile(r".*(?<=from) (\w+).*", re.IGNORECASE)
         match = reobj.search(sql)
         if match : 
             tablename = match.group(1)
@@ -307,13 +307,13 @@ class Dbext(object):
 
     def renderStatusLine(self,db_profile):
         if db_profile["servertype"] == "sqlite" :
-            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ File:'%s'\ "
+            strTemplate = r"setl statusline=\ Line:\ %%l/%%L:%%c\ \ File:'%s'\ "
             strValue = (db_profile["file"],)
         elif db_profile["servertype"] == "oracle" :
-            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ SID:'%s'"
+            strTemplate = r"setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ SID:'%s'"
             strValue = (db_profile["host"],db_profile["sid"])
         else :
-            strTemplate = "setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ Database:'%s'\ Port:'%s'"
+            strTemplate = r"setl statusline=\ Line:\ %%l/%%L:%%c\ \ Host:'%s'\ \ Database:'%s'\ Port:'%s'"
             port="none"
             if db_profile.get("port") != None:
                 port=db_profile["port"]
@@ -612,7 +612,7 @@ class SzDbCompletion(object):
             filebufferText = "\n".join([str(line) for line in vim.current.buffer])
             outBufferText = "\n".join([str(line) for line in Dbext.getOutputBuffer()])
             bufferText = "%s\n%s" %(filebufferText, outBufferText) 
-            pattern = str(r"""%s[^\s'"]*""" % base.replace("*","\S+") )
+            pattern = str(r"""%s[^\s'"]*""" % base.replace("*",r"\S+") )
             matches = re.findall(pattern,bufferText)
             completeList = []
             if matches :

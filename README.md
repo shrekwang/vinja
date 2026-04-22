@@ -1,7 +1,13 @@
 (又)一个vim java 开发环境
 =============
 
-需vim的python支持, 在winxp+vim73+python2.7 和 fc12+vim73+python2.6中日常应用 其他环境未测
+需vim的python3支持 (Python 3.9+), 在macOS/Linux中日常应用。
+
+Python 依赖:
+```
+pip install pyparsing beautifulsoup4
+```
+
 功能包括(但不限于):
 
     Jdext jde 功能，实现补全，编译，运行等功能
