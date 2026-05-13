@@ -23,15 +23,19 @@ function MyTabLine()
 endfunction
 
 function MyTabLabel(n)
-  " Append the tab number
-  let label = a:n .': '
   let buflist = tabpagebuflist(a:n)
   let winnr = tabpagewinnr(a:n)
   let modified_part = ''
-  
+
+  let workspace_path = gettabvar(a:n, "workspace_path")
+  let tree_prefix = ''
+  if workspace_path != ''
+    let tree_prefix = fnamemodify(workspace_path, ':t') . ': '
+  endif
+
   for bufnum in buflist  
     if getbufvar(bufnum, "tab_name") != '' 
-      return  label . getbufvar(bufnum, "tab_name")
+      return  tree_prefix . getbufvar(bufnum, "tab_name")
     endif
   endfor
 
@@ -40,7 +44,7 @@ function MyTabLabel(n)
   endif
 
   if getbufvar(buflist[winnr - 1], "buf_tab_title") != '' 
-    return  label . modified_part . getbufvar(buflist[winnr - 1], "buf_tab_title")
+    return  tree_prefix . modified_part . getbufvar(buflist[winnr - 1], "buf_tab_title")
   endif
 
   let name = bufname(buflist[winnr - 1])
@@ -53,8 +57,7 @@ function MyTabLabel(n)
   else
     let name = fnamemodify(name,":t")
   endif
-  let label .= modified_part . name
-  return label
+  return tree_prefix . modified_part . name
 endfunction
 
 function MyTitleString()
@@ -639,4 +642,4 @@ command! -nargs=1 Silent
 \ | execute ':silent !'.<q-args>
 \ | execute ':redraw!'
 
-py3 VinjaAgent.startAgent()
+"py3 VinjaAgent.startAgent()
