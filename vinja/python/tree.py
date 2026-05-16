@@ -15,6 +15,44 @@ from jde import ProjectManager,EditUtil
 
 _tree_registry = {}
 
+def _get_git_worktrees(root_dir):
+    try:
+        result = subprocess.run(
+            ["git", "worktree", "list", "--porcelain"],
+            cwd=root_dir, capture_output=True, text=True, timeout=5
+        )
+        if result.returncode != 0:
+            return []
+    except Exception:
+        return []
+
+    worktrees = []
+    current_path = None
+    current_branch = None
+    is_bare = False
+    real_root = os.path.realpath(root_dir)
+
+    for line in result.stdout.split("\n"):
+        if line.startswith("worktree "):
+            current_path = line[len("worktree "):]
+            current_branch = None
+            is_bare = False
+        elif line.startswith("branch refs/heads/"):
+            current_branch = line[len("branch refs/heads/"):]
+        elif line == "bare":
+            is_bare = True
+        elif line == "" and current_path:
+            if not is_bare and os.path.realpath(current_path) != real_root:
+                name = current_branch or os.path.basename(current_path)
+                worktrees.append((current_path, name))
+            current_path = None
+
+    if current_path and not is_bare and os.path.realpath(current_path) != real_root:
+        name = current_branch or os.path.basename(current_path)
+        worktrees.append((current_path, name))
+
+    return worktrees
+
 def _get_tab_id_global():
     cur_tab = vim.eval("tabpagenr()")
     tab_id = vim.eval('gettabvar("%s","tab_id")' % cur_tab)
@@ -276,8 +314,13 @@ class NormalDirNode(TreeNode):
                     node = old_node
                     break
             if node == None :
-                if os.path.exists(os.path.join(abpath,".classpath")) :
-                    node = ProjectRootNode(abpath,self.projectTree)
+                project_markers = [".classpath", "go.mod", "Cargo.toml", "sdkconfig"]
+                if any(os.path.exists(os.path.join(abpath, m)) for m in project_markers):
+                    try:
+                        node = ProjectRootNode(abpath,self.projectTree)
+                    except Exception as e:
+                        logging.debug("ProjectRootNode init failed for %s: %s" % (abpath, str(e)))
+                        node = NormalDirNode(dir_name, abpath, self.projectTree)
                 else :
                     node = NormalDirNode(dir_name, abpath, self.projectTree)
             elif isinstance(node, NormalDirNode):
@@ -440,6 +483,7 @@ class NormalFileNode(TreeNode):
         current_file_name = vim_buffer.name
         if self.realpath != current_file_name :
             vim.command("%s %s" %(edit_cmd, self.realpath))
+        self.set_edit_flag(True)
         ProjectTree.set_file_edit(self.realpath,"true");
 
     def dispose(self):
@@ -783,30 +827,91 @@ class ProjectRootNode(NormalDirNode):
                     node = NormalFileNode(name, path, isDirectory=False)
                 self.add_child(node)
 
-        if not self.is_java_project :
-            return 
+        worktrees = _get_git_worktrees(self.root_dir)
+        if worktrees:
+            wt_container_path = os.path.join(self.root_dir, "Git Worktrees")
+            wt_node = TreeNode("Git Worktrees", wt_container_path, True, False, True)
+            self.add_child(wt_node)
+            for wt_path, wt_name in worktrees:
+                node = NormalDirNode(wt_name, os.path.realpath(wt_path), self.projectTree)
+                wt_node.add_child(node)
 
-        abspath = os.path.join(self.root_dir ,"Referenced Libraries")
-        lib_src_node = TreeNode("Referenced Libraries",abspath, True,False,True)
-        self.add_child(lib_src_node)
+        # ESP-IDF: detect by sdkconfig (skip if already inside ESP-IDF)
+        if os.path.exists(os.path.join(self.root_dir, "sdkconfig")):
+            idf_path = os.getenv("IDF_PATH", os.path.expanduser("~/esp/esp-idf"))
+            idf_components = os.path.realpath(os.path.join(idf_path, "components"))
+            if os.path.isdir(idf_components) and not PathUtil.in_directory(self.root_dir, idf_components):
+                container_path = os.path.join(self.root_dir, "ESP-IDF Components")
+                idf_node = TreeNode("ESP-IDF Components", container_path, True, False, True)
+                self.add_child(idf_node)
+                idf_node.add_child(NormalDirNode("components", idf_components, self.projectTree))
 
-        for lib_src in self.lib_srcs :
-            if not os.path.exists(lib_src):
-                continue
-            basename = os.path.basename(lib_src)
-            try :
-                node = ZipRootNode(basename,lib_src, False,False)
-                lib_src_node.add_child(node)
-            except Exception as e:
-                logging.debug(basename+" not exists or is corrupted")
+        # Go: detect by go.mod (skip if already inside Go SDK)
+        if os.path.exists(os.path.join(self.root_dir, "go.mod")):
+            go_root = os.getenv("GOROOT")
+            if not go_root:
+                try:
+                    result = subprocess.run(
+                        ["go", "env", "GOROOT"],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    if result.returncode == 0:
+                        go_root = result.stdout.strip()
+                except Exception:
+                    pass
+            if go_root:
+                go_src = os.path.realpath(os.path.join(go_root, "src"))
+                if os.path.isdir(go_src) and not PathUtil.in_directory(self.root_dir, go_src):
+                    container_path = os.path.join(self.root_dir, "Go SDK")
+                    go_node = TreeNode("Go SDK", container_path, True, False, True)
+                    self.add_child(go_node)
+                    go_node.add_child(NormalDirNode("src", go_src, self.projectTree))
 
-        jdk_lib_src = os.path.join(os.getenv("JAVA_HOME"),"lib/src.zip")
-        if os.path.exists(jdk_lib_src) :
-            try : 
-                node = ZipRootNode("src.zip",jdk_lib_src, False,False)
-                lib_src_node.add_child(node)
-            except Exception as e:
-                logging.debug(basename+" not exists or is corrupted")
+        # Rust: detect by Cargo.toml (skip if already inside the std library)
+        if os.path.exists(os.path.join(self.root_dir, "Cargo.toml")):
+            rust_lib_path = None
+            try:
+                result = subprocess.run(
+                    ["rustc", "--print", "sysroot"],
+                    capture_output=True, text=True, timeout=3
+                )
+                if result.returncode == 0:
+                    sysroot = result.stdout.strip()
+                    candidate = os.path.realpath(os.path.join(sysroot, "lib", "rustlib", "src", "rust", "library"))
+                    if os.path.isdir(candidate):
+                        rust_lib_path = candidate
+            except Exception:
+                pass
+            if rust_lib_path and not PathUtil.in_directory(self.root_dir, rust_lib_path):
+                container_path = os.path.join(self.root_dir, "Rust Std Library")
+                rust_node = TreeNode("Rust Std Library", container_path, True, False, True)
+                self.add_child(rust_node)
+                rust_node.add_child(NormalDirNode("library", rust_lib_path, self.projectTree))
+
+        # Java: Referenced Libraries from .classpath
+        if self.is_java_project :
+            abspath = os.path.join(self.root_dir ,"Referenced Libraries")
+            lib_src_node = TreeNode("Referenced Libraries",abspath, True,False,True)
+            self.add_child(lib_src_node)
+
+            for lib_src in self.lib_srcs :
+                if not os.path.exists(lib_src):
+                    continue
+                basename = os.path.basename(lib_src)
+                try :
+                    node = ZipRootNode(basename,lib_src, False,False)
+                    lib_src_node.add_child(node)
+                except Exception as e:
+                    logging.debug(basename+" not exists or is corrupted")
+
+            java_home = os.getenv("JAVA_HOME", "")
+            jdk_lib_src = os.path.join(java_home, "lib/src.zip")
+            if java_home and os.path.exists(jdk_lib_src) :
+                try :
+                    node = ZipRootNode("src.zip",jdk_lib_src, False,False)
+                    lib_src_node.add_child(node)
+                except Exception as e:
+                    logging.debug("src.zip not exists or is corrupted")
 
     def refresh(self):
         self._load_dir_content()
@@ -906,8 +1011,24 @@ class ProjectTree(object):
             if sections[-1] == "" :
                 sections = sections[:-1]
             node = self._get_render_root()
-            for section in sections :
-                node = node.get_child(section)
+            i = 0
+            while i < len(sections):
+                child = node.get_child(sections[i])
+                if child is not None:
+                    node = child
+                    i += 1
+                else:
+                    found = False
+                    for j in range(i + 2, len(sections) + 1):
+                        combined = "/".join(sections[i:j])
+                        child = node.get_child(combined)
+                        if child is not None:
+                            node = child
+                            i = j
+                            found = True
+                            break
+                    if not found:
+                        return None
             return node
 
     def _restore_cursor(self, row) :
@@ -942,6 +1063,13 @@ class ProjectTree(object):
             vim.current.window.cursor = (row,col)
         else :
             node.open_node(edit_cmd)
+            if node.isEdited :
+                tab_id = self._get_tab_id()
+                if VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
+                    vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id)
+                    self.render_tree()
+                    vim.current.window.cursor = (row,col)
+                    vim.command("exec 'wincmd w'")
 
     def mark_selected_node(self):
         node = self.get_selected_node()
@@ -1094,6 +1222,8 @@ class ProjectTree(object):
     
     def up_one_level(self):
         node = self.get_selected_node()
+        if node == self._get_render_root() :
+            return
         if node.parent != None :
             self.select_node(node.parent)
 
@@ -1241,13 +1371,20 @@ class ProjectTree(object):
         if node == self._get_render_root() :
             vim.current.window.cursor = (1,0)
             return
+        render_root = self._get_render_root()
         while True :
             node = node.parent
+            if node == None :
+                vim.current.window.cursor = (1,0)
+                return
             node_list.insert(0,node.name)
-            if node == self._get_render_root() :
+            if node == render_root :
                 break
-        tree_path = "/".join(node_list[1:])
-        (row,col) = self.get_path_cursor(tree_path)
+        sections = node_list[1:]
+        (row,col) = self.get_path_cursor(sections)
+        vim_buffer = vim.current.buffer
+        if row > len(vim_buffer) :
+            row = len(vim_buffer)
         vim.current.window.cursor = (row,col)
 
     def add_node(self):
@@ -1531,7 +1668,10 @@ class ProjectTree(object):
         max_row = len(vim_buffer)
         indent = 0
         lnum = 1
-        sections = path.split("/")
+        if isinstance(path, list):
+            sections = path
+        else:
+            sections = path.split("/")
         section_idx = 0
 
         while lnum < max_row :
@@ -1549,6 +1689,8 @@ class ProjectTree(object):
         return lnum+1, len(sections)*2
 
     def open_path(self, path, node = None, abpath = True ):
+        if not path.startswith("jar:"):
+            path = os.path.realpath(path)
         if node == None :
             node = self._get_render_root() 
             if isinstance(node,WorkSpaceRootNode) :
@@ -1562,11 +1704,33 @@ class ProjectTree(object):
                         if PathUtil.in_directory(path,childs_child.realpath): 
                             node = childs_child
                             break
-            if isinstance(node, ProjectRootNode) and not PathUtil.in_directory(path, node.realpath):
+            if not PathUtil.in_directory(path, node.realpath):
+                found = False
                 for child in node.get_children():
-                    if PathUtil.in_directory(path, child.realpath):
+                    if child.isDirectory and PathUtil.in_directory(path, child.realpath):
                         node = child
+                        found = True
                         break
+                if not found:
+                    for child in node.get_children():
+                        if child.isDirectory and hasattr(child, '_children'):
+                            for grandchild in child._children:
+                                if grandchild.isDirectory and PathUtil.in_directory(path, grandchild.realpath):
+                                    node = grandchild
+                                    found = True
+                                    break
+                                if grandchild.isDirectory and hasattr(grandchild, '_children'):
+                                    for ggchild in grandchild._children:
+                                        if ggchild.isDirectory and PathUtil.in_directory(path, ggchild.realpath):
+                                            node = ggchild
+                                            found = True
+                                            break
+                                if found:
+                                    break
+                        if found:
+                            break
+                if not found:
+                    return None
 
         if path.startswith("jar:") :
             zip_file_path, inner_path =ZipUtil.split_zip_scheme(path)
@@ -1586,10 +1750,10 @@ class ProjectTree(object):
                 if node == self._get_render_root() :
                     break
                 tree_path.insert(0,node.name)
-            return "/".join(tree_path)
+            return tree_path
         else :
             if abpath :
-                path = os.path.relpath(path, node.realpath)
+                path = os.path.relpath(os.path.realpath(path), os.path.realpath(node.realpath))
             path = path.replace("\\","/")
             sections = path.split("/")
             if sections[-1] == "" :
@@ -1613,12 +1777,14 @@ class ProjectTree(object):
                 if node == self._get_render_root() :
                     break
                 tree_path.insert(0,node.name)
-            return "/".join(tree_path)
+            return tree_path
 
     def find_node(self,path, node=None):
 
         if path == None :
             return None
+        if not path.startswith("jar:"):
+            path = os.path.realpath(path)
         if node == None :
             node = self.root
             #workspaceRoot is just virtual node, search child nodes
@@ -1638,6 +1804,31 @@ class ProjectTree(object):
                             break
                 if node.realpath == path :
                     return node
+
+            if not PathUtil.in_directory(path, node.realpath):
+                found_child = None
+                for child in node.get_children():
+                    if child.isDirectory and PathUtil.in_directory(path, child.realpath):
+                        found_child = child
+                        break
+                    if child.isDirectory and hasattr(child, '_children'):
+                        for grandchild in child._children:
+                            if grandchild.isDirectory and PathUtil.in_directory(path, grandchild.realpath):
+                                found_child = grandchild
+                                break
+                            if grandchild.isDirectory and hasattr(grandchild, '_children'):
+                                for ggchild in grandchild._children:
+                                    if ggchild.isDirectory and PathUtil.in_directory(path, ggchild.realpath):
+                                        found_child = ggchild
+                                        break
+                            if found_child:
+                                break
+                    if found_child:
+                        break
+                if found_child:
+                    node = found_child
+                else:
+                    return None
 
         def _find_jar_in_lib(node,zip_file_path) :
 
@@ -1672,7 +1863,7 @@ class ProjectTree(object):
             node = tmp_node
         else :
             try :
-                path = os.path.relpath(path, node.realpath)
+                path = os.path.relpath(os.path.realpath(path), os.path.realpath(node.realpath))
             except :
                 return None
             path = path.replace("\\","/")
@@ -1810,8 +2001,15 @@ class ProjectTree(object):
         else :
             flag = False
 
+        if path and not path.startswith("jar:"):
+            path = os.path.realpath(path)
+
         for tab_id, tree in _tree_registry.items():
-            node = tree.find_node(path)
+            try:
+                node = tree.find_node(path)
+            except Exception as e:
+                logging.debug("set_file_edit: find_node failed for %s: %s" % (path, str(e)))
+                node = None
             if node != None :
                 node.set_edit_flag(flag)
                 normed_path = os.path.normpath(path)
