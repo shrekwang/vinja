@@ -1556,6 +1556,14 @@ class ProjectTree(object):
             self._set_render_root(node)
             self.render_tree()
 
+    def open_node_in_new_tab(self):
+        node = self.get_selected_node()
+        if not node.isDirectory:
+            node = node.parent
+        path = node.realpath
+        vim.command("tabnew")
+        vim.command("call ProjectTree('%s')" % path.replace("'", "''"))
+
     def change_root_upper(self):
         node = self._get_render_root()
         parent_node = node.parent
@@ -2065,6 +2073,7 @@ class ProjectTree(object):
             vim.command("set filetype=ztree")
             vim.command(r"setlocal statusline=\ ProjectTree")
             vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
+            vim.command("call SetupProjectTreeMappings()")
             tree.restore_status()
             tree.render_tree()
             if current_file_name != None :

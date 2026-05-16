@@ -289,19 +289,12 @@ function Javadoc()
   py3 Javadoc.runApp()
 endfunction
 
-function ProjectTree(...) 
-  if a:0 > 0
-    py3 ProjectTree.runApp(vim.eval("a:1"))
-  else
-    py3 ProjectTree.runApp()
-  endif
-  if bufname('%') =~ 'Vinja.*ProjectTree.*$'
-		"call SetTabPageName("ProjectExplorer")
+function SetupProjectTreeMappings()
     nnoremap <silent><buffer> <2-leftmouse> :py3 projectTree.open_selected_node()<cr>
     map <silent><buffer> <cr>  :py3 projectTree.open_selected_node()<cr>
     map <silent><buffer> o     :py3 projectTree.open_selected_node()<cr>
-    "map <silent><buffer> O     :py3 projectTree.recursive_open_node()<cr>
     map <silent><buffer> t     :py3 projectTree.open_selected_node("tabnew")<cr>
+    map <silent><buffer> T     :py3 projectTree.open_node_in_new_tab()<cr>
     map <silent><buffer> i     :py3 projectTree.open_selected_node("leftabove split")<cr>
     map <silent><buffer> O     :py3 projectTree.open_selected_node("vertical leftabove split")<cr>
     map <silent><buffer> gc    :py3 projectTree.cmp_selected_node()<cr>
@@ -350,13 +343,22 @@ function ProjectTree(...)
     map <silent><buffer> B     :py3 projectTree.change_back()<cr>
     map <silent><buffer> U     :py3 projectTree.change_root_upper()<cr>
     map <silent><buffer> QQ    :py3 projectTree.dispose_tree()<cr>
-    "map <silent><buffer> S     :py3 projectTree.save_status(False)<cr>
     autocmd BufUnload <buffer>  py3 projectTree.save_status(False)
 
     vmap <silent><buffer> DD   :py3 projectTree.delete_visual_node()<cr>
     vmap <silent><buffer> m    :py3 projectTree.mark_visual_node()<cr>
     vmap <silent><buffer> yy   :py3 projectTree.yank_visual_node(False)<cr>
     vmap <silent><buffer> dd   :py3 projectTree.yank_visual_node(True)<cr>
+endfunction
+
+function ProjectTree(...) 
+  if a:0 > 0
+    py3 ProjectTree.runApp(vim.eval("a:1"))
+  else
+    py3 ProjectTree.runApp()
+  endif
+  if bufname('%') =~ 'Vinja.*ProjectTree.*$'
+    call SetupProjectTreeMappings()
 	endif
   exec 'wincmd w'
 endfunction
