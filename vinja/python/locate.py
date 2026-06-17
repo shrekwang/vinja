@@ -542,6 +542,48 @@ class ProjectTreeRootContentManager(object):
             return
         vim.command("call ProjectTree('%s')" % path.replace("'", "''"))
 
+class TabContentManager(object):
+    def __init__(self):
+        self.show_on_open = True
+        self.tab_info = []
+
+    def get_init_prompt(self):
+        return ""
+
+    def search_content(self, search_pat):
+        self.tab_info = []
+        result = []
+        if not search_pat:
+            search_pat = "*"
+        pat = re.compile(".*%s.*" % search_pat.replace("*", ".*"), re.IGNORECASE)
+        tab_count = int(vim.eval("tabpagenr('$')"))
+        current_tab = int(vim.eval("tabpagenr()"))
+        for i in range(1, tab_count + 1):
+            label = vim.eval("MyTabLabel(%d)" % i)
+            marker = "*" if i == current_tab else " "
+            display = "%s %d: %s" % (marker, i, label)
+            if pat.match(label):
+                self.tab_info.append(i)
+                result.append(display)
+        return result
+
+    def open_content(self, line, mode="local"):
+        line = line.strip()
+        if not line:
+            return
+        # extract tab number from "* 2: label" or "  3: label"
+        parts = line.split(":", 1)
+        if not parts:
+            return
+        num_part = parts[0].strip().lstrip("*").strip()
+        try:
+            tabnr = int(num_part)
+        except ValueError:
+            return
+        vim.command("tabnext %d" % tabnr)
+        vim.command("redraw!")
+
+
 class ProjectLocationManager(object):
     def __init__(self):
         project_cfg_path = os.path.join(VinjaConf.getDataHome(), "project2.cfg")
