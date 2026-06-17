@@ -100,6 +100,9 @@ class DatabaseTree(object):
     def _set_render_root(self, node):
         tab_id = self._get_tab_id()
         self.root_map[tab_id] = node
+        cur_tab = vim.eval("tabpagenr()")
+        effective_path = node.realpath if node is not None else self.root.realpath
+        vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab, effective_path))
 
     def _get_render_root(self):
         tab_id = self._get_tab_id()

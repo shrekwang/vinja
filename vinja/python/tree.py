@@ -983,7 +983,8 @@ class ProjectTree(object):
         tab_id = self._get_tab_id()
         self.root_map[tab_id] = node
         cur_tab = vim.eval("tabpagenr()")
-        vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab,node.realpath))
+        effective_path = node.realpath if node is not None else self.root.realpath
+        vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab, effective_path))
 
     def _get_render_root(self):
         tab_id = self._get_tab_id()
@@ -1917,8 +1918,8 @@ class ProjectTree(object):
             tree_state_file.write(path)
             tree_state_file.write("\n")
         tree_state_file.close()
-        if not closeFile :
-            print("ProjectTree status has been saved.")
+        #if not closeFile :
+        #    print("ProjectTree status has been saved.")
 
     def restore_status(self, node_type = "dir"):
         if not os.path.exists(self.tree_state_path):
