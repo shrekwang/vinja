@@ -389,6 +389,12 @@ function ProjectTreeSelect()
   py3 QuickLocater.runApp(ptmgr)
 endfunction
 
+function LocateTab()
+  call RunSzPyfile("locate.py")
+  py3 tabmgr = TabContentManager()
+  py3 QuickLocater.runApp(tabmgr)
+endfunction
+
 function LocateMember()
   call RunSzPyfile("locate.py")
   py3 membermgr = JavaMemberContentManager()
@@ -623,6 +629,7 @@ nmap <silent><leader>lc  :call LocateFile("currentDir")<cr>
 nmap <silent><leader>lw  :call LocateFile("all")<cr>
 nmap <silent><leader>la  :call LocateHistory()<cr>
 nmap <silent><leader>lr  :call LocateProject()<cr>
+nmap <silent><leader>lt  :call LocateTab()<cr>
 
 function SetProjectTreeFileEditFlag(filename,flag)
   py3 ProjectTree.set_file_edit(vim.eval("a:filename"),vim.eval("a:flag"))

@@ -90,8 +90,11 @@ class QuickLocater(object) :
 
 
     def restore_winsize(self):
-        for i in range(0,len(self.winheights)):
-            vim.command("exec '%s wincmd w'" % str(i+1) )
+        actual_wins = int(vim.eval("winnr('$')"))
+        for i in range(0, len(self.winheights)):
+            if i + 1 > actual_wins:
+                break
+            vim.command("exec '%s wincmd w'" % str(i+1))
             vim.command("resize %s" % self.winheights[i])
 
     @staticmethod
@@ -114,6 +117,8 @@ class QuickLocater(object) :
             return r"Class\ Member\ Locate"
         elif isinstance(self.content_manager,ProjectTreeRootContentManager):
             return r"ProjectTree\ Root\ Select"
+        elif isinstance(self.content_manager,TabContentManager):
+            return r"Tab\ Locate"
         else :
             return r"Explorer\ Buffer"
 
