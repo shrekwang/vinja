@@ -142,7 +142,7 @@ function! SwitchToVinjaView(...) abort
     let s:views[viewname] = bufnr('%')
   endif
 
-  let &l:statusline = viewname
+  let &l:statusline = viewname . ' [win:%{winnr()}]'
   call SetVinjaBuf()
 endfunction
 
@@ -155,7 +155,7 @@ function! SwitchToVinjaViewVertical(viewname)
   else    
     exec 'silent! belowright vsplit VinjaView_' . a:viewname    
     exec "e VinjaView_" . a:viewname    
-    exec 'setlocal statusline=\ '. a:viewname
+    exec 'setlocal statusline=\ '. a:viewname .'\ [win:%{winnr()}]'
     call SetVinjaBuf()
   endif    
 endfunction    
