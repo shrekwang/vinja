@@ -222,9 +222,11 @@ class QuickLocater(object) :
         work_buffer=vim.current.buffer
         row,col = vim.current.window.cursor
         line = work_buffer[row-1]
+        cur_tab = int(vim.eval("tabpagenr()"))
         self.clean()
         self.content_manager.open_content(line, mode)
-        if mode == "local":
+        new_tab = int(vim.eval("tabpagenr()"))
+        if mode == "local" and cur_tab == new_tab:
             self.restore_winsize()
             vim.command("exec '%s wincmd w'" % self.last_winnr)
 

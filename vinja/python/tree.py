@@ -1595,6 +1595,27 @@ class ProjectTree(object):
         self.render_tree()
         self.select_node(node)
 
+    def refresh_tree(self):
+        """Cursor-safe deep refresh: reloads every open+loaded directory node
+        under the render root, then re-renders. Does not depend on the
+        selected node, so it can be invoked programmatically (e.g. from a
+        post-response hook) without the tree window being active."""
+        self._load_project_workset()
+        render_root = self._get_render_root()
+        (row, _col) = vim.current.window.cursor
+        def _refresh_open_dirs(node):
+            if not node.isDirectory:
+                return
+            if not node.isOpen or not node.isLoaded:
+                return
+            node.refresh()
+            for child in node.get_children():
+                if child.isDirectory:
+                    _refresh_open_dirs(child)
+        _refresh_open_dirs(render_root)
+        self.render_tree()
+        self._restore_cursor(row)
+
     def render_tree(self):
         vim.command("setlocal modifiable")
         node = self._get_render_root()
