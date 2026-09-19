@@ -104,7 +104,7 @@ def _copy_files(root_dir, dst_dir):
 def _reveal_worktree_node(tree, name):
     """Rebuild the tree so git worktrees are re-read, and when the ProjectTree
     window is visible expand "Git Worktrees" and select the new node."""
-    tree.root.refresh()
+    tree.anchor_root.refresh()
 
     view_name = "ProjectTree_%s" % _get_tab_id_global()
     if not VimUtil.isVinjaBufferVisible(view_name):
@@ -112,12 +112,12 @@ def _reveal_worktree_node(tree, name):
 
     vim.command("call SwitchToVinjaView('%s')" % view_name)
     try:
-        container = tree.root.get_child("Git Worktrees")
+        container = tree.anchor_root.get_child("Git Worktrees")
         node = container.get_child(name) if container else None
         if container and node:
             container.isOpen = True
         tree.render_tree()
-        if node and tree._get_render_root() is tree.root:
+        if node and tree._get_render_root() is tree.anchor_root:
             tree.select_node(node)
     finally:
         vim.command("exec 'wincmd w'")
@@ -999,14 +999,13 @@ class ProjectTree(object):
             root_dir = WorkSetRootNode.get_root_path()
         elif treeType == "workSpaceTree":
             root_dir = WorkSpaceRootNode.get_root_path()
-        self.root_dir = root_dir
+        self.project_root = root_dir
 
-        self.workset_config_path = os.path.join(self.root_dir, ".jde_work_set")
-        self.tree_state_path = os.path.join(self.root_dir, ".jde_tree_state")
+        self.workset_config_path = os.path.join(self.project_root, ".jde_work_set")
+        self.tree_state_path = os.path.join(self.project_root, ".jde_tree_state")
         self.prefix_pat = re.compile(r"[^ \-+~`|]")
         self.tree_markup_pat =re.compile(r"^[ `|]*[\-+~]")
         self._load_project_workset()
-        self.root_map = {}
 
         if treeType == "currentDir" :
             self.root = ProjectRootNode(root_dir,self)
@@ -1015,11 +1014,18 @@ class ProjectTree(object):
             self.root = WorkSetRootNode(self)
         else :
             self.root = WorkSpaceRootNode(self)
-        
+        # anchor_root is the original project root node; self.root is the
+        # render root, which change_root/change_root_upper move around.
+        self.anchor_root = self.root
+
         self.project_encoding = self._get_project_encoding()
 
+    @property
+    def root_dir(self):
+        return self.root.realpath
+
     def _get_project_encoding(self):
-        jde_file = os.path.join(self.root_dir, ".jde")
+        jde_file = os.path.join(self.project_root, ".jde")
         if not os.path.exists(jde_file) :
             return "utf-8"
 
@@ -1049,18 +1055,15 @@ class ProjectTree(object):
         return tab_id
 
     def _set_render_root(self, node):
-        tab_id = self._get_tab_id()
-        self.root_map[tab_id] = node
+        if node is None:
+            node = self.anchor_root
+        self.root = node
         cur_tab = vim.eval("tabpagenr()")
-        effective_path = node.realpath if node is not None else self.root.realpath
-        vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab, effective_path))
+        vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab, node.realpath))
+        vim.command('exec "tcd " . fnameescape("%s")' % node.realpath)
 
     def _get_render_root(self):
-        tab_id = self._get_tab_id()
-        node = self.root_map.get(tab_id)
-        if node == None :
-            return self.root
-        return node
+        return self.root
     
     def node_visible(self, rel_path):
         if len(self.work_path_set) == 0 :
@@ -1644,8 +1647,6 @@ class ProjectTree(object):
             parent_node = NormalDirNode(dir_name, updir_path, self)
             parent_node.add_child(node)
             parent_node.refresh()
-            self.root_dir = updir_path
-            self.root = parent_node
         parent_node.isOpen = True
         self._set_render_root(parent_node)
         self.render_tree()
@@ -1885,7 +1886,7 @@ class ProjectTree(object):
         if not path.startswith("jar:"):
             path = os.path.realpath(path)
         if node == None :
-            node = self.root
+            node = self.anchor_root
             #workspaceRoot is just virtual node, search child nodes
             if isinstance(node,WorkSpaceRootNode) :
                 for child in node.get_children():
@@ -2143,7 +2144,7 @@ class ProjectTree(object):
             print("PTreeWorkTree: no ProjectTree in this tab, run :ProjectTree first")
             return
 
-        root_dir = os.path.realpath(tree.root_dir)
+        root_dir = os.path.realpath(tree.project_root)
         if not os.path.exists(os.path.join(root_dir, ".git")):
             print("PTreeWorkTree: %s is not a git repository" % root_dir)
             return
@@ -2181,7 +2182,7 @@ class ProjectTree(object):
         if root_dir:
             root_dir = os.path.expanduser(root_dir)
             root_dir = os.path.abspath(root_dir)
-            if tree is not None and os.path.normpath(tree.root_dir) != os.path.normpath(root_dir):
+            if tree is not None and os.path.normpath(tree.project_root) != os.path.normpath(root_dir):
                 ProjectTree.dispose_tree()
                 tree = None
         if tree is None:
@@ -2193,6 +2194,7 @@ class ProjectTree(object):
 
         cur_tab = vim.eval("tabpagenr()")
         vim.command('call settabvar("%s","workspace_path","%s")' %(cur_tab,tree.root_dir))
+        vim.command('exec "tcd " . fnameescape("%s")' % tree.root_dir)
         
         tab_id = _get_tab_id_global()
         if VimUtil.isVinjaBufferVisible("ProjectTree_%s" % tab_id):
