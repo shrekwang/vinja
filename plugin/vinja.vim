@@ -363,6 +363,10 @@ function ProjectTree(...)
   exec 'wincmd w'
 endfunction
 
+function! PTreeWorkTree(name)
+  py3 ProjectTree.create_worktree(vim.eval("a:name"))
+endfunction
+
 
 
 function LocateFile(locateType)
@@ -605,6 +609,7 @@ command! -nargs=? -complete=dir ProjectTree  :call ProjectTree(<f-args>)
 command! -nargs=0 ProjectTreeFind      :py3 ProjectTree.locate_buf_in_tree()
 command! -nargs=0 ProjectTreeDispose   :py3 ProjectTree.dispose_tree()
 command! -nargs=0 ProjectTreeSelect    :call ProjectTreeSelect()
+command! -nargs=1 PTreeWorkTree        :call PTreeWorkTree('<args>')
 
 nmap <silent><leader>pt  :call ProjectTree()<cr>
 nmap <silent><leader>pf  :py3 ProjectTree.locate_buf_in_tree()<cr>

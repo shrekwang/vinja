@@ -53,6 +53,75 @@ def _get_git_worktrees(root_dir):
 
     return worktrees
 
+def _run_git(args, cwd, timeout=30):
+    try:
+        return subprocess.run(
+            ["git"] + args, cwd=cwd, capture_output=True,
+            text=True, errors="surrogateescape", timeout=timeout
+        )
+    except Exception as e:
+        logging.debug("run git %s failed: %s" % (" ".join(args), str(e)))
+        return None
+
+def _get_untracked_files(root_dir):
+    """Files under root_dir that git does not track and is not told to ignore,
+    relative to root_dir."""
+    result = _run_git(["ls-files", "-z", "--others", "--exclude-standard"], root_dir)
+    if result is None or result.returncode != 0:
+        return []
+    return sorted(p for p in result.stdout.split("\0") if p)
+
+def _copy_files(root_dir, dst_dir):
+    """Copy untracked (not ignored) files and the spec/ folder from root_dir into
+    dst_dir. Existing untracked destinations are skipped, spec/ is overwritten.
+    Returns (copied, skipped, failed, spec_copied)."""
+    copied = skipped = failed = 0
+    for rel in _get_untracked_files(root_dir):
+        src = os.path.join(root_dir, rel)
+        dst = os.path.join(dst_dir, rel)
+        if os.path.exists(dst):
+            skipped += 1
+            continue
+        try:
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            FileUtil.fileOrDirCp(src, dst)
+            copied += 1
+        except Exception as e:
+            logging.debug("copy %s -> %s failed: %s" % (src, dst, str(e)))
+            failed += 1
+
+    spec_src = os.path.join(root_dir, "spec")
+    spec_copied = False
+    if os.path.isdir(spec_src):
+        try:
+            FileUtil.fileOrDirCp(spec_src, dst_dir)
+            spec_copied = True
+        except Exception as e:
+            logging.debug("copy %s -> %s failed: %s" % (spec_src, dst_dir, str(e)))
+            failed += 1
+    return copied, skipped, failed, spec_copied
+
+def _reveal_worktree_node(tree, name):
+    """Rebuild the tree so git worktrees are re-read, and when the ProjectTree
+    window is visible expand "Git Worktrees" and select the new node."""
+    tree.root.refresh()
+
+    view_name = "ProjectTree_%s" % _get_tab_id_global()
+    if not VimUtil.isVinjaBufferVisible(view_name):
+        return
+
+    vim.command("call SwitchToVinjaView('%s')" % view_name)
+    try:
+        container = tree.root.get_child("Git Worktrees")
+        node = container.get_child(name) if container else None
+        if container and node:
+            container.isOpen = True
+        tree.render_tree()
+        if node and tree._get_render_root() is tree.root:
+            tree.select_node(node)
+    finally:
+        vim.command("exec 'wincmd w'")
+
 def _get_tab_id_global():
     cur_tab = vim.eval("tabpagenr()")
     tab_id = vim.eval('gettabvar("%s","tab_id")' % cur_tab)
@@ -2066,6 +2135,44 @@ class ProjectTree(object):
             tree.save_status()
             VimUtil.closeVinjaBuffer("ProjectTree_%s" % tab_id)
         remove_current_tree()
+
+    @staticmethod
+    def create_worktree(name):
+        tree = get_current_tree()
+        if tree is None:
+            print("PTreeWorkTree: no ProjectTree in this tab, run :ProjectTree first")
+            return
+
+        root_dir = os.path.realpath(tree.root_dir)
+        if not os.path.exists(os.path.join(root_dir, ".git")):
+            print("PTreeWorkTree: %s is not a git repository" % root_dir)
+            return
+
+        if not name or name != name.strip() or "/" in name or name in (".", ".."):
+            print("PTreeWorkTree: invalid worktree name: '%s'" % name)
+            return
+
+        project_name = os.path.basename(os.path.normpath(root_dir))
+        worktree_path = os.path.join(os.path.expanduser("~/.too/worktrees"), project_name, name)
+        try:
+            os.makedirs(os.path.dirname(worktree_path), exist_ok=True)
+        except Exception as e:
+            print("PTreeWorkTree: can't create %s: %s" % (os.path.dirname(worktree_path), str(e)))
+            return
+
+        result = _run_git(["worktree", "add", worktree_path], root_dir, timeout=120)
+        if result is None or result.returncode != 0:
+            err = result.stderr.strip() if result is not None else "git not available"
+            print("PTreeWorkTree: git worktree add failed: %s" % err)
+            return
+        if result.stderr.strip():
+            print(result.stderr.strip())
+
+        copied, skipped, failed, spec_copied = _copy_files(root_dir, worktree_path)
+        print("PTreeWorkTree: created %s (untracked copied %d, skipped %d, failed %d; spec/ copied: %s)"
+              % (worktree_path, copied, skipped, failed, "yes" if spec_copied else "no"))
+
+        _reveal_worktree_node(tree, name)
 
     @staticmethod
     def runApp(root_dir=None):
