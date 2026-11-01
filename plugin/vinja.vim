@@ -363,6 +363,10 @@ function ProjectTree(...)
   exec 'wincmd w'
 endfunction
 
+function! PTreeRootAdd(...) abort
+  py3 ProjectTree.add_saved_root(*vim.eval('a:000'))
+endfunction
+
 function! PTreeWorkTree(name)
   py3 ProjectTree.create_worktree(vim.eval("a:name"))
 endfunction
@@ -609,6 +613,8 @@ command! -nargs=? -complete=dir ProjectTree  :call ProjectTree(<f-args>)
 command! -nargs=0 ProjectTreeFind      :py3 ProjectTree.locate_buf_in_tree()
 command! -nargs=0 ProjectTreeDispose   :py3 ProjectTree.dispose_tree()
 command! -nargs=0 ProjectTreeSelect    :call ProjectTreeSelect()
+command! -nargs=? PTreeRootAdd         :call PTreeRootAdd(<f-args>)
+command! -nargs=0 PTreeRootRemove      :py3 ProjectTree.remove_saved_root()
 command! -nargs=1 PTreeWorkTree        :call PTreeWorkTree('<args>')
 
 nmap <silent><leader>pt  :call ProjectTree()<cr>

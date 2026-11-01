@@ -538,6 +538,8 @@ class ProjectTreeRootContentManager(object):
         return result
 
     def open_content(self, line, mode="local"):
+        if not line.strip():
+            return
         name = line.split()[0].strip()
         path = self.path_dict.get(name)
         if not path:

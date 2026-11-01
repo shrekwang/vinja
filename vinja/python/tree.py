@@ -9,7 +9,7 @@ import json
 import uuid
 import vim
 import re
-from common import ZipUtil,FileUtil,VimUtil,PathUtil,MiscUtil,VinjaConf
+from common import ZipUtil,FileUtil,VimUtil,PathUtil,MiscUtil,VinjaConf,ProjectTreeRootsConfig
 from xml.etree.ElementTree import *
 from jde import ProjectManager,EditUtil
 
@@ -2138,6 +2138,40 @@ class ProjectTree(object):
         remove_current_tree()
 
     @staticmethod
+    def _saved_root_path():
+        tree = get_current_tree()
+        if tree is None:
+            raise ValueError("no ProjectTree in this tab, run :ProjectTree first")
+        node = tree._get_render_root()
+        if not isinstance(node, NormalDirNode) or isinstance(
+                node, (WorkSpaceRootNode, WorkSetRootNode, WorkSetNode)):
+            raise ValueError("displayed root is not a filesystem directory")
+        return node.realpath
+
+    @staticmethod
+    def add_saved_root(name=None):
+        try:
+            path = ProjectTree._saved_root_path()
+            changed, aliases = ProjectTreeRootsConfig().add(path, name)
+            status = "saved" if changed else "already saved"
+            print("PTreeRootAdd: %s %s as %s" % (status, path, ", ".join(aliases)))
+        except (OSError, ValueError) as e:
+            print("PTreeRootAdd: %s" % e)
+
+    @staticmethod
+    def remove_saved_root():
+        try:
+            path = ProjectTree._saved_root_path()
+            changed, aliases = ProjectTreeRootsConfig().remove(path)
+            if changed:
+                print("PTreeRootRemove: removed %s for %s from configuration only; no files deleted"
+                      % (", ".join(aliases), path))
+            else:
+                print("PTreeRootRemove: root is not saved: %s" % path)
+        except (OSError, ValueError) as e:
+            print("PTreeRootRemove: %s" % e)
+
+    @staticmethod
     def create_worktree(name):
         tree = get_current_tree()
         if tree is None:
@@ -2200,7 +2234,7 @@ class ProjectTree(object):
         if VimUtil.isVinjaBufferVisible("ProjectTree_%s" % tab_id):
             VimUtil.closeVinjaBuffer("ProjectTree_%s" % tab_id)
         else :
-            vim.command("call SplitLeftPanel(30, 'VinjaView_ProjectTree_%s')" % tab_id )
+            vim.command("call SplitLeftPanel(24, 'VinjaView_ProjectTree_%s')" % tab_id )
             vim.command("set filetype=ztree")
             vim.command(r"setlocal statusline=\ ProjectTree")
             vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )

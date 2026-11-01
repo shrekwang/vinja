@@ -12,6 +12,8 @@ import string
 from io import StringIO
 import zipfile
 import platform
+import stat
+import tempfile
 
 HOST = 'localhost'
 PORT = 9527
@@ -769,6 +771,102 @@ class VinjaConf(object):
         vinja_home=vim.eval("g:vinja_home")
         share_home=os.path.join(vinja_home,"share")
         return share_home
+
+class ProjectTreeRootsConfig(object):
+    def __init__(self, file_path=None):
+        self.file_path = file_path or os.path.join(VinjaConf.getDataHome(), "ptree_roots.cfg")
+
+    @staticmethod
+    def _entry(line):
+        if not line.strip() or line.startswith("#") or "=" not in line:
+            return None
+        name, path = line.split("=", 1)
+        return name.strip(), path.strip()
+
+    @staticmethod
+    def _path_key(path):
+        if not path:
+            return None
+        return os.path.normcase(os.path.realpath(os.path.expanduser(path)))
+
+    @staticmethod
+    def _absolute_path(path):
+        if not path or path != path.strip() or "\r" in path or "\n" in path:
+            raise ValueError("root path cannot be represented in ptree_roots.cfg")
+        path = os.path.abspath(os.path.expanduser(path))
+        if path != path.strip():
+            raise ValueError("root path cannot be represented in ptree_roots.cfg")
+        return path
+
+    def _read(self):
+        try:
+            with open(self.file_path, "r", newline="") as cfg:
+                lines = cfg.readlines()
+        except FileNotFoundError:
+            lines = []
+        entries = dict(entry for entry in (self._entry(line) for line in lines)
+                       if entry is not None)
+        return lines, entries
+
+    def _write(self, lines):
+        target = os.path.realpath(self.file_path)
+        try:
+            mode = stat.S_IMODE(os.stat(target).st_mode)
+        except FileNotFoundError:
+            mode = None
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", newline="", delete=False,
+                                             dir=os.path.dirname(target),
+                                             prefix=".ptree_roots.") as cfg:
+                temp_path = cfg.name
+                cfg.writelines(lines)
+            if mode is not None:
+                os.chmod(temp_path, mode)
+            os.replace(temp_path, target)
+        finally:
+            if temp_path is not None and os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+    def add(self, path, name=None):
+        path = self._absolute_path(path)
+        if name is None:
+            name = os.path.basename(path)
+        if not name or name.startswith("#") or "=" in name or any(c.isspace() for c in name):
+            raise ValueError("invalid alias; use :PTreeRootAdd <name> with a nonempty name "
+                             "without whitespace or '=', not starting with '#'")
+        if not os.path.isdir(path):
+            raise ValueError("root is not an existing directory: %s" % path)
+        lines, entries = self._read()
+        key = self._path_key(path)
+        if name in entries and self._path_key(entries[name]) != key:
+            raise ValueError("alias '%s' already points to %s; choose another name"
+                             % (name, entries[name]))
+        aliases = [alias for alias, value in entries.items() if self._path_key(value) == key]
+        if aliases:
+            return False, aliases
+        if lines and not lines[-1].endswith(("\n", "\r")):
+            lines[-1] += "\n"
+        lines.append("%s=%s\n" % (name, path))
+        self._write(lines)
+        return True, [name]
+
+    def remove(self, path):
+        path = self._absolute_path(path)
+        lines, entries = self._read()
+        key = self._path_key(path)
+        aliases = [alias for alias, value in entries.items() if self._path_key(value) == key]
+        if not aliases:
+            return False, []
+        # Remove shadowed definitions too, so an older value cannot reappear.
+        kept = []
+        for line in lines:
+            entry = self._entry(line)
+            if entry is None or entry[0] not in aliases:
+                kept.append(line)
+        self._write(kept)
+        return True, aliases
+
 
 def initVinja():
     data_home = VinjaConf.getDataHome()

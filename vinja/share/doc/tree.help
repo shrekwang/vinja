@@ -49,3 +49,25 @@ QQ    :dispse the project tree
 DD,m,yy,dd maps also work in visual mode.
 
 :PTreeWorkTree <name> :create a git worktree under ~/.too/worktrees/<project>/<name> and refresh the tree
+
+:PTreeRootAdd [name] :save the current displayed root in ~/.vinja/ptree_roots.cfg
+:PTreeRootRemove     :remove all saved aliases for the current displayed root
+:ProjectTreeSelect   :locate/open a saved root (also <leader>ps)
+
+These commands use this tab's displayed root (including C, U and B changes),
+not the selected node or original project root. They work from any buffer,
+even with the tree panel hidden; run :ProjectTree first if the tab has no tree.
+Virtual workspace/workset/archive roots cannot be saved, but real directories
+reached within them can. Add requires an existing directory; remove can clean
+up an entry even if its directory has disappeared.
+
+The default alias is the directory basename. Supply a name for same-basename
+projects or directories whose names contain whitespace. Aliases must be nonempty,
+contain no whitespace or '=', and not start with '#'. Conflicting aliases are
+refused, never overwritten; an already-saved path is a no-op, not a new alias.
+Equivalent paths (including symlinks) count as the same root.
+
+Remove accepts no arguments and deletes configuration entries only, never files,
+buffers, or the tree itself. Removing an unsaved root is a no-op. Comments and
+unrelated configuration entries are preserved. Reopen :ProjectTreeSelect to see
+changes immediately. Concurrent edits from multiple processes are not locked.
