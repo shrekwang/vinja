@@ -2,6 +2,18 @@
 
 ## Testing
 
+Run all Python tests with `python3 -m unittest discover -s vinja/test -v`.
+Run the SQLite table-listing regression tests with:
+
+```sh
+python3 -m unittest discover -s vinja/test -p 'test_dbext_sqlite.py' -v
+```
+
+These integration tests use a real in-memory SQLite database and stub Vim UI
+calls. They cover rendered table listings, name filtering, quoted names, and
+empty matches. They require only the Python standard library; no configuration,
+secrets, or external database are needed.
+
 Run the saved project-tree root tests from the repository root:
 
 ```sh

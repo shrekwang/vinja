@@ -80,6 +80,9 @@ class QueryUtil(object):
         elif server_type == "mysql":
             sql = """ SELECT table_name FROM INFORMATION_SCHEMA.TABLES
             where table_name like '%%%s%%' and table_schema='%s' """ % (name, dbext.dbname)
+        elif server_type == "sqlite":
+            sql = """ SELECT name AS table_name FROM sqlite_master
+                WHERE type = 'table' AND name LIKE '%%%s%%' ORDER BY name """ % name.replace("'", "''")
 
         columns,result = dbext.query(sql)
         return columns, result
