@@ -73,3 +73,19 @@ quickfix lists, no-match/error states,
 result/display limits, literal and regex searches, encoding, special filenames,
 hidden and workset filters, symlink loops, binary/archive/large-file exclusion,
 and FIFOs. All are included in the standard full-suite discovery command.
+
+Run the project-tree status/shutdown regressions with:
+
+```sh
+python3 -m unittest discover -s vinja/test -p 'test_tree_status.py' -v
+```
+
+Add `-k VimStatusSystem` for the real headless Vim test or `-k StatusTests`
+for Python integration tests. The system test uses the same Vim/Python overrides
+and prerequisites described above. It checks multi-tab shutdown with 60 extra
+loaded buffers, one save per live tree (including hidden panels), no shutdown
+edit-flag synchronization or rendering, preserved file history, cancelled quits,
+and idempotent, buffer-owner-aware panel unload hooks. Integration tests check
+UI-free state serialization, lazy-directory preservation, exclusion of closed
+tabs, and continuation after a state-file write failure. Fixtures live under
+`/tmp`; no secrets or user configuration are needed.

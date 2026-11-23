@@ -1963,9 +1963,9 @@ class ProjectTree(object):
             for child in current_node.get_children():
                 if child.isDirectory :
                     _get_opened_nodes(child)
-                elif child.isEdited :
+                elif child.isEdited and closeFile:
                     bufnr = vim.eval("bufnr('%s')" % child.realpath)    
-                    if bufnr != "-1" and closeFile:
+                    if bufnr != "-1":
                         vim.command('Bclose %s' % bufnr)
                     #opened_dir_nodes.append(child.realpath)
         _get_opened_nodes(self._get_render_root())
@@ -1981,6 +1981,18 @@ class ProjectTree(object):
         tree_state_file.close()
         #if not closeFile :
         #    print("ProjectTree status has been saved.")
+
+    @staticmethod
+    def save_all_status():
+        # Closed tabs can remain in the registry; only save surviving tabs.
+        for tab in vim.tabpages:
+            tab_id = vim.eval('gettabvar(%s, "tab_id")' % tab.number)
+            tree = _tree_registry.get(tab_id)
+            if tree is not None:
+                try:
+                    tree.save_status(False)
+                except OSError as e:
+                    print("ProjectTree: could not save %s: %s" % (tree.tree_state_path, e))
 
     def restore_status(self, node_type = "dir"):
         if not os.path.exists(self.tree_state_path):

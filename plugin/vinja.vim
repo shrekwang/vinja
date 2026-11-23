@@ -345,7 +345,11 @@ function SetupProjectTreeMappings()
     map <silent><buffer> B     :py3 projectTree.change_back()<cr>
     map <silent><buffer> U     :py3 projectTree.change_root_upper()<cr>
     map <silent><buffer> QQ    :py3 projectTree.dispose_tree()<cr>
-    autocmd BufUnload <buffer>  py3 projectTree.save_status(False)
+    let b:vinja_tree_tab_id = get(t:, 'tab_id', '')
+    augroup VinjaProjectTreeStatus
+      autocmd! BufUnload <buffer>
+      autocmd BufUnload <buffer> call SaveProjectTreeStatus(str2nr(expand('<abuf>')))
+    augroup END
 
     vmap <silent><buffer> DD   :py3 projectTree.delete_visual_node()<cr>
     vmap <silent><buffer> m    :py3 projectTree.mark_visual_node()<cr>
@@ -645,8 +649,24 @@ nmap <silent><leader>lr  :call LocateProject()<cr>
 nmap <silent><leader>lt  :call LocateTab()<cr>
 
 function SetProjectTreeFileEditFlag(filename,flag)
+  if v:exiting isnot v:null
+    return
+  endif
   py3 ProjectTree.set_file_edit(vim.eval("a:filename"),vim.eval("a:flag"))
 endfunction
+
+function! SaveProjectTreeStatus(bufnr) abort
+  if v:exiting isnot v:null
+    return
+  endif
+  let tab_id = getbufvar(a:bufnr, 'vinja_tree_tab_id', '')
+  py3 tree = get_all_trees().get(vim.eval('l:tab_id')); tree.save_status(False) if tree is not None else None
+endfunction
+
+augroup VinjaProjectTreeExit
+  autocmd!
+  autocmd VimLeavePre * py3 ProjectTree.save_all_status()
+augroup END
 
 autocmd BufReadCmd  jar://*	py3 ZipUtil.read_zip_cmd()
 autocmd BufReadPost *  call SetProjectTreeFileEditFlag(expand("<amatch>"),"true")
