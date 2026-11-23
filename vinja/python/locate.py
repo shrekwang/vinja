@@ -550,6 +550,8 @@ class TabContentManager(object):
     def __init__(self):
         self.show_on_open = True
         self.tab_info = []
+        self.original_tab = int(vim.eval("tabpagenr()"))
+        self.original_label = vim.eval("MyTabLabel(%d)" % self.original_tab)
 
     def get_init_prompt(self):
         return ""
@@ -563,7 +565,10 @@ class TabContentManager(object):
         tab_count = int(vim.eval("tabpagenr('$')"))
         current_tab = int(vim.eval("tabpagenr()"))
         for i in range(1, tab_count + 1):
-            label = vim.eval("MyTabLabel(%d)" % i)
+            if i == self.original_tab:
+                label = self.original_label
+            else:
+                label = vim.eval("MyTabLabel(%d)" % i)
             marker = "*" if i == current_tab else " "
             display = "%s %d: %s" % (marker, i, label)
             if pat.match(label):

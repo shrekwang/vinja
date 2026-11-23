@@ -43,3 +43,13 @@ VINJA_TEST_PYTHON_DLL=/Library/Frameworks/Python.framework/Versions/3.13/Python 
 Adjust the library path to the installed Python runtime. Existing configuration
 readers may emit `ResourceWarning` messages for unclosed files; those are outside
 this feature's changes.
+
+Run the tab-selector regression tests with:
+
+```sh
+python3 -m unittest discover -s vinja/test -p 'test_locate_tabs.py' -v
+```
+
+These tests stub Vim and verify that opening the selector preserves the original
+current-tab label for display and filtering. They require only the Python
+standard library and no configuration or secrets.
