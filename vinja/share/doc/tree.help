@@ -14,8 +14,9 @@ z     :close edited file, if the current node is dir, close all file under it.
 Z     :like above , but close the file even if it had been changed.
 u     :move cursor to upper dir
 m     :mark current node (for copy, delete , move etc.)
-f     :search node content for prompted string.
-F     :search node content for content in the vim search register.
+f     :search selected filesystem directory asynchronously (literal or /regex/).
+F     :prefill search from the Vim search register (see regex notes below).
+<C-c> :cancel the active ProjectTree search; partial results are retained.
 >     :jump to next editing file
 <     :jump to prev editing file
 <C-j> :jump to next sibling
@@ -47,6 +48,43 @@ U     :change root to upper dir
 QQ    :dispse the project tree
 
 DD,m,yy,dd maps also work in visual mode.
+
+Content search
+--------------
+Requires ripgrep (rg) on PATH and Vim with Python 3, jobs, channels and timers.
+Use :copen to view incremental results and :cnext/:cprevious to navigate them.
+Completed or result-limited searches with matches open the quickfix window at
+the bottom. Empty, failed and cancelled searches do not open it. Auto-opening
+is skipped if the originating window was closed, you are in another tab, or
+you selected a different quickfix list. :PTreeSearchStop cancels from any
+buffer; Ctrl-C does so in the tree buffer. One ProjectTree search runs per
+Vim instance: starting another cancels the previous search. Each search owns a
+separate quickfix list; unrelated quickfix lists are not overwritten. The list
+is labelled running, completed, cancelled, truncated or failed. Partial results
+remain available after cancellation or failure; errors appear in :messages.
+
+Only the selected physical directory is searched, including closed subfolders.
+Virtual SDK/library/worktree branches are not automatically followed. Select a
+real directory child to search those sources. Archive members and virtual group
+roots are unsupported. Directory symlinks are not followed. Search reads saved
+files, not unsaved buffers, and never expands the UI tree.
+
+Git/ripgrep ignore files are respected. The tree's hidden-file setting is used
+(.git is always excluded). .jde_work_set patterns filter results, including
+ancestor directory restrictions; they do not prune ripgrep's disk traversal.
+Files larger than 2 MiB, special files and ZIP/JAR/WAR/EAR/RAR archives are
+skipped. Ripgrep stops scanning a file when it detects binary data; matches
+emitted before a later NUL byte is detected can remain in the results.
+The project encoding is passed to ripgrep. Filenames that
+cannot be represented as UTF-8 in Vim's Python bridge are skipped and counted.
+Results stop at 10,000 matching lines (labelled truncated); display text is
+limited to 500 characters, with the original line number and first-match column.
+
+Plain input is case-sensitive literal text. /pattern/ uses ripgrep's default
+regex syntax, not Python or Vim regex syntax; lookaround and backreferences are
+unsupported. F translates Vim's \< and \> to \b only; edit other Vim-specific
+constructs at the prompt. Empty or unclosed /pattern/ input is rejected. Invalid
+regexes are reported as failed searches, not as zero matches.
 
 :PTreeWorkTree <name> :create a git worktree under ~/.too/worktrees/<project>/<name> and refresh the tree
 

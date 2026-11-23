@@ -177,6 +177,7 @@ function! SplitLeftPanel(splitSize,name)
 endfunction
 
 let g:vinja_home = fnamemodify(expand("<sfile>"), ':p:h:h') . '/vinja'
+execute 'source' fnameescape(fnamemodify(expand('<sfile>'), ':p:h') . '/vinja_search.vim')
 
 function RunSzPyfile(filename)
   exec "py3file ".g:vinja_home."/python/".a:filename
@@ -308,6 +309,7 @@ function SetupProjectTreeMappings()
     map <silent><buffer> m     :py3 projectTree.mark_selected_node()<cr>
     map <silent><buffer> f     :py3 projectTree.recursive_search()<cr>
     map <silent><buffer> F     :py3 projectTree.recursive_search2()<cr>
+    nnoremap <silent><buffer> <C-c> :PTreeSearchStop<cr>
     map <silent><buffer> <     :py3 projectTree.get_prev_open_node()<cr>
     map <silent><buffer> >     :py3 projectTree.get_next_open_node()<cr>
     map <silent><buffer> g<    :py3 projectTree.get_prev_marked_node()<cr>

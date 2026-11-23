@@ -1220,54 +1220,24 @@ class ProjectTree(object):
         self.recursive_search(search_str)
 
     def recursive_search(self, default_str = None):
-        if default_str != None :
-            text = VimUtil.getInput("enter string to be searched: ", default_str)
-        else :
-            text = VimUtil.getInput("enter string to be searched: ")
-        if not text :
-            return
-        if text.startswith("/"):
-            text = re.compile(text[1:-1])
         node = self.get_selected_node()
-        if not node.isDirectory :
-            return 
-        result = []
-
-        re_type = type(re.compile(""))
-        def _search_node(node,text) :
-            if not node.isDirectory and node.plainText() :
-                # logging.debug("search content of %s " % node.realpath)
-                try :
-                    content = node.get_content(self.project_encoding)
-                    file_path = node.get_uri_path()
-                    for index,line in enumerate(content) :
-                        if (isinstance(text,str) and line.find(text) > -1 ) \
-                                or (isinstance(text,re_type) and text.search(line)) :
-                                result.append([file_path,str(index+1),line.replace("\n","")])
-                except Exception as e :
-                    logging.debug("error when reading content of %s " % node.realpath)
-            else :
-                for subnode in node.get_children():
-                    _search_node(subnode, text)
-        _search_node(node,text)
-        qflist = []
-        for filename,lineNum,lineText in result :
-            qfitem = dict(filename=self.relpath(filename),lnum=lineNum,text=lineText.strip())
-            qflist.append(qfitem)
-
-        if len(qflist) > 0 :
-            vim_qflist = vim.eval('[]')
-            for d in qflist:
-                vim_dict = vim.Dictionary()
-                for key, value in d.items():
-                    vim_dict[key] = value
-                vim_qflist.append(vim_dict)
-            vim.vars['tmp_qflist'] = vim_qflist
-            vim.command("call setqflist(tmp_qflist)" )
-            vim.command("exec 'wincmd w'")
-            vim.command("belowright cwindow")
-        else :
-            print("can't find any reference location.")
+        if (not isinstance(node, NormalDirNode) or
+                isinstance(node, (WorkSpaceRootNode, WorkSetRootNode, WorkSetNode)) or
+                not os.path.isdir(node.realpath)):
+            print("ProjectTree search: select a filesystem directory, not a file/archive/virtual group.")
+            return
+        text = vim.Function("input")("Search (literal or /regex/): ", default_str or "")
+        if isinstance(text, bytes):
+            text = text.decode(vim.eval('&encoding'))
+        if not text:
+            return
+        from tree_search import make_request
+        try:
+            request = make_request(node, self, text)
+        except ValueError as e:
+            print("ProjectTree search: %s" % e)
+            return
+        vim.Function("VinjaTreeSearchStart")(request)
 
     def filter_display_node(self):
         node = self.get_selected_node()

@@ -53,3 +53,23 @@ python3 -m unittest discover -s vinja/test -p 'test_locate_tabs.py' -v
 These tests stub Vim and verify that opening the selector preserves the original
 current-tab label for display and filtering. They require only the Python
 standard library and no configuration or secrets.
+
+Run the asynchronous project-tree search regressions with:
+
+```sh
+python3 -m unittest discover -s vinja/test -p 'test_tree_search.py' -v
+```
+
+Add `-k VimSearchSystem` for the headless Vim lifecycle test or `-k SearchTests`
+for backend tests. Backend integration tests require `rg` on PATH. The system
+case also requires Vim jobs/channels/timers, Python 3, and the plugin dependencies
+listed above; the same `VINJA_TEST_VIM` and `VINJA_TEST_PYTHON_DLL` overrides apply.
+Missing prerequisites cause explicit skips. Tests use only temporary homes and
+fixtures under `/tmp`, with no secrets or `.env`.
+
+Coverage includes f/F entry points, asynchronous cancellation/replacement,
+quickfix auto-opening for nonempty completion, isolation across tabs, freed
+quickfix lists, no-match/error states,
+result/display limits, literal and regex searches, encoding, special filenames,
+hidden and workset filters, symlink loops, binary/archive/large-file exclusion,
+and FIFOs. All are included in the standard full-suite discovery command.
