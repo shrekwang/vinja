@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import types
 import unittest
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -122,6 +123,25 @@ class SearchTests(unittest.TestCase):
             items = search.parse_matches(result.stdout.splitlines(), request)["items"]
             self.assertEqual(1, len(items))
             self.assertEqual(1, items[0]["col"])
+
+    def test_visibility_cached_across_batches_and_reset_for_new_search(self):
+        self.tree.work_path_set = ['src/keep']
+        request = self.request()
+        parser = search.MatchParser(request)
+        messages = [json.dumps({'type': 'match', 'data': {
+            'path': {'text': str(self.root / name)}, 'line_number': 1,
+            'lines': {'text': 'needle'}, 'submatches': [{'start': 0}]}})
+            for name in ('keep', 'drop')]
+        with mock.patch.object(search, '_visible', wraps=search._visible) as visible:
+            for _ in range(3):
+                parsed = parser.parse_matches(messages * 100)
+                self.assertEqual(100, len(parsed['items']))
+            self.assertEqual(2, visible.call_count)
+            self.tree.work_path_set = ['src/drop']
+            fresh = search.MatchParser(self.request())
+            parsed = fresh.parse_matches(messages)
+            self.assertEqual([str(self.root / 'drop')], [item['filename'] for item in parsed['items']])
+            self.assertEqual(4, visible.call_count)
 
     def test_json_bytes_long_lines_and_unrepresentable_paths(self):
         request = self.request()

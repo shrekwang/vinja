@@ -145,6 +145,13 @@ def remove_current_tree():
 def get_all_trees():
     return _tree_registry
 
+def prune_closed_trees():
+    live_ids = {vim.eval('gettabvar(%s, "tab_id")' % tab.number)
+                for tab in vim.tabpages}
+    for tab_id in list(_tree_registry):
+        if tab_id not in live_ids:
+            del _tree_registry[tab_id]
+
 class _TreeProxy(object):
     def __getattr__(self, name):
         tree = get_current_tree()
@@ -346,15 +353,28 @@ class NormalDirNode(TreeNode):
             except Exception:
                 pass
 
+    def _is_ancestor_link(self):
+        realpath = os.path.realpath(self.realpath)
+        ancestor = self.parent
+        while ancestor is not None:
+            if ancestor.realpath and realpath == os.path.realpath(ancestor.realpath):
+                return True
+            ancestor = ancestor.parent
+        return False
+
     def _load_dir_content(self):
 
+        if self._is_ancestor_link():
+            self._children = []
+            self.isLoaded = True
+            return
         if not os.path.exists(self.realpath):
             self.isLoaded = True
             return
 
         self._load_meta_status()
 
-        old_children = self._children
+        old_children = {(child.name, child.isDirectory): child for child in self._children}
         self._children = []
         self.hidden_nodes = set()
         files, dirs = [], []
@@ -376,17 +396,12 @@ class NormalDirNode(TreeNode):
         dirs.sort()
         files.sort()
         for dir_name, abpath in dirs :
-            node = None
-            #see if there's old dir node, for keep the node state (open/close etc).
-            for old_node in old_children :
-                if old_node.name == dir_name and old_node.isDirectory :
-                    node = old_node
-                    break
+            node = old_children.get((dir_name, True))
             if node == None :
                 project_markers = [".classpath", "go.mod", "Cargo.toml", "sdkconfig"]
                 if any(os.path.exists(os.path.join(abpath, m)) for m in project_markers):
                     try:
-                        node = ProjectRootNode(abpath,self.projectTree)
+                        node = ProjectRootNode(abpath,self.projectTree, lazy=True)
                     except Exception as e:
                         logging.debug("ProjectRootNode init failed for %s: %s" % (abpath, str(e)))
                         node = NormalDirNode(dir_name, abpath, self.projectTree)
@@ -396,11 +411,7 @@ class NormalDirNode(TreeNode):
                 node._load_meta_status()
             self.add_child(node)
         for file_name, abpath in files :
-            node = None
-            for old_node in old_children :
-                if old_node.name == file_name and old_node.isDirectory == False:
-                    node = old_node
-                    break
+            node = old_children.get((file_name, False))
             if node == None :
                 _ , ext  = os.path.splitext(file_name)
                 if ext.lower() in [".zip", ".jar", ".war", ".ear"] :
@@ -797,7 +808,7 @@ class WorkSpaceRootNode(NormalDirNode):
 
 class ProjectRootNode(NormalDirNode):
 
-    def __init__(self,root_dir, projectTree):
+    def __init__(self,root_dir, projectTree, lazy=False):
         super(ProjectRootNode, self).__init__(os.path.basename(root_dir),root_dir, projectTree)
         self.root_dir = root_dir
         self.projectTree = projectTree
@@ -805,10 +816,9 @@ class ProjectRootNode(NormalDirNode):
         self.var_dict = {}
         self.decompiled_jar_dict = {}
         self.lib_srcs = []
-        self._load_class_path()
-        self._load_dir_content()
-        self._build_virtual_noes()
-        #self.isOpen = True
+        self._classpath_loaded = False
+        if not lazy:
+            self.refresh()
 
     def _load_class_path(self):
 
@@ -983,6 +993,13 @@ class ProjectRootNode(NormalDirNode):
                     logging.debug("src.zip not exists or is corrupted")
 
     def refresh(self):
+        if self._is_ancestor_link():
+            self._children = []
+            self.isLoaded = True
+            return
+        if not self._classpath_loaded:
+            self._load_class_path()
+            self._classpath_loaded = True
         self._load_dir_content()
         self._build_virtual_noes()
 
@@ -994,6 +1011,7 @@ class ProjectTree(object):
         self.hide_dot_files = True
         self.work_path_set = []
         self.edit_history = []
+        self._restoring_files = False
 
         if treeType == "workSetTree" :
             root_dir = WorkSetRootNode.get_root_path()
@@ -1997,22 +2015,27 @@ class ProjectTree(object):
     def restore_status(self, node_type = "dir"):
         if not os.path.exists(self.tree_state_path):
             return
-        lines = open(self.tree_state_path,"r").readlines()
+        with open(self.tree_state_path,"r") as state_file:
+            lines = state_file.readlines()
         edit_count = 0
-        for line in lines :
-            path = line.strip()
-            if node_type == "dir" :
-                node = self.find_node(path)
-                if node != None :
-                    if node.isDirectory :
-                        node.isOpen = True
-                    else :
-                        node.isEdited = True
-            elif node_type !="dir" and os.path.isfile(path):
-                edit_count = edit_count + 1
-                if edit_count < 18 :
-                    edit_cmd = "silent edit"
-                    vim.command("%s %s" %(edit_cmd, path))
+        self._restoring_files = node_type != "dir"
+        try:
+            for line in lines :
+                path = line.strip()
+                if node_type == "dir" :
+                    node = self.find_node(path)
+                    if node != None :
+                        if node.isDirectory :
+                            node.isOpen = True
+                        else :
+                            node.isEdited = True
+                elif os.path.isfile(path):
+                    edit_count = edit_count + 1
+                    if edit_count < 18 :
+                        edit_cmd = "silent edit"
+                        vim.command("%s %s" %(edit_cmd, path))
+        finally:
+            self._restoring_files = False
 
     @staticmethod
     def locate_buf_in_tree(current_file_name = None):
@@ -2100,7 +2123,7 @@ class ProjectTree(object):
                 if flag :
                     tree.edit_history.insert(0,normed_path)
 
-                if not VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
+                if tree._restoring_files or not VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
                     continue
                 vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
                 (row,col) = vim.current.window.cursor
@@ -2201,7 +2224,8 @@ class ProjectTree(object):
             if tree is not None and os.path.normpath(tree.project_root) != os.path.normpath(root_dir):
                 ProjectTree.dispose_tree()
                 tree = None
-        if tree is None:
+        new_tree = tree is None
+        if new_tree:
             tree = ProjectTree.create_project_tree(root_dir)
             set_current_tree(tree)
 
@@ -2221,13 +2245,19 @@ class ProjectTree(object):
             vim.command(r"setlocal statusline=\ ProjectTree")
             vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
             vim.command("call SetupProjectTreeMappings()")
-            tree.restore_status()
+            if new_tree:
+                tree.restore_status()
+                vim.command("exec 'wincmd l'")
+                try:
+                    tree.restore_status(node_type="file")
+                finally:
+                    vim.command("exec 'wincmd h'")
+            tree_path = None
+            if current_file_name and "ProjectTree" not in current_file_name:
+                tree_path = tree.open_path(current_file_name)
             tree.render_tree()
-            if current_file_name != None :
-                ProjectTree.locate_buf_in_tree(current_file_name)
-            vim.command("exec 'wincmd l'")
-            tree.restore_status(node_type="file")
-            vim.command("exec 'wincmd h'")
+            if tree_path is not None:
+                vim.current.window.cursor = tree.get_path_cursor(tree_path)
 
 
     @staticmethod
@@ -2251,9 +2281,10 @@ class ProjectTree(object):
             tree = ProjectTree.create_project_tree()
         set_current_tree(tree)
         tree.restore_status()
-        tree.render_tree()
-
         vim.command("exec 'wincmd w'")
-        tree.restore_status(node_type="file")
-        vim.command("exec 'wincmd w'")
+        try:
+            tree.restore_status(node_type="file")
+        finally:
+            vim.command("exec 'wincmd w'")
+            tree.render_tree()
 

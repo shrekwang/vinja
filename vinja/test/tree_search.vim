@@ -17,6 +17,7 @@ function! WaitSearch(id) abort
     endif
     sleep 10m
   endwhile
+  py3 assert _vinja_tree_search_parser is None
   return getqflist({'id': a:id, 'context': 1, 'items': 1})
 endfunction
 
@@ -95,11 +96,14 @@ try
   let request = py3eval("__import__('tree_search').make_request(search_node, search_tree, 'needle')")
   let request.argv = ['sh', '-c', 'while :; do :; done']
   call VinjaTreeSearchStart(request)
+  py3 import weakref
+  py3 cancelled_parser = weakref.ref(_vinja_tree_search_parser)
   let stopped_id = getqflist({'id': 0}).id
   let before = reltime()
   PTreeSearchStop
   call assert_true(reltimefloat(reltime(before)) < 1.0)
   call assert_equal('cancelled', getqflist({'id': stopped_id, 'context': 1}).context.state)
+  py3 assert _vinja_tree_search_parser is None and cancelled_parser() is None
   call assert_equal(0, getqflist({'winid': 0}).winid)
   let results = WaitSearch(StartSearch('needle'))
   call assert_equal('completed', results.context.state)
@@ -108,9 +112,11 @@ try
   call assert_equal('cancelled', getqflist({'id': stopped_id, 'context': 1}).context.state)
 
   call VinjaTreeSearchStart(request)
+  py3 replaced_parser = weakref.ref(_vinja_tree_search_parser)
   let replaced_id = getqflist({'id': 0}).id
   let results = WaitSearch(StartSearch('a.b'))
   call assert_equal('cancelled', getqflist({'id': replaced_id, 'context': 1}).context.state)
+  py3 assert replaced_parser() is None
   call assert_equal(1, len(results.items))
 
   " A freed quickfix list must not be recreated by later callbacks.
@@ -119,6 +125,7 @@ try
   call setqflist([], 'f')
   sleep 100m
   call assert_equal('dead', job_status(producer))
+  py3 assert _vinja_tree_search_parser is None
   call assert_equal([], getqflist())
 
   call writefile(['needle ' . repeat('x', 600)], $HOME . '/project/long')
@@ -134,6 +141,31 @@ try
   call assert_equal(10000, len(results.items))
   call assert_equal('quickfix', &buftype)
   call delete($HOME . '/project/many')
+
+  " Visibility is evaluated once per file, including rejected files, across batches.
+  cclose
+  call mkdir($HOME . '/project/filtered', 'p')
+  call writefile(repeat(['needle'], 300), $HOME . '/project/filtered/allowed')
+  call writefile(repeat(['needle'], 300), $HOME . '/project/filtered/rejected')
+  py3 search_tree.root.refresh()
+  py3 search_node = search_tree.root.get_child('filtered')
+  py3 import tree_search
+  py3 visibility_calls = []
+  py3 original_visible = tree_search._visible
+  py3 tree_search._visible = lambda path, request: (visibility_calls.append(path), original_visible(path, request))[-1]
+  py3 search_tree.work_path_set = ['filtered/allowed']
+  let results = WaitSearch(StartSearch('needle'))
+  call assert_equal(300, len(results.items))
+  py3 assert len(visibility_calls) == len(set(visibility_calls)), visibility_calls
+  py3 assert os.path.join(search_node.realpath, 'rejected') in visibility_calls
+  cclose
+  py3 search_tree.work_path_set = ['filtered/rejected']
+  py3 visibility_calls.clear()
+  let results = WaitSearch(StartSearch('needle'))
+  call assert_equal(300, len(results.items))
+  call assert_equal(resolve($HOME . '/project/filtered/rejected'), resolve(fnamemodify(bufname(results.items[0].bufnr), ':p')))
+  py3 assert len(visibility_calls) == len(set(visibility_calls))
+  py3 tree_search._visible = original_visible
 
   " Unsupported nodes never expand or enumerate children.
   py3 search_tree.get_selected_node = lambda: TreeNode('virtual', '/unused', True)

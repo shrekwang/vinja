@@ -13,8 +13,9 @@ function! s:Publish(state) abort
 endfunction
 
 function! s:Finish(state) abort
+  py3 _vinja_tree_search_parser = None
   call timer_stop(s:search.timer)
-  if job_status(s:search.job) ==# 'run'
+  if has_key(s:search, 'job') && job_status(s:search.job) ==# 'run'
     call job_stop(s:search.job, 'kill')
   endif
   if get(getqflist({'id': s:search.id}), 'id', 0) == s:search.id
@@ -38,7 +39,7 @@ function! s:Flush() abort
       call s:Finish('cancelled')
       return
     endif
-    let parsed = py3eval("__import__('tree_search').parse_matches(vim.eval('s:search.messages'), vim.eval('s:search.request'))")
+    let parsed = py3eval("_vinja_tree_search_parser.parse_matches(vim.eval('s:search.messages'))")
     let s:search.messages = []
     let items = parsed.items[: 10000 - s:search.count - 1]
     let s:search.skipped += parsed.skipped
@@ -127,18 +128,25 @@ function! VinjaTreeSearchStart(request) abort
   let s:search = {'id': getqflist({'id': 0}).id, 'request': a:request,
         \ 'count': 0, 'skipped': 0, 'error': '', 'timer': -1,
         \ 'messages': [], 'bytes': 0, 'closed': 0, 'origin_win': win_getid()}
-  let s:search.job = job_start(a:request.argv, {'in_io': 'null',
-        \ 'out_mode': 'nl', 'err_mode': 'nl', 'stoponexit': 'kill',
-        \ 'out_cb': function('s:Output'), 'err_cb': function('s:Error'),
-        \ 'close_cb': function('s:Closed')})
-  if job_status(s:search.job) ==# 'fail'
-    let s:search.error = 'Could not start ripgrep.'
+  try
+    " Keep the parser in Python: vim.eval() copies Vim dictionaries on every call.
+    py3 _vinja_tree_search_parser = __import__('tree_search').MatchParser(vim.eval('s:search.request'))
+    let s:search.job = job_start(a:request.argv, {'in_io': 'null',
+          \ 'out_mode': 'nl', 'err_mode': 'nl', 'stoponexit': 'kill',
+          \ 'out_cb': function('s:Output'), 'err_cb': function('s:Error'),
+          \ 'close_cb': function('s:Closed')})
+    if job_status(s:search.job) ==# 'fail'
+      let s:search.error = 'Could not start ripgrep.'
+      call s:Finish('failed')
+      return
+    endif
+    let s:search.timer = timer_start(20, function('s:Poll'), {'repeat': -1})
+    call s:Publish('running')
+    echo 'ProjectTree search started. :copen for results; :PTreeSearchStop to cancel.'
+  catch
+    let s:search.error = v:exception
     call s:Finish('failed')
-    return
-  endif
-  let s:search.timer = timer_start(20, function('s:Poll'), {'repeat': -1})
-  call s:Publish('running')
-  echo 'ProjectTree search started. :copen for results; :PTreeSearchStop to cancel.'
+  endtry
 endfunction
 
 command! -nargs=0 PTreeSearchStop call VinjaTreeSearchStop()

@@ -666,6 +666,7 @@ endfunction
 augroup VinjaProjectTreeExit
   autocmd!
   autocmd VimLeavePre * py3 ProjectTree.save_all_status()
+  autocmd TabClosed * py3 prune_closed_trees()
 augroup END
 
 autocmd BufReadCmd  jar://*	py3 ZipUtil.read_zip_cmd()

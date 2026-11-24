@@ -29,6 +29,18 @@ endfunction
 
 try
   execute 'source' fnameescape($VINJA_TEST_REPO . '/plugin/vinja.vim')
+  " Real startup must not recursively load project-marked symlink cycles.
+  py3 cycle_root = os.path.join(os.environ['HOME'], 'cycle')
+  py3 os.mkdir(cycle_root)
+  py3 open(os.path.join(cycle_root, 'go.mod'), 'w').close()
+  py3 os.symlink(cycle_root, os.path.join(cycle_root, 'loop'))
+  py3 cycle_tree = ProjectTree(cycle_root)
+  py3 cycle_node = cycle_tree.root.get_child('loop')
+  py3 assert not cycle_node.isLoaded
+  py3 assert cycle_node.get_children() == []
+  py3 cycle_node.refresh()
+  py3 assert cycle_node.get_children() == []
+
   py3 status_saves = []
   py3 original_save = ProjectTree.save_status
   py3 ProjectTree.save_status = lambda self, closeFile=True: (status_saves.append(self.project_root), original_save(self, closeFile))[-1]
@@ -71,6 +83,17 @@ try
   tablast
   call writefile(['another'], root . '/child/another')
   execute 'edit' fnameescape(root . '/child/another')
+  " Closing a different tab removes only its tree, not hidden live panels.
+  py3 hidden_tree = get_current_tree()
+  tabnew
+  call mkdir($HOME . '/closed', 'p')
+  call ProjectTree($HOME . '/closed')
+  py3 closed_tab_id = _get_tab_id_global()
+  tabclose
+  py3 assert closed_tab_id not in get_all_trees()
+  py3 assert get_current_tree() is hidden_tree
+  py3 assert len(get_all_trees()) == 3
+
   " Include many loaded buffers, not just the visible file windows.
   call mkdir($HOME . '/buffers', 'p')
   for index in range(1, 60)

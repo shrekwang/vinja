@@ -51,28 +51,42 @@ def _text(value):
     return base64.b64decode(value["bytes"]).decode("utf-8", errors="replace")
 
 
-def parse_matches(messages, request):
-    items = []
-    skipped = 0
-    for message in messages:
-        event = json.loads(message)
-        if event["type"] != "match":
-            continue
-        data = event["data"]
-        path_data = data["path"]
-        if "text" in path_data:
-            path = path_data["text"]
-        else:
-            # Vim's Python bridge cannot represent surrogate-escaped filenames.
-            try:
-                path = base64.b64decode(path_data["bytes"]).decode("utf-8")
-            except UnicodeDecodeError:
-                skipped += 1
+class MatchParser:
+    """Reuse for all batches of one search, then release to discard visibility."""
+
+    def __init__(self, request):
+        self.request = request
+        self.visibility = {}
+
+    def parse_matches(self, messages):
+        items = []
+        skipped = 0
+        for message in messages:
+            event = json.loads(message)
+            if event["type"] != "match":
                 continue
-        if not _visible(path, request):
-            continue
-        matches = data["submatches"]
-        items.append(dict(filename=path, lnum=data["line_number"],
-                          col=matches[0]["start"] + 1 if matches else 1,
-                          text=_text(data["lines"]).rstrip("\r\n")[:500]))
-    return dict(items=items, skipped=skipped)
+            data = event["data"]
+            path_data = data["path"]
+            if "text" in path_data:
+                path = path_data["text"]
+            else:
+                # Vim's Python bridge cannot represent surrogate-escaped filenames.
+                try:
+                    path = base64.b64decode(path_data["bytes"]).decode("utf-8")
+                except UnicodeDecodeError:
+                    skipped += 1
+                    continue
+            if path not in self.visibility:
+                self.visibility[path] = _visible(path, self.request)
+            if not self.visibility[path]:
+                continue
+            matches = data["submatches"]
+            items.append(dict(filename=path, lnum=data["line_number"],
+                              col=matches[0]["start"] + 1 if matches else 1,
+                              text=_text(data["lines"]).rstrip("\r\n")[:500]))
+        return dict(items=items, skipped=skipped)
+
+
+def parse_matches(messages, request):
+    """Parse a single batch without retaining state between calls."""
+    return MatchParser(request).parse_matches(messages)

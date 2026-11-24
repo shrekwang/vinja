@@ -89,3 +89,35 @@ and idempotent, buffer-owner-aware panel unload hooks. Integration tests check
 UI-free state serialization, lazy-directory preservation, exclusion of closed
 tabs, and continuation after a state-file write failure. Fixtures live under
 `/tmp`; no secrets or user configuration are needed.
+
+Run the tree-loading performance regressions with:
+
+```sh
+python3 -m unittest discover -s vinja/test -p 'test_tree_loading.py' -v
+```
+
+These standard-library tests verify lazy nested-project discovery, ancestor
+symlink-cycle prevention without blocking external directory links, linear
+child-reuse comparisons during refresh, and file-to-directory replacement.
+They use temporary fixtures under `/tmp` and stub Vim and SDK discovery.
+The status system test also covers real-plugin cycle handling and `TabClosed`
+registry cleanup while preserving hidden trees in surviving tabs. The search
+suite checks visibility caching across batches (including rejected files), fresh
+filters for each search, and parser release on completion, failure, truncation,
+cancellation, replacement, and freed quickfix lists. The same Vim prerequisites
+and environment overrides apply; no secrets or `.env` are required.
+
+Run the tree-restoration regressions with:
+
+```sh
+python3 -m unittest discover -s vinja/test -p 'test_tree_restore.py' -v
+```
+
+Add `-k VimRestoreSystem` for the headless Vim test or `-k RestoreTests`
+for Python integration tests. The system test checks a single final render when
+restoring ten saved files, preserved edit flags/history and cursor selection,
+and reopening panels without replaying stale disk state or closed buffers.
+Integration tests cover rendering after tree-type restoration and resuming normal
+edit rendering after a restoration error. The same Vim prerequisites and
+`VINJA_TEST_VIM`/`VINJA_TEST_PYTHON_DLL` overrides apply. Fixtures and temporary
+homes live under `/tmp`; no secrets or user configuration are needed.
