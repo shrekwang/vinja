@@ -121,3 +121,16 @@ Integration tests cover rendering after tree-type restoration and resuming norma
 edit rendering after a restoration error. The same Vim prerequisites and
 `VINJA_TEST_VIM`/`VINJA_TEST_PYTHON_DLL` overrides apply. Fixtures and temporary
 homes live under `/tmp`; no secrets or user configuration are needed.
+
+Run the file-opening regressions with:
+
+```sh
+python3 -m unittest discover -s vinja/test -p 'test_tree_open.py' -v
+```
+
+Add `-k VimOpenSystem` for the headless Vim test or `-k OpenTests` for Python
+integration tests. Coverage includes one redraw for a fresh file, no redraw for
+unchanged edit flags, MRU history, failed edits, Enter/preview/split/tab focus,
+tree cursor preservation, directory toggles, and unloading/reopening files.
+The system test uses the same Vim prerequisites and environment overrides above.
+Fixtures live under `/tmp`; no secrets or user configuration are needed.

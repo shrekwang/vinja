@@ -563,7 +563,6 @@ class NormalFileNode(TreeNode):
         current_file_name = vim_buffer.name
         if self.realpath != current_file_name :
             vim.command("%s %s" %(edit_cmd, self.realpath))
-        self.set_edit_flag(True)
         ProjectTree.set_file_edit(self.realpath,"true");
 
     def dispose(self):
@@ -1154,13 +1153,6 @@ class ProjectTree(object):
             vim.current.window.cursor = (row,col)
         else :
             node.open_node(edit_cmd)
-            if node.isEdited :
-                tab_id = self._get_tab_id()
-                if VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
-                    vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id)
-                    self.render_tree()
-                    vim.current.window.cursor = (row,col)
-                    vim.command("exec 'wincmd w'")
 
     def mark_selected_node(self):
         node = self.get_selected_node()
@@ -2116,6 +2108,7 @@ class ProjectTree(object):
                 logging.debug("set_file_edit: find_node failed for %s: %s" % (path, str(e)))
                 node = None
             if node != None :
+                changed = node.isEdited != flag
                 node.set_edit_flag(flag)
                 normed_path = os.path.normpath(path)
                 if normed_path in tree.edit_history :
@@ -2123,7 +2116,7 @@ class ProjectTree(object):
                 if flag :
                     tree.edit_history.insert(0,normed_path)
 
-                if tree._restoring_files or not VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
+                if not changed or tree._restoring_files or not VimUtil.isVinjaBufferVisible('ProjectTree_%s' % tab_id):
                     continue
                 vim.command("call SwitchToVinjaView('ProjectTree_%s')" % tab_id )
                 (row,col) = vim.current.window.cursor
